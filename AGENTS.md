@@ -7,3 +7,26 @@ This version has breaking changes — APIs, conventions, and file structure may 
 This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
 
 <!-- END:nextjs-agent-rules -->
+
+# The SaaS Harbor
+
+Next.js 16 App Router and Supabase platform where independent SaaS products get public profiles and rank on a self-reported MRR leaderboard. Read `README.md`, `docs/ARCHITECTURE.md` and `docs/STATUS.md` before larger changes.
+
+## Commands
+
+- `npm run check` before handing over any change: Prettier, ESLint, TypeScript and unit tests.
+- `npm run build` after changes to routing, config or the server/client boundary.
+- `npm run db:start`, then `npm run test:db` and `npm run test:e2e`, after changes to the schema, auth, forms or pages. Docker must be running. Local Supabase uses ports 55320-55329.
+- `npm run format` formats the codebase.
+
+## Rules
+
+- Schema changes go in a new file in `supabase/migrations`. Never edit an applied migration. Then run `npm run db:reset` and `npm run db:types`, and extend `supabase/tests/database`.
+- Never apply migrations or write data to the hosted project (`qvvqkskyukqoleuivdfw`) without explicit approval. Read-only checks are fine.
+- Every exposed table needs RLS and explicit grants. Views use `security_invoker = true`. The app never uses a service-role key.
+- Money is integer USD cents. Never use floating point for revenue.
+- Mutations are Server Actions that call `requireUser()`, with RLS as the second layer. Public reads use `publicClient()` so they never carry a session.
+- Validate input on the server with the zod schemas in `src/lib/domain.ts`.
+- Keep the Axe scans in `tests/e2e` passing and add new pages to them.
+- Update `README.md`, `docs/ARCHITECTURE.md` and `docs/STATUS.md` when behavior, setup or known issues change.
+- Never share `supabase status` output: it contains local keys.

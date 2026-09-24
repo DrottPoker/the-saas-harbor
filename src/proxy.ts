@@ -7,15 +7,17 @@ export async function proxy(request: NextRequest) {
   response.headers.set("Cache-Control", "private, no-store");
   const config = supabaseConfig();
   if (!config) return response;
-  const client = createServerClient(config.url, config.key, { cookies: {
-    getAll: () => request.cookies.getAll(),
-    setAll(values) {
-      values.forEach(({ name, value }) => request.cookies.set(name, value));
-      response = NextResponse.next({ request });
-      values.forEach(({ name, value, options }) => response.cookies.set(name, value, options));
-      response.headers.set("Cache-Control", "private, no-store");
+  const client = createServerClient(config.url, config.key, {
+    cookies: {
+      getAll: () => request.cookies.getAll(),
+      setAll(values) {
+        values.forEach(({ name, value }) => request.cookies.set(name, value));
+        response = NextResponse.next({ request });
+        values.forEach(({ name, value, options }) => response.cookies.set(name, value, options));
+        response.headers.set("Cache-Control", "private, no-store");
+      },
     },
-  } });
+  });
   await client.auth.getClaims();
   return response;
 }

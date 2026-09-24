@@ -1,11 +1,28 @@
+# Dependencies
 node_modules/
+
+# Next.js build output and generated files
 .next/
+.next-e2e/
+next-env.d.ts
+*.tsbuildinfo
+
+# Environment. Only the example is committed.
 .env*
 !.env.example
-*.tsbuildinfo
+
+# Test output
 playwright-report/
+blob-report/
 test-results/
+coverage/
+
+# Local tooling
 .local/
 supabase/.temp/
 supabase/.branches/
-.next-e2e/
+.vercel/
+*.pem
+npm-debug.log*
+.DS_Store
+.claude/settings.local.json

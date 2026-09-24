@@ -6,7 +6,15 @@ export async function GET(request: NextRequest) {
   if (code) {
     const client = await serverClient();
     const { error } = await client.auth.exchangeCodeForSession(code);
-    if (!error) return NextResponse.redirect(new URL(request.nextUrl.searchParams.get("next") === "update" ? "/auth?mode=update" : "/dashboard", origin));
+    if (!error)
+      return NextResponse.redirect(
+        new URL(
+          request.nextUrl.searchParams.get("next") === "update"
+            ? "/auth?mode=update"
+            : "/dashboard",
+          origin,
+        ),
+      );
   }
   return NextResponse.redirect(new URL("/auth?callback_error=1", origin));
 }

@@ -16,7 +16,7 @@ Sales, escrow, company profiles, messaging and advanced revenue verification are
 
 ## Run locally
 
-Requires Node.js 22.14 or later and npm. Dependencies have exact versions and a lockfile.
+Requires Node.js 22.14 or later (see `.nvmrc`) and npm. Dependencies have exact versions and a lockfile, and `.npmrc` keeps new installs exact.
 
 ```powershell
 npm ci
@@ -29,11 +29,11 @@ Open http://localhost:3000. The server binds to the local loopback interface.
 
 The current checkout already has an ignored `.env.local` configured for the existing **The SaaS Harbor** Supabase project, reference `qvvqkskyukqoleuivdfw`, in `eu-central-1`. Do not replace it with the example if it is already configured. No new hosted project was created.
 
-| Variable | Meaning |
-| --- | --- |
-| `NEXT_PUBLIC_SUPABASE_URL` | Project API URL, such as `https://your-project-ref.supabase.co` |
-| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Public publishable key, never a secret/service-role key |
-| `NEXT_PUBLIC_SITE_URL` | Canonical app origin; locally `http://localhost:3000` |
+| Variable                               | Meaning                                                         |
+| -------------------------------------- | --------------------------------------------------------------- |
+| `NEXT_PUBLIC_SUPABASE_URL`             | Project API URL, such as `https://your-project-ref.supabase.co` |
+| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Public publishable key, never a secret/service-role key         |
+| `NEXT_PUBLIC_SITE_URL`                 | Canonical app origin; locally `http://localhost:3000`           |
 
 Use one consistent hostname while signing up, confirming an email, or recovering a password. PKCE email links need to open in the same browser that initiated the request.
 
@@ -57,30 +57,36 @@ No service-role credential is needed by the app. No website has been deployed ex
 ## Verification
 
 ```powershell
-npm run lint
-npm run typecheck
-npm test
+npm run check         # Prettier, ESLint, TypeScript and unit tests
 npm run build
-node scripts/check-hosted.mjs
+npm run check:hosted  # Read-only checks against the hosted project
 ```
 
 The hosted check reads only public resources, confirms anonymous metric-history denial, and reports safe Auth settings. It never prints keys, creates users or sends email.
 
+Format code with `npm run format`. CI (`.github/workflows/ci.yml`) runs the same checks, the build, the database tests and the browser tests on pushes to `main` and `development` and on pull requests.
+
 ### Isolated browser and database tests
 
-Docker Desktop must be running. These use an entirely local Supabase stack with a local Mailpit inbox. The hosted project is not seeded or modified by the browser tests.
+Docker Desktop must be running. These use an entirely local Supabase stack with a local Mailpit inbox. The hosted project is never seeded or modified by the tests.
 
 ```powershell
-npx supabase start
+npm run db:start
 npx playwright install chromium
+npm run test:db
 npm run test:e2e
-Get-Content supabase/tests/access.sql -Raw | docker exec -i supabase_db_the-saas-harbor psql -U postgres -d postgres -v ON_ERROR_STOP=1 --quiet
-npx supabase stop
+npm run db:stop
 ```
 
-The test runner reads local CLI credentials directly into its process environment, refuses a non-loopback API, and starts the app on `http://127.0.0.1:3001` with a separate build directory. Do not share local CLI status output: it includes local test keys. Test users and files are removed afterward. Browser tests cover registration and confirmation, login and session persistence, profile/SaaS editing, error-state input retention, images, multiple SaaS, private/public MRR, revocation, cross-owner denial, password recovery, responsive layout, and an automated accessibility scan of the homepage.
+The local stack uses ports 55320-55329 (API `http://127.0.0.1:55321`, Studio `http://127.0.0.1:55323`, Mailpit `http://127.0.0.1:55324`), so it can run next to other local Supabase projects on the default 543xx ports. `npm run db:reset` rebuilds the local database from the migrations.
 
-`supabase/tests/access.sql` uses a transaction that is rolled back. It checks actual database permissions, storage ownership, private history, numeric ranking, zero MRR, and independent visibility. The current CLI cannot run this multi-statement file with `db query --file`; use the Docker/psql command above or the SQL editor as one transaction.
+The browser test runner reads local CLI credentials and the Mailpit URL directly into its process environment, refuses non-loopback addresses, and starts the app on `http://127.0.0.1:3001` with a separate build directory. Do not share local CLI status output: it includes local test keys. Test users and files are removed afterward. Browser tests cover registration and confirmation, login and session persistence, profile/SaaS editing, error-state input retention, images, multiple SaaS, private/public MRR, revocation, cross-owner denial, password recovery, page titles, responsive layout, and automated WCAG 2.1 AA scans of public, auth and owner pages, including pages with shared data.
+
+`supabase/tests/database/access.test.sql` is a pgTAP suite run by `npm run test:db`. It runs in a transaction that is rolled back and checks actual database grants, RLS, storage ownership, private history, numeric ranking, zero MRR, revocation and independent visibility.
+
+### Database changes
+
+Add every schema change as a new file in `supabase/migrations` (`npx supabase migration new <name>`), never by editing applied migrations or changing the hosted database by hand. Apply it locally with `npm run db:reset`, regenerate `src/lib/supabase/database.types.ts` with `npm run db:types`, and extend the pgTAP suite. The hosted project receives the migration only after review.
 
 ### Production preview
 
@@ -95,6 +101,5 @@ Future Vercel deployment needs the three application variables and matching Supa
 
 - [Architecture and security boundaries](docs/ARCHITECTURE.md)
 - [Scope and implementation plan](docs/PLAN.md)
-- [Verification status and remaining account setup](docs/STATUS.md)
-
-All source files are present in the checkout. There are no commits or pushes from this implementation.
+- [Verification status, known issues and next steps](docs/STATUS.md)
+- [Instructions for coding agents](AGENTS.md)

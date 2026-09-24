@@ -11,9 +11,21 @@ for (const table of ["public_saas", "leaderboard"]) {
   if (error) throw new Error(`Public read failed for ${table}: ${error.code}`);
 }
 const { error } = await client.from("metric_reports").select("id").limit(1);
-if (!["42501", "PGRST205"].includes(error?.code ?? "")) throw new Error("Anonymous metric history access was not rejected as expected.");
+if (!["42501", "PGRST205"].includes(error?.code ?? ""))
+  throw new Error("Anonymous metric history access was not rejected as expected.");
 const response = await fetch(`${url}/auth/v1/settings`, { headers: { apikey: key } });
 if (!response.ok) throw new Error("Auth settings are unreachable.");
 const settings = await response.json();
-console.log(JSON.stringify({ publicReads: "passed", privateHistory: "access denied as expected", emailSignupEnabled: settings.external?.email === true && !settings.disable_signup, emailConfirmationRequired: !settings.mailer_autoconfirm, note: "Email delivery and redirect allowlists need a separate account-level check." }, null, 2));
-
+console.log(
+  JSON.stringify(
+    {
+      publicReads: "passed",
+      privateHistory: "access denied as expected",
+      emailSignupEnabled: settings.external?.email === true && !settings.disable_signup,
+      emailConfirmationRequired: !settings.mailer_autoconfirm,
+      note: "Email delivery and redirect allowlists need a separate account-level check.",
+    },
+    null,
+    2,
+  ),
+);
