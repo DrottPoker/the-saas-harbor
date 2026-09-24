@@ -233,14 +233,16 @@ otp_length = 6
 otp_expiry = 3600
 
 # Use a production-ready SMTP server
-# [auth.email.smtp]
-# enabled = true
-# host = "smtp.sendgrid.net"
-# port = 587
-# user = "apikey"
-# pass = "env(SENDGRID_API_KEY)"
-# admin_email = "admin@email.com"
-# sender_name = "Admin"
+# Auth email delivery. Committed defaults in supabase/.env keep it off, so every email goes to
+# Mailpit. Real delivery is enabled per machine in supabase/.env.local (git-ignored); see README.
+[auth.email.smtp]
+enabled = "env(HARBOR_SMTP_ENABLED)"
+host = "env(HARBOR_SMTP_HOST)"
+port = "env(HARBOR_SMTP_PORT)"
+user = "env(HARBOR_SMTP_USER)"
+pass = "env(HARBOR_SMTP_PASS)"
+admin_email = "env(HARBOR_SMTP_ADMIN_EMAIL)"
+sender_name = "env(HARBOR_SMTP_SENDER_NAME)"
 
 # Uncomment to customize email template
 # [auth.email.template.invite]

@@ -7,9 +7,10 @@ node_modules/
 next-env.d.ts
 *.tsbuildinfo
 
-# Environment. Only the example is committed.
+# Environment. Only the example and the Supabase CLI defaults (no secrets) are committed.
 .env*
 !.env.example
+!supabase/.env
 
 # Test output
 playwright-report/

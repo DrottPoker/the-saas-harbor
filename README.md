@@ -37,6 +37,16 @@ Before the dev server starts, `npm run dev` runs `scripts/local-env.mjs`. It sta
 
 Auth is Supabase Auth. Locally, confirmation and password reset emails never reach a real inbox: Mailpit catches them all, and the sign-in pages link to it. Open the link in the same browser you signed up in, since PKCE links only work there. Use `http://localhost:3001` consistently rather than `127.0.0.1:3001`, because the session cookies are tied to the hostname.
 
+### Real email
+
+Local Auth can deliver email to real inboxes through any SMTP provider. The settings live in `supabase/.env.local`, which is git-ignored and overrides the committed defaults in `supabase/.env` (real email off). For Gmail:
+
+1. Turn on 2-Step Verification for the Google account and create an app password at https://myaccount.google.com/apppasswords.
+2. In `supabase/.env.local`, set `HARBOR_SMTP_ENABLED=true`, `HARBOR_SMTP_HOST=smtp.gmail.com`, `HARBOR_SMTP_PORT=587`, your address as `HARBOR_SMTP_USER` and `HARBOR_SMTP_ADMIN_EMAIL`, and the app password as `HARBOR_SMTP_PASS`.
+3. Run `npm run db:restart`. It prints where Auth email goes.
+
+Without a password the stack falls back to Mailpit. The links in the emails point at this computer (`127.0.0.1`), so open them on the same computer and in the same browser you signed up in. The browser tests need Mailpit and refuse to run while real email is on; `npm run db:restart -- --mailpit` switches back until the next plain restart.
+
 Demo accounts from `npm run db:seed` are `<name>@demo.harbor.test` (for example `lena@demo.harbor.test`) with the password `harbor-demo-password`. Re-running the seed replaces earlier demo accounts, and `npm run db:reset` rebuilds the database from the migrations without any data. The ports 55320-55329 keep this stack clear of other local Supabase projects on the default 543xx ports. `npm run db:stop` stops the stack and keeps the data.
 
 | Variable                               | Meaning                                                             |

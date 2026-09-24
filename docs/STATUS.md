@@ -54,6 +54,8 @@ The browser tests no longer assume an empty database, check for horizontal scrol
 
 The project owner decided that Supabase runs locally for this project, not on Supabase Cloud. `npm run dev` now starts the local Docker stack when needed and points `.env.local` at it, the hosted check script was removed, and the sign-in pages link to the local Mailpit inbox. A sign-up that "never sent an email" was the expected local behavior: the message was waiting in Mailpit.
 
+Real email can now be turned on per machine through `supabase/.env.local` (for example Gmail with an app password), without changing the committed config or CI. The mechanism was verified against the installed CLI with a fake SMTP host: overrides reach the Auth container, a missing password falls back to Mailpit, `--mailpit` forces the inbox, and the browser tests refuse to run during real delivery. Actual delivery through Gmail was not tested, because it needs the owner's app password.
+
 The earlier hosted project (`qvvqkskyukqoleuivdfw`, eu-central-1) is no longer used by the code. It was empty when it was disconnected (no users, profiles, SaaS or images) and still exists in the Supabase account, where the owner can pause or delete it.
 
 ## Remaining setup

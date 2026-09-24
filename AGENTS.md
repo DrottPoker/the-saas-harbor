@@ -24,6 +24,7 @@ Next.js 16 App Router and Supabase platform where independent SaaS products get 
 
 - Schema changes go in a new file in `supabase/migrations`. Never edit an applied migration. Then run `npm run db:reset` and `npm run db:types`, and extend `supabase/tests/database`.
 - Supabase runs only locally in Docker. Do not connect the app to a hosted Supabase project, or write to one, without explicit approval. The old hosted project `qvvqkskyukqoleuivdfw` is unused.
+- `supabase/.env.local` holds per-machine SMTP credentials. Never read out, print or commit its password. Use `npm run db:restart -- --mailpit` before browser tests when real email is on.
 - Never stop or reset other projects' local Supabase containers (for example `one-life-at-sea` on the 543xx ports).
 - Every exposed table needs RLS and explicit grants. Views use `security_invoker = true`. The app never uses a service-role key.
 - Money is integer USD cents. Never use floating point for revenue.

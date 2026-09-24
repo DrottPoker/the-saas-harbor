@@ -1,7 +1,12 @@
 import { spawnSync } from "node:child_process";
-import { ensureLocalSupabase, npx, shell } from "./local-supabase.mjs";
+import { emailDelivery, ensureLocalSupabase, npx, shell } from "./local-supabase.mjs";
 
 const local = ensureLocalSupabase();
+// The tests read confirmation links from Mailpit and must never email real addresses.
+if (emailDelivery() !== "mailpit")
+  throw new Error(
+    "Local Supabase delivers real email. Run `npm run db:restart -- --mailpit` before the browser tests.",
+  );
 const testEnv = { ...process.env };
 delete testEnv.NO_COLOR;
 delete testEnv.FORCE_COLOR;

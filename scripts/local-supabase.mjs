@@ -1,7 +1,13 @@
 import { execFileSync } from "node:child_process";
+import { existsSync, readFileSync } from "node:fs";
+import { parseEnv } from "node:util";
 
 export const npx = process.platform === "win32" ? "npx.cmd" : "npx";
 export const shell = process.platform === "win32";
+
+const projectId = readFileSync("supabase/config.toml", "utf8").match(
+  /^project_id\s*=\s*"([^"]+)"/m,
+)?.[1];
 
 function status() {
   try {
@@ -41,15 +47,50 @@ export function localSupabase() {
   return describe(value);
 }
 
+// Where the running Auth container sends email: "mailpit", or the real SMTP host.
+export function emailDelivery() {
+  const env = execFileSync(
+    "docker",
+    [
+      "inspect",
+      `supabase_auth_${projectId}`,
+      "--format",
+      "{{range .Config.Env}}{{println .}}{{end}}",
+    ],
+    { encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] },
+  );
+  const host = env.match(/^GOTRUE_SMTP_HOST=(.*)$/m)?.[1] ?? "";
+  return host.startsWith("supabase_inbucket_") ? "mailpit" : host;
+}
+
+// Starts the stack. Real email is used only when supabase/.env.local enables it with a password;
+// `mailpit: true` forces the local inbox, which the browser tests need.
+export function startLocalSupabase({ mailpit = false } = {}) {
+  const local = existsSync("supabase/.env.local")
+    ? parseEnv(readFileSync("supabase/.env.local", "utf8"))
+    : {};
+  const env = { ...process.env };
+  if (local.HARBOR_SMTP_ENABLED === "true" && !local.HARBOR_SMTP_PASS && !mailpit)
+    console.warn("Real email is enabled in supabase/.env.local but HARBOR_SMTP_PASS is empty.");
+  if (mailpit || !local.HARBOR_SMTP_PASS) env.HARBOR_SMTP_ENABLED = "false";
+  console.log("Starting local Supabase. The first start downloads Docker images...");
+  try {
+    execFileSync(npx, ["supabase", "start"], {
+      shell,
+      env,
+      stdio: ["ignore", "ignore", "inherit"],
+    });
+  } catch {
+    throw new Error("Local Supabase could not start. Make sure Docker Desktop is running.");
+  }
+}
+
+export function stopLocalSupabase() {
+  execFileSync(npx, ["supabase", "stop"], { shell, stdio: ["ignore", "ignore", "inherit"] });
+}
+
 // Like localSupabase(), but starts the stack first when it is not running.
 export function ensureLocalSupabase() {
-  if (!status()) {
-    console.log("Starting local Supabase. The first start downloads Docker images...");
-    try {
-      execFileSync(npx, ["supabase", "start"], { shell, stdio: ["ignore", "ignore", "inherit"] });
-    } catch {
-      throw new Error("Local Supabase could not start. Make sure Docker Desktop is running.");
-    }
-  }
+  if (!status()) startLocalSupabase();
   return localSupabase();
 }
