@@ -2,9 +2,8 @@
 node_modules/
 
 # Next.js build output and generated files
-.next/
-.next-e2e/
-.next-local/
+# Any Next.js build directory (.next, .next-e2e, ...). Tailwind skips ignored paths.
+.next*/
 next-env.d.ts
 *.tsbuildinfo
 

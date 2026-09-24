@@ -18,12 +18,13 @@ Next.js 16 App Router and Supabase platform where independent SaaS products get 
 - `npm run build` after changes to routing, config or the server/client boundary.
 - `npm run db:start`, then `npm run test:db` and `npm run test:e2e`, after changes to the schema, auth, forms or pages. Docker must be running. Local Supabase uses ports 55320-55329.
 - `npm run format` formats the codebase.
-- `npm run dev` serves the app on http://localhost:3001 against the hosted project. `npm run db:seed` then `npm run dev:local` serves it against the local stack with demo data, which is the default for development and design work. Browser tests start their own server on port 3002.
+- `npm run dev` starts local Supabase if needed, syncs `.env.local` and serves the app on http://localhost:3001. `npm run db:seed` adds fictional demo data. Mailpit at http://127.0.0.1:55324 receives every email; Studio is at http://127.0.0.1:55323. Browser tests start their own server on port 3002.
 
 ## Rules
 
 - Schema changes go in a new file in `supabase/migrations`. Never edit an applied migration. Then run `npm run db:reset` and `npm run db:types`, and extend `supabase/tests/database`.
-- Never apply migrations or write data to the hosted project (`qvvqkskyukqoleuivdfw`) without explicit approval. Read-only checks are fine.
+- Supabase runs only locally in Docker. Do not connect the app to a hosted Supabase project, or write to one, without explicit approval. The old hosted project `qvvqkskyukqoleuivdfw` is unused.
+- Never stop or reset other projects' local Supabase containers (for example `one-life-at-sea` on the 543xx ports).
 - Every exposed table needs RLS and explicit grants. Views use `security_invoker = true`. The app never uses a service-role key.
 - Money is integer USD cents. Never use floating point for revenue.
 - Mutations are Server Actions that call `requireUser()`, with RLS as the second layer. Public reads use `publicClient()` so they never carry a session.

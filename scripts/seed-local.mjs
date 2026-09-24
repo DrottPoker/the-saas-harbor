@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { deflateSync } from "node:zlib";
 import { createClient } from "@supabase/supabase-js";
-import { localSupabase } from "./local-supabase.mjs";
+import { ensureLocalSupabase } from "./local-supabase.mjs";
 
 // Fictional demo content for the local stack only. Re-running replaces earlier demo accounts.
 const DOMAIN = "demo.harbor.test";
@@ -296,7 +296,7 @@ function logo([hex, shape]) {
   ]);
 }
 
-const local = localSupabase();
+const local = ensureLocalSupabase();
 const options = { auth: { persistSession: false, autoRefreshToken: false } };
 const admin = createClient(local.url, local.secretKey, options);
 

@@ -21,6 +21,16 @@ const copy: Record<Mode, { title: string; description: string }> = {
   update: { title: "Choose a new password", description: "Use at least 12 characters." },
 };
 
+// Set by scripts/local-env.mjs during local development only. Never shown for a remote address.
+function localInbox() {
+  const value = process.env.LOCAL_MAILPIT_URL;
+  try {
+    return value && ["127.0.0.1", "localhost"].includes(new URL(value).hostname) ? value : null;
+  } catch {
+    return null;
+  }
+}
+
 function modeOf(value: string | undefined): Mode {
   return value === "signup" || value === "reset" || value === "update" ? value : "login";
 }
@@ -34,6 +44,7 @@ export default async function Auth({ searchParams }: Props) {
   const mode = modeOf(params.mode);
   if (mode === "update") await requireUser();
   const { title, description } = copy[mode];
+  const inbox = localInbox();
   return (
     <div className="mx-auto w-full max-w-sm px-4 pt-14 sm:pt-24">
       <LogoMark className="size-9 text-brand-mark" />
@@ -51,6 +62,14 @@ export default async function Auth({ searchParams }: Props) {
         ) : (
           <Notice tone="error">
             Authentication is not configured. Follow the Supabase setup in README.md.
+          </Notice>
+        )}
+        {inbox && mode !== "update" && (
+          <Notice>
+            Local development: confirmation and reset emails are not sent to real inboxes.{" "}
+            <a href={inbox} target="_blank" rel="noreferrer" className="font-medium underline">
+              Open the local inbox
+            </a>
           </Notice>
         )}
       </div>

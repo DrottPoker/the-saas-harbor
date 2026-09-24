@@ -48,25 +48,17 @@ The browser tests no longer assume an empty database, check for horizontal scrol
 - `npm run build`: Next.js 16.3.5 production build.
 - `npm run test:db`: 24 pgTAP assertions against a local database rebuilt from the migrations with `supabase db reset`.
 - `npm run test:e2e`: 5 Chromium integration tests with Axe scans in both themes, against local Supabase.
-- `npm run check:hosted`: public reads, anonymous history denial, email signup enabled and confirmation required.
-- Hosted migration history matches the three local migrations. Supabase security advisor has no findings; the performance advisor only reports unused indexes, which is expected on an empty database.
-- The hosted database is empty: no users, profiles, SaaS or images.
 - The CI workflow has not run on GitHub yet. Its commands were run locally with the same Supabase service exclusions.
 
-## Connected project
+## Local-only Supabase 2026-09-24
 
-- Name: The SaaS Harbor
-- Project reference: `qvvqkskyukqoleuivdfw`
-- Region: `eu-central-1`
-- [Dashboard](https://supabase.com/dashboard/project/qvvqkskyukqoleuivdfw)
-- Three versioned migrations applied, with local filenames matching hosted migration history.
-- An ignored `.env.local` contains only the application's public configuration.
+The project owner decided that Supabase runs locally for this project, not on Supabase Cloud. `npm run dev` now starts the local Docker stack when needed and points `.env.local` at it, the hosted check script was removed, and the sign-in pages link to the local Mailpit inbox. A sign-up that "never sent an email" was the expected local behavior: the message was waiting in Mailpit.
 
-## Remaining account setup
+The earlier hosted project (`qvvqkskyukqoleuivdfw`, eu-central-1) is no longer used by the code. It was empty when it was disconnected (no users, profiles, SaaS or images) and still exists in the Supabase account, where the owner can pause or delete it.
 
-Hosted delivery to a real mailbox and the hosted Auth redirect allowlist remain unverified. Check Site URL and both callback URLs, then configure SMTP as described in README. The complete auth flow was verified locally using Mailpit, without sending external messages.
+## Remaining setup
 
-The website is not deployed. The preview uses the real hosted database, which has no seeded public profiles or SaaS.
+The website is not deployed. Production needs a decision on where Supabase runs: self-hosted (Docker on a server the team operates, with backups, upgrades and monitoring) or Supabase Cloud. It also needs an SMTP provider for real email and matching Auth redirect URLs.
 
 ## Known issues and next steps
 
@@ -76,7 +68,7 @@ Before a public launch:
 2. Abuse and trust. SaaS creation is unlimited, there is no moderation or reporting, and self-reported MRR is easy to inflate. The leaderboard's credibility needs a plan: moderation at minimum, verified revenue (for example through Stripe) later.
 3. Email links across devices. PKCE links fail when the email is opened in another browser, such as on a phone after signing up on a desktop. The `token_hash` + `verifyOtp` confirmation flow with custom email templates avoids this.
 4. Security headers. No Content Security Policy yet. HSTS depends on the hosting platform. A future CSP must allow the inline theme script in the root layout, by hash or nonce.
-5. Production SMTP, Auth URLs and a deployment target.
+5. Production hosting: where Supabase runs (self-hosted or Cloud), SMTP, Auth URLs and a deployment target for the app.
 
 Product and quality:
 

@@ -38,9 +38,13 @@ The server validates PNG/JPEG/WebP signatures and the 2 MB limit before uploadin
 
 Validation runs on the server. Forms retain entered text and visibility choices after validation errors; password values are never copied into action state. Public links require HTTP(S), and external links use `noopener noreferrer nofollow`. Private editors require ownership even when accessed by a forged URL, and database RLS independently enforces ownership for direct API calls.
 
+## Local Supabase
+
+Supabase runs only locally, in Docker through the Supabase CLI, configured by `supabase/config.toml` and the migrations. No hosted Supabase project is used. `scripts/local-supabase.mjs` reads the local stack's URLs and keys from `supabase status` without printing them, refuses anything that is not on 127.0.0.1, and can start the stack. `npm run dev` runs `scripts/local-env.mjs` first, which starts the stack when needed and writes only the managed keys in `.env.local`. The app itself only knows the three public variables, so it can later point at any Supabase instance, self-hosted or Cloud.
+
 ## Authentication and local tests
 
-Signup and password recovery use PKCE and the default Supabase confirmation links. `/auth/callback` exchanges the code and accepts only the fixed dashboard or password-update destination. Email delivery and redirect allowlists are configured in Supabase. Production SMTP is an account-level setup item.
+Authentication is Supabase Auth (email and password). Signup and password recovery use PKCE and the default Supabase confirmation links. `/auth/callback` exchanges the code and accepts only the fixed dashboard or password-update destination. Redirect allowlists, email confirmation and the 12-character password minimum are set in `supabase/config.toml`. Locally, every email goes to Mailpit; `LOCAL_MAILPIT_URL` makes the sign-in pages link to it and is only honored for a loopback address. Production email delivery needs an SMTP provider.
 
 `scripts/test-local.mjs` obtains credentials and the Mailpit URL from the local CLI without printing them, refuses non-loopback addresses, and starts Playwright with a separate `.next-e2e` output. Its admin credential exists only in the test process. Email stays inside local Mailpit. Tests remove their users and uploaded files afterward. The local stack uses its own port range (55320-55329) so it can run next to other local Supabase projects. Database access tests are a pgTAP suite (`supabase/tests/database`) that runs inside a rolled-back transaction and has no persistent test fixtures.
 

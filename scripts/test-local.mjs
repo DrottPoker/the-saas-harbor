@@ -1,7 +1,7 @@
 import { spawnSync } from "node:child_process";
-import { localSupabase, npx, shell } from "./local-supabase.mjs";
+import { ensureLocalSupabase, npx, shell } from "./local-supabase.mjs";
 
-const local = localSupabase();
+const local = ensureLocalSupabase();
 const testEnv = { ...process.env };
 delete testEnv.NO_COLOR;
 delete testEnv.FORCE_COLOR;

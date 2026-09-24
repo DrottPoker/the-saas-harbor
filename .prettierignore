@@ -1,6 +1,4 @@
-.next/
-.next-e2e/
-.next-local/
+.next*/
 .local/
 node_modules/
 playwright-report/
