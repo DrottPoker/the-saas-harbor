@@ -1,12 +1,17 @@
 import Link from "next/link";
 import { BadgeCheck } from "lucide-react";
+import { parseHistory } from "@/lib/charts";
 import { PAGE_SIZE, type Listing, type RevenueStatus } from "@/lib/data";
 import { formatDate, formatUsd } from "@/lib/domain";
 import { cn } from "@/lib/utils";
 import { ProductLogo } from "./avatars";
+import { Growth } from "./charts/growth";
+import { Sparkline } from "./charts/sparkline";
 import { Button } from "./ui/button";
 
-const columns = "md:grid-cols-[2.5rem_minmax(0,1fr)_10rem_8rem_7.5rem] md:gap-6 md:px-5";
+// The trend column appears from lg; below that its cell is hidden and takes no track.
+const columns =
+  "md:grid-cols-[2.5rem_minmax(0,1fr)_10rem_8rem_7.5rem] md:gap-6 md:px-5 lg:grid-cols-[2.5rem_minmax(0,1fr)_9rem_6rem_8rem_7.5rem]";
 
 export function Leaderboard({ items }: { items: Listing[] }) {
   return (
@@ -21,53 +26,63 @@ export function Leaderboard({ items }: { items: Listing[] }) {
         <span>#</span>
         <span>Product</span>
         <span>Category</span>
+        <span className="hidden lg:block">12 months</span>
         <span className="text-right">Verified MRR</span>
         <span className="text-right">Verified</span>
       </div>
       <ol className="divide-y">
-        {items.map((item) => (
-          <li key={item.id}>
-            <Link
-              href={`/saas/${item.id}`}
-              className={cn(
-                "grid grid-cols-[1.75rem_minmax(0,1fr)_auto] items-center gap-3 px-4 py-3.5 transition-colors hover:bg-subtle",
-                columns,
-              )}
-            >
-              <span
+        {items.map((item) => {
+          const history = parseHistory(item.mrr_history);
+          return (
+            <li key={item.id}>
+              <Link
+                href={`/saas/${item.id}`}
                 className={cn(
-                  "text-sm tabular-nums",
-                  item.rank && item.rank <= 3
-                    ? "font-medium text-foreground"
-                    : "text-faint-foreground",
+                  "grid grid-cols-[1.75rem_minmax(0,1fr)_auto] items-center gap-3 px-4 py-3.5 transition-colors hover:bg-subtle",
+                  columns,
                 )}
               >
-                <span className="sr-only">Rank </span>
-                {item.rank}
-              </span>
-              <span className="flex min-w-0 items-center gap-3">
-                <ProductLogo path={item.logo_path} name={item.name ?? "SaaS"} />
-                <span className="min-w-0">
-                  <span className="block truncate font-medium">{item.name}</span>
-                  <span className="block truncate text-sm text-muted-foreground">
-                    {item.tagline}
+                <span
+                  className={cn(
+                    "text-sm tabular-nums",
+                    item.rank && item.rank <= 3
+                      ? "font-medium text-foreground"
+                      : "text-faint-foreground",
+                  )}
+                >
+                  <span className="sr-only">Rank </span>
+                  {item.rank}
+                </span>
+                <span className="flex min-w-0 items-center gap-3">
+                  <ProductLogo path={item.logo_path} name={item.name ?? "SaaS"} />
+                  <span className="min-w-0">
+                    <span className="block truncate font-medium">{item.name}</span>
+                    <span className="block truncate text-sm text-muted-foreground">
+                      {item.tagline}
+                    </span>
                   </span>
                 </span>
-              </span>
-              <span className="hidden truncate text-sm text-muted-foreground md:block">
-                {item.category}
-              </span>
-              <span className="text-right">
-                <span className="sr-only">MRR </span>
-                <span className="font-semibold tabular-nums">{formatUsd(item.mrr_cents ?? 0)}</span>
-              </span>
-              <span className="hidden text-right text-sm text-muted-foreground tabular-nums md:block">
-                <span className="sr-only">Verified </span>
-                {formatDate(item.verified_at)}
-              </span>
-            </Link>
-          </li>
-        ))}
+                <span className="hidden truncate text-sm text-muted-foreground md:block">
+                  {item.category}
+                </span>
+                <span className="hidden lg:block">
+                  {history && history.length > 1 && <Sparkline history={history} />}
+                </span>
+                <span className="flex flex-col items-end">
+                  <span className="sr-only">MRR </span>
+                  <span className="font-semibold tabular-nums">
+                    {formatUsd(item.mrr_cents ?? 0)}
+                  </span>
+                  {item.mrr_growth_pct != null && <Growth pct={item.mrr_growth_pct} />}
+                </span>
+                <span className="hidden text-right text-sm text-muted-foreground tabular-nums md:block">
+                  <span className="sr-only">Verified </span>
+                  {formatDate(item.verified_at)}
+                </span>
+              </Link>
+            </li>
+          );
+        })}
       </ol>
     </div>
   );

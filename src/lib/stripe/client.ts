@@ -1,13 +1,21 @@
 import "server-only";
 import type { StripeCoupon, StripePrice, StripeSubscription, StripeSubscriptionItem } from "./mrr";
 import { COUNTED_STATUSES } from "./mrr";
+import { linePriceId, type StripeInvoice, type StripeInvoiceLine } from "./history";
 
 // Every request pins the API version, because responses otherwise follow each account's own
 // default version and field shapes differ between versions.
 export const STRIPE_API_VERSION = "2026-08-26.dahlia";
-const MAX_PAGES = 200; // 20,000 subscriptions per status
+const MAX_PAGES = 200; // 20,000 objects per list
 
-export class StripeRequestError extends Error {}
+export class StripeRequestError extends Error {
+  constructor(
+    message: string,
+    readonly status?: number,
+  ) {
+    super(message);
+  }
+}
 
 function baseUrl() {
   return process.env.STRIPE_API_BASE || "https://api.stripe.com";
@@ -34,13 +42,14 @@ async function stripeGet<T>(
   const body = (await response.json().catch(() => null)) as { error?: { message?: string } } | null;
   const detail = body?.error?.message?.slice(0, 300);
   if (response.status === 401)
-    throw new StripeRequestError("Stripe rejected the key. It may have been revoked.");
+    throw new StripeRequestError("Stripe rejected the key. It may have been revoked.", 401);
   if (response.status === 403)
     throw new StripeRequestError(
       `The key is missing a read permission.${detail ? ` Stripe says: ${detail}` : ""}`,
+      403,
     );
   if (response.status === 429)
-    throw new StripeRequestError("Stripe is rate limiting requests. Try again later.");
+    throw new StripeRequestError("Stripe is rate limiting requests. Try again later.", 429);
   throw new StripeRequestError(`Stripe returned an error${detail ? `: ${detail}` : "."}`);
 }
 
@@ -61,7 +70,7 @@ async function listAll<T extends { id: string }>(
     if (!list.has_more || list.data.length === 0) return items;
     startingAfter = list.data.at(-1)!.id;
   }
-  throw new StripeRequestError("The Stripe account has too many subscriptions to verify.");
+  throw new StripeRequestError("The Stripe account has too much data to verify in one run.");
 }
 
 export type StripeAccountData = {
@@ -120,4 +129,28 @@ export async function fetchStripeAccountData(key: string): Promise<StripeAccount
     for (const price of prices) price.tiers = full.tiers;
   }
   return { subscriptions, coupons };
+}
+
+// Reads paid invoices created since `since` (Unix seconds) with all their lines, and the prices
+// those lines use, for the MRR history. Permissions: Invoices and Prices, read only.
+export async function fetchPaidInvoices(key: string, since: number) {
+  const invoices = await listAll<StripeInvoice>(key, "/v1/invoices", [
+    ["status", "paid"],
+    ["created[gte]", String(since)],
+  ]);
+  for (const invoice of invoices) {
+    if (!invoice.lines.has_more) continue;
+    invoice.lines.data = await listAll<StripeInvoiceLine>(
+      key,
+      `/v1/invoices/${encodeURIComponent(invoice.id)}/lines`,
+      [],
+    );
+  }
+  const prices = new Map<string, StripePrice>();
+  const ids = new Set(invoices.flatMap((invoice) => invoice.lines.data.map(linePriceId)));
+  for (const id of ids) {
+    if (id)
+      prices.set(id, await stripeGet<StripePrice>(key, `/v1/prices/${encodeURIComponent(id)}`));
+  }
+  return { invoices, prices };
 }

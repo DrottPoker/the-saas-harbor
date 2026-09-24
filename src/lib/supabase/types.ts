@@ -14,7 +14,12 @@ export type Database = Omit<GeneratedDatabase, "public"> & {
       record_stripe_verification: {
         Args: Nullable<
           Functions["record_stripe_verification"]["Args"],
-          "p_encrypted_key" | "p_key_hint" | "p_fx_date"
+          | "p_encrypted_key"
+          | "p_key_hint"
+          | "p_fx_date"
+          | "p_history"
+          | "p_mrr_invoice_cents"
+          | "p_mrr_30d_ago_cents"
         >;
         Returns: undefined;
       };

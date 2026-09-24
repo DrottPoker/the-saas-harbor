@@ -45,6 +45,8 @@ export type Database = {
           launched_on: string | null
           livemode: boolean | null
           mrr_cents: number | null
+          mrr_growth_pct: number | null
+          mrr_history: Json | null
           owner_id: string
           saas_id: string
           verified_at: string | null
@@ -54,6 +56,8 @@ export type Database = {
           launched_on?: string | null
           livemode?: boolean | null
           mrr_cents?: number | null
+          mrr_growth_pct?: number | null
+          mrr_history?: Json | null
           owner_id: string
           saas_id: string
           verified_at?: string | null
@@ -63,6 +67,8 @@ export type Database = {
           launched_on?: string | null
           livemode?: boolean | null
           mrr_cents?: number | null
+          mrr_growth_pct?: number | null
+          mrr_history?: Json | null
           owner_id?: string
           saas_id?: string
           verified_at?: string | null
@@ -97,9 +103,12 @@ export type Database = {
           currencies: Json
           customers: number
           fx_date: string | null
+          history: Json | null
           id: string
           livemode: boolean
+          mrr_30d_ago_cents: number | null
           mrr_cents: number
+          mrr_invoice_cents: number | null
           owner_id: string
           saas_id: string
           seq: number
@@ -109,9 +118,12 @@ export type Database = {
           currencies?: Json
           customers: number
           fx_date?: string | null
+          history?: Json | null
           id?: string
           livemode: boolean
+          mrr_30d_ago_cents?: number | null
           mrr_cents: number
+          mrr_invoice_cents?: number | null
           owner_id: string
           saas_id: string
           seq?: never
@@ -121,9 +133,12 @@ export type Database = {
           currencies?: Json
           customers?: number
           fx_date?: string | null
+          history?: Json | null
           id?: string
           livemode?: boolean
+          mrr_30d_ago_cents?: number | null
           mrr_cents?: number
+          mrr_invoice_cents?: number | null
           owner_id?: string
           saas_id?: string
           seq?: never
@@ -322,6 +337,8 @@ export type Database = {
           livemode: boolean | null
           logo_path: string | null
           mrr_cents: number | null
+          mrr_growth_pct: number | null
+          mrr_history: Json | null
           name: string | null
           owner_avatar_path: string | null
           owner_id: string | null
@@ -354,6 +371,8 @@ export type Database = {
           livemode: boolean | null
           logo_path: string | null
           mrr_cents: number | null
+          mrr_growth_pct: number | null
+          mrr_history: Json | null
           name: string | null
           owner_avatar_path: string | null
           owner_id: string | null
@@ -382,9 +401,12 @@ export type Database = {
           p_customers: number
           p_encrypted_key: string
           p_fx_date: string
+          p_history: Json
           p_key_hint: string
           p_livemode: boolean
+          p_mrr_30d_ago_cents: number
           p_mrr_cents: number
+          p_mrr_invoice_cents: number
           p_saas_id: string
           p_subscription_hashes: string[]
         }

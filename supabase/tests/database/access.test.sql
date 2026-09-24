@@ -1,7 +1,7 @@
 -- Grants, RLS, storage ownership, verified revenue and ranking. Runs in a rolled-back transaction.
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(41);
+select plan(46);
 
 insert into auth.users(id) values
   ('b0000000-0000-4000-8000-000000000001'),
@@ -47,7 +47,7 @@ select throws_ok(
 );
 select throws_ok(
   $$ select public.record_stripe_verification('c0000000-0000-4000-8000-000000000002', null, null,
-    true, 999999, 1, '{}', null, '{}') $$,
+    true, 999999, 1, '{}', null, '{}', null, null, null) $$,
   '42501', null, 'owner cannot record a verification'
 );
 select throws_ok(
@@ -79,27 +79,27 @@ set local role service_role;
 select lives_ok(
   $$ select public.record_stripe_verification('c0000000-0000-4000-8000-000000000001', 'v1:private',
     'rk_live_…0001', true, 99999900, 99, '{"usd": 99999900}', null,
-    array[repeat('a', 64)]) $$,
+    array[repeat('a', 64)], null, null, null) $$,
   'server verifies the private product'
 );
 select lives_ok(
   $$ select public.record_stripe_verification('c0000000-0000-4000-8000-000000000002', 'v1:small',
-    'rk_live_…0002', true, 1999, 1, '{"usd": 1999}', null, array[repeat('b', 64)]) $$,
+    'rk_live_…0002', true, 1999, 1, '{"usd": 1999}', null, array[repeat('b', 64)], null, null, null) $$,
   'server verifies the small product'
 );
 select lives_ok(
   $$ select public.record_stripe_verification('c0000000-0000-4000-8000-000000000003', 'v1:large',
-    'rk_live_…0003', true, 100000, 2, '{"usd": 100000}', null, array[repeat('c', 64)]) $$,
+    'rk_live_…0003', true, 100000, 2, '{"usd": 100000}', null, array[repeat('c', 64)], null, null, null) $$,
   'server verifies the large product'
 );
 select throws_ok(
   $$ select public.record_stripe_verification('c0000000-0000-4000-8000-000000000003', null, null,
-    true, 100000, 2, '{}', null, array[repeat('a', 64), repeat('c', 64)]) $$,
+    true, 100000, 2, '{}', null, array[repeat('a', 64), repeat('c', 64)], null, null, null) $$,
   '23505', null, 'a subscription cannot verify two products'
 );
 select throws_ok(
   $$ select public.record_stripe_verification('c0000000-0000-4000-8000-000000000009', null, null,
-    true, 1, 1, '{}', null, '{}') $$,
+    true, 1, 1, '{}', null, '{}', null, null, null) $$,
   'P0002', null, 'verification requires an existing SaaS'
 );
 
@@ -174,7 +174,7 @@ update public.saas_settings set share_mrr = false where saas_id = 'c0000000-0000
 set local role service_role;
 select lives_ok(
   $$ select public.record_stripe_verification('c0000000-0000-4000-8000-000000000002', null, null,
-    true, 0, 0, '{}', null, array[repeat('b', 64)]) $$,
+    true, 0, 0, '{}', null, array[repeat('b', 64)], null, null, null) $$,
   'server records zero MRR'
 );
 
@@ -222,12 +222,64 @@ select is(
 set local role service_role;
 select lives_ok(
   $$ select public.record_stripe_verification('c0000000-0000-4000-8000-000000000003', null, null,
-    true, 100000, 2, '{}', null, array[repeat('a', 64), repeat('c', 64)]) $$,
+    true, 100000, 2, '{}', null, array[repeat('a', 64), repeat('c', 64)], null, null, null) $$,
   'subscriptions released by a disconnect can verify another product'
 );
 select lives_ok(
   $$ delete from public.saas where id = 'c0000000-0000-4000-8000-000000000003' $$,
   'deleting a connected SaaS cascades cleanly'
+);
+
+-- Revenue history follows the MRR sharing choice and staleness.
+set local role authenticated;
+select set_config('request.jwt.claim.sub', 'b0000000-0000-4000-8000-000000000001', true);
+select lives_ok(
+  $$ select public.save_saas('c0000000-0000-4000-8000-000000000004', 'SQL Test History',
+    'History fixture', 'A temporary fixture that is rolled back.', 'Other', 'https://example.com',
+    null, null, true, false, false) $$,
+  'owner saves a product that shares MRR'
+);
+set local role service_role;
+select lives_ok(
+  $$ select public.record_stripe_verification('c0000000-0000-4000-8000-000000000004', 'v1:history',
+    'rk_live_…0004', true, 100000, 5, '{}', null, array[repeat('d', 64)],
+    '[{"month": "2026-07", "mrr_cents": 70000}, {"month": "2026-08", "mrr_cents": 90000}]',
+    100000, 80000) $$,
+  'server records history and the 30-day basis'
+);
+set local role anon;
+select set_config('request.jwt.claim.sub', '', true);
+select results_eq(
+  $$ select jsonb_array_length(mrr_history), mrr_growth_pct from public.public_saas
+    where id = 'c0000000-0000-4000-8000-000000000004' $$,
+  $$ values (2, 25.0::numeric) $$,
+  'shared MRR publishes its history and 30-day growth'
+);
+set local role authenticated;
+select set_config('request.jwt.claim.sub', 'b0000000-0000-4000-8000-000000000001', true);
+update public.saas_settings set share_mrr = false where saas_id = 'c0000000-0000-4000-8000-000000000004';
+set local role anon;
+select set_config('request.jwt.claim.sub', '', true);
+select results_eq(
+  $$ select mrr_history, mrr_growth_pct from public.public_saas
+    where id = 'c0000000-0000-4000-8000-000000000004' $$,
+  $$ values (null::jsonb, null::numeric) $$,
+  'hiding MRR also hides its history and growth'
+);
+set local role authenticated;
+select set_config('request.jwt.claim.sub', 'b0000000-0000-4000-8000-000000000001', true);
+update public.saas_settings set share_mrr = true where saas_id = 'c0000000-0000-4000-8000-000000000004';
+reset role;
+update public.revenue_snapshots set captured_at = now() - interval '8 days'
+  where saas_id = 'c0000000-0000-4000-8000-000000000004';
+select private.refresh_public_metrics('c0000000-0000-4000-8000-000000000004');
+set local role anon;
+select set_config('request.jwt.claim.sub', '', true);
+select results_eq(
+  $$ select mrr_history, mrr_growth_pct from public.public_saas
+    where id = 'c0000000-0000-4000-8000-000000000004' $$,
+  $$ values (null::jsonb, null::numeric) $$,
+  'stale history and growth are hidden'
 );
 
 reset role;

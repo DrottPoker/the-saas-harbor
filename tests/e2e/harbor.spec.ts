@@ -287,9 +287,27 @@ test("registration, email confirmation, profile and SaaS editing, storage, priva
   await page.getByRole("button", { name: "Save changes" }).click();
   await expect(page).toHaveURL(/saved=/);
   await page.goto(`/?q=${encodeURIComponent(productName)}`);
-  await expect(
-    page.getByRole("link").filter({ hasText: productName }).getByText("$104", { exact: true }),
-  ).toBeVisible();
+  const row = page.getByRole("link").filter({ hasText: productName });
+  await expect(row.getByText("$104", { exact: true })).toBeVisible();
+  // Shared MRR brings its invoice history: a trend line and 30-day growth on the leaderboard,
+  // and a month-end chart with a table view on the product page.
+  await expect(row.getByText("+92.6%", { exact: true })).toBeVisible();
+  await expect(row.locator("polyline")).toHaveCount(1);
+  await page.goto(`/saas/${productId}`);
+  await expect(page.getByText("+92.6%", { exact: true })).toBeVisible();
+  const chart = page.getByRole("group", { name: /MRR at month end/ });
+  await expect(chart).toBeVisible();
+  await chart.focus();
+  await page.keyboard.press("Home");
+  await expect(chart.getByText(/^[A-Z][a-z]+ \d{4}: \$29$/)).toBeAttached();
+  await page.getByText("Show as table").click();
+  const months = page.getByRole("table", { name: "MRR at month end" }).locator("tbody tr");
+  await expect(months).toHaveCount(12);
+  await expect(months.first().getByRole("cell")).toHaveText("$29");
+  await expect(months.last().getByRole("cell")).toHaveText("$54");
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expectNoHorizontalScroll(page);
+  await page.setViewportSize({ width: 1280, height: 720 });
   // Audit pages in both themes while they show real, shared data.
   const dataPages = [
     `/?q=${encodeURIComponent(productName)}`,
@@ -373,6 +391,8 @@ test("registration, email confirmation, profile and SaaS editing, storage, priva
   await page.getByLabel("Restricted key", { exact: true }).fill("rk_test_harborfixture0002");
   await page.getByRole("button", { name: "Connect and verify" }).click();
   await expect(page.locator("#revenue").getByText("Connected to Stripe")).toBeVisible();
+  // This key cannot read invoices, so MRR is verified without history and the maker is told why.
+  await expect(page.getByText(/No revenue history yet/)).toBeVisible();
 
   // The scheduled sync endpoint refuses callers without the secret.
   expect((await request.post("/api/stripe/sync")).status()).toBe(401);

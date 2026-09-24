@@ -40,6 +40,9 @@
   --error-bg: #fcefed;
   --error-border: #f0c4be;
   --error-foreground: #a3261b;
+  /* Chart marks, validated for lightness, chroma and contrast on --surface. */
+  --chart-1: #008f82;
+  --chart-muted: #80858b;
 
   @variant dark {
     color-scheme: dark;
@@ -64,6 +67,8 @@
     --error-bg: #2e1a19;
     --error-border: #5c2c28;
     --error-foreground: #f2a39b;
+    --chart-1: #2fa89c;
+    --chart-muted: #737a84;
   }
 }
 
@@ -95,6 +100,8 @@
   --color-error-bg: var(--error-bg);
   --color-error-border: var(--error-border);
   --color-ring: var(--accent);
+  --color-chart-1: var(--chart-1);
+  --color-chart-muted: var(--chart-muted);
   --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-geist-mono), ui-monospace, monospace;
   --radius-md: 8px;

@@ -74,14 +74,36 @@ export function startLocalSupabase({ mailpit = false } = {}) {
     console.warn("Real email is enabled in supabase/.env.local but HARBOR_SMTP_PASS is empty.");
   if (mailpit || !local.HARBOR_SMTP_PASS) env.HARBOR_SMTP_ENABLED = "false";
   console.log("Starting local Supabase. The first start downloads Docker images...");
+  // The CLI stops the stack when a start fails, for example when a container misses its health
+  // check right after a restart, so one retry begins from a clean state.
+  for (let attempt = 1; attempt <= 2; attempt++) {
+    const failure = runStart(env);
+    if (failure === null) return;
+    if (failure) console.error(failure);
+    if (attempt === 1) console.log("Local Supabase did not start. Retrying once...");
+  }
+  throw new Error("Local Supabase could not start. Make sure Docker Desktop is running.");
+}
+
+// Lines that may carry credentials are never shown.
+const SENSITIVE = /key|secret|jwt|token|pass|smtp/i;
+
+// Returns null on success, otherwise the safe part of the CLI output. Standard output lists the
+// local keys after a successful start, so it is never printed as a whole.
+function runStart(env) {
   try {
     execFileSync(npx, ["supabase", "start"], {
       shell,
       env,
-      stdio: ["ignore", "ignore", "inherit"],
+      encoding: "utf8",
+      stdio: ["ignore", "pipe", "inherit"],
     });
-  } catch {
-    throw new Error("Local Supabase could not start. Make sure Docker Desktop is running.");
+    return null;
+  } catch (error) {
+    return String(error.stdout ?? "")
+      .split("\n")
+      .filter((line) => line.trim() && !SENSITIVE.test(line))
+      .join("\n");
   }
 }
 

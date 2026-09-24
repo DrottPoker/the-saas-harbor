@@ -44,10 +44,10 @@ The browser tests no longer assume an empty database, check for horizontal scrol
 
 ## Verified 2026-09-24
 
-- `npm run check`: Prettier, ESLint with zero warnings, TypeScript, 41 unit tests (27 for Stripe MRR, keys and encryption).
+- `npm run check`: Prettier, ESLint with zero warnings, TypeScript, 67 unit tests: Stripe MRR, invoice history, keys and encryption, chart models, and the full Stripe read path against the fake Stripe server.
 - `npm run build`: Next.js 16.3.5 production build.
-- `npm run test:db`: 41 pgTAP assertions, stable over repeated runs. `supabase db diff` reports no drift between the local database and the migrations, and `supabase db lint` reports no errors.
-- `npm run test:e2e`: 5 Chromium integration tests with Axe scans in both themes, against local Supabase and a fake Stripe API.
+- `npm run test:db`: 46 pgTAP assertions, stable over repeated runs. `supabase db diff` reports no drift between the local database and the migrations, and `supabase db lint` reports no errors.
+- `npm run test:e2e`: 5 Chromium integration tests with Axe scans in both themes (including the revenue charts), against local Supabase and a fake Stripe API, passing twice in a row.
 - The CI workflow has not run on GitHub yet. Its commands were run locally with the same Supabase service exclusions.
 
 ## Verified revenue through Stripe 2026-09-24
@@ -56,11 +56,20 @@ Makers no longer type in revenue. Each product can connect a Stripe restricted k
 
 The migration removes the self-reported `metric_reports` and moves visibility choices and launch dates to `saas_settings`. Makers cannot write verified figures, directly or through RPC, and cannot read stored keys. A Stripe subscription can verify one product only, and verifications older than seven days leave the leaderboard. `npm run db:seed` gives demo products verified test-mode snapshots.
 
-Not yet verified against the real Stripe API: the tests use a fake Stripe server with the documented response shapes for API version 2026-08-26.dahlia. Connecting one real test-mode restricted key is the first step before launch, to confirm the permission names shown to makers (Subscriptions, Coupons, Prices) and the response shapes. Exchange rates come from Frankfurter's public API.
+Not yet verified against the real Stripe API: the tests use a fake Stripe server with the documented response shapes for API version 2026-08-26.dahlia. Connecting one real test-mode restricted key is the first step before launch, to confirm the permission names shown to makers (Subscriptions, Invoices, Coupons, Prices) and the response shapes, including invoice lines (`parent`, `pricing`, `discount_amounts`, `taxes`). Exchange rates come from Frankfurter's public API.
+
+## Revenue charts 2026-09-24
+
+Verified products now show how their revenue developed. Decisions by the project owner: history covers twelve months, reconstructed from paid Stripe invoices; charts appear on the product page and the leaderboard, not in the maker's editor.
+
+- Product page: an area chart of MRR at each of the last twelve month-ends, with a crosshair tooltip, arrow-key reading for keyboard and screen reader users, and a table view. The MRR figure shows the 30-day growth.
+- Leaderboard: a 12-month trend line (from 1024 px wide) and the 30-day growth under each MRR figure (at every width).
+- Makers need Invoices: Read on the restricted key. Keys created before this change still verify MRR; the editor tells the maker to replace the key to get history.
+- Migration `20260924180000_revenue_history.sql` stores history and the growth basis on each snapshot and projects them publicly only when MRR is shared and fresh (pgTAP covers shared, hidden and stale cases).
 
 ## Local-only Supabase 2026-09-24
 
-The project owner decided that Supabase runs locally for this project, not on Supabase Cloud. `npm run dev` now starts the local Docker stack when needed and points `.env.local` at it, the hosted check script was removed, and the sign-in pages link to the local Mailpit inbox. A sign-up that "never sent an email" was the expected local behavior: the message was waiting in Mailpit.
+The project owner decided that Supabase runs locally for this project, not on Supabase Cloud. `npm run dev` now starts the local Docker stack when needed and points `.env.local` at it, the hosted check script was removed, and the sign-in pages link to the local Mailpit inbox. A sign-up that "never sent an email" was the expected local behavior: the message was waiting in Mailpit. A start right after a stop can fail when a container misses its health check; `npm run db:start` and `db:restart` then retry once and show the CLI error lines, never the keys.
 
 Real email can now be turned on per machine through `supabase/.env.local` (for example Gmail with an app password), without changing the committed config or CI. The mechanism was verified against the installed CLI with a fake SMTP host: overrides reach the Auth container, a missing password falls back to Mailpit, `--mailpit` forces the inbox, and the browser tests refuse to run during real delivery. Actual delivery through Gmail was not tested, because it needs the owner's app password.
 

@@ -1,9 +1,10 @@
 import "server-only";
 import { createHash } from "node:crypto";
 import { adminClient } from "@/lib/supabase/admin";
-import { fetchStripeAccountData } from "./client";
+import { fetchPaidInvoices, fetchStripeAccountData, StripeRequestError } from "./client";
 import { decryptStripeKey, encryptStripeKey } from "./crypto";
 import { usdRates } from "./fx";
+import { historyWindowStart, monthEnds, mrrAt, serviceLines } from "./history";
 import { calculateMrr, toUsdCents } from "./mrr";
 import type { RestrictedKey } from "./key";
 
@@ -14,13 +15,51 @@ export type Verification = {
   fxDate: string | null;
   subscriptionHashes: string[];
   skippedItems: number;
+  /** MRR at the last twelve month-ends, from paid invoices; null without invoice access. */
+  history: { month: string; mrr_cents: number }[] | null;
+  /** Invoice-based MRR now and 30 days ago, the basis for 30-day growth. */
+  mrrInvoiceCents: number | null;
+  mrr30dAgoCents: number | null;
+  historyNote: string | null;
 };
 
+const DAY = 86_400;
+
+// History needs Invoices: Read. Keys without it still verify MRR; the maker gets a note.
+async function invoiceHistory(key: string, now: Date) {
+  try {
+    const { invoices, prices } = await fetchPaidInvoices(key, historyWindowStart(now));
+    return { lines: serviceLines(invoices, prices), note: null };
+  } catch (error) {
+    if (error instanceof StripeRequestError && error.status === 403)
+      return {
+        lines: null,
+        note: "Revenue history needs the Invoices: Read permission on the restricted key.",
+      };
+    throw error;
+  }
+}
+
 // Reads the Stripe account and computes verified MRR in USD cents. Makes no writes anywhere.
-export async function verifyStripeRevenue(key: string): Promise<Verification> {
+export async function verifyStripeRevenue(key: string, now = new Date()): Promise<Verification> {
   const { subscriptions, coupons } = await fetchStripeAccountData(key);
   const mrr = calculateMrr(subscriptions, coupons);
-  const { rates, date } = await usdRates(Object.keys(mrr.byCurrency));
+  const { lines, note } = await invoiceHistory(key, now);
+  const nowSeconds = Math.floor(now.getTime() / 1000);
+  const points = lines
+    ? {
+        months: monthEnds(now).map(({ month, at }) => ({ month, byCurrency: mrrAt(lines, at) })),
+        now: mrrAt(lines, nowSeconds),
+        before: mrrAt(lines, nowSeconds - 30 * DAY),
+      }
+    : null;
+  // History is converted at today's rates, so the chart shows business growth, not FX moves.
+  const currenciesUsed = new Set(Object.keys(mrr.byCurrency));
+  for (const map of points
+    ? [points.now, points.before, ...points.months.map((m) => m.byCurrency)]
+    : [])
+    for (const currency of Object.keys(map)) currenciesUsed.add(currency);
+  const { rates, date } = await usdRates([...currenciesUsed]);
   const currencies = Object.fromEntries(
     Object.entries(mrr.byCurrency).map(([currency, minor]) => [currency, Math.round(minor)]),
   );
@@ -33,6 +72,15 @@ export async function verifyStripeRevenue(key: string): Promise<Verification> {
       createHash("sha256").update(id).digest("hex"),
     ),
     skippedItems: mrr.skippedItems,
+    history: points
+      ? points.months.map(({ month, byCurrency }) => ({
+          month,
+          mrr_cents: toUsdCents(byCurrency, rates),
+        }))
+      : null,
+    mrrInvoiceCents: points ? toUsdCents(points.now, rates) : null,
+    mrr30dAgoCents: points ? toUsdCents(points.before, rates) : null,
+    historyNote: note,
   };
 }
 
@@ -59,6 +107,9 @@ async function record(
     p_currencies: verification.currencies,
     p_fx_date: verification.fxDate,
     p_subscription_hashes: verification.subscriptionHashes,
+    p_history: verification.history,
+    p_mrr_invoice_cents: verification.mrrInvoiceCents,
+    p_mrr_30d_ago_cents: verification.mrr30dAgoCents,
   });
   if (error) throw new Error(friendly(new Error(error.message)));
 }

@@ -29,7 +29,8 @@ function summary(result: Verification) {
   const skipped = result.skippedItems
     ? ` ${result.skippedItems} usage-based ${result.skippedItems === 1 ? "item was" : "items were"} not counted.`
     : "";
-  return `Verified MRR: ${formatUsd(result.mrrCents)} from ${customers}.${skipped}`;
+  const history = result.historyNote ? ` ${result.historyNote}` : "";
+  return `Verified MRR: ${formatUsd(result.mrrCents)} from ${customers}.${skipped}${history}`;
 }
 
 const failure = (error: unknown): ActionState => ({

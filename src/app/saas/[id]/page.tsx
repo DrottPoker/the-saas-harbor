@@ -3,10 +3,13 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { z } from "zod";
 import { ArrowUpRight, BadgeCheck } from "lucide-react";
+import { parseHistory } from "@/lib/charts";
 import { publicSaas, type RevenueStatus } from "@/lib/data";
 import { formatDate, formatUsd } from "@/lib/domain";
 import { cn } from "@/lib/utils";
 import { PersonAvatar, ProductLogo } from "@/components/avatars";
+import { Growth } from "@/components/charts/growth";
+import { RevenueHistory } from "@/components/charts/revenue-history";
 import { Shell } from "@/components/shell";
 import { Button } from "@/components/ui/button";
 
@@ -31,10 +34,12 @@ function Metric({
   label,
   value,
   empty = "Not shared",
+  detail,
 }: {
   label: string;
   value: string | null;
   empty?: string;
+  detail?: React.ReactNode;
 }) {
   return (
     <div className="px-5 py-4">
@@ -47,6 +52,7 @@ function Metric({
       >
         {value ?? empty}
       </dd>
+      {value && detail && <dd className="mt-1">{detail}</dd>}
     </div>
   );
 }
@@ -67,6 +73,7 @@ export default async function SaasProfile({ params }: Props) {
   const name = item.name ?? "SaaS";
   const site = hostname(item.website);
   const status = (item.revenue_status ?? "unverified") as RevenueStatus;
+  const history = parseHistory(item.mrr_history);
 
   return (
     <Shell size="medium">
@@ -116,6 +123,7 @@ export default async function SaasProfile({ params }: Props) {
           label="Monthly recurring revenue"
           value={item.mrr_cents == null ? null : formatUsd(item.mrr_cents)}
           empty={missingRevenue[status]}
+          detail={item.mrr_growth_pct != null && <Growth pct={item.mrr_growth_pct} />}
         />
         <Metric
           label="Paying customers"
@@ -135,6 +143,8 @@ export default async function SaasProfile({ params }: Props) {
           </>
         )}
       </p>
+
+      {history && <RevenueHistory history={history} />}
 
       <div className="mt-12 grid gap-10 lg:grid-cols-[minmax(0,1fr)_17rem] lg:gap-14">
         <section>

@@ -34,7 +34,7 @@ function ConnectForm({ saasId, replace }: { saasId: string; replace: boolean }) 
         </li>
         <li>
           Set <strong className="font-medium text-foreground">Read</strong> for Subscriptions,
-          Coupons and Prices. Leave every other permission at None.
+          Invoices, Coupons and Prices. Leave every other permission at None.
         </li>
         <li>Copy the key, which starts with rk_live_, and paste it below.</li>
       </ol>
@@ -50,8 +50,8 @@ function ConnectForm({ saasId, replace }: { saasId: string; replace: boolean }) 
         />
       </Field>
       <p className="text-[13px] text-muted-foreground">
-        The key is encrypted and only used to read subscriptions. You can revoke it in Stripe at any
-        time.
+        The key is encrypted and only used to read subscriptions and paid invoices. You can revoke
+        it in Stripe at any time.
       </p>
       <Feedback state={state} />
       <Actions>
@@ -123,6 +123,12 @@ function Connected({
               </dd>
             </div>
           </dl>
+        )}
+        {snapshot && !snapshot.history && (
+          <p className="border-t px-5 py-3 text-[13px] text-muted-foreground">
+            No revenue history yet. Replace the key with one that also has Invoices: Read to show
+            the last 12 months as a chart.
+          </p>
         )}
         <div className="flex flex-wrap items-center justify-end gap-2 border-t p-4">
           <form action={refresh}>

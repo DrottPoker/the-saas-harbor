@@ -321,7 +321,28 @@ function encrypt(plaintext, saasId) {
     .map((p) => (typeof p === "string" ? p : p.toString("base64url")))
     .join(":");
 }
+// Deterministic demo history: twelve month-ends (as src/lib/stripe/history.ts computes them) that
+// move toward today's MRR from a per-product starting level, with a little noise. Some shrink.
+function unitHash(text) {
+  return createHash("sha256").update(text).digest().readUInt32BE(0) / 2 ** 32;
+}
+function demoHistory(product, now = new Date()) {
+  const seed = unitHash(product.name);
+  const start = 0.35 + seed * 0.75;
+  const points = [];
+  for (let back = 12; back >= 1; back--) {
+    const end = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - back + 1, 1) - 1000);
+    const t = (13 - back) / 13;
+    const noise = 1 + 0.02 * Math.sin(seed * 40 + back * 1.9);
+    points.push({
+      month: `${end.getUTCFullYear()}-${String(end.getUTCMonth() + 1).padStart(2, "0")}`,
+      mrr_cents: Math.round(product.mrr * 100 * (start + (1 - start) * t ** 1.4) * noise),
+    });
+  }
+  return points;
+}
 async function verifyDemo(saasId, product) {
+  const history = demoHistory(product);
   const { error } = await admin.rpc("record_stripe_verification", {
     p_saas_id: saasId,
     p_encrypted_key: encrypt(`rk_test_demo${randomBytes(12).toString("hex")}`, saasId),
@@ -332,6 +353,9 @@ async function verifyDemo(saasId, product) {
     p_currencies: { usd: product.mrr * 100 },
     p_fx_date: null,
     p_subscription_hashes: [createHash("sha256").update(`demo-${saasId}`).digest("hex")],
+    p_history: history,
+    p_mrr_invoice_cents: product.mrr * 100,
+    p_mrr_30d_ago_cents: history.at(-1).mrr_cents,
   });
   if (error) throw new Error(`Could not verify ${product.name}.`);
 }
