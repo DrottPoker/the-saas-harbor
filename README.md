@@ -25,7 +25,19 @@ Copy-Item .env.example .env.local
 npm run dev
 ```
 
-Open http://localhost:3001. The server binds to the local loopback interface.
+Open http://localhost:3001. The server binds to the local loopback interface. `npm run dev` uses the hosted project configured in `.env.local`.
+
+### Local development with demo data
+
+For day-to-day work, run the app against the local Supabase stack instead of the hosted project (Docker must be running):
+
+```powershell
+npm run db:start
+npm run db:seed    # 8 fictional makers and 16 SaaS, local only
+npm run dev:local  # http://localhost:3001 against the local stack
+```
+
+Demo accounts are `<name>@demo.harbor.test` (for example `lena@demo.harbor.test`) with the password `harbor-demo-password`. Re-running `npm run db:seed` replaces earlier demo accounts. `npm run db:reset` removes them. The seed and dev scripts refuse anything that is not a local stack.
 
 The current checkout already has an ignored `.env.local` configured for the existing **The SaaS Harbor** Supabase project, reference `qvvqkskyukqoleuivdfw`, in `eu-central-1`. Do not replace it with the example if it is already configured. No new hosted project was created.
 

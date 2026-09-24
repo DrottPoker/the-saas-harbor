@@ -1,23 +1,42 @@
 import Link from "next/link";
-import {
-  ArrowRight,
-  Search,
-  SlidersHorizontal,
-  Trophy,
-  Sparkles,
-  Grid2X2,
-  ShieldCheck,
-} from "lucide-react";
-import { listings, PAGE_SIZE, safePage } from "@/lib/data";
+import { Search } from "lucide-react";
+import { listings, safePage, type Sort } from "@/lib/data";
 import { categories } from "@/lib/domain";
-import { EmptyState, HarborArt, ListingCard, RankedList } from "./harbor";
+import { cn } from "@/lib/utils";
+import { Leaderboard, ListingGrid, ResultsFooter } from "./listings";
+import { EmptyState, Notice, PageHeader, Shell } from "./shell";
 import { Button } from "./ui/button";
+import { fieldClasses } from "./ui/input";
+
+type Mode = "ranked" | "discover" | "newest";
+
+const intro: Record<Mode, { title: string; description: string; path: string; sort: Sort }> = {
+  ranked: {
+    title: "Independent SaaS, ranked by revenue",
+    description:
+      "Monthly recurring revenue shared publicly by the founders who build these products.",
+    path: "/",
+    sort: "rank",
+  },
+  discover: {
+    title: "Browse SaaS",
+    description: "Every product listed here, A to Z, including those that keep revenue private.",
+    path: "/discover",
+    sort: "name",
+  },
+  newest: {
+    title: "New arrivals",
+    description: "The latest products to join, newest first.",
+    path: "/newest",
+    sort: "newest",
+  },
+};
 
 export async function Explore({
   mode,
   params,
 }: {
-  mode: "ranked" | "discover" | "newest";
+  mode: Mode;
   params: Record<string, string | undefined>;
 }) {
   const ranked = mode === "ranked";
@@ -26,8 +45,9 @@ export async function Explore({
     : "";
   const page = safePage(params.page);
   const search = (params.q ?? "").slice(0, 80);
-  const { rows, count, error } = await listings({ ranked, category, page, search });
-  const path = ranked ? "/" : mode === "newest" ? "/newest" : "/discover";
+  const { title, description, path, sort } = intro[mode];
+  const { rows, count, error } = await listings({ sort, category, page, search });
+  const filtered = !!category || !!search || page > 1;
   function url(nextCategory: string, nextPage = 1) {
     const query = new URLSearchParams();
     if (nextCategory) query.set("category", nextCategory);
@@ -35,164 +55,95 @@ export async function Explore({
     if (nextPage > 1) query.set("page", String(nextPage));
     return `${path}${query.size ? `?${query}` : ""}`;
   }
+
   return (
-    <div className="page-shell">
-      {ranked ? (
-        <section className="hero">
-          <div className="hero-copy">
-            <p className="eyebrow">
-              <span className="live-dot" /> INDEPENDENT MINDS. REAL PRODUCTS.
-            </p>
-            <h1>
-              Small teams.
-              <br />
-              Big possibilities<span className="coral">.</span>
-            </h1>
-            <p className="hero-description">
-              Discover the SaaS people are building.
-              <br />
-              Meet the makers. Follow the journey.
-            </p>
-            <div className="hero-actions">
-              <Button size="lg" asChild>
-                <Link href="/dashboard/saas/new">
-                  Find your place in the harbor <ArrowRight size={16} />
-                </Link>
-              </Button>
-              <Link className="text-link" href="/discover">
-                Explore SaaS <ArrowUpRightIcon />
-              </Link>
-            </div>
-            <p className="hero-footnote">Every stage is welcome. Every maker has a story.</p>
-          </div>
-          <HarborArt />
-        </section>
-      ) : (
-        <section className="page-intro">
-          <p className="eyebrow">
-            {mode === "newest" ? "FRESHLY DOCKED" : "FIND YOUR NEXT FAVORITE"}
-          </p>
-          <h1>{mode === "newest" ? "New to the harbor." : "Good things are being built."}</h1>
-          <p>
-            {mode === "newest"
-              ? "The latest SaaS to join our community, newest first."
-              : "Explore independent software and the people behind it. Shared numbers are optional."}
-          </p>
-        </section>
-      )}
-      <section className="explore-section">
-        <div className="section-title">
-          <div>
-            <p className="eyebrow">{ranked ? "BUILDING IN THE OPEN" : "THE DIRECTORY"}</p>
-            <h2>
-              {ranked
-                ? "The SaaS leaderboard"
-                : mode === "newest"
-                  ? "Just arrived"
-                  : "Explore the harbor"}
-            </h2>
-            <p>
-              {ranked
-                ? "Ranked by publicly shared monthly recurring revenue in USD."
-                : "Independent products. Discover something worth a closer look."}
-            </p>
-          </div>
-          <div className="count-label">
-            <span className="live-dot" />
-            {count} {ranked ? "ranked" : "listed"} {count === 1 ? "SaaS" : "SaaS"}
-          </div>
-        </div>
-        <div className="explore-toolbar">
-          <div className="view-tabs">
-            <Link href="/" className={ranked ? "active" : ""}>
-              <Trophy size={16} /> Leaderboard
-            </Link>
-            <Link href="/discover" className={mode === "discover" ? "active" : ""}>
-              <Grid2X2 size={16} /> All SaaS
-            </Link>
-            <Link href="/newest" className={mode === "newest" ? "active" : ""}>
-              <Sparkles size={16} /> New arrivals
-            </Link>
-          </div>
-          <form className="search-form" action={path}>
-            <Search size={17} />
+    <Shell>
+      <PageHeader
+        title={title}
+        description={description}
+        actions={
+          <form action={path} role="search" className="relative w-full sm:w-64">
+            <Search
+              aria-hidden="true"
+              className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-faint-foreground"
+            />
             <input
-              aria-label="Search SaaS"
               name="q"
-              placeholder="Search the harbor..."
+              type="search"
+              aria-label="Search products by name"
+              placeholder="Search products"
               defaultValue={search}
+              className={cn(fieldClasses, "h-9 pl-9")}
             />
             {category && <input type="hidden" name="category" value={category} />}
-            <button aria-label="Search" type="submit">
-              <ArrowRight size={17} />
-            </button>
           </form>
-        </div>
-        <div className="category-filters" aria-label="Filter by category">
-          <SlidersHorizontal size={15} />
-          <Link href={url("")} className={!category ? "active" : ""}>
-            All categories
+        }
+      />
+
+      <nav
+        aria-label="Categories"
+        className="-mx-4 mb-4 flex gap-1.5 overflow-x-auto px-4 pb-1 sm:-mx-6 sm:px-6 lg:mx-0 lg:flex-wrap lg:px-0 lg:pb-0"
+      >
+        {["", ...categories].map((item) => (
+          <Link
+            key={item || "all"}
+            href={url(item)}
+            aria-current={category === item ? "page" : undefined}
+            className="shrink-0 rounded-full border px-3 py-1 text-[13px] whitespace-nowrap text-muted-foreground transition-colors hover:border-border-strong hover:text-foreground aria-[current=page]:border-foreground aria-[current=page]:bg-foreground aria-[current=page]:text-background"
+          >
+            {item || "All categories"}
           </Link>
-          {categories.map((item) => (
-            <Link href={url(item)} key={item} className={category === item ? "active" : ""}>
-              {item}
-            </Link>
-          ))}
-        </div>
-        {error ? (
-          <div className="notice error" role="alert">
-            {error}
-          </div>
-        ) : !rows.length ? (
-          <EmptyState filtered={!!category || !!search || page > 1} ranked={ranked} />
-        ) : ranked ? (
-          <RankedList items={rows} />
+        ))}
+      </nav>
+
+      {error ? (
+        <Notice tone="error">{error}</Notice>
+      ) : !rows.length ? (
+        filtered ? (
+          <EmptyState
+            title="No matching products"
+            action={
+              <Button asChild variant="outline" size="sm">
+                <Link href={path}>Clear filters</Link>
+              </Button>
+            }
+          >
+            Try another category or search term.
+          </EmptyState>
         ) : (
-          <div className="listing-grid">
-            {rows.map((item) => (
-              <ListingCard key={item.id} item={item} />
-            ))}
-          </div>
-        )}
-        {count > PAGE_SIZE && (
-          <nav className="pagination" aria-label="Pagination">
-            {page > 1 && <Link href={url(category, page - 1)}>Previous</Link>}
-            <span>
-              Page {page} of {Math.ceil(count / PAGE_SIZE)}
-            </span>
-            {page * PAGE_SIZE < count && (
-              <Link href={url(category, page + 1)}>
-                Next <ArrowRight size={15} />
-              </Link>
-            )}
-          </nav>
-        )}
-        <div className="transparency-note">
-          <ShieldCheck size={19} />
-          <p>
-            <strong>A little transparency goes a long way.</strong> All revenue is self-reported by
-            makers and shown with its update date. Private metrics stay private.
-          </p>
-          <Link href="/about">
-            How it works <ArrowRight size={14} />
+          <EmptyState
+            title={ranked ? "No revenue shared yet" : "No products yet"}
+            action={
+              <Button asChild size="sm">
+                <Link href="/dashboard/saas/new">Submit your SaaS</Link>
+              </Button>
+            }
+          >
+            {ranked
+              ? "Products appear on the leaderboard once their maker shares MRR publicly."
+              : "Be the first to list a product."}
+          </EmptyState>
+        )
+      ) : (
+        <>
+          {ranked ? (
+            <Leaderboard items={rows} />
+          ) : (
+            <ListingGrid items={rows} meta={mode === "newest" ? "joined" : "maker"} />
+          )}
+          <ResultsFooter page={page} count={count} href={(next) => url(category, next)} />
+        </>
+      )}
+
+      {ranked && (
+        <p className="mt-8 max-w-2xl text-[13px] text-faint-foreground">
+          MRR is self-reported by each maker and not independently verified. Equal amounts are
+          ordered by the date the product was listed.{" "}
+          <Link href="/about" className="underline underline-offset-2 hover:text-foreground">
+            How the ranking works
           </Link>
-        </div>
-      </section>
-      <section className="bottom-cta">
-        <div>
-          <p className="eyebrow">YOU BUILT SOMETHING. THAT MATTERS.</p>
-          <h2>There&apos;s a berth with your name on it.</h2>
-          <p>Pre-revenue or profitable, side project or full-time. You belong here.</p>
-        </div>
-        <Button asChild variant="outline" size="lg">
-          <Link href="/dashboard/saas/new">
-            Add your SaaS <ArrowRight size={16} />
-          </Link>
-        </Button>
-      </section>
-    </div>
+        </p>
+      )}
+    </Shell>
   );
-}
-function ArrowUpRightIcon() {
-  return <ArrowRight size={15} style={{ transform: "rotate(-35deg)" }} />;
 }

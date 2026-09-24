@@ -18,7 +18,7 @@ Next.js 16 App Router and Supabase platform where independent SaaS products get 
 - `npm run build` after changes to routing, config or the server/client boundary.
 - `npm run db:start`, then `npm run test:db` and `npm run test:e2e`, after changes to the schema, auth, forms or pages. Docker must be running. Local Supabase uses ports 55320-55329.
 - `npm run format` formats the codebase.
-- `npm run dev` serves the app on http://localhost:3001. Browser tests start their own server on port 3002.
+- `npm run dev` serves the app on http://localhost:3001 against the hosted project. `npm run db:seed` then `npm run dev:local` serves it against the local stack with demo data, which is the default for development and design work. Browser tests start their own server on port 3002.
 
 ## Rules
 
@@ -29,5 +29,6 @@ Next.js 16 App Router and Supabase platform where independent SaaS products get 
 - Mutations are Server Actions that call `requireUser()`, with RLS as the second layer. Public reads use `publicClient()` so they never carry a session.
 - Validate input on the server with the zod schemas in `src/lib/domain.ts`.
 - Keep the Axe scans in `tests/e2e` passing and add new pages to them.
+- UI: use the tokens in `src/app/globals.css` through Tailwind utilities and the shared components in `src/components`. No new global CSS classes, no text below 12 px, one accent color, plain copy without metaphors. Check new screens at 390 px and 1440 px wide.
 - Update `README.md`, `docs/ARCHITECTURE.md` and `docs/STATUS.md` when behavior, setup or known issues change.
 - Never share `supabase status` output: it contains local keys.

@@ -1,9 +1,13 @@
 import Link from "next/link";
-import { ArrowUpRight, Plus, Settings2 } from "lucide-react";
+import { Plus } from "lucide-react";
+import { signOut } from "@/app/actions";
 import { requireUser } from "@/lib/supabase/server";
-import { Avatar, EmptyState } from "@/components/harbor";
+import { PersonAvatar, ProductLogo } from "@/components/avatars";
+import { EmptyState, Notice, PageHeader, Shell } from "@/components/shell";
 import { Button } from "@/components/ui/button";
-export const metadata = { title: "My harbor" };
+
+export const metadata = { title: "Dashboard" };
+
 export default async function Dashboard({
   searchParams,
 }: {
@@ -19,66 +23,91 @@ export default async function Dashboard({
       .eq("owner_id", user.id)
       .order("created_at", { ascending: false }),
   ]);
-  if (error || profileError) throw new Error("Your harbor could not be loaded.");
+  if (error || profileError) throw new Error("Your dashboard could not be loaded.");
+  const addButton = (
+    <Button asChild>
+      <Link href="/dashboard/saas/new">
+        <Plus />
+        Add SaaS
+      </Link>
+    </Button>
+  );
+
   return (
-    <div className="page-shell dashboard">
-      <div className="dashboard-heading">
-        <div>
-          <p className="eyebrow">YOUR CORNER OF THE HARBOR</p>
-          <h1>{profile ? `Welcome, ${profile.name}.` : "Make yourself at home."}</h1>
-          <p className="muted">Your products, your progress, your story.</p>
-        </div>
-        <Button asChild>
-          <Link href="/dashboard/saas/new">
-            <Plus size={16} /> Add a SaaS
-          </Link>
-        </Button>
-      </div>
+    <Shell>
+      <PageHeader
+        title="Dashboard"
+        description="Manage your maker profile and products."
+        actions={addButton}
+      />
       {params.saved && (
-        <p className="notice success" role="status">
-          Your SaaS has been saved. Its public information is now available in the harbor.
-        </p>
+        <Notice tone="success" className="mb-6">
+          Saved. The public product page is up to date.
+        </Notice>
       )}
-      <div className="profile-strip">
-        <Avatar path={profile?.avatar_path} name={profile?.name ?? "Maker"} />
-        <div>
-          <h2>{profile?.name ?? "Set up your maker profile"}</h2>
-          <p>{profile?.bio || "A name, a photo, and a little about what drives you."}</p>
+
+      <section className="flex flex-col gap-4 rounded-xl border p-5 sm:flex-row sm:items-center">
+        <PersonAvatar path={profile?.avatar_path} name={profile?.name ?? "?"} size="lg" />
+        <div className="min-w-0 flex-1">
+          <h2 className="font-semibold">{profile?.name ?? "Set up your profile"}</h2>
+          <p className="truncate text-sm text-muted-foreground">
+            {profile
+              ? profile.bio || "No bio yet."
+              : "Add your name and a short bio. Your maker profile is public."}
+          </p>
         </div>
-        <Link className="text-link" href="/dashboard/profile">
-          <Settings2 size={16} /> Edit profile
-        </Link>
-        {profile && (
-          <Link className="text-link" href={`/makers/${user.id}`}>
-            View public profile <ArrowUpRight size={16} />
-          </Link>
+        <div className="flex gap-2">
+          {profile && (
+            <Button asChild variant="ghost" size="sm">
+              <Link href={`/makers/${user.id}`}>View public profile</Link>
+            </Button>
+          )}
+          <Button asChild variant="outline" size="sm">
+            <Link href="/dashboard/profile">Edit profile</Link>
+          </Button>
+        </div>
+      </section>
+
+      <section className="mt-10">
+        <div className="mb-4 flex items-baseline justify-between">
+          <h2 id="products" className="text-lg font-semibold">
+            Your products
+          </h2>
+          <span className="text-sm text-muted-foreground">{products?.length ?? 0} total</span>
+        </div>
+        {!products?.length ? (
+          <EmptyState title="No products yet" action={addButton}>
+            Add a product to list it in the directory. Revenue stays private unless you share it.
+          </EmptyState>
+        ) : (
+          <ul aria-labelledby="products" className="divide-y rounded-xl border">
+            {products.map((product) => (
+              <li key={product.id} className="flex items-center gap-4 p-4">
+                <ProductLogo path={product.logo_path} name={product.name} />
+                <div className="min-w-0 flex-1">
+                  <h3 className="truncate font-medium">{product.name}</h3>
+                  <p className="truncate text-sm text-muted-foreground">{product.tagline}</p>
+                </div>
+                <div className="flex shrink-0 gap-1">
+                  <Button asChild variant="ghost" size="sm">
+                    <Link href={`/saas/${product.id}`}>View</Link>
+                  </Button>
+                  <Button asChild variant="outline" size="sm">
+                    <Link href={`/dashboard/saas/${product.id}`}>Edit</Link>
+                  </Button>
+                </div>
+              </li>
+            ))}
+          </ul>
         )}
-      </div>
-      <div className="section-title">
-        <h2>Your SaaS</h2>
-        <span className="muted small">{products?.length ?? 0} products</span>
-      </div>
-      {!products?.length ? (
-        <EmptyState />
-      ) : (
-        <div className="listing-grid">
-          {products.map((product) => (
-            <article className="listing-card dashboard-card" key={product.id}>
-              <Avatar path={product.logo_path} name={product.name} />
-              <h3>{product.name}</h3>
-              <p>{product.tagline}</p>
-              <div className="card-bottom">
-                <Link className="text-link" href={`/dashboard/saas/${product.id}`}>
-                  Edit SaaS <Settings2 size={14} />
-                </Link>
-                <Link className="text-link" href={`/saas/${product.id}`}>
-                  Public page <ArrowUpRight size={14} />
-                </Link>
-              </div>
-            </article>
-          ))}
-        </div>
-      )}
-    </div>
+      </section>
+
+      {/* The header hides sign-out on small screens. */}
+      <form action={signOut} className="mt-10 md:hidden">
+        <Button type="submit" variant="outline" className="w-full">
+          Sign out
+        </Button>
+      </form>
+    </Shell>
   );
 }

@@ -4,6 +4,7 @@ node_modules/
 # Next.js build output and generated files
 .next/
 .next-e2e/
+.next-local/
 next-env.d.ts
 *.tsbuildinfo
 

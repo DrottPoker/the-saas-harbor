@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { z } from "zod";
 import { ArrowUpRight } from "lucide-react";
-import { listings, PAGE_SIZE, publicProfile, safePage } from "@/lib/data";
-import { Avatar, ListingCard } from "@/components/harbor";
+import { listings, publicProfile, safePage } from "@/lib/data";
+import { PersonAvatar } from "@/components/avatars";
+import { ListingGrid, ResultsFooter } from "@/components/listings";
+import { EmptyState, Notice, Shell } from "@/components/shell";
 
 type Props = { params: Promise<{ id: string }>; searchParams: Promise<{ page?: string }> };
 
@@ -22,53 +23,58 @@ export default async function Maker({ params, searchParams }: Props) {
   if (!profile) notFound();
   const page = safePage((await searchParams).page);
   const result = await listings({ owner: id, page });
+  const links = [
+    ["Website", profile.website],
+    ["Social profile", profile.social_url],
+  ].filter(([, href]) => href);
+
   return (
-    <div className="detail-shell">
-      <Link className="back-link" href="/discover">
-        ← Explore the harbor
-      </Link>
-      <section className="maker-profile">
-        <Avatar path={profile.avatar_path} name={profile.name} large />
-        <p className="eyebrow">INDEPENDENT MAKER</p>
-        <h1>{profile.name}</h1>
-        <p>{profile.bio || "Building something worth sharing."}</p>
-        <div className="maker-links">
-          {profile.website && (
-            <a href={profile.website} target="_blank" rel="noopener noreferrer nofollow">
-              Website <ArrowUpRight size={15} />
-            </a>
+    <Shell>
+      <header className="flex flex-col gap-5 border-b pb-10 sm:flex-row sm:items-center sm:gap-6">
+        <PersonAvatar path={profile.avatar_path} name={profile.name} size="xl" decorative={false} />
+        <div className="min-w-0">
+          <h1 className="text-3xl font-semibold tracking-tight [overflow-wrap:anywhere]">
+            {profile.name}
+          </h1>
+          {profile.bio && (
+            <p className="mt-2 max-w-2xl whitespace-pre-wrap text-muted-foreground [overflow-wrap:anywhere]">
+              {profile.bio}
+            </p>
           )}
-          {profile.social_url && (
-            <a href={profile.social_url} target="_blank" rel="noopener noreferrer nofollow">
-              Social profile <ArrowUpRight size={15} />
-            </a>
+          {links.length > 0 && (
+            <p className="mt-3 flex flex-wrap gap-x-5 gap-y-1 text-sm">
+              {links.map(([label, href]) => (
+                <a
+                  key={label}
+                  href={href}
+                  target="_blank"
+                  rel="noopener noreferrer nofollow"
+                  className="inline-flex items-center gap-1 font-medium hover:underline"
+                >
+                  {label}
+                  <ArrowUpRight className="size-3.5 text-muted-foreground" />
+                </a>
+              ))}
+            </p>
           )}
         </div>
+      </header>
+
+      <section className="pt-10">
+        <h2 className="mb-4 text-lg font-semibold">Products</h2>
+        {result.error ? (
+          <Notice tone="error">{result.error}</Notice>
+        ) : !result.rows.length ? (
+          <EmptyState title="No products listed">
+            {profile.name} has not listed a product yet.
+          </EmptyState>
+        ) : (
+          <>
+            <ListingGrid items={result.rows} meta="joined" />
+            <ResultsFooter page={page} count={result.count} href={(next) => `?page=${next}`} />
+          </>
+        )}
       </section>
-      <div className="section-title">
-        <h2>In {profile.name}&apos;s harbor</h2>
-        <span className="small muted">{result.count} products</span>
-      </div>
-      {result.error ? (
-        <p role="alert" className="notice error">
-          {result.error}
-        </p>
-      ) : !result.rows.length ? (
-        <p className="notice">No SaaS shared yet. Watch this space.</p>
-      ) : (
-        <div className="listing-grid">
-          {result.rows.map((item) => (
-            <ListingCard key={item.id} item={item} />
-          ))}
-        </div>
-      )}
-      {result.count > PAGE_SIZE && (
-        <nav className="pagination" aria-label="Pagination">
-          {page > 1 && <Link href={`?page=${page - 1}`}>Previous</Link>}
-          <span>Page {page}</span>
-          {page * PAGE_SIZE < result.count && <Link href={`?page=${page + 1}`}>Next</Link>}
-        </nav>
-      )}
-    </div>
+    </Shell>
   );
 }

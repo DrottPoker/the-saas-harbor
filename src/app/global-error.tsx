@@ -8,11 +8,12 @@ export default function GlobalError({ retry }: { error: Error; retry: () => void
     <html lang="en">
       <body>
         <title>Something went wrong | The SaaS Harbor</title>
-        <main className="prose-shell">
-          <p className="eyebrow">A BRIEF DETOUR</p>
-          <h1>The harbor could not be loaded.</h1>
-          <p>Please try again in a moment.</p>
-          <Button onClick={() => retry()}>Try again</Button>
+        <main className="mx-auto max-w-md px-4 pt-32 text-center">
+          <h1 className="text-3xl font-semibold tracking-tight">The SaaS Harbor could not load</h1>
+          <p className="mt-2 text-muted-foreground">Please try again in a moment.</p>
+          <Button onClick={() => retry()} className="mt-8">
+            Try again
+          </Button>
         </main>
       </body>
     </html>

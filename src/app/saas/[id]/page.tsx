@@ -2,11 +2,13 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { z } from "zod";
-import { ArrowUpRight, CalendarDays, Users, TrendingUp } from "lucide-react";
+import { ArrowUpRight } from "lucide-react";
 import { publicSaas } from "@/lib/data";
-import { Avatar } from "@/components/harbor";
-import { Button } from "@/components/ui/button";
 import { formatDate, formatUsd } from "@/lib/domain";
+import { cn } from "@/lib/utils";
+import { PersonAvatar, ProductLogo } from "@/components/avatars";
+import { Shell } from "@/components/shell";
+import { Button } from "@/components/ui/button";
 
 type Props = { params: Promise<{ id: string }> };
 
@@ -17,78 +19,133 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return item ? { title: item.name, description: item.tagline } : {};
 }
 
+function hostname(url: string | null) {
+  try {
+    return url ? new URL(url).hostname.replace(/^www\./, "") : null;
+  } catch {
+    return null;
+  }
+}
+
+function Metric({ label, value }: { label: string; value: string | null }) {
+  return (
+    <div className="px-5 py-4">
+      <dt className="text-sm text-muted-foreground">{label}</dt>
+      <dd
+        className={cn(
+          "mt-1 tabular-nums",
+          value ? "text-2xl font-semibold tracking-tight" : "text-base text-faint-foreground",
+        )}
+      >
+        {value ?? "Not shared"}
+      </dd>
+    </div>
+  );
+}
+
 export default async function SaasProfile({ params }: Props) {
   const { id } = await params;
   if (!z.uuid().safeParse(id).success) notFound();
   const item = await publicSaas(id);
   if (!item) notFound();
+  const name = item.name ?? "SaaS";
+  const site = hostname(item.website);
+  const shared = item.mrr_cents != null || item.customers != null || item.launched_on != null;
+
   return (
-    <div className="detail-shell">
-      <Link className="back-link" href="/discover">
-        ← Explore the harbor
-      </Link>
-      <section className="product-header">
-        <Avatar path={item.logo_path} name={item.name ?? "SaaS"} large />
-        <div>
-          <span className="category-badge">{item.category}</span>
-          <h1>{item.name}</h1>
-          <p>{item.tagline}</p>
+    <Shell size="medium">
+      <nav aria-label="Breadcrumb" className="mb-8 text-sm text-muted-foreground">
+        <Link href="/discover" className="hover:text-foreground">
+          Browse
+        </Link>
+        <span aria-hidden="true" className="mx-2">
+          /
+        </span>
+        <span className="text-foreground">{name}</span>
+      </nav>
+
+      <header className="flex flex-col gap-5 sm:flex-row sm:items-start">
+        <ProductLogo path={item.logo_path} name={name} size="xl" />
+        <div className="min-w-0 flex-1">
+          <h1 className="text-3xl font-semibold tracking-tight [overflow-wrap:anywhere]">{name}</h1>
+          <p className="mt-1.5 text-lg text-muted-foreground">{item.tagline}</p>
+          <p className="mt-3 text-sm text-muted-foreground">
+            <Link
+              href={`/discover?category=${encodeURIComponent(item.category ?? "")}`}
+              className="hover:text-foreground"
+            >
+              {item.category}
+            </Link>
+            <span aria-hidden="true" className="mx-2">
+              ·
+            </span>
+            by{" "}
+            <Link href={`/makers/${item.owner_id}`} className="text-foreground hover:underline">
+              {item.owner_name}
+            </Link>
+          </p>
         </div>
-        <Button asChild>
-          <a href={item.website ?? "#"} target="_blank" rel="noopener noreferrer nofollow">
-            Visit website <ArrowUpRight size={16} />
-          </a>
-        </Button>
-      </section>
-      <div className="public-metric-grid">
-        <div>
-          <TrendingUp size={19} />
-          <span>Monthly revenue</span>
-          <strong>{item.mrr_cents == null ? "Not shared" : formatUsd(item.mrr_cents)}</strong>
-          <small>
-            {item.mrr_cents == null ? "The maker keeps this private" : "USD · Self-reported"}
-          </small>
-        </div>
-        <div>
-          <Users size={19} />
-          <span>Paying customers</span>
-          <strong>{item.customers?.toLocaleString("en-US") ?? "Not shared"}</strong>
-          <small>{item.customers == null ? "The maker keeps this private" : "Self-reported"}</small>
-        </div>
-        <div>
-          <CalendarDays size={19} />
-          <span>Launch date</span>
-          <strong>{formatDate(item.launched_on)}</strong>
-          <small>{item.launched_on ? "Shared by the maker" : "The maker keeps this private"}</small>
-        </div>
-      </div>
-      {(item.mrr_cents != null || item.customers != null || item.launched_on != null) && (
-        <p className="metric-date">
-          Metrics updated {formatDate(item.reported_at)}. Self-reported by the owner, not
-          independently verified.
+        {item.website && (
+          <Button asChild variant="outline" className="self-start">
+            <a href={item.website} target="_blank" rel="noopener noreferrer nofollow">
+              Visit website
+              <ArrowUpRight />
+            </a>
+          </Button>
+        )}
+      </header>
+
+      <dl className="mt-10 grid divide-y rounded-xl border sm:grid-cols-3 sm:divide-x sm:divide-y-0">
+        <Metric
+          label="Monthly recurring revenue"
+          value={item.mrr_cents == null ? null : formatUsd(item.mrr_cents)}
+        />
+        <Metric label="Paying customers" value={item.customers?.toLocaleString("en-US") ?? null} />
+        <Metric label="Launched" value={item.launched_on ? formatDate(item.launched_on) : null} />
+      </dl>
+      {shared && (
+        <p className="mt-3 text-[13px] text-faint-foreground">
+          Self-reported by the maker and not independently verified. Updated{" "}
+          {formatDate(item.reported_at)}.
         </p>
       )}
-      <div className="story-grid">
+
+      <div className="mt-12 grid gap-10 lg:grid-cols-[minmax(0,1fr)_17rem] lg:gap-14">
         <section>
-          <p className="eyebrow">BEHIND THE PRODUCT</p>
-          <h2>The story</h2>
-          <p className="product-story">{item.description}</p>
-        </section>
-        <aside className="maker-card">
-          <p className="eyebrow">MEET THE MAKER</p>
-          <Avatar path={item.owner_avatar_path} name={item.owner_name ?? "Maker"} />
-          <h3>{item.owner_name}</h3>
-          <Link className="text-link" href={`/makers/${item.owner_id}`}>
-            View maker profile <ArrowUpRight size={15} />
-          </Link>
-          <hr />
-          <p className="small muted">
-            Joined the harbor
-            <br />
-            {formatDate(item.created_at)}
+          <h2 className="text-lg font-semibold">About {name}</h2>
+          <p className="mt-3 leading-7 whitespace-pre-wrap text-foreground/85 [overflow-wrap:anywhere]">
+            {item.description}
           </p>
+        </section>
+        <aside className="grid content-start gap-4">
+          <div className="rounded-xl border p-5">
+            <h2 className="text-sm text-muted-foreground">Maker</h2>
+            <Link
+              href={`/makers/${item.owner_id}`}
+              className="mt-3 flex items-center gap-3 hover:underline"
+            >
+              <PersonAvatar path={item.owner_avatar_path} name={item.owner_name ?? "Maker"} />
+              <span className="font-medium">{item.owner_name}</span>
+            </Link>
+          </div>
+          <dl className="grid gap-3 rounded-xl border p-5 text-sm">
+            <div className="flex justify-between gap-4">
+              <dt className="text-muted-foreground">Category</dt>
+              <dd className="text-right">{item.category}</dd>
+            </div>
+            {site && (
+              <div className="flex justify-between gap-4">
+                <dt className="text-muted-foreground">Website</dt>
+                <dd className="truncate text-right">{site}</dd>
+              </div>
+            )}
+            <div className="flex justify-between gap-4">
+              <dt className="text-muted-foreground">Listed</dt>
+              <dd className="text-right">{formatDate(item.created_at)}</dd>
+            </div>
+          </dl>
         </aside>
       </div>
-    </div>
+    </Shell>
   );
 }

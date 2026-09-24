@@ -1,73 +1,37 @@
 import type { Metadata } from "next";
-import Link from "next/link";
-import { Plus, ArrowUpRight } from "lucide-react";
-import { Brand } from "@/components/harbor";
-import { Navigation } from "@/components/navigation";
-import { Button } from "@/components/ui/button";
+import { Geist, Geist_Mono } from "next/font/google";
+import { SiteFooter, SiteHeader } from "@/components/site-chrome";
 import { currentUser } from "@/lib/supabase/server";
-import { signOut } from "./actions";
 import "./globals.css";
+
+const sans = Geist({ subsets: ["latin"], variable: "--font-geist-sans" });
+const mono = Geist_Mono({ subsets: ["latin"], variable: "--font-geist-mono" });
 
 export const metadata: Metadata = {
   title: {
-    default: "The SaaS Harbor | A home for what you're building",
+    default: "The SaaS Harbor | Independent SaaS, ranked by revenue",
     template: "%s | The SaaS Harbor",
   },
   description:
-    "Discover independent SaaS, meet the makers, and explore a transparent leaderboard of self-reported monthly revenue.",
+    "A public directory of independent SaaS products, with a leaderboard of self-reported monthly recurring revenue.",
 };
 export const dynamic = "force-dynamic";
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const user = await currentUser();
   return (
-    <html lang="en">
-      <body>
-        <a className="skip-link" href="#main">
+    <html lang="en" className={`${sans.variable} ${mono.variable}`}>
+      <body className="flex min-h-dvh flex-col">
+        <a
+          className="fixed top-2 left-2 z-50 -translate-y-16 rounded-md bg-primary px-3 py-2 text-sm text-primary-foreground focus:translate-y-0"
+          href="#main"
+        >
           Skip to content
         </a>
-        <header className="site-header">
-          <div className="header-inner">
-            <Brand />
-            <Navigation />
-            <div className="header-actions">
-              {user ? (
-                <>
-                  <Link className="account-link" href="/dashboard">
-                    My harbor
-                  </Link>
-                  <form action={signOut}>
-                    <button className="signout" type="submit">
-                      Sign out
-                    </button>
-                  </form>
-                </>
-              ) : (
-                <Link className="account-link" href="/auth">
-                  Sign in
-                </Link>
-              )}
-              <Button asChild className="add-button">
-                <Link href="/dashboard/saas/new">
-                  <Plus size={16} /> Add your SaaS
-                </Link>
-              </Button>
-            </div>
-          </div>
-        </header>
-        <main id="main">{children}</main>
-        <footer className="site-footer">
-          <div>
-            <Brand />
-            <p>A home for what you&apos;re building.</p>
-          </div>
-          <div className="footer-right">
-            <Link href="/about">
-              About the harbor <ArrowUpRight size={14} />
-            </Link>
-            <span>Built for makers. Open to everyone.</span>
-            <small>Revenue is self-reported, never independently verified.</small>
-          </div>
-        </footer>
+        <SiteHeader user={user} />
+        <main id="main" className="flex-1">
+          {children}
+        </main>
+        <SiteFooter />
       </body>
     </html>
   );

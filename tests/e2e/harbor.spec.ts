@@ -38,14 +38,18 @@ async function login(page: Page, address: string, pass: string) {
   await expect(page).toHaveURL(/\/dashboard$/);
 }
 async function fillProduct(page: Page, name: string) {
-  await page.getByLabel("SaaS name", { exact: true }).fill(name);
+  await page.getByLabel("Product name", { exact: true }).fill(name);
+  await page.getByLabel("Tagline").fill("A product created only by the local integration test.");
   await page
-    .getByLabel("One-line pitch")
-    .fill("A product created only by the local integration test.");
-  await page
-    .getByLabel("The story behind your SaaS")
+    .getByLabel("Description")
     .fill("This is an isolated local integration fixture and is removed after verification.");
-  await page.getByLabel("Product website").fill("https://example.com");
+  await page.getByLabel("Website", { exact: true }).fill("https://example.com");
+}
+async function expectNoHorizontalScroll(page: Page) {
+  expect(
+    await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth),
+    `no horizontal scroll on ${new URL(page.url()).pathname}`,
+  ).toBe(true);
 }
 async function expectAccessible(page: Page) {
   const accessibility = await new AxeBuilder({ page })
@@ -81,21 +85,24 @@ test.afterAll(async () => {
   }
 });
 
+// The local database may hold demo data from `npm run db:seed`, so tests never assume it is empty.
 test("anonymous navigation, private route protection and responsive empty state", async ({
   page,
 }) => {
   await page.goto("/");
-  await expect(page.getByRole("heading", { name: "The SaaS leaderboard" })).toBeVisible();
-  await expect(page.getByText("The first spot is waiting.")).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "Independent SaaS, ranked by revenue" }),
+  ).toBeVisible();
   await page.goto("/dashboard");
   await expect(page).toHaveURL(/\/auth$/);
-  await page.goto("/discover?category=Design&q=missing");
-  await expect(page.getByText("No SaaS found here. Yet.")).toBeVisible();
+  await page.goto(`/discover?category=Design&q=missing-${run}`);
+  await expect(page.getByRole("heading", { name: "No matching products" })).toBeVisible();
   await page.setViewportSize({ width: 390, height: 844 });
+  for (const path of ["/", "/discover", "/auth"]) {
+    await page.goto(path);
+    await expectNoHorizontalScroll(page);
+  }
   await page.goto("/");
-  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(
-    true,
-  );
   await page.screenshot({ path: "test-results/mobile-home.png", fullPage: true, caret: "initial" });
   await page.setViewportSize({ width: 1440, height: 1000 });
   await page.screenshot({
@@ -145,24 +152,22 @@ test("registration, email confirmation, profile and SaaS editing, storage, priva
   firstUserId = users.data.users.find((user) => user.email === email)!.id;
   userIds.push(firstUserId);
   await page.goto("/dashboard/profile");
-  await page.getByLabel("Your name").fill("Local Test Maker");
-  await page
-    .getByLabel("A little about you")
-    .fill("An isolated maker profile for browser verification.");
+  await page.getByLabel("Name", { exact: true }).fill("Local Test Maker");
+  await page.getByLabel("Bio").fill("An isolated maker profile for browser verification.");
   await page.getByLabel("Website", { exact: true }).fill("https://example.com");
-  await page.getByLabel("Upload image").setInputFiles({
+  await page.getByLabel("Upload photo").setInputFiles({
     name: "invalid.png",
     mimeType: "image/png",
     buffer: Buffer.from("not an image"),
   });
   await page.getByRole("button", { name: "Save profile" }).click();
   await expect(page.getByRole("alert").filter({ hasText: "Choose a valid PNG" })).toBeVisible();
-  await expect(page.getByLabel("Your name")).toHaveValue("Local Test Maker");
+  await expect(page.getByLabel("Name", { exact: true })).toHaveValue("Local Test Maker");
   await page
-    .getByLabel("Upload image")
+    .getByLabel("Upload photo")
     .setInputFiles({ name: "avatar.png", mimeType: "image/png", buffer: png });
   await page.getByRole("button", { name: "Save profile" }).click();
-  await expect(page.getByText("Your public profile has been saved.")).toBeVisible();
+  await expect(page.getByText("Profile saved.")).toBeVisible();
   await page.goto(`/makers/${firstUserId}`);
   await expect(page.getByRole("heading", { name: "Local Test Maker", exact: true })).toBeVisible();
   await expect(page).toHaveTitle("Local Test Maker | The SaaS Harbor");
@@ -174,18 +179,18 @@ test("registration, email confirmation, profile and SaaS editing, storage, priva
   await page.goto("/dashboard/saas/new");
   await fillProduct(page, productName);
   await page
-    .getByLabel("Upload image")
+    .getByLabel("Upload logo")
     .setInputFiles({ name: "logo.png", mimeType: "image/png", buffer: png });
   await page.getByLabel("Monthly recurring revenue (USD)").fill("-25");
-  await page.getByRole("button", { name: "Add your SaaS", exact: true }).click();
+  await page.getByRole("button", { name: "Add SaaS", exact: true }).click();
   await expect(page.getByRole("alert").filter({ hasText: "Enter a USD amount" })).toBeVisible();
-  await expect(page.getByLabel("SaaS name", { exact: true })).toHaveValue(productName);
+  await expect(page.getByLabel("Product name", { exact: true })).toHaveValue(productName);
   await page
-    .getByLabel("Upload image")
+    .getByLabel("Upload logo")
     .setInputFiles({ name: "logo.png", mimeType: "image/png", buffer: png });
   await page.getByLabel("Monthly recurring revenue (USD)").fill("9876543.21");
   await page.getByLabel("Paying customers", { exact: true }).fill("123");
-  await page.getByRole("button", { name: "Add your SaaS", exact: true }).click();
+  await page.getByRole("button", { name: "Add SaaS", exact: true }).click();
   await expect(page).toHaveURL(/\/dashboard\?saved=/);
   productId = new URL(page.url()).searchParams.get("saved")!;
   await page.goto(`/saas/${productId}`);
@@ -208,7 +213,7 @@ test("registration, email confirmation, profile and SaaS editing, storage, priva
   await page.getByLabel("Share MRR publicly", { exact: true }).check();
   await page.getByRole("button", { name: "Save changes" }).click();
   await expect(page).toHaveURL(/saved=/);
-  await page.goto("/");
+  await page.goto(`/?q=${encodeURIComponent(productName)}`);
   await expect(
     page.getByRole("link").filter({ hasText: productName }).getByText("$1,234.56", { exact: true }),
   ).toBeVisible();
@@ -229,22 +234,32 @@ test("registration, email confirmation, profile and SaaS editing, storage, priva
   await page.getByLabel("Share MRR publicly", { exact: true }).uncheck();
   await page.getByRole("button", { name: "Save changes" }).click();
   await expect(page).toHaveURL(/saved=/);
-  await page.goto("/");
+  await page.goto(`/?q=${encodeURIComponent(productName)}`);
   await expect(page.getByText(productName, { exact: true })).toHaveCount(0);
-  await page.goto("/discover");
+  await page.goto(`/discover?q=${encodeURIComponent(productName)}`);
   await expect(page.getByRole("heading", { name: productName, exact: true })).toBeVisible();
   await page.goto("/dashboard/saas/new");
   await fillProduct(page, `Second ${run}`);
-  await page.getByRole("button", { name: "Add your SaaS", exact: true }).click();
+  await page.getByRole("button", { name: "Add SaaS", exact: true }).click();
   await expect(page).toHaveURL(/saved=/);
-  await expect(page.locator(".dashboard-card")).toHaveCount(2);
+  await expect(page.getByRole("list", { name: "Your products" }).getByRole("listitem")).toHaveCount(
+    2,
+  );
+  // The signed-in header carries extra links, so check it separately on a phone-sized screen.
+  await page.setViewportSize({ width: 390, height: 844 });
+  for (const path of ["/", "/dashboard", `/dashboard/saas/${productId}`, `/saas/${productId}`]) {
+    await page.goto(path);
+    await expectNoHorizontalScroll(page);
+  }
+  await page.setViewportSize({ width: 1280, height: 720 });
+  await page.goto("/dashboard");
   await page.getByRole("button", { name: "Sign out", exact: true }).click();
   await expect(page).toHaveURL("/");
   await page.goto("/dashboard");
   await expect(page).toHaveURL(/\/auth$/);
   await login(page, email, password);
   await page.reload();
-  await expect(page.getByRole("heading", { name: "Welcome, Local Test Maker." })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Local Test Maker", exact: true })).toBeVisible();
 });
 
 test("another owner cannot read private history, edit SaaS, or overwrite images", async ({
@@ -259,7 +274,7 @@ test("another owner cannot read private history, edit SaaS, or overwrite images"
   userIds.push(data.user.id);
   await login(page, secondEmail, secondPassword);
   await page.goto(`/dashboard/saas/${productId}`);
-  await expect(page.getByRole("heading", { name: "This berth is empty." })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Page not found" })).toBeVisible();
   const other = createClient(url, publicKey, {
     auth: { persistSession: false, autoRefreshToken: false },
   });

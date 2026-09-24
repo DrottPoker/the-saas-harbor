@@ -1,68 +1,59 @@
+import type { Metadata } from "next";
 import { AuthForm } from "@/components/forms";
-import { Anchor } from "lucide-react";
+import { LogoMark } from "@/components/logo";
+import { Notice } from "@/components/shell";
 import { supabaseConfig } from "@/lib/supabase/config";
 import { requireUser } from "@/lib/supabase/server";
-export const metadata = { title: "Welcome aboard" };
-export default async function Auth({
-  searchParams,
-}: {
-  searchParams: Promise<Record<string, string | undefined>>;
-}) {
+
+type Mode = "login" | "signup" | "reset" | "update";
+type Props = { searchParams: Promise<Record<string, string | undefined>> };
+
+const copy: Record<Mode, { title: string; description: string }> = {
+  login: { title: "Sign in", description: "Welcome back. Sign in to manage your products." },
+  signup: {
+    title: "Create your account",
+    description: "List your SaaS and choose which numbers to share.",
+  },
+  reset: {
+    title: "Reset your password",
+    description: "We will email you a link to choose a new password.",
+  },
+  update: { title: "Choose a new password", description: "Use at least 12 characters." },
+};
+
+function modeOf(value: string | undefined): Mode {
+  return value === "signup" || value === "reset" || value === "update" ? value : "login";
+}
+
+export async function generateMetadata({ searchParams }: Props): Promise<Metadata> {
+  return { title: copy[modeOf((await searchParams).mode)].title };
+}
+
+export default async function Auth({ searchParams }: Props) {
   const params = await searchParams;
-  const mode =
-    params.mode === "signup" || params.mode === "reset" || params.mode === "update"
-      ? params.mode
-      : "login";
+  const mode = modeOf(params.mode);
   if (mode === "update") await requireUser();
+  const { title, description } = copy[mode];
   return (
-    <div className="auth-shell">
-      <div className="auth-aside">
-        <Anchor size={48} strokeWidth={1.3} />
-        <p className="eyebrow">WELCOME TO THE HARBOR</p>
-        <h1>
-          A place for
-          <br />
-          your next chapter<span className="coral">.</span>
-        </h1>
-        <p>
-          Share what you&apos;re building.
-          <br />
-          Let people discover your story.
-        </p>
-        <span className="auth-aside-bottom">INDEPENDENT BY SPIRIT. TOGETHER BY CHOICE.</span>
-      </div>
-      <section className="auth-main">
-        <p className="eyebrow">YOUR JOURNEY STARTS HERE</p>
-        <h2>
-          {mode === "login"
-            ? "Welcome back."
-            : mode === "signup"
-              ? "Come aboard."
-              : mode === "reset"
-                ? "A fresh start."
-                : "Set a new password."}
-        </h2>
-        <p className="muted">
-          {mode === "login"
-            ? "Sign in to your corner of the harbor."
-            : mode === "signup"
-              ? "Create your free maker account."
-              : "Let’s get you back to building."}
-        </p>
+    <div className="mx-auto w-full max-w-sm px-4 pt-14 sm:pt-24">
+      <LogoMark className="size-9 text-brand" />
+      <h1 className="mt-6 text-2xl font-semibold tracking-tight">{title}</h1>
+      <p className="mt-1.5 text-muted-foreground">{description}</p>
+      <div className="mt-8 grid gap-5">
         {params.callback_error && (
-          <p className="notice error">
-            This link has expired or was opened in another browser. Try signing in or request a new
-            reset link.
-          </p>
+          <Notice tone="error">
+            This link has expired or was opened in another browser. Sign in, or request a new reset
+            link.
+          </Notice>
         )}
         {supabaseConfig() ? (
           <AuthForm mode={mode} />
         ) : (
-          <p className="notice error">
+          <Notice tone="error">
             Authentication is not configured. Follow the Supabase setup in README.md.
-          </p>
+          </Notice>
         )}
-      </section>
+      </div>
     </div>
   );
 }

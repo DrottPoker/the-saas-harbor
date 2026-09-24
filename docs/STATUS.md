@@ -28,6 +28,19 @@ Defects fixed:
 - SaaS and maker pages had the generic site title. They now set their own title and description through `generateMetadata`, sharing a request-cached loader with the page.
 - `currentUser()` is request-cached, so the layout and page no longer make two Auth round trips.
 
+## Interface redesign 2026-09-24
+
+The first interface was generated with ChatGPT and read as generic: a slogan hero with decorative art, uppercase labels above every heading, nautical metaphors in the copy, repeated calls to action and 7-10 px text. It was rebuilt as a calm, data-first product interface:
+
+- The leaderboard is the homepage content, directly under a one-line heading, with search and category filters.
+- Neutral palette with one teal accent, Geist type, tabular figures and a 12 px minimum text size.
+- Browse is sorted A to Z so it no longer duplicates New arrivals.
+- Product and maker pages, the dashboard and settings-style editors share one set of components.
+- The roughly 1,600 lines of global CSS were replaced by design tokens and Tailwind utilities.
+- `npm run db:seed` and `npm run dev:local` give a realistic local dataset for design and development.
+
+The browser tests no longer assume an empty database, check for horizontal scrolling on phone-sized screens both signed out and signed in, and run Axe on every redesigned page.
+
 ## Verified 2026-09-24
 
 - `npm run check`: Prettier, ESLint with zero warnings, TypeScript, 26 unit tests.
@@ -66,10 +79,9 @@ Before a public launch:
 
 Product and quality:
 
-6. Typography. Much text is 7-10 px (eyebrows, filters, card metadata, the mobile ranking header). Readability needs a design decision on the type scale.
-7. `save_saas` appends a metric report and refreshes `reported_at` on every save, even when only the description changed. "Metrics updated" can then show a date when no metric changed, and history fills with duplicates.
-8. SEO: no `sitemap.ts`, `robots.ts`, Open Graph images or canonical URLs. Public URLs use UUIDs rather than slugs.
-9. Old images stay in storage after replacement or removal.
-10. All routes are dynamic with `no-store`. Public pages could be cached once traffic grows, with private data kept separate.
-11. Styling mixes about 1,600 lines of global CSS with hardcoded colors and the Tailwind/shadcn tokens. Consolidating into tokens would ease design changes and dark mode.
-12. `src/components/ui/checkbox.tsx` is unused. Image signature validation in `src/lib/upload.ts` has no unit tests.
+6. `save_saas` appends a metric report and refreshes `reported_at` on every save, even when only the description changed. "Metrics updated" can then show a date when no metric changed, and history fills with duplicates.
+7. SEO: no `sitemap.ts`, `robots.ts`, Open Graph images or canonical URLs. Public URLs use UUIDs rather than slugs.
+8. Old images stay in storage after replacement or removal.
+9. All routes are dynamic with `no-store`. Public pages could be cached once traffic grows, with private data kept separate.
+10. Dark mode. The tokens in `globals.css` are ready for a dark theme, but none is defined.
+11. Image signature validation in `src/lib/upload.ts` has no unit tests.

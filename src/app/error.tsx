@@ -1,5 +1,6 @@
 "use client";
 import { useEffect } from "react";
+import { Shell } from "@/components/shell";
 import { Button } from "@/components/ui/button";
 
 export default function ErrorPage({
@@ -13,15 +14,15 @@ export default function ErrorPage({
     console.error(error);
   }, [error]);
   return (
-    <section className="prose-shell">
-      <p className="eyebrow">A BRIEF DETOUR</p>
-      <h1>We couldn&apos;t load this page.</h1>
-      <p>
-        Please try again. If this keeps happening, check the Supabase connection and the setup
-        instructions.
+    <Shell size="narrow" className="pt-24 text-center sm:pt-32">
+      <h1 className="text-3xl font-semibold tracking-tight">This page could not be loaded</h1>
+      <p className="mt-2 text-muted-foreground">
+        Please try again. If the problem continues, check the Supabase connection.
       </p>
       {/* retry() re-fetches server data; reset() would only re-render the failed result. */}
-      <Button onClick={() => retry()}>Try again</Button>
-    </section>
+      <Button onClick={() => retry()} className="mt-8">
+        Try again
+      </Button>
+    </Shell>
   );
 }

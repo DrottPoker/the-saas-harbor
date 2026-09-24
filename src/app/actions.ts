@@ -41,8 +41,7 @@ export async function authenticate(
       };
     if (!data.session)
       return {
-        success:
-          "Check your email to confirm your account, then sign in. If no email arrives, the project owner may need to configure email delivery.",
+        success: "Check your email to confirm your account, then sign in.",
       };
   } else if (mode === "reset") {
     const { error } = await client.auth.resetPasswordForEmail(email, {
@@ -100,7 +99,7 @@ export async function saveProfile(_state: ActionState, form: FormData): Promise<
     return { error: message(error) };
   }
   revalidatePath("/", "layout");
-  return { success: "Your public profile has been saved." };
+  return { success: "Profile saved." };
 }
 
 export async function saveSaas(_state: ActionState, form: FormData): Promise<ActionState> {

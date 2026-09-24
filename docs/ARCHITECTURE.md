@@ -22,7 +22,13 @@ Public reads deliberately create a separate anonymous Supabase client. They do n
 
 MRR uses integer USD cents with a maximum of 999,999,999,999 cents, below JavaScript's safe integer limit. Parsing uses decimal strings without floating-point multiplication. Blank MRR differs from zero. Customer count and launch date have independent visibility switches. Each report has a database timestamp. Values are always self-reported.
 
-The leaderboard is ordered in PostgreSQL by public MRR descending, then creation time ascending, then UUID ascending. Ties receive deterministic sequential positions. Category filters preserve the global rank. Discovery includes products without shared MRR and orders by creation time descending. List queries return at most 12 rows per page. The server validates category and page inputs and searches product names case-insensitively. User-supplied wildcard characters (`%`, `_`, `*` and backslash) are removed first, since PostgREST treats `*` like `%`.
+The leaderboard is ordered in PostgreSQL by public MRR descending, then creation time ascending, then UUID ascending. Ties receive deterministic sequential positions. Category filters preserve the global rank. Browse includes products without shared MRR and orders by name. New arrivals orders by creation time descending. List queries return at most 12 rows per page. The server validates category and page inputs and searches product names case-insensitively. User-supplied wildcard characters (`%`, `_`, `*` and backslash) are removed first, since PostgREST treats `*` like `%`.
+
+## Interface
+
+Styling uses Tailwind utilities in the components. Design tokens (colors, fonts, radii) live as CSS variables in `src/app/globals.css` and map to Tailwind names such as `bg-muted`, `text-muted-foreground` and `text-brand`. There is no page-specific global CSS. The type is Geist, loaded with `next/font`, and body text is never smaller than 12 px. The palette is neutral with one teal accent (`--accent`) for the logo, links, focus rings and checkboxes. Primary buttons are near-black.
+
+Shared building blocks live in `src/components`: `site-chrome.tsx` (header and footer), `shell.tsx` (page width, page header, notices, empty states), `listings.tsx` (leaderboard, product cards, pagination), `avatars.tsx` (rounded-square product logos, round person avatars) and `forms.tsx` (settings-style form sections). Copy is plain and specific, without metaphors. Product logos next to a visible name are decorative (`alt=""`); the maker page avatar carries the maker's name.
 
 ## Images and forms
 
