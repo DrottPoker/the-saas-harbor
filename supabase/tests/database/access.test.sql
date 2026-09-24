@@ -1,7 +1,7 @@
 -- Grants, RLS, storage ownership, verified revenue and ranking. Runs in a rolled-back transaction.
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(59);
+select plan(67);
 
 insert into auth.users(id) values
   ('b0000000-0000-4000-8000-000000000001'),
@@ -282,6 +282,61 @@ select results_eq(
   'stale history and growth are hidden'
 );
 
+
+-- Product deletion: only the owner, and it removes everything that belongs to the product.
+set local role authenticated;
+select set_config('request.jwt.claim.sub', 'b0000000-0000-4000-8000-000000000001', true);
+select lives_ok(
+  $$ select public.save_saas('c0000000-0000-4000-8000-000000000006', 'SQL Test Delete',
+    'Delete fixture', 'A temporary fixture that is rolled back.', 'Other', 'https://example.com',
+    null, null, true, false, false) $$,
+  'owner saves a product to delete'
+);
+set local role service_role;
+select lives_ok(
+  $$ select public.record_stripe_verification('c0000000-0000-4000-8000-000000000006', 'v1:delete',
+    'rk_live_…0006', true, 5000, 3, '{"usd": 5000}', null, array[repeat('e', 64)],
+    '[{"month": "2026-08", "mrr_cents": 4000}]', 5000, 4000) $$,
+  'server verifies the product to delete'
+);
+set local role anon;
+select set_config('request.jwt.claim.sub', '', true);
+select throws_ok(
+  $$ delete from public.saas where id = 'c0000000-0000-4000-8000-000000000006' $$,
+  '42501', null, 'visitors cannot delete a product'
+);
+set local role authenticated;
+select set_config('request.jwt.claim.sub', 'b0000000-0000-4000-8000-000000000002', true);
+delete from public.saas where id = 'c0000000-0000-4000-8000-000000000006';
+select isnt_empty(
+  $$ select 1 from public.saas where id = 'c0000000-0000-4000-8000-000000000006' $$,
+  'another owner cannot delete the product'
+);
+select set_config('request.jwt.claim.sub', 'b0000000-0000-4000-8000-000000000001', true);
+select lives_ok(
+  $$ delete from public.saas where id = 'c0000000-0000-4000-8000-000000000006' $$,
+  'the owner deletes the product'
+);
+reset role;
+select is_empty(
+  $$ select 1 from public.saas where id = 'c0000000-0000-4000-8000-000000000006' $$,
+  'the product is gone'
+);
+select is_empty(
+  $$ select saas_id from public.saas_settings where saas_id = 'c0000000-0000-4000-8000-000000000006'
+  union all select saas_id from public.public_metrics where saas_id = 'c0000000-0000-4000-8000-000000000006'
+  union all select saas_id from public.revenue_snapshots where saas_id = 'c0000000-0000-4000-8000-000000000006'
+  union all select saas_id from public.stripe_connections where saas_id = 'c0000000-0000-4000-8000-000000000006'
+  union all select saas_id from private.stripe_subscription_claims where saas_id = 'c0000000-0000-4000-8000-000000000006' $$,
+  'settings, metrics, snapshots, the Stripe key and claims go with the product'
+);
+set local role service_role;
+select lives_ok(
+  $$ select public.record_stripe_verification('c0000000-0000-4000-8000-000000000001', 'v1:again',
+    'rk_live_…0001', true, 5000, 3, '{"usd": 5000}', null, array[repeat('e', 64)],
+    null, null, null) $$,
+  'the Stripe account of a deleted product can verify another product'
+);
 
 -- Account deletion: only the signed-in maker, only after a recent password sign-in, and it
 -- removes everything they own while other makers keep theirs.

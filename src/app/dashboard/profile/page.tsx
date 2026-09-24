@@ -1,6 +1,6 @@
 import { ProfileForm } from "@/components/forms";
 import { BackLink } from "@/components/back-link";
-import { DeleteAccount } from "@/components/delete-account";
+import { DeleteAccount } from "@/components/delete-forms";
 import { PageHeader, Shell } from "@/components/shell";
 import { requireUser } from "@/lib/supabase/server";
 

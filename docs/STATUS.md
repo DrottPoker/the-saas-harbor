@@ -46,8 +46,8 @@ The browser tests no longer assume an empty database, check for horizontal scrol
 
 - `npm run check`: Prettier, ESLint with zero warnings, TypeScript, 67 unit tests: Stripe MRR, invoice history, keys and encryption, chart models, and the full Stripe read path against the fake Stripe server.
 - `npm run build`: Next.js 16.3.5 production build.
-- `npm run test:db`: 59 pgTAP assertions, stable over repeated runs. `supabase db diff` reports no drift between the local database and the migrations, and `supabase db lint` reports no errors.
-- `npm run test:e2e`: 6 Chromium integration tests with Axe scans in both themes (including the revenue charts, the privacy policy and the delete account section), against local Supabase and a fake Stripe API, passing twice in a row.
+- `npm run test:db`: 67 pgTAP assertions, stable over repeated runs. `supabase db diff` reports no drift between the local database and the migrations, and `supabase db lint` reports no errors.
+- `npm run test:e2e`: 6 Chromium integration tests with Axe scans in both themes (including the revenue charts, the privacy policy and the delete sections for products and accounts), against local Supabase and a fake Stripe API, passing twice in a row.
 - The CI workflow has not run on GitHub yet. Its commands were run locally with the same Supabase service exclusions.
 
 ## Verified revenue through Stripe 2026-09-24
@@ -66,6 +66,10 @@ Verified products now show how their revenue developed. Decisions by the project
 - Leaderboard: a 12-month trend line (from 1024 px wide) and the 30-day growth under each MRR figure (at every width).
 - Makers need Invoices: Read on the restricted key. Keys created before this change still verify MRR; the editor tells the maker to replace the key to get history.
 - Migration `20260924180000_revenue_history.sql` stores history and the growth basis on each snapshot and projects them publicly only when MRR is shared and fresh (pgTAP covers shared, hidden and stale cases).
+
+## Product deletion 2026-09-24
+
+Makers can delete a single product at the bottom of its editor by typing its name. The product page, its logo, its Stripe connection with the stored key and its verification history go at once, the product leaves the leaderboard, and the Stripe account can verify another product. A logo that the profile photo or another product also uses is kept. Deletion is allowed by a new RLS policy for the owner (migration `20260924210000_saas_deletion.sql`), and foreign keys remove everything that belongs to the product.
 
 ## Account deletion and a privacy policy 2026-09-24
 
@@ -91,7 +95,7 @@ The website is not deployed. Production needs a decision on where Supabase runs:
 Before a public launch:
 
 1. Verify Stripe verification once against the real Stripe API with a test-mode restricted key (see above).
-2. Legal pages. The privacy policy is a draft: set the operator's name and contact address in `src/lib/legal.ts`, name the hosting, database and email providers once they are chosen (and any transfers outside the EU/EEA), and have it reviewed. Terms of service are missing. Makers can delete their whole account, but not a single product.
+2. Legal pages. The privacy policy is a draft: set the operator's name and contact address in `src/lib/legal.ts`, name the hosting, database and email providers once they are chosen (and any transfers outside the EU/EEA), and have it reviewed. Terms of service are missing.
 3. Abuse and moderation. Revenue is now verified, but SaaS creation is unlimited and there is no moderation or reporting of listings.
 4. Email links across devices. PKCE links fail when the email is opened in another browser, such as on a phone after signing up on a desktop. The `token_hash` + `verifyOtp` confirmation flow with custom email templates avoids this.
 5. Security headers. No Content Security Policy yet. HSTS depends on the hosting platform. A future CSP must allow the inline theme script in the root layout, by hash or nonce.
@@ -103,6 +107,6 @@ Product and quality:
 8. Only Stripe is supported. Paddle, Lemon Squeezy and others are not.
 9. Encryption key rotation: stored keys carry a version prefix, but there is no re-encryption job yet.
 10. SEO: no `sitemap.ts`, `robots.ts`, Open Graph images or canonical URLs. Public URLs use UUIDs rather than slugs.
-11. Old images stay in storage after replacement or removal.
+11. Old images stay in storage after replacement or removal, until the account is deleted.
 12. All routes are dynamic with `no-store`. Public pages could be cached once traffic grows, with private data kept separate.
 13. Image signature validation in `src/lib/upload.ts` has no unit tests. Vitest can now import server-only modules, so this is straightforward.

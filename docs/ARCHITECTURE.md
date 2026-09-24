@@ -7,7 +7,7 @@ One Next.js App Router application uses React, TypeScript, Tailwind CSS and shad
 | Resource                     | Public access                                           | Owner access                                      |
 | ---------------------------- | ------------------------------------------------------- | ------------------------------------------------- |
 | `profiles`                   | Name, bio, website, social link, image path             | Insert/update own row                             |
-| `saas`                       | Product description, category, website, logo, owner     | Insert/update own products                        |
+| `saas`                       | Product description, category, website, logo, owner     | Insert/update/delete own products                 |
 | `saas_settings`              | None                                                    | Read/write own visibility choices and launch date |
 | `stripe_connections`         | None                                                    | Read own status and key hint; never the key       |
 | `revenue_snapshots`          | None                                                    | Read own verified history; no writes              |
@@ -41,7 +41,7 @@ Makers connect a Stripe restricted key (`rk_live_`; `rk_test_` only when `STRIPE
 
 Server actions in `src/app/stripe-actions.ts` check ownership on every call, since the SaaS id is bound on the client. Manual refresh is limited to once per five minutes. `POST /api/stripe/sync` re-verifies every connection when called with `Authorization: Bearer $CRON_SECRET` (compared in constant time); production needs a daily scheduler for it. The service-role key (`SUPABASE_SECRET_KEY`) is only read by `src/lib/supabase/admin.ts`, a server-only module used for these trusted writes.
 
-## Account deletion
+## Deleting data
 
 Makers delete their account under Maker profile → Delete account, confirming with their password. `deleteAccountAction` (`src/app/actions.ts`) calls `deleteAccount` in `src/lib/account.ts`:
 
@@ -50,9 +50,11 @@ Makers delete their account under Maker profile → Delete account, confirming w
 3. It calls `public.delete_account()`. This SECURITY DEFINER function deletes only `auth.uid()`, and only when the JWT's `amr` claim has a password sign-in from the last five minutes, so a leaked or long-lived session token alone cannot delete an account. It deletes the user's audit log entries (email and IP address), leftover refresh tokens and sign-in flows, then the auth user. Foreign keys cascade to the profile, products, settings, Stripe connections with their keys, subscription claims, snapshots and the public projection. Execute is granted to `authenticated` only.
 4. The action signs the browser out and redirects to `/account-deleted`.
 
-The pgTAP suite covers the recent-password requirement, the complete removal and that other makers are untouched. The browser test covers the whole flow, including images in a subfolder.
+Makers delete a single product at the bottom of its editor by typing its name. `deleteSaasAction` checks ownership and the name, removes the logo through the Storage API unless the maker's profile photo or another of their products uses the same file, then deletes the row under the `saas_owner_delete` RLS policy. Foreign keys remove the settings, the public projection, the snapshots and the Stripe connection with its key and claims, which frees the Stripe account for another product. Referential actions run as the table owner, so makers still cannot write those tables directly. Logos replaced earlier are not tracked and stay until the account is deleted.
 
-The privacy policy is `src/app/privacy/page.tsx`. The operator's name and contact address come from `src/lib/legal.ts`; while they are unset, the page says it is a draft. Anything new that stores personal data must be described there and removed by account deletion.
+The pgTAP suite covers the recent-password requirement, who may delete a product, the complete removal and that other makers are untouched. The browser test covers both flows, including a logo that is also the profile photo and images in a subfolder.
+
+The privacy policy is `src/app/privacy/page.tsx`. The operator's name and contact address come from `src/lib/legal.ts`; while they are unset, the page says it is a draft. Anything new that stores personal data must be described there and removed by account deletion, and product-scoped tables need an `on delete cascade` foreign key to `saas`.
 
 ## Interface
 
@@ -82,7 +84,7 @@ Authentication is Supabase Auth (email and password). Signup and password recove
 
 ## Deliberate limits
 
-There are no company profiles, deletion of a single product (only the whole account), transaction features, messaging, revenue integrations other than Stripe, or image garbage collector. The first version is an owner-usable profile and discovery application. Real usage may warrant abuse controls, moderation, optimized images and cache design before broader public launch.
+There are no company profiles, transaction features, messaging, revenue integrations other than Stripe, or image garbage collector (replaced images stay until the account is deleted). The first version is an owner-usable profile and discovery application. Real usage may warrant abuse controls, moderation, optimized images and cache design before broader public launch.
 
 ## Sources checked during implementation
 

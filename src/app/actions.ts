@@ -92,6 +92,74 @@ export async function deleteAccountAction(
   redirect("/account-deleted", RedirectType.replace);
 }
 
+type Client = Awaited<ReturnType<typeof serverClient>>;
+
+// A logo is removed only when it is in the maker's own folder and neither their profile photo nor
+// another of their products uses the same file.
+async function logoIsUnused(client: Client, owner: string, path: string, saasId: string) {
+  if (!path.startsWith(`${owner}/`)) return false;
+  const [profile, products] = await Promise.all([
+    client
+      .from("profiles")
+      .select("id", { count: "exact", head: true })
+      .eq("id", owner)
+      .eq("avatar_path", path),
+    client
+      .from("saas")
+      .select("id", { count: "exact", head: true })
+      .eq("owner_id", owner)
+      .eq("logo_path", path)
+      .neq("id", saasId),
+  ]);
+  if (profile.error || products.error)
+    throw new Error("The SaaS could not be deleted. Please try again.");
+  return !profile.count && !products.count;
+}
+
+export async function deleteSaasAction(
+  saasId: string,
+  _state: ActionState,
+  form: FormData,
+): Promise<ActionState> {
+  const { user, client } = await requireUser();
+  if (!z.uuid().safeParse(saasId).success) return { error: "You can only delete your own SaaS." };
+  const { data: saas, error } = await client
+    .from("saas")
+    .select("name, logo_path")
+    .eq("id", saasId)
+    .eq("owner_id", user.id)
+    .maybeSingle();
+  if (error) return { error: "The SaaS profile could not be loaded." };
+  if (!saas) return { error: "You can only delete your own SaaS." };
+  if (value(form, "confirm_name").trim() !== saas.name.trim())
+    return { error: "Type the product name exactly as shown to confirm." };
+  try {
+    // The logo goes first, so a failure leaves the product in place to delete again.
+    if (saas.logo_path && (await logoIsUnused(client, user.id, saas.logo_path, saasId))) {
+      const { error: removeError } = await client.storage
+        .from("profile-images")
+        .remove([saas.logo_path]);
+      if (removeError)
+        throw new Error(
+          "The logo could not be deleted, so the product was kept. Please try again.",
+        );
+    }
+    // Foreign keys remove the settings, figures, Stripe connection and verification history.
+    const { data: deleted, error: deleteError } = await client
+      .from("saas")
+      .delete()
+      .eq("id", saasId)
+      .eq("owner_id", user.id)
+      .select("id");
+    if (deleteError || !deleted.length)
+      throw new Error("The SaaS could not be deleted. Please try again.");
+  } catch (error) {
+    return { error: message(error) };
+  }
+  revalidatePath("/", "layout");
+  redirect("/dashboard?deleted=1", RedirectType.replace);
+}
+
 export async function saveProfile(_state: ActionState, form: FormData): Promise<ActionState> {
   const { user, client } = await requireUser();
   let uploaded: string | null = null;

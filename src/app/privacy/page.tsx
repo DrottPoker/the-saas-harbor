@@ -113,8 +113,9 @@ export default function Privacy() {
           </p>
           <p>
             Disconnecting Stripe deletes the stored key at once. Earlier verification results stay
-            in your private history until you delete your account. You can also delete the key in
-            Stripe under <span className="whitespace-nowrap">Developers → API keys</span>.
+            in your private history until you delete the product or your account. You can also
+            delete the key in Stripe under{" "}
+            <span className="whitespace-nowrap">Developers → API keys</span>.
           </p>
         </Section>
 
@@ -174,7 +175,10 @@ export default function Privacy() {
           <p>
             We keep your data for as long as you have an account. When you delete your account, your
             profile, products, images, Stripe keys, verification history and sign-in records are
-            deleted right away. Copies in backups disappear when those backups expire.
+            deleted right away. Deleting a single product removes its details, its logo, its Stripe
+            key and its verification history in the same way. Logos and photos you replaced earlier
+            are kept until you delete your account. Copies in backups disappear when those backups
+            expire.
           </p>
           <p>
             Information that was public may already have been copied by others, such as search
@@ -184,8 +188,8 @@ export default function Privacy() {
 
         <Section id="rights" title="Your rights">
           <p>
-            You can see and change your profile and products at any time in your dashboard, and
-            delete your account yourself under{" "}
+            You can see and change your profile and products at any time in your dashboard, delete a
+            product at the bottom of its editor, and delete your account yourself under{" "}
             <Link className={link} href="/dashboard/profile#delete-account">
               Maker profile → Delete account
             </Link>

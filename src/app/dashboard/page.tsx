@@ -67,6 +67,11 @@ export default async function Dashboard({
           Saved. The public product page is up to date.
         </Notice>
       )}
+      {params.deleted && (
+        <Notice tone="success" className="mb-6">
+          Product deleted. It has left the directory and the leaderboard.
+        </Notice>
+      )}
 
       <section className="flex flex-col gap-4 rounded-xl border bg-surface p-5 sm:flex-row sm:items-center">
         <PersonAvatar path={profile?.avatar_path} name={profile?.name ?? "?"} size="lg" />

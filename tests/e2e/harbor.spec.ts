@@ -516,7 +516,7 @@ test("password recovery confirms a local email link and accepts the new password
   await login(page, email, replacement);
 });
 
-test("a maker deletes their account and everything in it", async ({ page }) => {
+test("a maker deletes products, then their account and everything in it", async ({ page }) => {
   const { data: created, error } = await admin.auth.admin.createUser({
     email: leavingEmail,
     password: leavingPassword,
@@ -526,8 +526,9 @@ test("a maker deletes their account and everything in it", async ({ page }) => {
   const id = created.user.id;
   userIds.push(id);
 
-  // A profile with a photo, a product with a logo, an image in a subfolder, and a verified
-  // Stripe connection with its claims, snapshot and public projection.
+  // A profile with a photo, an image in a subfolder, and three products: one with its own logo
+  // and a verified Stripe connection, one whose logo is the profile photo, and one that stays
+  // until the account goes.
   const maker = createClient(url, publicKey, {
     auth: { persistSession: false, autoRefreshToken: false },
   });
@@ -548,39 +549,92 @@ test("a maker deletes their account and everything in it", async ({ page }) => {
     avatar_path: `${id}/avatar.png`,
   });
   if (profileError) throw new Error("Unable to create the fixture profile.");
-  const productId = randomUUID();
-  const { error: saveError } = await maker.rpc("save_saas", {
-    p_id: productId,
-    p_name: `Leaving ${run}`,
-    p_tagline: "A product that is deleted with its maker's account.",
-    p_description: "This is an isolated local integration fixture for account deletion.",
-    p_category: "Other",
-    p_website: "https://example.com",
-    p_logo_path: `${id}/logo.png`,
-    p_launched_on: null,
-    p_share_mrr: true,
-    p_share_customers: false,
-    p_share_launch: false,
-  });
-  if (saveError) throw new Error("Unable to create the fixture product.");
-  const { error: verifyError } = await admin.rpc("record_stripe_verification", {
-    p_saas_id: productId,
-    p_encrypted_key: "v1:e2e-fixture",
-    p_key_hint: "rk_test_…e2e0",
-    p_livemode: false,
-    p_mrr_cents: 4200,
-    p_customers: 2,
-    p_currencies: { usd: 4200 },
-    p_fx_date: null,
-    p_subscription_hashes: [createHash("sha256").update(`leaving-${run}`).digest("hex")],
-    p_history: null,
-    p_mrr_invoice_cents: null,
-    p_mrr_30d_ago_cents: null,
-  });
-  if (verifyError) throw new Error("Unable to verify the fixture product.");
+  async function product(name: string, logo: string | null, verified: boolean) {
+    const productId = randomUUID();
+    const { error: saveError } = await maker.rpc("save_saas", {
+      p_id: productId,
+      p_name: name,
+      p_tagline: "A product created only by the local deletion test.",
+      p_description: "This is an isolated local integration fixture for deleting data.",
+      p_category: "Other",
+      p_website: "https://example.com",
+      p_logo_path: logo && `${id}/${logo}`,
+      p_launched_on: null,
+      p_share_mrr: true,
+      p_share_customers: false,
+      p_share_launch: false,
+    });
+    if (saveError) throw new Error("Unable to create a fixture product.");
+    if (!verified) return productId;
+    const { error: verifyError } = await admin.rpc("record_stripe_verification", {
+      p_saas_id: productId,
+      p_encrypted_key: "v1:e2e-fixture",
+      p_key_hint: "rk_test_…e2e0",
+      p_livemode: false,
+      p_mrr_cents: 4200,
+      p_customers: 2,
+      p_currencies: { usd: 4200 },
+      p_fx_date: null,
+      p_subscription_hashes: [createHash("sha256").update(`${name}-${run}`).digest("hex")],
+      p_history: null,
+      p_mrr_invoice_cents: null,
+      p_mrr_30d_ago_cents: null,
+    });
+    if (verifyError) throw new Error("Unable to verify a fixture product.");
+    return productId;
+  }
+  const ownLogo = await product(`Own logo ${run}`, "logo.png", true);
+  const sharedLogo = await product(`Shared logo ${run}`, "avatar.png", false);
+  const staying = await product(`Staying ${run}`, null, true);
   await maker.auth.signOut();
+  const files = async (folder: string) =>
+    ((await admin.storage.from("profile-images").list(folder)).data ?? []).map((f) => f.name);
 
   await login(page, leavingEmail, leavingPassword);
+  const productList = page.getByRole("list", { name: "Your products" }).getByRole("listitem");
+
+  // A product is deleted only when its name is typed exactly.
+  await page.goto(`/dashboard/saas/${ownLogo}`);
+  const confirmName = page.getByLabel(`Type “Own logo ${run}” to confirm`);
+  const deleteProduct = page.getByRole("button", { name: "Delete product" });
+  await confirmName.fill("Own logo");
+  await deleteProduct.click();
+  await expect(
+    page.getByRole("alert").filter({ hasText: "Type the product name exactly as shown" }),
+  ).toBeVisible();
+  expect((await admin.from("saas").select("id").eq("id", ownLogo)).data).toHaveLength(1);
+  await confirmName.fill(`Own logo ${run}`);
+  await deleteProduct.click();
+  await expect(page).toHaveURL(/\/dashboard\?deleted=1$/);
+  await expect(page.getByText("Product deleted.")).toBeVisible();
+  await expect(productList).toHaveCount(2);
+  expect((await admin.from("saas").select("id").eq("id", ownLogo)).data).toEqual([]);
+  for (const table of [
+    "saas_settings",
+    "public_metrics",
+    "revenue_snapshots",
+    "stripe_connections",
+  ]) {
+    const { data: rows, error: readError } = await admin
+      .from(table)
+      .select("saas_id")
+      .eq("saas_id", ownLogo);
+    expect(readError, table).toBeNull();
+    expect(rows, table).toEqual([]);
+  }
+  expect(await files(id)).toEqual(expect.arrayContaining(["avatar.png", "nested"]));
+  expect(await files(id)).not.toContain("logo.png");
+  await page.goto(`/saas/${ownLogo}`);
+  await expect(page.getByRole("heading", { name: "Page not found" })).toBeVisible();
+
+  // A logo that is also the profile photo stays in place.
+  await page.goto(`/dashboard/saas/${sharedLogo}`);
+  await page.getByLabel(`Type “Shared logo ${run}” to confirm`).fill(`Shared logo ${run}`);
+  await page.getByRole("button", { name: "Delete product" }).click();
+  await expect(page).toHaveURL(/\/dashboard\?deleted=1$/);
+  await expect(productList).toHaveCount(1);
+  expect(await files(id)).toContain("avatar.png");
+
   await page.goto("/dashboard/profile");
   const confirm = page.getByLabel("Confirm with your password");
   const remove = page.getByRole("button", { name: "Delete account" });
@@ -592,7 +646,7 @@ test("a maker deletes their account and everything in it", async ({ page }) => {
   ).toBeVisible();
   await expect(confirm).toHaveValue("");
   expect((await admin.auth.admin.getUserById(id)).error).toBeNull();
-  expect((await admin.storage.from("profile-images").list(id)).data).toHaveLength(3);
+  expect(await files(id)).toHaveLength(2);
 
   await confirm.fill(leavingPassword);
   await remove.click();
@@ -613,11 +667,8 @@ test("a maker deletes their account and everything in it", async ({ page }) => {
     expect(readError, table).toBeNull();
     expect(rows, table).toEqual([]);
   }
-  for (const folder of [id, `${id}/nested`]) {
-    const { data: files } = await admin.storage.from("profile-images").list(folder);
-    expect(files, folder).toEqual([]);
-  }
-  await page.goto(`/saas/${productId}`);
+  for (const folder of [id, `${id}/nested`]) expect(await files(folder), folder).toEqual([]);
+  await page.goto(`/saas/${staying}`);
   await expect(page.getByRole("heading", { name: "Page not found" })).toBeVisible();
   await page.goto("/dashboard");
   await expect(page).toHaveURL(/\/auth$/);

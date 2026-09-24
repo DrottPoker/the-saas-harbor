@@ -25,7 +25,7 @@ const sections = [
     body: [
       "Product details, maker profiles, logos and photos are public. Verified MRR, paying customers and launch date are private by default, each with its own sharing setting. Sharing MRR also shows its month-end history and 30-day growth; the full verification history is visible only to the maker. Information that was public before may already have been copied by others.",
       <>
-        Makers can delete their account, with everything in it, at any time. The{" "}
+        Makers can delete a product, or their whole account with everything in it, at any time. The{" "}
         <Link className="font-medium text-foreground underline" href="/privacy">
           privacy policy
         </Link>{" "}

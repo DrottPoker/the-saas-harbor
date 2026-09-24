@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { z } from "zod";
 import { SaasForm } from "@/components/forms";
 import { BackLink } from "@/components/back-link";
+import { DeleteProduct } from "@/components/delete-forms";
 import { PageHeader, Shell } from "@/components/shell";
 import { StripeConnectionSection } from "@/components/stripe-connection";
 import { STRIPE_CONNECTION_COLUMNS, type StripeConnection } from "@/lib/data";
@@ -74,6 +75,7 @@ export default async function EditSaas({ params, searchParams }: Props) {
           created={(await searchParams).created === "1"}
         />
       </div>
+      <DeleteProduct saasId={id} name={saas.data.name} connected={!!connection.data} />
     </Shell>
   );
 }
