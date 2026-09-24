@@ -7,6 +7,7 @@ const sizes = {
   md: [40, "size-10 text-sm"],
   lg: [56, "size-14 text-lg"],
   xl: [80, "size-20 text-2xl"],
+  "2xl": [128, "size-24 text-3xl sm:size-32 sm:text-4xl"],
 } as const;
 
 type Props = {

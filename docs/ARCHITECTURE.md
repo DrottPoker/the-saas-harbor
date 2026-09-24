@@ -4,21 +4,22 @@ One Next.js App Router application uses React, TypeScript, Tailwind CSS and shad
 
 ## Data and authorization
 
-| Resource                     | Public access                                           | Owner access                                                      |
-| ---------------------------- | ------------------------------------------------------- | ----------------------------------------------------------------- |
-| `profiles`                   | Name, bio, website, social link, image path             | Insert/update own row                                             |
-| `saas`                       | Product description, category, website, logo, owner     | Insert/update/delete own products                                 |
-| `saas_settings`              | None                                                    | Read/write own visibility choices and launch date                 |
-| `stripe_connections`         | None                                                    | Read own status and key hint; never the key                       |
-| `revenue_snapshots`          | None                                                    | Read own verified history; no writes                              |
-| `public_metrics`             | Current shared, verified figures and shared launch date | No writes; kept in sync by a trigger                              |
-| `private.*`                  | None (schema not exposed)                               | None                                                              |
-| `public_saas`, `leaderboard` | Public projection with `revenue_status`                 | Same public fields                                                |
-| `conversations`, `messages`  | None                                                    | Read conversations they are in; write only through `send_message` |
-| `conversation_reads`         | None                                                    | Read/write own read position                                      |
-| `blocks`                     | None                                                    | Read/insert/delete own blocks                                     |
-| `inbox`                      | None                                                    | Own conversations with the latest message and unread count        |
-| `profile-images`             | Image bytes are public                                  | Upload/delete only within own UUID prefix                         |
+| Resource                     | Public access                                                                  | Owner access                                                      |
+| ---------------------------- | ------------------------------------------------------------------------------ | ----------------------------------------------------------------- |
+| `profiles`                   | Name, headline, location, About, links, Open to, skills, photo and cover paths | Insert/update own row, through `save_profile`                     |
+| `profile_entries`            | Experience and education                                                       | Insert/delete own entries, through `save_profile`                 |
+| `saas`                       | Product description, category, website, logo, owner                            | Insert/update/delete own products                                 |
+| `saas_settings`              | None                                                                           | Read/write own visibility choices and launch date                 |
+| `stripe_connections`         | None                                                                           | Read own status and key hint; never the key                       |
+| `revenue_snapshots`          | None                                                                           | Read own verified history; no writes                              |
+| `public_metrics`             | Current shared, verified figures and shared launch date                        | No writes; kept in sync by a trigger                              |
+| `private.*`                  | None (schema not exposed)                                                      | None                                                              |
+| `public_saas`, `leaderboard` | Public projection with `revenue_status`                                        | Same public fields                                                |
+| `conversations`, `messages`  | None                                                                           | Read conversations they are in; write only through `send_message` |
+| `conversation_reads`         | None                                                                           | Read/write own read position                                      |
+| `blocks`                     | None                                                                           | Read/insert/delete own blocks                                     |
+| `inbox`                      | None                                                                           | Own conversations with the latest message and unread count        |
+| `profile-images`             | Image bytes are public                                                         | Upload/delete only within own UUID prefix                         |
 
 Every exposed table has RLS and explicit grants. Views use `security_invoker = true`. Composite foreign keys prevent attaching another owner's data to a product. The invoker `save_saas` RPC saves product details, visibility choices and launch date; it accepts no figures. Verified figures are written only by trusted server code with the service-role key, through `record_stripe_verification`, which is executable by `service_role` alone.
 
@@ -59,6 +60,15 @@ Makers delete a single product at the bottom of its editor by typing its name. `
 The pgTAP suite covers the recent-password requirement, who may delete a product, the complete removal and that other makers are untouched. The browser test covers both flows, including a logo that is also the profile photo and images in a subfolder.
 
 The privacy policy is `src/app/privacy/page.tsx`. The operator's name and contact address come from `src/lib/legal.ts`; while they are unset, the page says it is a draft. Anything new that stores personal data must be described there and removed by account deletion, and product-scoped tables need an `on delete cascade` foreign key to `saas`.
+
+## Maker profiles
+
+Profiles are personal, in the style of LinkedIn, and entirely public. `profiles` holds the name, a headline, a location, About (the `bio` column, up to 2,000 characters), links to a website, LinkedIn, GitHub, X and one other site, what the maker is open to, skills, and paths to the photo and a cover image in the same `profile-images` bucket. `profile_entries` holds experience and education with months stored as the first day of the month; an entry without an end month is current.
+
+- `save_profile` saves the whole profile and replaces its entries in one transaction. It runs with the maker's rights, so RLS decides and a maker can only write their own profile. A trigger caps a profile at 40 entries however they are written.
+- The database repeats the form's rules: Open to accepts a fixed list (`OPEN_TO` in `src/lib/profile.ts`), skills are at most 20 unique labels of up to 40 characters (checked by `private.valid_labels`), and LinkedIn, GitHub and X links must use https and point to their own site. `profileSchema` in `src/lib/domain.ts` gives the readable messages first.
+- The editor (`src/components/profile/profile-form.tsx`) keeps experience, education and Open to in React state and sends the entries as JSON. It submits from `onSubmit` rather than the `action` prop, because React resets a form after its action, which would show stale values in controlled fields next to the state that is sent. File fields are cleared after a successful save instead.
+- The public page (`src/app/makers/[id]/page.tsx`) shows the cover and photo, headline, location, links with icons, then Open to, About, products, experience, education and skills. Experience lists current roles first with LinkedIn-style durations. The owner sees Edit profile and a prompt for missing sections; everyone else sees Send message.
 
 ## Messages
 

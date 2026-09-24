@@ -244,6 +244,120 @@ const makers = [
   },
 ];
 
+// Personal profile details. Companies, schools and link handles are fictional.
+const personal = {
+  lena: {
+    headline: "Building finance tools for small teams",
+    location: "London, United Kingdom",
+    about:
+      "I build finance tools for small teams. Before Ledgerloop I led product at a payments startup, where I watched finance teams close the books in spreadsheets every month.\n\nLedgerloop and Paperweight are my attempt to make that week calmer. I am always happy to talk about pricing, onboarding and selling to finance teams.",
+    openTo: ["feedback", "mentoring"],
+    skills: ["Product management", "Payments", "Accounting workflows", "Pricing"],
+    linkedin: "https://www.linkedin.com/in/harbor-demo-lena",
+    entries: [
+      ["experience", "Founder", "Ledgerloop", "2022-03", null],
+      ["experience", "Head of Product", "Northpay", "2018-06", "2022-02"],
+      ["education", "MSc Finance", "University of Northgate", "2014-09", "2016-06"],
+    ],
+  },
+  tomas: {
+    headline: "Small tools for people who live in SQL",
+    location: "Valencia, Spain",
+    about:
+      "Data engineer for ten years, now building Querybird and Shiplog. I like tools that answer a question in one screen.",
+    openTo: ["collaboration", "freelance"],
+    skills: ["PostgreSQL", "Data engineering", "Python", "TypeScript"],
+    github: "https://github.com/harbor-demo-tomas",
+    entries: [
+      ["experience", "Founder", "Querybird", "2023-05", null],
+      ["experience", "Data Engineer", "Brightline Analytics", "2017-09", "2023-04"],
+      ["education", "BSc Computer Science", "University of the Levante", "2012-09", "2016-06"],
+    ],
+  },
+  priya: {
+    headline: "Solo founder, bootstrapped and profitable",
+    location: "Toronto, Canada",
+    about:
+      "I run Tallyform on my own and write about what it takes to grow a product without outside money. Dialtone is my newest experiment.",
+    openTo: ["mentoring", "feedback"],
+    skills: ["Bootstrapping", "No-code", "Payments", "Writing"],
+    x: "https://x.com/harbor_demo_priya",
+    entries: [
+      ["experience", "Founder", "Tallyform", "2021-09", null],
+      ["experience", "Founder", "Dialtone", "2025-02", null],
+      ["experience", "Software Engineer", "Formwise", "2016-01", "2021-08"],
+    ],
+  },
+  mei: {
+    headline: "Designer who codes",
+    location: "Singapore",
+    about:
+      "Product designer turned maker. Framecast turns screenshots into launch videos, and Paletteer builds accessible color systems.",
+    openTo: ["cofounder", "collaboration"],
+    skills: ["Product design", "Design systems", "React", "Motion design"],
+    linkedin: "https://www.linkedin.com/in/harbor-demo-mei",
+    x: "https://x.com/harbor_demo_mei",
+    entries: [
+      ["experience", "Founder", "Framecast", "2023-11", null],
+      ["experience", "Senior Product Designer", "Studio Lumen", "2019-03", "2023-10"],
+      ["education", "BA Interaction Design", "Harbour Design Academy", "2014-09", "2018-06"],
+    ],
+  },
+  jonas: {
+    headline: "Growth marketer turned founder",
+    location: "Gothenburg, Sweden",
+    about:
+      "I spent years helping other companies grow before building Sendwise, a deliverability tool for small sales teams.",
+    openTo: ["cofounder", "hiring"],
+    skills: ["Growth", "Email deliverability", "SEO", "Copywriting"],
+    linkedin: "https://www.linkedin.com/in/harbor-demo-jonas",
+    entries: [
+      ["experience", "Founder", "Sendwise", "2022-10", null],
+      ["experience", "Growth Lead", "Kustbolaget", "2018-04", "2022-09"],
+    ],
+  },
+  sam: {
+    headline: "Boring infrastructure that never pages anyone",
+    location: "Manchester, United Kingdom",
+    about:
+      "Site reliability engineer by trade. Beacon is the status page and uptime tool I wanted during a decade of on-call rotations.",
+    openTo: ["freelance", "feedback"],
+    skills: ["Go", "Kubernetes", "Observability", "PostgreSQL"],
+    github: "https://github.com/harbor-demo-sam",
+    entries: [
+      ["experience", "Founder", "Beacon", "2022-06", null],
+      ["experience", "Site Reliability Engineer", "Parcelworks", "2015-05", "2022-05"],
+    ],
+  },
+  aisha: {
+    headline: "Tooling for production LLM apps",
+    location: "Berlin, Germany",
+    about:
+      "ML engineer building the unglamorous tooling around language models: versioned prompts, evaluations and rollbacks.",
+    openTo: ["cofounder", "investment"],
+    skills: ["Machine learning", "LLM evaluation", "Python", "TypeScript"],
+    github: "https://github.com/harbor-demo-aisha",
+    linkedin: "https://www.linkedin.com/in/harbor-demo-aisha",
+    entries: [
+      ["experience", "Founder", "Promptvault", "2024-02", null],
+      ["experience", "Machine Learning Engineer", "Aster Labs", "2020-01", "2024-01"],
+      ["education", "MSc Machine Learning", "University of Northgate", "2017-10", "2019-09"],
+    ],
+  },
+  oskar: {
+    headline: "Software for the trades I know",
+    location: "Malmö, Sweden",
+    about:
+      "Twelve years in restaurant kitchens taught me what shift planning should feel like. Rostra is that tool.",
+    openTo: ["feedback", "acquisition"],
+    skills: ["Restaurant operations", "Scheduling", "Ruby on Rails"],
+    entries: [
+      ["experience", "Founder", "Rostra", "2023-08", null],
+      ["experience", "Head Chef", "Bistro Norra", "2012-03", "2021-12"],
+    ],
+  },
+};
+
 function describe(product) {
   return `${product.tagline} ${product.name} started as a side project and is now used by teams who wanted something simpler than the incumbents. It is built and supported by its founder, with a public roadmap and a changelog updated every few weeks.`;
 }
@@ -382,12 +496,29 @@ for (const maker of makers) {
   const userId = created.user.id;
   const client = createClient(local.url, local.publishableKey, options);
   await client.auth.signInWithPassword({ email, password: PASSWORD });
-  const { error: profileError } = await client.from("profiles").upsert({
-    id: userId,
-    name: maker.name,
-    bio: maker.bio,
-    website: maker.website ?? "",
-    social_url: "",
+  const details = personal[maker.key] ?? {};
+  const { error: profileError } = await client.rpc("save_profile", {
+    p_name: maker.name,
+    p_headline: details.headline ?? "",
+    p_location: details.location ?? "",
+    p_bio: details.about ?? maker.bio,
+    p_website: maker.website ?? "",
+    p_linkedin_url: details.linkedin ?? "",
+    p_github_url: details.github ?? "",
+    p_x_url: details.x ?? "",
+    p_social_url: "",
+    p_open_to: details.openTo ?? [],
+    p_skills: details.skills ?? [],
+    p_avatar_path: null,
+    p_cover_path: null,
+    p_entries: (details.entries ?? []).map(([kind, title, organization, start, end]) => ({
+      kind,
+      title,
+      organization,
+      starts_on: `${start}-01`,
+      ends_on: end && `${end}-01`,
+      description: "",
+    })),
   });
   if (profileError) throw new Error(`Could not save the profile for ${email}.`);
 

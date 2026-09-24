@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 import { z } from "zod";
 import { ArrowUpRight, BadgeCheck } from "lucide-react";
 import { parseHistory } from "@/lib/charts";
-import { publicSaas, type RevenueStatus } from "@/lib/data";
+import { publicProfile, publicSaas, type RevenueStatus } from "@/lib/data";
 import { currentUser } from "@/lib/supabase/server";
 import { formatDate, formatUsd } from "@/lib/domain";
 import { cn } from "@/lib/utils";
@@ -72,6 +72,7 @@ export default async function SaasProfile({ params }: Props) {
   if (!z.uuid().safeParse(id).success) notFound();
   const [item, viewer] = await Promise.all([publicSaas(id), currentUser()]);
   if (!item) notFound();
+  const maker = item.owner_id ? await publicProfile(item.owner_id) : null;
   const name = item.name ?? "SaaS";
   const site = hostname(item.website);
   const status = (item.revenue_status ?? "unverified") as RevenueStatus;
@@ -158,12 +159,16 @@ export default async function SaasProfile({ params }: Props) {
         <aside className="grid content-start gap-4">
           <div className="rounded-xl border bg-surface p-5">
             <h2 className="text-sm text-muted-foreground">Maker</h2>
-            <Link
-              href={`/makers/${item.owner_id}`}
-              className="mt-3 flex items-center gap-3 hover:underline"
-            >
+            <Link href={`/makers/${item.owner_id}`} className="group mt-3 flex items-center gap-3">
               <PersonAvatar path={item.owner_avatar_path} name={item.owner_name ?? "Maker"} />
-              <span className="font-medium">{item.owner_name}</span>
+              <span className="min-w-0">
+                <span className="block font-medium group-hover:underline">{item.owner_name}</span>
+                {maker?.headline && (
+                  <span className="line-clamp-2 text-sm text-muted-foreground">
+                    {maker.headline}
+                  </span>
+                )}
+              </span>
             </Link>
             {item.owner_id && (
               <SendMessageButton

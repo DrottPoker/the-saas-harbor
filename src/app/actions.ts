@@ -4,6 +4,7 @@ import { redirect, RedirectType } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { deleteAccount } from "@/lib/account";
+import { parseSkills } from "@/lib/profile";
 import { profileSchema, safeNext, saasSchema, type ActionState } from "@/lib/domain";
 import { requireUser, serverClient } from "@/lib/supabase/server";
 import { uploadImage } from "@/lib/upload";
@@ -94,16 +95,12 @@ export async function deleteAccountAction(
 
 type Client = Awaited<ReturnType<typeof serverClient>>;
 
-// A logo is removed only when it is in the maker's own folder and neither their profile photo nor
-// another of their products uses the same file.
+// A logo is removed only when it is in the maker's own folder and neither their profile photo,
+// their cover image nor another of their products uses the same file.
 async function logoIsUnused(client: Client, owner: string, path: string, saasId: string) {
   if (!path.startsWith(`${owner}/`)) return false;
   const [profile, products] = await Promise.all([
-    client
-      .from("profiles")
-      .select("id", { count: "exact", head: true })
-      .eq("id", owner)
-      .eq("avatar_path", path),
+    client.from("profiles").select("avatar_path, cover_path").eq("id", owner).maybeSingle(),
     client
       .from("saas")
       .select("id", { count: "exact", head: true })
@@ -113,7 +110,8 @@ async function logoIsUnused(client: Client, owner: string, path: string, saasId:
   ]);
   if (profile.error || products.error)
     throw new Error("The SaaS could not be deleted. Please try again.");
-  return !profile.count && !products.count;
+  const profileImages = [profile.data?.avatar_path, profile.data?.cover_path];
+  return !profileImages.includes(path) && !products.count;
 }
 
 export async function deleteSaasAction(
@@ -160,30 +158,76 @@ export async function deleteSaasAction(
   redirect("/dashboard?deleted=1", RedirectType.replace);
 }
 
+// Experience and education arrive as JSON from the entries editor.
+function entriesFrom(form: FormData) {
+  try {
+    const entries: unknown = JSON.parse(value(form, "entries") || "[]");
+    return Array.isArray(entries) ? entries : null;
+  } catch {
+    return null;
+  }
+}
+
 export async function saveProfile(_state: ActionState, form: FormData): Promise<ActionState> {
   const { user, client } = await requireUser();
-  let uploaded: string | null = null;
+  const uploaded: string[] = [];
   try {
-    const fields = profileSchema.parse(
-      Object.fromEntries(
-        ["name", "bio", "website", "social_url"].map((key) => [key, value(form, key)]),
+    const entries = entriesFrom(form);
+    if (!entries) return { error: "Your experience and education could not be read. Try again." };
+    const fields = profileSchema.parse({
+      ...Object.fromEntries(
+        [
+          "name",
+          "headline",
+          "location",
+          "bio",
+          "website",
+          "linkedin_url",
+          "github_url",
+          "x_url",
+          "social_url",
+        ].map((key) => [key, value(form, key)]),
       ),
-    );
+      open_to: form.getAll("open_to").map(String),
+      skills: parseSkills(value(form, "skills")),
+      entries,
+    });
     const { data: existing, error: readError } = await client
       .from("profiles")
-      .select("avatar_path")
+      .select("avatar_path, cover_path")
       .eq("id", user.id)
       .maybeSingle();
     if (readError) return { error: "Your profile could not be loaded. Please try again." };
-    uploaded = await uploadImage(client, user.id, form.get("image"));
-    const avatar_path =
-      uploaded || (form.has("remove_image") ? null : (existing?.avatar_path ?? null));
-    const { error } = await client
-      .from("profiles")
-      .upsert({ ...fields, id: user.id, avatar_path, updated_at: new Date().toISOString() });
+    const avatar = await uploadImage(client, user.id, form.get("image"));
+    if (avatar) uploaded.push(avatar);
+    const cover = await uploadImage(client, user.id, form.get("cover"));
+    if (cover) uploaded.push(cover);
+    const { error } = await client.rpc("save_profile", {
+      p_name: fields.name,
+      p_headline: fields.headline,
+      p_location: fields.location,
+      p_bio: fields.bio,
+      p_website: fields.website,
+      p_linkedin_url: fields.linkedin_url,
+      p_github_url: fields.github_url,
+      p_x_url: fields.x_url,
+      p_social_url: fields.social_url,
+      p_open_to: fields.open_to,
+      p_skills: fields.skills,
+      p_avatar_path: avatar || (form.has("remove_image") ? null : (existing?.avatar_path ?? null)),
+      p_cover_path: cover || (form.has("remove_cover") ? null : (existing?.cover_path ?? null)),
+      p_entries: fields.entries.map((entry) => ({
+        kind: entry.kind,
+        title: entry.title,
+        organization: entry.organization,
+        starts_on: `${entry.start}-01`,
+        ends_on: entry.end && `${entry.end}-01`,
+        description: entry.description,
+      })),
+    });
     if (error) throw new Error("Your profile could not be saved. Please try again.");
   } catch (error) {
-    if (uploaded) await client.storage.from("profile-images").remove([uploaded]);
+    if (uploaded.length) await client.storage.from("profile-images").remove(uploaded);
     return { error: message(error) };
   }
   revalidatePath("/", "layout");

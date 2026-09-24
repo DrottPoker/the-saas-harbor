@@ -6,7 +6,11 @@ type Nullable<T, K extends keyof T> = Omit<T, K> & { [P in K]: T[P] | null };
 // PostgreSQL function argument nullability is not included in generated types.
 export type Database = Omit<GeneratedDatabase, "public"> & {
   public: Omit<GeneratedDatabase["public"], "Functions"> & {
-    Functions: Omit<Functions, "save_saas" | "record_stripe_verification"> & {
+    Functions: Omit<Functions, "save_saas" | "record_stripe_verification" | "save_profile"> & {
+      save_profile: {
+        Args: Nullable<Functions["save_profile"]["Args"], "p_avatar_path" | "p_cover_path">;
+        Returns: undefined;
+      };
       save_saas: {
         Args: Nullable<Functions["save_saas"]["Args"], "p_logo_path" | "p_launched_on">;
         Returns: string;

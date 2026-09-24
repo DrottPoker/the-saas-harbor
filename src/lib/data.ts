@@ -69,6 +69,13 @@ export const publicProfile = cache(async (id: string) => {
   if (error) throw new Error("This maker could not be loaded.");
   return data;
 });
+export const publicProfileEntries = cache(async (id: string) => {
+  const client = publicClient();
+  if (!client) throw new Error("Supabase is not configured.");
+  const { data, error } = await client.from("profile_entries").select("*").eq("profile_id", id);
+  if (error) throw new Error("This maker could not be loaded.");
+  return data;
+});
 export function safePage(value: string | undefined) {
   return Math.min(10000, Math.max(1, Number.parseInt(value || "1", 10) || 1));
 }

@@ -3,4 +3,4 @@
 // until then the policy says it is a draft.
 export const operator = null as { name: string; email: string } | null;
 
-export const privacyUpdated = "September 24, 2026";
+export const privacyUpdated = "September 25, 2026";

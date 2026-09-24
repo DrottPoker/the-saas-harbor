@@ -205,20 +205,45 @@ test("registration, email confirmation, profile and SaaS editing, storage, priva
   userIds.push(firstUserId);
   await page.goto("/dashboard/profile");
   await page.getByLabel("Name", { exact: true }).fill("Local Test Maker");
-  await page.getByLabel("Bio").fill("An isolated maker profile for browser verification.");
+  await page.getByLabel("Headline").fill("Builds test fixtures for a living");
+  await page.getByLabel("Location").fill("Gothenburg, Sweden");
+  await page.getByLabel("About").fill("An isolated maker profile for browser verification.");
+  await page.getByLabel("Product feedback").check();
+  await page.getByLabel("Skills").fill("Testing, Playwright, testing");
+  await page.getByRole("button", { name: "Add experience" }).click();
+  const role = page.getByRole("group", { name: "Experience 1" });
+  await role.getByLabel("Title").fill("Test engineer");
+  await role.getByLabel("Company").fill("Harbor QA");
+  await role.getByLabel("Start month").selectOption("03");
+  await role.getByLabel("Start year").selectOption("2021");
+  await role.getByLabel("I work here now").check();
   await page.getByLabel("Website", { exact: true }).fill("https://example.com");
+  // Each link must point to its own site; everything typed so far stays in the form.
+  await page.getByLabel("LinkedIn").fill("https://evil.example/in/local-test-maker");
+  const save = page.getByRole("button", { name: "Save profile" });
+  await save.click();
+  await expect(
+    page.getByRole("alert").filter({ hasText: "Use your LinkedIn address" }),
+  ).toBeVisible();
+  await expect(page.getByLabel("Headline")).toHaveValue("Builds test fixtures for a living");
+  await expect(page.getByLabel("Product feedback")).toBeChecked();
+  await expect(role.getByLabel("Title")).toHaveValue("Test engineer");
+  await page.getByLabel("LinkedIn").fill("https://www.linkedin.com/in/local-test-maker");
   await page.getByLabel("Upload photo").setInputFiles({
     name: "invalid.png",
     mimeType: "image/png",
     buffer: Buffer.from("not an image"),
   });
-  await page.getByRole("button", { name: "Save profile" }).click();
+  await save.click();
   await expect(page.getByRole("alert").filter({ hasText: "Choose a valid PNG" })).toBeVisible();
   await expect(page.getByLabel("Name", { exact: true })).toHaveValue("Local Test Maker");
   await page
     .getByLabel("Upload photo")
     .setInputFiles({ name: "avatar.png", mimeType: "image/png", buffer: png });
-  await page.getByRole("button", { name: "Save profile" }).click();
+  await page
+    .getByLabel("Upload cover image")
+    .setInputFiles({ name: "cover.png", mimeType: "image/png", buffer: png });
+  await save.click();
   await expect(page.getByText("Profile saved.")).toBeVisible();
   await page.goto(`/makers/${firstUserId}`);
   await expect(page.getByRole("heading", { name: "Local Test Maker", exact: true })).toBeVisible();
@@ -228,6 +253,25 @@ test("registration, email confirmation, profile and SaaS editing, storage, priva
   expect(
     await image.evaluate((img: HTMLImageElement) => img.complete && img.naturalWidth > 0),
   ).toBe(true);
+  // The personal profile shows everything that was saved, and its owner can edit it from here.
+  await expect(page.getByText("Builds test fixtures for a living")).toBeVisible();
+  await expect(page.getByText("Gothenburg, Sweden")).toBeVisible();
+  await expect(
+    page.getByRole("region", { name: "Open to" }).getByText("Product feedback"),
+  ).toBeVisible();
+  const experience = page.getByRole("region", { name: "Experience" });
+  await expect(experience.getByText("Test engineer")).toBeVisible();
+  await expect(experience.getByText(/^Mar 2021 - Present · /)).toBeVisible();
+  await expect(page.getByRole("region", { name: "Skills" }).getByRole("listitem")).toHaveText([
+    "Testing",
+    "Playwright",
+  ]);
+  await expect(page.getByRole("link", { name: "LinkedIn" })).toHaveAttribute(
+    "href",
+    "https://www.linkedin.com/in/local-test-maker",
+  );
+  await expect(page.getByRole("link", { name: "Edit profile" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Send message" })).toHaveCount(0);
   await page.goto("/dashboard/saas/new");
   await fillProduct(page, productName);
   await page.getByLabel("Upload logo").setInputFiles({
@@ -417,7 +461,14 @@ test("registration, email confirmation, profile and SaaS editing, storage, priva
   ).toBe(401);
   // The signed-in header carries extra links, so check it separately on a phone-sized screen.
   await page.setViewportSize({ width: 390, height: 844 });
-  for (const path of ["/", "/dashboard", `/dashboard/saas/${productId}`, `/saas/${productId}`]) {
+  for (const path of [
+    "/",
+    "/dashboard",
+    "/dashboard/profile",
+    `/dashboard/saas/${productId}`,
+    `/saas/${productId}`,
+    `/makers/${firstUserId}`,
+  ]) {
     await page.goto(path);
     await expectNoHorizontalScroll(page);
   }

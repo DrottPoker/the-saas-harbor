@@ -79,8 +79,8 @@ export default async function Dashboard({
           <h2 className="font-semibold">{profile?.name ?? "Set up your profile"}</h2>
           <p className="truncate text-sm text-muted-foreground">
             {profile
-              ? profile.bio || "No bio yet."
-              : "Add your name and a short bio. Your maker profile is public."}
+              ? profile.headline || "No headline yet. Add one so makers know what you do."
+              : "Add your name and a headline. Your maker profile is public."}
           </p>
         </div>
         <div className="flex gap-2">

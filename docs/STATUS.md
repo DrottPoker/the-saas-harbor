@@ -44,10 +44,10 @@ The browser tests no longer assume an empty database, check for horizontal scrol
 
 ## Verified 2026-09-24
 
-- `npm run check`: Prettier, ESLint with zero warnings, TypeScript, 73 unit tests: Stripe MRR, invoice history, keys and encryption, chart models, message threads and sign-in continuation, and the full Stripe read path against the fake Stripe server.
+- `npm run check`: Prettier, ESLint with zero warnings, TypeScript, 80 unit tests: Stripe MRR, invoice history, keys and encryption, chart models, message threads, profile dates and input, sign-in continuation, and the full Stripe read path against the fake Stripe server.
 - `npm run build`: Next.js 16.3.5 production build.
-- `npm run test:db`: 98 pgTAP assertions, stable over repeated runs. `supabase db diff` reports no drift between the local database and the migrations, and `supabase db lint` reports no errors.
-- `npm run test:e2e`: 7 Chromium integration tests with Axe scans in both themes (including the revenue charts, the privacy policy, the delete sections and messaging), against local Supabase, local Realtime and a fake Stripe API, passing three times in a row.
+- `npm run test:db`: 113 pgTAP assertions, stable over repeated runs. `supabase db diff` reports no drift between the local database and the migrations, and `supabase db lint` reports no errors.
+- `npm run test:e2e`: 7 Chromium integration tests with Axe scans in both themes (including the revenue charts, the privacy policy, the delete sections, messaging and personal profiles), against local Supabase, local Realtime and a fake Stripe API, passing twice in a row.
 - The CI workflow has not run on GitHub yet. Its commands were run locally with the same Supabase service exclusions.
 
 ## Verified revenue through Stripe 2026-09-24
@@ -66,6 +66,10 @@ Verified products now show how their revenue developed. Decisions by the project
 - Leaderboard: a 12-month trend line (from 1024 px wide) and the 30-day growth under each MRR figure (at every width).
 - Makers need Invoices: Read on the restricted key. Keys created before this change still verify MRR; the editor tells the maker to replace the key to get history.
 - Migration `20260924180000_revenue_history.sql` stores history and the growth basis on each snapshot and projects them publicly only when MRR is shared and fresh (pgTAP covers shared, hidden and stale cases).
+
+## Personal profiles 2026-09-25
+
+Maker profiles are now personal, in the style of LinkedIn, as the project owner asked: a cover image behind the photo, a headline, a location, a longer About, experience and education with dates and durations, skills, an Open to box (co-founder, collaborations, feedback, mentoring, investment, hiring, freelance work, acquisition offers) and links to a website, LinkedIn, GitHub and X with icons. Headlines also show on the dashboard and next to the maker on product pages. Existing social links that pointed to LinkedIn, GitHub or X moved to their own fields. The demo data has full profiles. The privacy policy lists the new fields.
 
 ## Messages 2026-09-24
 

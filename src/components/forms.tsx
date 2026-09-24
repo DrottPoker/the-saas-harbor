@@ -3,9 +3,9 @@
 import { useEditorAction } from "./use-editor-action";
 import { useFormStatus } from "react-dom";
 import Link from "next/link";
-import { authenticate, saveProfile, saveSaas } from "@/app/actions";
+import { authenticate, saveSaas } from "@/app/actions";
 import { categories, type ActionState } from "@/lib/domain";
-import type { Profile, Saas, SaasSettings } from "@/lib/data";
+import type { Saas, SaasSettings } from "@/lib/data";
 import { cn } from "@/lib/utils";
 import { PersonAvatar, ProductLogo } from "./avatars";
 import { Notice } from "./shell";
@@ -19,15 +19,19 @@ export function Submit({
   variant,
   size,
   pendingLabel = "Saving...",
+  pending: busy,
   children,
 }: {
   className?: string;
   variant?: React.ComponentProps<typeof Button>["variant"];
   size?: React.ComponentProps<typeof Button>["size"];
   pendingLabel?: string;
+  /** For forms submitted from onSubmit, which useFormStatus cannot see. */
+  pending?: boolean;
   children: React.ReactNode;
 }) {
-  const { pending } = useFormStatus();
+  const status = useFormStatus();
+  const pending = busy ?? status.pending;
   return (
     <Button type="submit" variant={variant} size={size} disabled={pending} className={className}>
       {pending ? pendingLabel : children}
@@ -63,7 +67,7 @@ export function Field({
     </div>
   );
 }
-function Share({
+export function Share({
   name,
   label,
   checked,
@@ -99,7 +103,7 @@ export function Section({
     </section>
   );
 }
-function ImageField({
+export function ImageField({
   label,
   current,
   name,
@@ -211,76 +215,6 @@ export function AuthForm({
           </Link>
         )}
       </p>
-    </form>
-  );
-}
-
-export function ProfileForm({ profile }: { profile: Profile | null }) {
-  const [state, action] = useEditorAction(saveProfile);
-  return (
-    <form action={action}>
-      <Section title="Profile" description="Shown on your public maker page.">
-        <Field name="name" label="Name">
-          <Input
-            id="name"
-            name="name"
-            required
-            minLength={2}
-            maxLength={60}
-            autoComplete="name"
-            defaultValue={state.values?.name ?? profile?.name}
-          />
-        </Field>
-        <Field name="bio" label="Bio" hint="Up to 400 characters.">
-          <Textarea
-            id="bio"
-            name="bio"
-            maxLength={400}
-            rows={4}
-            defaultValue={state.values?.bio ?? profile?.bio}
-            placeholder="What you build and why."
-          />
-        </Field>
-      </Section>
-      <Section title="Links" description="Optional. Use full https:// addresses.">
-        <Field name="website" label="Website">
-          <Input
-            id="website"
-            name="website"
-            type="url"
-            maxLength={500}
-            defaultValue={state.values?.website ?? profile?.website}
-            placeholder="https://"
-          />
-        </Field>
-        <Field name="social_url" label="Social profile">
-          <Input
-            id="social_url"
-            name="social_url"
-            type="url"
-            maxLength={500}
-            defaultValue={state.values?.social_url ?? profile?.social_url}
-            placeholder="https://"
-          />
-        </Field>
-      </Section>
-      <Section title="Photo" description="A square photo works best.">
-        <ImageField
-          label="Upload photo"
-          current={profile?.avatar_path}
-          name={profile?.name ?? ""}
-          person
-        />
-      </Section>
-      <div className="grid gap-4">
-        <Feedback state={state} />
-        <Actions>
-          <Button asChild variant="ghost">
-            <Link href="/dashboard">Cancel</Link>
-          </Button>
-          <Submit>Save profile</Submit>
-        </Actions>
-      </div>
     </form>
   );
 }

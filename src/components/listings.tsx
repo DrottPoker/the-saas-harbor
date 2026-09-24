@@ -131,9 +131,17 @@ export function ListingCard({ item, meta }: { item: Listing; meta: "maker" | "jo
   );
 }
 
-export function ListingGrid({ items, meta }: { items: Listing[]; meta: "maker" | "joined" }) {
+export function ListingGrid({
+  items,
+  meta,
+  columns = 3,
+}: {
+  items: Listing[];
+  meta: "maker" | "joined";
+  columns?: 2 | 3;
+}) {
   return (
-    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+    <div className={cn("grid gap-4 sm:grid-cols-2", columns === 3 && "lg:grid-cols-3")}>
       {items.map((item) => (
         <ListingCard key={item.id} item={item} meta={meta} />
       ))}

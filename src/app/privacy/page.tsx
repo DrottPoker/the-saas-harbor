@@ -81,7 +81,8 @@ export default function Privacy() {
             </li>
             <li>
               <strong className="font-medium text-foreground">Maker profile.</strong> Your name,
-              bio, website, social profile link and photo.
+              headline, location, About text, experience and education, skills, what you are open
+              to, links, photo and cover image. You decide what to fill in.
             </li>
             <li>
               <strong className="font-medium text-foreground">Products.</strong> Name, tagline,
