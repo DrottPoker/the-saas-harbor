@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { SiteFooter, SiteHeader } from "@/components/site-chrome";
-import { currentUser } from "@/lib/supabase/server";
+import { currentUser, unreadMessageCount } from "@/lib/supabase/server";
 import { themeScript } from "@/lib/theme";
 import "./globals.css";
 
@@ -19,6 +19,7 @@ export const metadata: Metadata = {
 export const dynamic = "force-dynamic";
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const user = await currentUser();
+  const unread = user ? await unreadMessageCount() : 0;
   return (
     <html lang="en" className={`${sans.variable} ${mono.variable}`} suppressHydrationWarning>
       <head>
@@ -31,7 +32,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         >
           Skip to content
         </a>
-        <SiteHeader user={user} />
+        <SiteHeader user={user} unread={unread} />
         <main id="main" className="flex-1">
           {children}
         </main>

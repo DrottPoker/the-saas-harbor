@@ -4,17 +4,21 @@ One Next.js App Router application uses React, TypeScript, Tailwind CSS and shad
 
 ## Data and authorization
 
-| Resource                     | Public access                                           | Owner access                                      |
-| ---------------------------- | ------------------------------------------------------- | ------------------------------------------------- |
-| `profiles`                   | Name, bio, website, social link, image path             | Insert/update own row                             |
-| `saas`                       | Product description, category, website, logo, owner     | Insert/update/delete own products                 |
-| `saas_settings`              | None                                                    | Read/write own visibility choices and launch date |
-| `stripe_connections`         | None                                                    | Read own status and key hint; never the key       |
-| `revenue_snapshots`          | None                                                    | Read own verified history; no writes              |
-| `public_metrics`             | Current shared, verified figures and shared launch date | No writes; kept in sync by a trigger              |
-| `private.*`                  | None (schema not exposed)                               | None                                              |
-| `public_saas`, `leaderboard` | Public projection with `revenue_status`                 | Same public fields                                |
-| `profile-images`             | Image bytes are public                                  | Upload/delete only within own UUID prefix         |
+| Resource                     | Public access                                           | Owner access                                                      |
+| ---------------------------- | ------------------------------------------------------- | ----------------------------------------------------------------- |
+| `profiles`                   | Name, bio, website, social link, image path             | Insert/update own row                                             |
+| `saas`                       | Product description, category, website, logo, owner     | Insert/update/delete own products                                 |
+| `saas_settings`              | None                                                    | Read/write own visibility choices and launch date                 |
+| `stripe_connections`         | None                                                    | Read own status and key hint; never the key                       |
+| `revenue_snapshots`          | None                                                    | Read own verified history; no writes                              |
+| `public_metrics`             | Current shared, verified figures and shared launch date | No writes; kept in sync by a trigger                              |
+| `private.*`                  | None (schema not exposed)                               | None                                                              |
+| `public_saas`, `leaderboard` | Public projection with `revenue_status`                 | Same public fields                                                |
+| `conversations`, `messages`  | None                                                    | Read conversations they are in; write only through `send_message` |
+| `conversation_reads`         | None                                                    | Read/write own read position                                      |
+| `blocks`                     | None                                                    | Read/insert/delete own blocks                                     |
+| `inbox`                      | None                                                    | Own conversations with the latest message and unread count        |
+| `profile-images`             | Image bytes are public                                  | Upload/delete only within own UUID prefix                         |
 
 Every exposed table has RLS and explicit grants. Views use `security_invoker = true`. Composite foreign keys prevent attaching another owner's data to a product. The invoker `save_saas` RPC saves product details, visibility choices and launch date; it accepts no figures. Verified figures are written only by trusted server code with the service-role key, through `record_stripe_verification`, which is executable by `service_role` alone.
 
@@ -56,6 +60,16 @@ The pgTAP suite covers the recent-password requirement, who may delete a product
 
 The privacy policy is `src/app/privacy/page.tsx`. The operator's name and contact address come from `src/lib/legal.ts`; while they are unset, the page says it is a draft. Anything new that stores personal data must be described there and removed by account deletion, and product-scoped tables need an `on delete cascade` foreign key to `saas`.
 
+## Messages
+
+Two makers share one conversation (`conversations`, with the participants in a fixed order and a unique pair), created with the first message. Only the two participants can read it, through RLS on `conversations` and `messages`. Everything references `profiles` with `on delete cascade`, so deleting either account deletes the whole conversation, for both makers.
+
+- Writing: `public.send_message(recipient, body)` is the only write path. It is SECURITY DEFINER because makers cannot write these tables, always uses `auth.uid()` as the sender, trims the text (1 to 4,000 characters), requires profiles on both sides, refuses blocked pairs in either direction, and limits each sender to 20 messages a minute, 500 a day and 20 new conversations a day. Errors meant for makers use SQLSTATE P0001; `sendMessageAction` shows those and a generic message for anything else.
+- Reading position: `conversation_reads` stores how far each maker has read, never shown to the other maker, so there are no read receipts. `mark_conversation_read` only moves it forward and never past the current time; the view `inbox` and `unread_message_count()` use it.
+- Live updates: a trigger announces each new message with `realtime.send` on the private Realtime channels `user:<recipient>` and `user:<sender>`. The event carries ids only, never the text, and an RLS policy on `realtime.messages` lets a maker join only their own channel. `src/components/messages/live.ts` keeps one channel per tab for the header count and the open conversation. The conversation then reads the new message under RLS with the browser client (`src/lib/supabase/browser.ts`), and catches up when a hidden tab becomes visible again. Writes always go through Server Actions.
+- The header's unread count is rendered on the server and refreshed on new messages and after reading; the most recently requested count wins. Times are formatted in the visitor's time zone after hydration (`LocalTime`).
+- Send message on maker profiles and product pages opens `/messages/<maker id>`. Visitors go to sign-in with `next`, which `safeNext()` limits to the messaging pages, so it cannot send anyone to another site.
+
 ## Interface
 
 Styling uses Tailwind utilities in the components. Design tokens (colors, fonts, radii) live as CSS variables in `src/app/globals.css` and map to Tailwind names such as `bg-muted`, `text-muted-foreground` and `text-brand`. There is no page-specific global CSS. The type is Geist, loaded with `next/font`, and body text is never smaller than 12 px. The palette is neutral with one teal accent (`--accent`) for links, focus rings and checkboxes, and a separate `--brand-mark` for the logo. Cards, tables and fields sit on `bg-surface`, one step lighter than the page background. Primary buttons use the foreground color. Destructive buttons use `--destructive` with `--destructive-foreground`, which is dark in the dark theme because white text on the lighter red there fails contrast.
@@ -84,7 +98,7 @@ Authentication is Supabase Auth (email and password). Signup and password recove
 
 ## Deliberate limits
 
-There are no company profiles, transaction features, messaging, revenue integrations other than Stripe, or image garbage collector (replaced images stay until the account is deleted). The first version is an owner-usable profile and discovery application. Real usage may warrant abuse controls, moderation, optimized images and cache design before broader public launch.
+There are no company profiles, transaction features, email notifications, message reporting or moderation, revenue integrations other than Stripe, or image garbage collector (replaced images stay until the account is deleted). The first version is an owner-usable profile and discovery application. Real usage may warrant abuse controls, moderation, optimized images and cache design before broader public launch.
 
 ## Sources checked during implementation
 

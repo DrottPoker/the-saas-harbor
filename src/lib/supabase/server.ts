@@ -43,6 +43,13 @@ export const currentUser = cache(async () => {
   } = await client.auth.getUser();
   return user;
 });
+// Unread messages for the header, once per request. A failure never breaks the page.
+export const unreadMessageCount = cache(async () => {
+  if (!(await currentUser())) return 0;
+  const client = await serverClient();
+  const { data, error } = await client.rpc("unread_message_count");
+  return error || typeof data !== "number" ? 0 : data;
+});
 export async function requireUser() {
   const user = await currentUser();
   if (!user) redirect("/auth");

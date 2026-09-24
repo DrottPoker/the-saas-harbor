@@ -80,3 +80,11 @@ export const saasSchema = z.object({
   share_launch: z.boolean(),
 });
 export type ActionState = { error?: string; success?: string };
+
+export const MESSAGE_MAX_LENGTH = 4000;
+
+// Where sign-in may continue to. Only known internal paths, so the parameter cannot be used to
+// send people to another site.
+export function safeNext(value: string | null | undefined) {
+  return value && /^\/messages(\/[0-9a-f-]{36})?$/.test(value) ? value : null;
+}

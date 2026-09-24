@@ -6,7 +6,7 @@ Updated 2026-09-24 after a full project review and handover. The first release w
 
 The first release includes accounts, email confirmation and recovery, public maker profiles, multiple editable SaaS per owner, profile/logo uploads, SaaS and maker pages, category/name filtering, newest arrivals, and a USD MRR leaderboard. Each optional metric has a sharing control. Private reports and the current public projection are separate and protected by RLS. No demo data is displayed as real activity.
 
-Connections between makers (contacts, messaging) are part of the product vision but are not implemented yet.
+Makers can message each other privately (see Messages below). Other forms of connection, such as following or contact lists, are not implemented.
 
 ## Handover review 2026-09-24
 
@@ -44,10 +44,10 @@ The browser tests no longer assume an empty database, check for horizontal scrol
 
 ## Verified 2026-09-24
 
-- `npm run check`: Prettier, ESLint with zero warnings, TypeScript, 67 unit tests: Stripe MRR, invoice history, keys and encryption, chart models, and the full Stripe read path against the fake Stripe server.
+- `npm run check`: Prettier, ESLint with zero warnings, TypeScript, 73 unit tests: Stripe MRR, invoice history, keys and encryption, chart models, message threads and sign-in continuation, and the full Stripe read path against the fake Stripe server.
 - `npm run build`: Next.js 16.3.5 production build.
-- `npm run test:db`: 67 pgTAP assertions, stable over repeated runs. `supabase db diff` reports no drift between the local database and the migrations, and `supabase db lint` reports no errors.
-- `npm run test:e2e`: 6 Chromium integration tests with Axe scans in both themes (including the revenue charts, the privacy policy and the delete sections for products and accounts), against local Supabase and a fake Stripe API, passing twice in a row.
+- `npm run test:db`: 98 pgTAP assertions, stable over repeated runs. `supabase db diff` reports no drift between the local database and the migrations, and `supabase db lint` reports no errors.
+- `npm run test:e2e`: 7 Chromium integration tests with Axe scans in both themes (including the revenue charts, the privacy policy, the delete sections and messaging), against local Supabase, local Realtime and a fake Stripe API, passing three times in a row.
 - The CI workflow has not run on GitHub yet. Its commands were run locally with the same Supabase service exclusions.
 
 ## Verified revenue through Stripe 2026-09-24
@@ -66,6 +66,12 @@ Verified products now show how their revenue developed. Decisions by the project
 - Leaderboard: a 12-month trend line (from 1024 px wide) and the 30-day growth under each MRR figure (at every width).
 - Makers need Invoices: Read on the restricted key. Keys created before this change still verify MRR; the editor tells the maker to replace the key to get history.
 - Migration `20260924180000_revenue_history.sql` stores history and the growth basis on each snapshot and projects them publicly only when MRR is shared and fresh (pgTAP covers shared, hidden and stale cases).
+
+## Messages 2026-09-24
+
+Makers can write to each other. Send message is on maker profiles and product pages; visitors sign in first and continue in the conversation. Messages arrive live: the header shows an unread count, the inbox lists conversations with the latest message, and replies appear in an open conversation without a reload. Makers can block each other, which stops messages in both directions, and limits stop one account from flooding others. Only the two makers can read a conversation; deleting either account deletes it for both. The privacy policy describes this.
+
+On phones, the signed-in header now shows Messages, Dashboard and Submit SaaS as icons. With the Messages link it would otherwise have overflowed at 360-375 px, and it already overflowed at 320 px.
 
 ## Product deletion 2026-09-24
 
@@ -110,3 +116,4 @@ Product and quality:
 11. Old images stay in storage after replacement or removal, until the account is deleted.
 12. All routes are dynamic with `no-store`. Public pages could be cached once traffic grows, with private data kept separate.
 13. Image signature validation in `src/lib/upload.ts` has no unit tests. Vitest can now import server-only modules, so this is straightforward.
+14. Messages: no email notifications (they need an email provider), and messages cannot be reported. Realtime keeps its event rows, which hold ids only, for a few days.

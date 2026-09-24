@@ -1,7 +1,7 @@
 -- Grants, RLS, storage ownership, verified revenue and ranking. Runs in a rolled-back transaction.
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(67);
+select plan(98);
 
 insert into auth.users(id) values
   ('b0000000-0000-4000-8000-000000000001'),
@@ -283,6 +283,169 @@ select results_eq(
 );
 
 
+-- Messages: only the two makers in a conversation can read it, writes go through
+-- send_message(), blocks work in both directions, and Realtime events carry ids only.
+reset role;
+insert into auth.users(id) values ('b0000000-0000-4000-8000-000000000003');
+insert into public.profiles(id, name) values ('b0000000-0000-4000-8000-000000000002', 'SQL Test Two'), ('b0000000-0000-4000-8000-000000000003', 'SQL Test Three')
+  on conflict (id) do nothing;
+
+set local role anon;
+select set_config('request.jwt.claim.sub', '', true);
+select throws_ok(
+  $$ select public.send_message('b0000000-0000-4000-8000-000000000002', 'Hello') $$,
+  '42501', null, 'visitors cannot send messages'
+);
+select throws_ok(
+  'select count(*) from public.messages',
+  '42501', null, 'visitors cannot read messages'
+);
+
+set local role authenticated;
+select set_config('request.jwt.claim.sub', 'b0000000-0000-4000-8000-000000000001', true);
+select throws_ok(
+  $$ select public.send_message('b0000000-0000-4000-8000-000000000001', 'Hello me') $$,
+  'P0001', 'Choose another maker to message', 'makers cannot message themselves'
+);
+select throws_ok(
+  $$ select public.send_message('b0000000-0000-4000-8000-000000000002', '   ') $$,
+  'P0001', 'Write a message first', 'blank messages are refused'
+);
+select throws_ok(
+  $$ select public.send_message('b0000000-0000-4000-8000-000000000002', repeat('x', 4001)) $$,
+  'P0001', 'Messages can be up to 4,000 characters', 'messages over 4,000 characters are refused'
+);
+select throws_ok(
+  $$ select public.send_message('b0000000-0000-4000-8000-000000000009', 'Hello') $$,
+  'P0001', 'This maker no longer has an account', 'messages need an existing recipient'
+);
+select lives_ok(
+  $$ select public.send_message('b0000000-0000-4000-8000-000000000002', '  Hello from one  ') $$,
+  'a maker sends a message'
+);
+set local role authenticated;
+select set_config('request.jwt.claim.sub', 'b0000000-0000-4000-8000-000000000002', true);
+select lives_ok(
+  $$ select public.send_message('b0000000-0000-4000-8000-000000000001', 'Hello from two') $$,
+  'the other maker replies'
+);
+set local role authenticated;
+select set_config('request.jwt.claim.sub', 'b0000000-0000-4000-8000-000000000003', true);
+select lives_ok(
+  $$ select public.send_message('b0000000-0000-4000-8000-000000000002', 'Hello from three') $$,
+  'a third maker writes to maker two'
+);
+
+reset role;
+select results_eq(
+  $$ select c.user_a, c.user_b, c.started_by, m.body from public.conversations c
+    join public.messages m on m.conversation_id = c.id
+    where c.user_a = 'b0000000-0000-4000-8000-000000000001' and c.user_b = 'b0000000-0000-4000-8000-000000000002' order by m.created_at limit 1 $$,
+  $$ values ('b0000000-0000-4000-8000-000000000001'::uuid, 'b0000000-0000-4000-8000-000000000002'::uuid, 'b0000000-0000-4000-8000-000000000001'::uuid, 'Hello from one') $$,
+  'one conversation per pair, started by the first sender, with trimmed text'
+);
+create temp table pgtap_pair as select id from public.conversations
+  where user_a = 'b0000000-0000-4000-8000-000000000001' and user_b = 'b0000000-0000-4000-8000-000000000002';
+grant select on pgtap_pair to authenticated;
+
+set local role authenticated;
+select set_config('request.jwt.claim.sub', 'b0000000-0000-4000-8000-000000000001', true);
+select is(public.unread_message_count(), 1, 'the reply is unread for the first maker');
+select results_eq(
+  $$ select other_id, other_name, last_body, unread, blocked from public.inbox $$,
+  $$ values ('b0000000-0000-4000-8000-000000000002'::uuid, 'SQL Test Two'::text, 'Hello from two'::text, 1, false) $$,
+  'the inbox shows the other maker, the latest message and the unread count'
+);
+select lives_ok(
+  $$ select public.mark_conversation_read((select id from public.conversations where user_a = 'b0000000-0000-4000-8000-000000000001' and user_b = 'b0000000-0000-4000-8000-000000000002'), now() + interval '1 minute') $$,
+  'a maker marks the conversation read'
+);
+select is(public.unread_message_count(), 0, 'reading clears the unread count');
+select throws_ok(
+  $$ insert into public.messages(conversation_id, sender_id, body)
+    values ((select id from public.conversations where user_a = 'b0000000-0000-4000-8000-000000000001' and user_b = 'b0000000-0000-4000-8000-000000000002'), 'b0000000-0000-4000-8000-000000000001', 'Forged') $$,
+  '42501', null, 'makers cannot insert messages directly'
+);
+select throws_ok(
+  $$ update public.messages set body = 'Changed' where sender_id = 'b0000000-0000-4000-8000-000000000001' $$,
+  '42501', null, 'makers cannot change messages'
+);
+
+set local role authenticated;
+select set_config('request.jwt.claim.sub', 'b0000000-0000-4000-8000-000000000003', true);
+select is_empty(
+  'select 1 from public.messages where conversation_id = (select id from pgtap_pair)',
+  'other makers cannot read the messages'
+);
+select is_empty(
+  'select 1 from public.conversations where id = (select id from pgtap_pair)',
+  'other makers cannot see the conversation'
+);
+select public.mark_conversation_read((select id from pgtap_pair), now());
+reset role;
+select is(
+  (select count(*)::int from public.conversation_reads where user_id = 'b0000000-0000-4000-8000-000000000003'
+    and conversation_id = (select id from pgtap_pair)),
+  0, 'other makers cannot mark the conversation read'
+);
+
+set local role authenticated;
+select set_config('request.jwt.claim.sub', 'b0000000-0000-4000-8000-000000000002', true);
+select lives_ok(
+  $$ insert into public.blocks(blocker_id, blocked_id) values ('b0000000-0000-4000-8000-000000000002', 'b0000000-0000-4000-8000-000000000001') $$,
+  'a maker blocks another'
+);
+select throws_ok(
+  $$ select public.send_message('b0000000-0000-4000-8000-000000000001', 'Still there?') $$,
+  'P0001', 'Messages between you and this maker are blocked',
+  'the maker who blocked cannot send either'
+);
+set local role authenticated;
+select set_config('request.jwt.claim.sub', 'b0000000-0000-4000-8000-000000000001', true);
+select is_empty('select 1 from public.blocks', 'a blocked maker cannot see the block');
+select throws_ok(
+  $$ select public.send_message('b0000000-0000-4000-8000-000000000002', 'Hello?') $$,
+  'P0001', 'Messages between you and this maker are blocked', 'a blocked maker cannot send'
+);
+set local role authenticated;
+select set_config('request.jwt.claim.sub', 'b0000000-0000-4000-8000-000000000002', true);
+delete from public.blocks where blocked_id = 'b0000000-0000-4000-8000-000000000001';
+set local role authenticated;
+select set_config('request.jwt.claim.sub', 'b0000000-0000-4000-8000-000000000001', true);
+select lives_ok(
+  $$ select public.send_message('b0000000-0000-4000-8000-000000000002', 'Thanks for unblocking') $$,
+  'messages work again after unblocking'
+);
+select lives_ok(
+  $$ select public.send_message('b0000000-0000-4000-8000-000000000002', 'Message ' || n) from generate_series(1, 18) n $$,
+  'a maker sends twenty messages within a minute'
+);
+select throws_ok(
+  $$ select public.send_message('b0000000-0000-4000-8000-000000000002', 'One too many') $$,
+  'P0001', 'You are sending messages too quickly. Try again later',
+  'the twenty-first message within a minute is refused'
+);
+
+reset role;
+select is_empty(
+  $$ select 1 from realtime.messages
+    where topic in ('user:b0000000-0000-4000-8000-000000000001', 'user:b0000000-0000-4000-8000-000000000002') and (payload ? 'body' or event <> 'message') $$,
+  'Realtime events carry ids only'
+);
+set local role authenticated;
+select set_config('request.jwt.claim.sub', 'b0000000-0000-4000-8000-000000000002', true);
+select set_config('realtime.topic', 'user:b0000000-0000-4000-8000-000000000002', true);
+select isnt_empty(
+  'select 1 from realtime.messages',
+  'a maker can receive events on their own channel'
+);
+select set_config('realtime.topic', 'user:b0000000-0000-4000-8000-000000000001', true);
+select is_empty(
+  'select 1 from realtime.messages',
+  'a maker cannot receive events on another maker''s channel'
+);
+select set_config('realtime.topic', '', true);
+
 -- Product deletion: only the owner, and it removes everything that belongs to the product.
 set local role authenticated;
 select set_config('request.jwt.claim.sub', 'b0000000-0000-4000-8000-000000000001', true);
@@ -435,6 +598,17 @@ select lives_ok(
   $$ select public.record_stripe_verification('c0000000-0000-4000-8000-000000000005', 'v1:other',
     'rk_live_…0005', true, 1000, 1, '{}', null, array[repeat('d', 64)], null, null, null) $$,
   'subscriptions of a deleted account can verify another product'
+);
+
+reset role;
+select is_empty(
+  $$ select 1 from public.conversations where 'b0000000-0000-4000-8000-000000000001' in (user_a, user_b) $$,
+  'conversations with a deleted account are deleted for both makers'
+);
+select isnt_empty(
+  $$ select 1 from public.messages m join public.conversations c on c.id = m.conversation_id
+    where c.user_a = 'b0000000-0000-4000-8000-000000000002' and c.user_b = 'b0000000-0000-4000-8000-000000000003' $$,
+  'other conversations are kept'
 );
 
 reset role;

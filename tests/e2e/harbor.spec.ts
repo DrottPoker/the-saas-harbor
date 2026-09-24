@@ -677,3 +677,115 @@ test("a maker deletes products, then their account and everything in it", async 
   await page.getByRole("button", { name: "Sign in", exact: true }).click();
   await expect(page.getByRole("alert").filter({ hasText: "Unable to sign in" })).toBeVisible();
 });
+
+test("makers message each other live, with unread counts and blocking", async ({ browser }) => {
+  const baseURL = test.info().project.use.baseURL;
+  const makers: { id: string; email: string; password: string; name: string }[] = [];
+  for (const label of ["writer", "reader"]) {
+    const address = `harbor-${label}-${run}@example.test`;
+    const secret = randomBytes(24).toString("hex");
+    const { data, error } = await admin.auth.admin.createUser({
+      email: address,
+      password: secret,
+      email_confirm: true,
+    });
+    if (error || !data.user) throw new Error("Unable to create a messaging maker.");
+    userIds.push(data.user.id);
+    const name = `Maker ${label} ${run}`;
+    const { error: profileError } = await admin.from("profiles").insert({ id: data.user.id, name });
+    if (profileError) throw new Error("Unable to create a messaging profile.");
+    makers.push({ id: data.user.id, email: address, password: secret, name });
+  }
+  const [writer, reader] = makers;
+  const hydrationErrors: string[] = [];
+  const open = async () => {
+    const page = await (await browser.newContext({ baseURL })).newPage();
+    page.on("console", (message) => {
+      if (message.type() === "error" && /hydrat/i.test(message.text()))
+        hydrationErrors.push(message.text());
+    });
+    return page;
+  };
+
+  // The reader waits on the dashboard; the unread count must arrive without a reload.
+  const readerPage = await open();
+  await login(readerPage, reader.email, reader.password);
+
+  // A visitor who chooses Send message signs in and continues in the conversation.
+  const writerPage = await open();
+  await writerPage.goto(`/makers/${reader.id}`);
+  await writerPage.getByRole("link", { name: "Send message" }).click();
+  await expect(writerPage).toHaveURL(`/auth?next=${encodeURIComponent(`/messages/${reader.id}`)}`);
+  await writerPage.getByLabel("Email address").fill(writer.email);
+  await writerPage.getByLabel("Password", { exact: true }).fill(writer.password);
+  await writerPage.getByRole("button", { name: "Sign in", exact: true }).click();
+  await expect(writerPage).toHaveURL(`/messages/${reader.id}`);
+  await expect(writerPage.getByRole("heading", { name: reader.name })).toBeVisible();
+
+  const writerLog = writerPage.getByRole("log");
+  const writerField = writerPage.getByLabel(`Message to ${reader.name}`);
+  const writerSend = writerPage.getByRole("button", { name: "Send", exact: true });
+  await writerField.fill("Hello! Are you open to partners?");
+  await writerSend.click();
+  await expect(writerLog.getByText("Hello! Are you open to partners?")).toBeVisible();
+  await expect(writerField).toHaveValue("");
+
+  const unread = readerPage.getByRole("link", { name: "Messages, 1 unread" });
+  await expect(unread).toBeVisible();
+  await unread.click();
+  await expect(readerPage).toHaveURL("/messages");
+  const row = readerPage
+    .getByRole("list", { name: "Conversations" })
+    .getByRole("link")
+    .filter({ hasText: writer.name });
+  await expect(row.getByText("1 unread")).toBeAttached();
+  await row.click();
+  await expect(
+    readerPage.getByRole("log").getByText("Hello! Are you open to partners?"),
+  ).toBeVisible();
+  await expect(readerPage.getByRole("link", { name: "Messages", exact: true })).toBeVisible();
+
+  // Replies arrive in the open conversation without a reload, and are read there at once.
+  await readerPage.getByLabel(`Message to ${writer.name}`).fill("Yes, happy to talk.");
+  await readerPage.getByRole("button", { name: "Send", exact: true }).click();
+  await expect(writerLog.getByText("Yes, happy to talk.")).toBeVisible();
+  await expect(writerPage.getByRole("link", { name: "Messages", exact: true })).toBeVisible();
+
+  // A block stops messages in both directions until it is lifted. A refused message stays.
+  await readerPage.getByRole("button", { name: `Block ${writer.name}` }).click();
+  await expect(readerPage.getByText(`You blocked ${writer.name}.`)).toBeVisible();
+  await writerField.fill("Are you there?");
+  await writerSend.click();
+  await expect(
+    writerPage
+      .getByRole("alert")
+      .filter({ hasText: "Messages between you and this maker are blocked." }),
+  ).toBeVisible();
+  await expect(writerField).toHaveValue("Are you there?");
+  await readerPage.getByRole("button", { name: `Unblock ${writer.name}` }).click();
+  await expect(readerPage.getByLabel(`Message to ${writer.name}`)).toBeVisible();
+  await writerSend.click();
+  await expect(readerPage.getByRole("log").getByText("Are you there?")).toBeVisible();
+
+  // Makers cannot message themselves.
+  await writerPage.goto(`/makers/${writer.id}`);
+  await expect(writerPage.getByRole("heading", { name: writer.name })).toBeVisible();
+  await expect(writerPage.getByRole("link", { name: "Send message" })).toHaveCount(0);
+  await writerPage.goto(`/messages/${writer.id}`);
+  await expect(writerPage).toHaveURL("/messages");
+
+  for (const theme of ["dark", "light"] as const) {
+    await setThemeCookie(readerPage, theme);
+    for (const path of ["/messages", `/messages/${writer.id}`]) {
+      await readerPage.goto(path);
+      await expect(readerPage.getByRole("heading", { level: 1 })).toBeVisible();
+      await expectAccessible(readerPage);
+    }
+  }
+  await readerPage.setViewportSize({ width: 360, height: 800 });
+  for (const path of ["/messages", `/messages/${writer.id}`, "/dashboard"]) {
+    await readerPage.goto(path);
+    await expectNoHorizontalScroll(readerPage);
+  }
+  expect(hydrationErrors).toEqual([]);
+});

@@ -17,17 +17,19 @@ import { Label } from "./ui/label";
 export function Submit({
   className,
   variant,
+  size,
   pendingLabel = "Saving...",
   children,
 }: {
   className?: string;
-  variant?: "default" | "destructive";
+  variant?: React.ComponentProps<typeof Button>["variant"];
+  size?: React.ComponentProps<typeof Button>["size"];
   pendingLabel?: string;
   children: React.ReactNode;
 }) {
   const { pending } = useFormStatus();
   return (
-    <Button type="submit" variant={variant} disabled={pending} className={className}>
+    <Button type="submit" variant={variant} size={size} disabled={pending} className={className}>
       {pending ? pendingLabel : children}
     </Button>
   );
@@ -132,10 +134,18 @@ const authCopy = {
   update: "Update password",
 } as const;
 
-export function AuthForm({ mode }: { mode: "login" | "signup" | "reset" | "update" }) {
+export function AuthForm({
+  mode,
+  next,
+}: {
+  mode: "login" | "signup" | "reset" | "update";
+  /** Where to continue after signing in, already checked with safeNext(). */
+  next?: string | null;
+}) {
   const [state, action] = useEditorAction(authenticate.bind(null, mode));
   return (
     <form action={action} className="grid gap-5">
+      {mode === "login" && next && <input type="hidden" name="next" value={next} />}
       {mode !== "update" && (
         <Field name="email" label="Email address">
           <Input

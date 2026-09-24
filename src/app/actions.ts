@@ -4,7 +4,7 @@ import { redirect, RedirectType } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { deleteAccount } from "@/lib/account";
-import { profileSchema, saasSchema, type ActionState } from "@/lib/domain";
+import { profileSchema, safeNext, saasSchema, type ActionState } from "@/lib/domain";
 import { requireUser, serverClient } from "@/lib/supabase/server";
 import { uploadImage } from "@/lib/upload";
 
@@ -62,7 +62,7 @@ export async function authenticate(
       };
   }
   revalidatePath("/", "layout");
-  redirect("/dashboard");
+  redirect((mode === "login" && safeNext(value(form, "next"))) || "/dashboard");
 }
 
 export async function signOut() {

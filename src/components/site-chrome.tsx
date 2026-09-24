@@ -1,28 +1,33 @@
 import Link from "next/link";
-import { Plus } from "lucide-react";
+import { LayoutDashboard, Plus } from "lucide-react";
 import type { User } from "@supabase/supabase-js";
 import { signOut } from "@/app/actions";
 import { Brand } from "./logo";
+import { MessagesLink } from "./messages/messages-link";
 import { Navigation } from "./navigation";
 import { sections } from "./sections";
 import { ThemeMenu } from "./theme-menu";
 import { Button } from "./ui/button";
 
 const quietLink = "text-sm text-muted-foreground transition-colors hover:text-foreground";
+// Below md a signed-in header shows icons with 32 px targets, so everything fits on one line.
+const iconLink = `${quietLink} inline-flex items-center justify-center gap-1.5 max-md:h-8 max-md:min-w-8`;
 
-export function SiteHeader({ user }: { user: User | null }) {
+export function SiteHeader({ user, unread }: { user: User | null; unread: number }) {
   return (
     <header className="sticky top-0 z-40 border-b bg-background/80 backdrop-blur-md">
       <div className="mx-auto flex h-14 max-w-6xl items-center gap-3 px-4 sm:gap-6 sm:px-6">
-        <Brand />
+        <Brand compact={!!user} />
         <Navigation className="hidden md:flex" />
-        <div className="ml-auto flex items-center gap-3 sm:gap-4">
+        <div className="ml-auto flex items-center gap-2 sm:gap-4">
           {/* On small screens the theme menu sits in the navigation row below. */}
           <ThemeMenu className="max-md:hidden" />
           {user ? (
             <>
-              <Link className={quietLink} href="/dashboard">
-                Dashboard
+              <MessagesLink userId={user.id} initialCount={unread} className={iconLink} />
+              <Link className={iconLink} href="/dashboard">
+                <LayoutDashboard aria-hidden="true" className="size-4 md:hidden" />
+                <span className="max-md:sr-only">Dashboard</span>
               </Link>
               {/* On small screens sign-out lives on the dashboard to keep the header on one line. */}
               <form action={signOut} className="hidden md:block">
@@ -36,10 +41,10 @@ export function SiteHeader({ user }: { user: User | null }) {
               Sign in
             </Link>
           )}
-          <Button asChild size="sm">
+          <Button asChild size="sm" className={user ? "max-sm:w-8 max-sm:px-0" : undefined}>
             <Link href="/dashboard/saas/new">
-              <Plus className="max-sm:hidden" />
-              Submit SaaS
+              <Plus className={user ? undefined : "max-sm:hidden"} />
+              <span className={user ? "max-sm:sr-only" : undefined}>Submit SaaS</span>
             </Link>
           </Button>
         </div>

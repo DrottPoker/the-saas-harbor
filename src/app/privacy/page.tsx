@@ -95,6 +95,10 @@ export default function Privacy() {
               of subscription IDs, which stop one Stripe account from verifying two products.
             </li>
             <li>
+              <strong className="font-medium text-foreground">Messages.</strong> The messages you
+              send and receive, how far you have read each conversation, and the makers you block.
+            </li>
+            <li>
               <strong className="font-medium text-foreground">Preferences.</strong> Whether you
               chose the light or dark theme, in a cookie on your device.
             </li>
@@ -130,8 +134,13 @@ export default function Privacy() {
               to share. This is part of the same service (Article 6(1)(b)).
             </li>
             <li>
-              To keep the service secure and fair, through the sign-in records and the subscription
-              hashes described above (our legitimate interests, Article 6(1)(f)).
+              To deliver the messages you send to other makers, also part of the service (Article
+              6(1)(b)).
+            </li>
+            <li>
+              To keep the service secure and fair, through the sign-in records, the subscription
+              hashes described above, and limits on how many messages an account can send (our
+              legitimate interests, Article 6(1)(f)).
             </li>
           </List>
           <p>We do not sell data, show ads, or use analytics or tracking of any kind.</p>
@@ -149,6 +158,13 @@ export default function Privacy() {
               <strong className="font-medium text-foreground">Only you:</strong> your email address,
               your Stripe connection status, your verification history and any figures you keep
               private. Stored Stripe keys are never shown, not even to you.
+            </li>
+            <li>
+              <strong className="font-medium text-foreground">The two of you:</strong> a
+              conversation and its messages are visible only to the two makers in it. A block is
+              visible only to the maker who made it. Messages are not end-to-end encrypted, so
+              people who run the site could technically access them; we only do so when the law
+              requires it or to investigate abuse.
             </li>
             <li>
               <strong className="font-medium text-foreground">Service providers:</strong> our
@@ -174,11 +190,12 @@ export default function Privacy() {
         <Section id="retention" title="How long we keep it">
           <p>
             We keep your data for as long as you have an account. When you delete your account, your
-            profile, products, images, Stripe keys, verification history and sign-in records are
-            deleted right away. Deleting a single product removes its details, its logo, its Stripe
-            key and its verification history in the same way. Logos and photos you replaced earlier
-            are kept until you delete your account. Copies in backups disappear when those backups
-            expire.
+            profile, products, images, Stripe keys, verification history, conversations and sign-in
+            records are deleted right away. A conversation is deleted for both makers when either of
+            them deletes their account. Deleting a single product removes its details, its logo, its
+            Stripe key and its verification history in the same way. Logos and photos you replaced
+            earlier are kept until you delete your account. Copies in backups disappear when those
+            backups expire.
           </p>
           <p>
             Information that was public may already have been copied by others, such as search

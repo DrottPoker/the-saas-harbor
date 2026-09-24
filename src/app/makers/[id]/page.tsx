@@ -3,8 +3,10 @@ import { notFound } from "next/navigation";
 import { z } from "zod";
 import { ArrowUpRight } from "lucide-react";
 import { listings, publicProfile, safePage } from "@/lib/data";
+import { currentUser } from "@/lib/supabase/server";
 import { PersonAvatar } from "@/components/avatars";
 import { ListingGrid, ResultsFooter } from "@/components/listings";
+import { SendMessageButton } from "@/components/messages/send-message-button";
 import { EmptyState, Notice, Shell } from "@/components/shell";
 
 type Props = { params: Promise<{ id: string }>; searchParams: Promise<{ page?: string }> };
@@ -22,7 +24,7 @@ export default async function Maker({ params, searchParams }: Props) {
   const profile = await publicProfile(id);
   if (!profile) notFound();
   const page = safePage((await searchParams).page);
-  const result = await listings({ owner: id, page });
+  const [result, viewer] = await Promise.all([listings({ owner: id, page }), currentUser()]);
   const links = [
     ["Website", profile.website],
     ["Social profile", profile.social_url],
@@ -58,6 +60,11 @@ export default async function Maker({ params, searchParams }: Props) {
             </p>
           )}
         </div>
+        <SendMessageButton
+          makerId={id}
+          viewerId={viewer?.id ?? null}
+          className="self-start sm:ml-auto sm:self-center"
+        />
       </header>
 
       <section className="pt-10">

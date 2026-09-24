@@ -10,7 +10,7 @@ export default function AccountDeleted() {
     <Shell size="narrow">
       <PageHeader
         title="Your account has been deleted"
-        description="Your profile, products, images, Stripe connections and verification history are gone, and your products have left the leaderboard."
+        description="Your profile, products, images, Stripe connections, verification history and conversations are gone, and your products have left the leaderboard."
       />
       <div className="grid gap-4 border-t pt-8 leading-7 text-foreground/85">
         <p>

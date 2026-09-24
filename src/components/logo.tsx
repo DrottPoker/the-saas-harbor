@@ -13,14 +13,15 @@ export function LogoMark({ className }: { className?: string }) {
   );
 }
 
-export function Brand() {
+/** With `compact`, the name is only for screen readers on the narrowest phones. */
+export function Brand({ compact = false }: { compact?: boolean }) {
   return (
     <Link
       href="/"
       className="flex shrink-0 items-center gap-2 text-[15px] font-semibold tracking-tight"
     >
       <LogoMark className="text-brand-mark" />
-      The SaaS Harbor
+      <span className={cn(compact && "max-[359px]:sr-only")}>The SaaS Harbor</span>
     </Link>
   );
 }

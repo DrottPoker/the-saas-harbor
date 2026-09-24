@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { AuthForm } from "@/components/forms";
 import { LogoMark } from "@/components/logo";
 import { Notice } from "@/components/shell";
+import { safeNext } from "@/lib/domain";
 import { supabaseConfig } from "@/lib/supabase/config";
 import { requireUser } from "@/lib/supabase/server";
 
@@ -58,7 +59,7 @@ export default async function Auth({ searchParams }: Props) {
           </Notice>
         )}
         {supabaseConfig() ? (
-          <AuthForm mode={mode} />
+          <AuthForm mode={mode} next={safeNext(params.next)} />
         ) : (
           <Notice tone="error">
             Authentication is not configured. Follow the Supabase setup in README.md.

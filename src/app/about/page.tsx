@@ -36,7 +36,7 @@ const sections = [
   {
     title: "What this is not",
     body: [
-      "The SaaS Harbor is a directory and leaderboard. There are no sales, deal rooms, messages or payments here.",
+      "The SaaS Harbor is a directory and leaderboard where makers can also write to each other privately. There are no sales, deal rooms or payments here.",
     ],
   },
 ];

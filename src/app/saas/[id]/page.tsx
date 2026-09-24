@@ -5,11 +5,13 @@ import { z } from "zod";
 import { ArrowUpRight, BadgeCheck } from "lucide-react";
 import { parseHistory } from "@/lib/charts";
 import { publicSaas, type RevenueStatus } from "@/lib/data";
+import { currentUser } from "@/lib/supabase/server";
 import { formatDate, formatUsd } from "@/lib/domain";
 import { cn } from "@/lib/utils";
 import { PersonAvatar, ProductLogo } from "@/components/avatars";
 import { Growth } from "@/components/charts/growth";
 import { RevenueHistory } from "@/components/charts/revenue-history";
+import { SendMessageButton } from "@/components/messages/send-message-button";
 import { Shell } from "@/components/shell";
 import { Button } from "@/components/ui/button";
 
@@ -68,7 +70,7 @@ const missingRevenue: Record<RevenueStatus, string> = {
 export default async function SaasProfile({ params }: Props) {
   const { id } = await params;
   if (!z.uuid().safeParse(id).success) notFound();
-  const item = await publicSaas(id);
+  const [item, viewer] = await Promise.all([publicSaas(id), currentUser()]);
   if (!item) notFound();
   const name = item.name ?? "SaaS";
   const site = hostname(item.website);
@@ -163,6 +165,14 @@ export default async function SaasProfile({ params }: Props) {
               <PersonAvatar path={item.owner_avatar_path} name={item.owner_name ?? "Maker"} />
               <span className="font-medium">{item.owner_name}</span>
             </Link>
+            {item.owner_id && (
+              <SendMessageButton
+                makerId={item.owner_id}
+                viewerId={viewer?.id ?? null}
+                size="sm"
+                className="mt-4 w-full"
+              />
+            )}
           </div>
           <dl className="grid gap-3 rounded-xl border bg-surface p-5 text-sm">
             <div className="flex justify-between gap-4">
