@@ -29,6 +29,6 @@ Next.js 16 App Router and Supabase platform where independent SaaS products get 
 - Mutations are Server Actions that call `requireUser()`, with RLS as the second layer. Public reads use `publicClient()` so they never carry a session.
 - Validate input on the server with the zod schemas in `src/lib/domain.ts`.
 - Keep the Axe scans in `tests/e2e` passing and add new pages to them.
-- UI: use the tokens in `src/app/globals.css` through Tailwind utilities and the shared components in `src/components`. No new global CSS classes, no text below 12 px, one accent color, plain copy without metaphors. Check new screens at 390 px and 1440 px wide.
+- UI: use the tokens in `src/app/globals.css` through Tailwind utilities and the shared components in `src/components`. No hardcoded colors, no new global CSS classes, no text below 12 px, one accent color, plain copy without metaphors. New colors need a light value and a dark value. Check new screens at 390 px and 1440 px wide, in both themes.
 - Update `README.md`, `docs/ARCHITECTURE.md` and `docs/STATUS.md` when behavior, setup or known issues change.
 - Never share `supabase status` output: it contains local keys.

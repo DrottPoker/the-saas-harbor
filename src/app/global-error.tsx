@@ -1,11 +1,15 @@
 "use client";
 import "./globals.css";
 import { Button } from "@/components/ui/button";
+import { themeScript } from "@/lib/theme";
 
 // Replaces the root layout when it fails, so it renders its own document.
 export default function GlobalError({ retry }: { error: Error; retry: () => void }) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: themeScript }} />
+      </head>
       <body>
         <title>Something went wrong | The SaaS Harbor</title>
         <main className="mx-auto max-w-md px-4 pt-32 text-center">

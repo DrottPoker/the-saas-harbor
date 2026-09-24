@@ -89,7 +89,7 @@ export async function Explore({
             key={item || "all"}
             href={url(item)}
             aria-current={category === item ? "page" : undefined}
-            className="shrink-0 rounded-full border px-3 py-1 text-[13px] whitespace-nowrap text-muted-foreground transition-colors hover:border-border-strong hover:text-foreground aria-[current=page]:border-foreground aria-[current=page]:bg-foreground aria-[current=page]:text-background"
+            className="shrink-0 rounded-full border bg-surface px-3 py-1 text-[13px] whitespace-nowrap text-muted-foreground transition-colors hover:border-border-strong hover:text-foreground aria-[current=page]:border-foreground aria-[current=page]:bg-foreground aria-[current=page]:text-background"
           >
             {item || "All categories"}
           </Link>

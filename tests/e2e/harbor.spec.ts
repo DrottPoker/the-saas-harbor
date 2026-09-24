@@ -51,6 +51,14 @@ async function expectNoHorizontalScroll(page: Page) {
     `no horizontal scroll on ${new URL(page.url()).pathname}`,
   ).toBe(true);
 }
+async function setThemeCookie(page: Page, theme: "light" | "dark") {
+  await page
+    .context()
+    .addCookies([{ name: "theme", value: theme, url: new URL(page.url()).origin }]);
+}
+async function pageBackground(page: Page) {
+  return page.evaluate(() => getComputedStyle(document.body).backgroundColor);
+}
 async function expectAccessible(page: Page) {
   const accessibility = await new AxeBuilder({ page })
     .withTags(["wcag2a", "wcag2aa", "wcag21aa"])
@@ -111,10 +119,40 @@ test("anonymous navigation, private route protection and responsive empty state"
     caret: "initial",
   });
   await expectAccessible(page);
-  for (const path of ["/discover", "/newest", "/about", "/auth", "/auth?mode=signup", "/missing"]) {
+  const publicPages = ["/discover", "/newest", "/about", "/auth", "/auth?mode=signup", "/missing"];
+  for (const path of publicPages) {
     await page.goto(path);
     await expectAccessible(page);
   }
+});
+
+test("theme menu persists light and dark, and system follows the OS", async ({ page }) => {
+  const light = "rgb(246, 245, 241)";
+  const dark = "rgb(27, 31, 36)";
+  await page.emulateMedia({ colorScheme: "light" });
+  await page.goto("/");
+  expect(await pageBackground(page)).toBe(light);
+  await page.getByRole("button", { name: "Theme" }).click();
+  await page.getByRole("menuitemradio", { name: "Dark" }).click();
+  await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
+  expect(await pageBackground(page)).toBe(dark);
+  // The inline script restores the saved choice before paint on a full reload.
+  await page.reload();
+  await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
+  expect(await pageBackground(page)).toBe(dark);
+  for (const path of ["/", "/discover", "/newest", "/about", "/auth", "/missing"]) {
+    await page.goto(path);
+    await expectAccessible(page);
+  }
+  await page.getByRole("button", { name: "Theme" }).click();
+  await page.getByRole("menuitemradio", { name: "System" }).click();
+  await expect(page.locator("html")).not.toHaveAttribute("data-theme");
+  await page.emulateMedia({ colorScheme: "dark" });
+  expect(await pageBackground(page)).toBe(dark);
+  await page.emulateMedia({ colorScheme: "light" });
+  expect(await pageBackground(page)).toBe(light);
+  await page.reload();
+  await expect(page.locator("html")).not.toHaveAttribute("data-theme");
 });
 
 test("registration, email confirmation, profile and SaaS editing, storage, privacy and logout", async ({
@@ -217,18 +255,22 @@ test("registration, email confirmation, profile and SaaS editing, storage, priva
   await expect(
     page.getByRole("link").filter({ hasText: productName }).getByText("$1,234.56", { exact: true }),
   ).toBeVisible();
-  // Audit pages while they show real, shared data.
-  await expectAccessible(page);
-  for (const path of [
+  // Audit pages in both themes while they show real, shared data.
+  const dataPages = [
+    `/?q=${encodeURIComponent(productName)}`,
     `/saas/${productId}`,
     `/makers/${firstUserId}`,
     "/discover",
     "/dashboard",
     `/dashboard/saas/${productId}`,
     "/dashboard/profile",
-  ]) {
-    await page.goto(path);
-    await expectAccessible(page);
+  ];
+  for (const theme of ["dark", "light"] as const) {
+    await setThemeCookie(page, theme);
+    for (const path of dataPages) {
+      await page.goto(path);
+      await expectAccessible(page);
+    }
   }
   await page.goto(`/dashboard/saas/${productId}`);
   await page.getByLabel("Share MRR publicly", { exact: true }).uncheck();

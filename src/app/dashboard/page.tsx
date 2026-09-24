@@ -46,7 +46,7 @@ export default async function Dashboard({
         </Notice>
       )}
 
-      <section className="flex flex-col gap-4 rounded-xl border p-5 sm:flex-row sm:items-center">
+      <section className="flex flex-col gap-4 rounded-xl border bg-surface p-5 sm:flex-row sm:items-center">
         <PersonAvatar path={profile?.avatar_path} name={profile?.name ?? "?"} size="lg" />
         <div className="min-w-0 flex-1">
           <h2 className="font-semibold">{profile?.name ?? "Set up your profile"}</h2>
@@ -80,7 +80,7 @@ export default async function Dashboard({
             Add a product to list it in the directory. Revenue stays private unless you share it.
           </EmptyState>
         ) : (
-          <ul aria-labelledby="products" className="divide-y rounded-xl border">
+          <ul aria-labelledby="products" className="divide-y rounded-xl border bg-surface">
             {products.map((product) => (
               <li key={product.id} className="flex items-center gap-4 p-4">
                 <ProductLogo path={product.logo_path} name={product.name} />

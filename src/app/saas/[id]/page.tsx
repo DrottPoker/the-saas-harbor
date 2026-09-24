@@ -95,7 +95,7 @@ export default async function SaasProfile({ params }: Props) {
         )}
       </header>
 
-      <dl className="mt-10 grid divide-y rounded-xl border sm:grid-cols-3 sm:divide-x sm:divide-y-0">
+      <dl className="mt-10 grid divide-y rounded-xl border bg-surface sm:grid-cols-3 sm:divide-x sm:divide-y-0">
         <Metric
           label="Monthly recurring revenue"
           value={item.mrr_cents == null ? null : formatUsd(item.mrr_cents)}
@@ -118,7 +118,7 @@ export default async function SaasProfile({ params }: Props) {
           </p>
         </section>
         <aside className="grid content-start gap-4">
-          <div className="rounded-xl border p-5">
+          <div className="rounded-xl border bg-surface p-5">
             <h2 className="text-sm text-muted-foreground">Maker</h2>
             <Link
               href={`/makers/${item.owner_id}`}
@@ -128,7 +128,7 @@ export default async function SaasProfile({ params }: Props) {
               <span className="font-medium">{item.owner_name}</span>
             </Link>
           </div>
-          <dl className="grid gap-3 rounded-xl border p-5 text-sm">
+          <dl className="grid gap-3 rounded-xl border bg-surface p-5 text-sm">
             <div className="flex justify-between gap-4">
               <dt className="text-muted-foreground">Category</dt>
               <dd className="text-right">{item.category}</dd>

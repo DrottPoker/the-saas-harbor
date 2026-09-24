@@ -9,7 +9,7 @@ const columns = "md:grid-cols-[2.5rem_minmax(0,1fr)_10rem_8rem_7.5rem] md:gap-6 
 
 export function Leaderboard({ items }: { items: Listing[] }) {
   return (
-    <div className="overflow-hidden rounded-xl border">
+    <div className="overflow-hidden rounded-xl border bg-surface">
       <div
         aria-hidden="true"
         className={cn(
@@ -76,7 +76,7 @@ export function ListingCard({ item, meta }: { item: Listing; meta: "maker" | "jo
   return (
     <Link
       href={`/saas/${item.id}`}
-      className="flex flex-col rounded-xl border p-5 transition-colors hover:border-border-strong hover:bg-subtle"
+      className="flex flex-col rounded-xl border bg-surface p-5 transition-colors hover:border-border-strong"
     >
       <div className="flex items-center gap-3">
         <ProductLogo path={item.logo_path} name={item.name ?? "SaaS"} />

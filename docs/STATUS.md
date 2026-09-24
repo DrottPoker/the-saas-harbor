@@ -34,6 +34,7 @@ The first interface was generated with ChatGPT and read as generic: a slogan her
 
 - The leaderboard is the homepage content, directly under a one-line heading, with search and category filters.
 - Neutral palette with one teal accent, Geist type, tabular figures and a 12 px minimum text size.
+- Light and dark themes (warm paper and graphite, never pure white or black), chosen in the header menu or following the OS, with no flash on load. Axe checks every page in both themes.
 - Browse is sorted A to Z so it no longer duplicates New arrivals.
 - Product and maker pages, the dashboard and settings-style editors share one set of components.
 - The roughly 1,600 lines of global CSS were replaced by design tokens and Tailwind utilities.
@@ -46,7 +47,7 @@ The browser tests no longer assume an empty database, check for horizontal scrol
 - `npm run check`: Prettier, ESLint with zero warnings, TypeScript, 26 unit tests.
 - `npm run build`: Next.js 16.3.5 production build.
 - `npm run test:db`: 24 pgTAP assertions against a local database rebuilt from the migrations with `supabase db reset`.
-- `npm run test:e2e`: 4 Chromium integration tests with Axe scans, against local Supabase.
+- `npm run test:e2e`: 5 Chromium integration tests with Axe scans in both themes, against local Supabase.
 - `npm run check:hosted`: public reads, anonymous history denial, email signup enabled and confirmation required.
 - Hosted migration history matches the three local migrations. Supabase security advisor has no findings; the performance advisor only reports unused indexes, which is expected on an empty database.
 - The hosted database is empty: no users, profiles, SaaS or images.
@@ -74,7 +75,7 @@ Before a public launch:
 1. Account and SaaS deletion. There are no delete policies or UI, so users cannot remove their data (GDPR right to erasure). A privacy policy and terms are also missing.
 2. Abuse and trust. SaaS creation is unlimited, there is no moderation or reporting, and self-reported MRR is easy to inflate. The leaderboard's credibility needs a plan: moderation at minimum, verified revenue (for example through Stripe) later.
 3. Email links across devices. PKCE links fail when the email is opened in another browser, such as on a phone after signing up on a desktop. The `token_hash` + `verifyOtp` confirmation flow with custom email templates avoids this.
-4. Security headers. No Content Security Policy yet. HSTS depends on the hosting platform.
+4. Security headers. No Content Security Policy yet. HSTS depends on the hosting platform. A future CSP must allow the inline theme script in the root layout, by hash or nonce.
 5. Production SMTP, Auth URLs and a deployment target.
 
 Product and quality:
@@ -83,5 +84,4 @@ Product and quality:
 7. SEO: no `sitemap.ts`, `robots.ts`, Open Graph images or canonical URLs. Public URLs use UUIDs rather than slugs.
 8. Old images stay in storage after replacement or removal.
 9. All routes are dynamic with `no-store`. Public pages could be cached once traffic grows, with private data kept separate.
-10. Dark mode. The tokens in `globals.css` are ready for a dark theme, but none is defined.
-11. Image signature validation in `src/lib/upload.ts` has no unit tests.
+10. Image signature validation in `src/lib/upload.ts` has no unit tests.

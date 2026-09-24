@@ -19,7 +19,7 @@ export function Brand() {
       href="/"
       className="flex shrink-0 items-center gap-2 text-[15px] font-semibold tracking-tight"
     >
-      <LogoMark className="text-brand" />
+      <LogoMark className="text-brand-mark" />
       The SaaS Harbor
     </Link>
   );

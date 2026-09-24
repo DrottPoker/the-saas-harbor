@@ -5,17 +5,20 @@ import { signOut } from "@/app/actions";
 import { Brand } from "./logo";
 import { Navigation } from "./navigation";
 import { sections } from "./sections";
+import { ThemeMenu } from "./theme-menu";
 import { Button } from "./ui/button";
 
 const quietLink = "text-sm text-muted-foreground transition-colors hover:text-foreground";
 
 export function SiteHeader({ user }: { user: User | null }) {
   return (
-    <header className="sticky top-0 z-40 border-b bg-background/85 backdrop-blur-md">
+    <header className="sticky top-0 z-40 border-b bg-background/80 backdrop-blur-md">
       <div className="mx-auto flex h-14 max-w-6xl items-center gap-3 px-4 sm:gap-6 sm:px-6">
         <Brand />
         <Navigation className="hidden md:flex" />
         <div className="ml-auto flex items-center gap-3 sm:gap-4">
+          {/* On small screens the theme menu sits in the navigation row below. */}
+          <ThemeMenu className="max-md:hidden" />
           {user ? (
             <>
               <Link className={quietLink} href="/dashboard">
@@ -41,7 +44,10 @@ export function SiteHeader({ user }: { user: User | null }) {
           </Button>
         </div>
       </div>
-      <Navigation className="flex overflow-x-auto border-t px-2.5 py-1.5 md:hidden" />
+      <div className="flex items-center gap-2 border-t px-2.5 py-1.5 md:hidden">
+        <Navigation className="flex min-w-0 overflow-x-auto" />
+        <ThemeMenu className="ml-auto shrink-0" />
+      </div>
     </header>
   );
 }

@@ -48,9 +48,9 @@ export function PageHeader({
 }
 
 const tones = {
-  info: "border-border bg-subtle text-foreground",
-  success: "border-[#b7e3cf] bg-[#effaf4] text-[#0b6a3f]",
-  error: "border-[#f5c2bd] bg-[#fef3f2] text-[#a3261b]",
+  info: "border-border bg-surface text-foreground",
+  success: "border-success-border bg-success-bg text-success",
+  error: "border-error-border bg-error-bg text-error",
 } as const;
 
 export function Notice({
