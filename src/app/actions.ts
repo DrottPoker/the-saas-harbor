@@ -25,7 +25,7 @@ export async function authenticate(
   if (mode !== "reset" && (password.length < (mode === "login" ? 1 : 12) || password.length > 128))
     return { error: "Use a password between 12 and 128 characters." };
   const client = await serverClient();
-  const origin = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+  const origin = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3001";
   if (mode === "signup") {
     const { data, error } = await client.auth.signUp({
       email,

@@ -18,6 +18,7 @@ Next.js 16 App Router and Supabase platform where independent SaaS products get 
 - `npm run build` after changes to routing, config or the server/client boundary.
 - `npm run db:start`, then `npm run test:db` and `npm run test:e2e`, after changes to the schema, auth, forms or pages. Docker must be running. Local Supabase uses ports 55320-55329.
 - `npm run format` formats the codebase.
+- `npm run dev` serves the app on http://localhost:3001. Browser tests start their own server on port 3002.
 
 ## Rules
 

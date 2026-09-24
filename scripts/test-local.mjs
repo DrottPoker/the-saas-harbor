@@ -33,7 +33,7 @@ const result = spawnSync(npx, ["playwright", "test"], {
     TEST_MAILPIT_URL: mailpit,
     NEXT_PUBLIC_SUPABASE_URL: url,
     NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: status.PUBLISHABLE_KEY || status.ANON_KEY,
-    NEXT_PUBLIC_SITE_URL: "http://127.0.0.1:3001",
+    NEXT_PUBLIC_SITE_URL: "http://127.0.0.1:3002",
     NEXT_DIST_DIR: ".next-e2e",
   },
 });

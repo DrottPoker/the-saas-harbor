@@ -25,7 +25,7 @@ Copy-Item .env.example .env.local
 npm run dev
 ```
 
-Open http://localhost:3000. The server binds to the local loopback interface.
+Open http://localhost:3001. The server binds to the local loopback interface.
 
 The current checkout already has an ignored `.env.local` configured for the existing **The SaaS Harbor** Supabase project, reference `qvvqkskyukqoleuivdfw`, in `eu-central-1`. Do not replace it with the example if it is already configured. No new hosted project was created.
 
@@ -33,7 +33,7 @@ The current checkout already has an ignored `.env.local` configured for the exis
 | -------------------------------------- | --------------------------------------------------------------- |
 | `NEXT_PUBLIC_SUPABASE_URL`             | Project API URL, such as `https://your-project-ref.supabase.co` |
 | `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Public publishable key, never a secret/service-role key         |
-| `NEXT_PUBLIC_SITE_URL`                 | Canonical app origin; locally `http://localhost:3000`           |
+| `NEXT_PUBLIC_SITE_URL`                 | Canonical app origin; locally `http://localhost:3001`           |
 
 Use one consistent hostname while signing up, confirming an email, or recovering a password. PKCE email links need to open in the same browser that initiated the request.
 
@@ -45,9 +45,9 @@ The three SQL migrations in `supabase/migrations` are already applied to this pr
 
 Before using real email accounts, check **Authentication > URL Configuration**:
 
-- Site URL: `http://localhost:3000` for local use.
-- Allowed redirect: `http://localhost:3000/auth/callback`.
-- Allowed recovery redirect: `http://localhost:3000/auth/callback?next=update`.
+- Site URL: `http://localhost:3001` for local use.
+- Allowed redirect: `http://localhost:3001/auth/callback`.
+- Allowed recovery redirect: `http://localhost:3001/auth/callback?next=update`.
 - Keep email confirmation enabled. Email signup and confirmation were confirmed enabled through the public Auth settings endpoint.
 
 Configure production SMTP in Supabase for reliable delivery to real users. The default Supabase mail service has recipient/rate restrictions. Hosted email delivery and the hosted redirect allowlist were not tested using a real mailbox. Do not disable confirmation to bypass email setup. See [Supabase SMTP documentation](https://supabase.com/docs/guides/auth/auth-smtp).
@@ -80,7 +80,7 @@ npm run db:stop
 
 The local stack uses ports 55320-55329 (API `http://127.0.0.1:55321`, Studio `http://127.0.0.1:55323`, Mailpit `http://127.0.0.1:55324`), so it can run next to other local Supabase projects on the default 543xx ports. `npm run db:reset` rebuilds the local database from the migrations.
 
-The browser test runner reads local CLI credentials and the Mailpit URL directly into its process environment, refuses non-loopback addresses, and starts the app on `http://127.0.0.1:3001` with a separate build directory. Do not share local CLI status output: it includes local test keys. Test users and files are removed afterward. Browser tests cover registration and confirmation, login and session persistence, profile/SaaS editing, error-state input retention, images, multiple SaaS, private/public MRR, revocation, cross-owner denial, password recovery, page titles, responsive layout, and automated WCAG 2.1 AA scans of public, auth and owner pages, including pages with shared data.
+The browser test runner reads local CLI credentials and the Mailpit URL directly into its process environment, refuses non-loopback addresses, and starts the app on `http://127.0.0.1:3002` with a separate build directory. Do not share local CLI status output: it includes local test keys. Test users and files are removed afterward. Browser tests cover registration and confirmation, login and session persistence, profile/SaaS editing, error-state input retention, images, multiple SaaS, private/public MRR, revocation, cross-owner denial, password recovery, page titles, responsive layout, and automated WCAG 2.1 AA scans of public, auth and owner pages, including pages with shared data.
 
 `supabase/tests/database/access.test.sql` is a pgTAP suite run by `npm run test:db`. It runs in a transaction that is rolled back and checks actual database grants, RLS, storage ownership, private history, numeric ranking, zero MRR, revocation and independent visibility.
 
