@@ -1,12 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-  containsPattern,
-  parseUsd,
-  usdInput,
-  formatUsd,
-  profileSchema,
-  saasSchema,
-} from "../../src/lib/domain";
+import { containsPattern, formatUsd, profileSchema, saasSchema } from "../../src/lib/domain";
 
 describe("name search pattern", () => {
   it("wraps a trimmed term in wildcards", () =>
@@ -25,27 +18,11 @@ describe("name search pattern", () => {
   it("limits the term length", () => expect(containsPattern("x".repeat(200))).toHaveLength(82));
 });
 
-describe("exact USD amounts", () => {
-  it.each([
-    ["0", 0],
-    ["0.01", 1],
-    ["19.99", 1999],
-    ["9999999999.99", 999999999999],
-    ["1.1", 110],
-  ])("stores %s exactly", (input, expected) => expect(parseUsd(input as string)).toBe(expected));
-  it("keeps omitted MRR distinct from zero", () => {
-    expect(parseUsd("")).toBeNull();
-    expect(parseUsd("0")).toBe(0);
+describe("USD display", () => {
+  it("shows cents only when present", () => {
+    expect(formatUsd(1999)).toBe("$19.99");
+    expect(formatUsd(840000)).toBe("$8,400");
   });
-  it.each(["1.001", "-1", "NaN", "1e5", "Infinity", "10,000", "10000000000", "0xFF"])(
-    "rejects %s",
-    (input) => expect(() => parseUsd(input)).toThrow(),
-  );
-  it("round-trips cent values", () => {
-    for (const cents of [0, 1, 9, 101, 1999, 100000001, 999999999999])
-      expect(parseUsd(usdInput(cents))).toBe(cents);
-  });
-  it("displays cents without dropping precision", () => expect(formatUsd(1999)).toBe("$19.99"));
 });
 describe("profile boundaries", () => {
   it.each(["javascript:alert(1)", "data:text/html,test", "https://user:password@example.com"])(
@@ -55,21 +32,24 @@ describe("profile boundaries", () => {
         profileSchema.safeParse({ name: "Maker", bio: "", website, social_url: "" }).success,
       ).toBe(false),
   );
-  it("rejects invalid calendar dates", () => {
-    const input = {
-      id: crypto.randomUUID(),
-      name: "Test",
-      tagline: "Test product",
-      description: "A sufficiently detailed product description.",
-      category: "Other",
-      website: "https://example.com",
-      mrr: "",
-      customers: "",
-      launched_on: "2026-02-30",
-      public_mrr: false,
-      public_customers: false,
-      public_launch: false,
-    };
-    expect(saasSchema.safeParse(input).success).toBe(false);
+  const product = {
+    id: crypto.randomUUID(),
+    name: "Test",
+    tagline: "Test product",
+    description: "A sufficiently detailed product description.",
+    category: "Other",
+    website: "https://example.com",
+    launched_on: "2026-01-15",
+    share_mrr: true,
+    share_customers: false,
+    share_launch: false,
+  };
+  it("rejects invalid calendar dates", () =>
+    expect(saasSchema.safeParse({ ...product, launched_on: "2026-02-30" }).success).toBe(false));
+  it("never accepts revenue from the form", () => {
+    const parsed = saasSchema.parse({ ...product, mrr: "99999", mrr_cents: 1, customers: "5" });
+    expect(parsed).not.toHaveProperty("mrr");
+    expect(parsed).not.toHaveProperty("mrr_cents");
+    expect(parsed).not.toHaveProperty("customers");
   });
 });

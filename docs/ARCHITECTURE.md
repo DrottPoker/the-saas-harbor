@@ -4,25 +4,41 @@ One Next.js App Router application uses React, TypeScript, Tailwind CSS and shad
 
 ## Data and authorization
 
-| Resource         | Public access                                       | Owner access                              |
-| ---------------- | --------------------------------------------------- | ----------------------------------------- |
-| `profiles`       | Public name, bio, website, social link, image path  | Insert/update own row                     |
-| `saas`           | Product description, category, website, logo, owner | Insert/update own products                |
-| `metric_reports` | None, including for another authenticated owner     | Read and append own dated reports         |
-| `public_metrics` | Only the current deliberately shared values         | Publish or clear own values               |
-| `public_saas`    | Explicit public projection                          | Same public fields                        |
-| `leaderboard`    | Products with public non-null MRR                   | Same public ranking                       |
-| `profile-images` | Image bytes are public                              | Upload/delete only within own UUID prefix |
+| Resource                     | Public access                                           | Owner access                                      |
+| ---------------------------- | ------------------------------------------------------- | ------------------------------------------------- |
+| `profiles`                   | Name, bio, website, social link, image path             | Insert/update own row                             |
+| `saas`                       | Product description, category, website, logo, owner     | Insert/update own products                        |
+| `saas_settings`              | None                                                    | Read/write own visibility choices and launch date |
+| `stripe_connections`         | None                                                    | Read own status and key hint; never the key       |
+| `revenue_snapshots`          | None                                                    | Read own verified history; no writes              |
+| `public_metrics`             | Current shared, verified figures and shared launch date | No writes; kept in sync by a trigger              |
+| `private.*`                  | None (schema not exposed)                               | None                                              |
+| `public_saas`, `leaderboard` | Public projection with `revenue_status`                 | Same public fields                                |
+| `profile-images`             | Image bytes are public                                  | Upload/delete only within own UUID prefix         |
 
-Every exposed table has RLS and explicit grants. Views use `security_invoker = true`. There are no security-definer functions and no service-role credentials in the application. Composite foreign keys prevent assigning another owner's metrics to a product. The invoker `save_saas` RPC atomically saves the product, appends a private report, and replaces the public projection. An unset sharing flag writes NULL into the public projection, including when old reports contained published values. Historical reports remain owner-only.
+Every exposed table has RLS and explicit grants. Views use `security_invoker = true`. Composite foreign keys prevent attaching another owner's data to a product. The invoker `save_saas` RPC saves product details, visibility choices and launch date; it accepts no figures. Verified figures are written only by trusted server code with the service-role key, through `record_stripe_verification`, which is executable by `service_role` alone.
+
+The public projection `public_metrics` is maintained by `private.refresh_public_metrics`, called from triggers on `saas_settings`, `revenue_snapshots` and `stripe_connections`. It is the one SECURITY DEFINER function: a maker's own setting change must update a table the maker cannot write. It lives in the unexposed `private` schema, has an empty `search_path`, and its execute privilege is revoked from API roles. An unset sharing flag writes NULL into the projection. Snapshots carry an identity `seq` so "latest" is deterministic even for snapshots taken at the same instant.
 
 Public reads deliberately create a separate anonymous Supabase client. They do not inherit the current owner's session. This makes the public route's data shape identical for an owner and a visitor. All application routes are dynamic; data fetches use `no-store`, and the Proxy sends `Cache-Control: private, no-store`. No shared application/CDN cache holds private records. An already downloaded public page cannot be recalled from a visitor.
 
 ## Revenue and discovery
 
-MRR uses integer USD cents with a maximum of 999,999,999,999 cents, below JavaScript's safe integer limit. Parsing uses decimal strings without floating-point multiplication. Blank MRR differs from zero. Customer count and launch date have independent visibility switches. Each report has a database timestamp. Values are always self-reported.
+MRR is stored as integer USD cents (at most 999,999,999,999, below JavaScript's safe integer limit) and only ever comes from Stripe verification; see below. Verified MRR, paying customers and launch date have independent visibility switches. A verification older than seven days is hidden by the `public_saas` view and marked `stale`, so it leaves the leaderboard. `revenue_status` is `verified`, `private`, `stale` or `unverified`.
 
 The leaderboard is ordered in PostgreSQL by public MRR descending, then creation time ascending, then UUID ascending. Ties receive deterministic sequential positions. Category filters preserve the global rank. Browse includes products without shared MRR and orders by name. New arrivals orders by creation time descending. List queries return at most 12 rows per page. The server validates category and page inputs and searches product names case-insensitively. User-supplied wildcard characters (`%`, `_`, `*` and backslash) are removed first, since PostgREST treats `*` like `%`.
+
+## Stripe verification
+
+Makers connect a Stripe restricted key (`rk_live_`; `rk_test_` only when `STRIPE_ALLOW_TEST_KEYS=true`) with read access to Subscriptions, Coupons and Prices. Secret and publishable keys are rejected. The flow lives in `src/lib/stripe`:
+
+- `client.ts` reads active and past-due subscriptions with expanded discounts, then the coupons and tiered prices they reference. Every request pins `Stripe-Version: 2026-08-26.dahlia`, because responses otherwise follow each account's own default version.
+- `mrr.ts` is pure and unit-tested: licensed items normalized to a month (day, week, month, year and interval counts), per-unit and volume/graduated tiers, quantity transforms, forever and repeating discounts (percent and amount), no tax. Trials, paused collection, metered items and one-time discounts are excluded. Paying customers have a subscription worth more than zero.
+- `fx.ts` converts other currencies to USD with Frankfurter's daily central-bank rates (base USD). A currency without a rate fails the verification instead of being dropped.
+- `crypto.ts` stores keys with AES-256-GCM under `STRIPE_KEY_ENCRYPTION_KEY`, bound to the SaaS id as associated data. The stored format carries a version prefix for later key rotation. Owners can never read the ciphertext: `encrypted_key` is excluded from their column grants.
+- `sync.ts` verifies before storing anything, then calls `record_stripe_verification`, which stores the key, claims the counted subscriptions, records a snapshot and updates the connection in one transaction. A subscription can verify one SaaS only (`private.stripe_subscription_claims`, SHA-256 of the subscription id), so one Stripe account cannot be counted twice. Failed re-verifications record a readable error for the owner and keep the last snapshot until it goes stale.
+
+Server actions in `src/app/stripe-actions.ts` check ownership on every call, since the SaaS id is bound on the client. Manual refresh is limited to once per five minutes. `POST /api/stripe/sync` re-verifies every connection when called with `Authorization: Bearer $CRON_SECRET` (compared in constant time); production needs a daily scheduler for it. The service-role key (`SUPABASE_SECRET_KEY`) is only read by `src/lib/supabase/admin.ts`, a server-only module used for these trusted writes.
 
 ## Interface
 
@@ -36,11 +52,11 @@ Shared building blocks live in `src/components`: `site-chrome.tsx` (header and f
 
 The server validates PNG/JPEG/WebP signatures and the 2 MB limit before uploading an immutable random filename under the authenticated user's prefix. SVG is excluded. Storage enforces the matching MIME/size and ownership policies. Failed database saves remove their newly uploaded file. Replacing or removing a displayed image leaves previous uploads in storage in this first version; a future referenced-file cleanup job can remove them safely.
 
-Validation runs on the server. Forms retain entered text and visibility choices after validation errors; password values are never copied into action state. Public links require HTTP(S), and external links use `noopener noreferrer nofollow`. Private editors require ownership even when accessed by a forged URL, and database RLS independently enforces ownership for direct API calls.
+Validation runs on the server. Forms retain entered text and visibility choices after validation errors; passwords and Stripe keys are never copied into action state. Public links require HTTP(S), and external links use `noopener noreferrer nofollow`. Private editors require ownership even when accessed by a forged URL, and database RLS independently enforces ownership for direct API calls.
 
 ## Local Supabase
 
-Supabase runs only locally, in Docker through the Supabase CLI, configured by `supabase/config.toml` and the migrations. No hosted Supabase project is used. `scripts/local-supabase.mjs` reads the local stack's URLs and keys from `supabase status` without printing them, refuses anything that is not on 127.0.0.1, and can start the stack. `npm run dev` runs `scripts/local-env.mjs` first, which starts the stack when needed and writes only the managed keys in `.env.local`. The app itself only knows the three public variables, so it can later point at any Supabase instance, self-hosted or Cloud.
+Supabase runs only locally, in Docker through the Supabase CLI, configured by `supabase/config.toml` and the migrations. No hosted Supabase project is used. `scripts/local-supabase.mjs` reads the local stack's URLs and keys from `supabase status` without printing them, refuses anything that is not on 127.0.0.1, and can start the stack. `npm run dev` runs `scripts/local-env.mjs` first, which starts the stack when needed and writes only the managed keys in `.env.local`. The app only needs the public Supabase variables plus the server-only secrets for Stripe verification, so it can later point at any Supabase instance, self-hosted or Cloud.
 
 ## Authentication and local tests
 
@@ -50,11 +66,12 @@ Authentication is Supabase Auth (email and password). Signup and password recove
 
 ## Deliberate limits
 
-There are no company profiles, deletion/account-erasure UI, transaction features, messaging, revenue integrations, image garbage collector, or historical chart UI. The first version is an owner-usable profile and discovery application. Real usage may warrant abuse controls, moderation, optimized images and cache design before broader public launch.
+There are no company profiles, deletion/account-erasure UI, transaction features, messaging, revenue integrations other than Stripe, image garbage collector, or historical chart UI. The first version is an owner-usable profile and discovery application. Real usage may warrant abuse controls, moderation, optimized images and cache design before broader public launch.
 
 ## Sources checked during implementation
 
 - [Next.js installation](https://nextjs.org/docs/app/getting-started/installation), plus installed `next/dist/docs` for Forms, Proxy and Server Actions.
 - [Supabase SSR clients](https://supabase.com/docs/guides/auth/server-side/creating-a-client?framework=nextjs), [Storage access control](https://supabase.com/docs/guides/storage/security/access-control), [explicit Data API grants](https://supabase.com/changelog/45329-breaking-change-tables-not-exposed-to-data-and-graphql-api-automatically).
 - [shadcn/ui Next.js installation](https://ui.shadcn.com/docs/installation/next).
+- Stripe [restricted API keys](https://docs.stripe.com/keys/restricted-api-keys), [list subscriptions](https://docs.stripe.com/api/subscriptions/list), [Discount object](https://docs.stripe.com/api/discounts/object) and the [changelog](https://docs.stripe.com/changelog) (Discount `source.coupon` since 2025-09-30.clover). [Frankfurter](https://frankfurter.dev/) v2 rates.
 - The installed Next.js ESLint guide documents standalone `@next/eslint-plugin-next`. ESLint 10 runs the recommended JavaScript, TypeScript, React Hooks, and Next.js Core Web Vitals rules through compatible native plugins.

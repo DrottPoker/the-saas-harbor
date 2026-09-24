@@ -14,7 +14,7 @@ export const metadata: Metadata = {
     template: "%s | The SaaS Harbor",
   },
   description:
-    "A public directory of independent SaaS products, with a leaderboard of self-reported monthly recurring revenue.",
+    "A public directory of independent SaaS products, with a leaderboard of monthly recurring revenue verified through Stripe.",
 };
 export const dynamic = "force-dynamic";
 export default async function RootLayout({ children }: { children: React.ReactNode }) {

@@ -73,7 +73,7 @@ export function SiteFooter() {
           </Link>
         </nav>
         <p className="text-[13px] text-faint-foreground sm:col-span-2">
-          Revenue figures are self-reported by makers and not independently verified.
+          Revenue is verified through read-only Stripe connections and refreshed daily.
         </p>
       </div>
     </footer>

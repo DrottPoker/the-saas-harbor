@@ -9,67 +9,6 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      metric_reports: {
-        Row: {
-          customers: number | null
-          id: string
-          launched_on: string | null
-          mrr_cents: number | null
-          owner_id: string
-          public_customers: boolean
-          public_launch: boolean
-          public_mrr: boolean
-          reported_at: string
-          saas_id: string
-        }
-        Insert: {
-          customers?: number | null
-          id?: string
-          launched_on?: string | null
-          mrr_cents?: number | null
-          owner_id: string
-          public_customers?: boolean
-          public_launch?: boolean
-          public_mrr?: boolean
-          reported_at?: string
-          saas_id: string
-        }
-        Update: {
-          customers?: number | null
-          id?: string
-          launched_on?: string | null
-          mrr_cents?: number | null
-          owner_id?: string
-          public_customers?: boolean
-          public_launch?: boolean
-          public_mrr?: boolean
-          reported_at?: string
-          saas_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "metric_reports_saas_id_owner_id_fkey"
-            columns: ["saas_id", "owner_id"]
-            isOneToOne: false
-            referencedRelation: "leaderboard"
-            referencedColumns: ["id", "owner_id"]
-          },
-          {
-            foreignKeyName: "metric_reports_saas_id_owner_id_fkey"
-            columns: ["saas_id", "owner_id"]
-            isOneToOne: false
-            referencedRelation: "public_saas"
-            referencedColumns: ["id", "owner_id"]
-          },
-          {
-            foreignKeyName: "metric_reports_saas_id_owner_id_fkey"
-            columns: ["saas_id", "owner_id"]
-            isOneToOne: false
-            referencedRelation: "saas"
-            referencedColumns: ["id", "owner_id"]
-          },
-        ]
-      }
       profiles: {
         Row: {
           avatar_path: string | null
@@ -104,26 +43,29 @@ export type Database = {
         Row: {
           customers: number | null
           launched_on: string | null
+          livemode: boolean | null
           mrr_cents: number | null
           owner_id: string
-          reported_at: string
           saas_id: string
+          verified_at: string | null
         }
         Insert: {
           customers?: number | null
           launched_on?: string | null
+          livemode?: boolean | null
           mrr_cents?: number | null
           owner_id: string
-          reported_at?: string
           saas_id: string
+          verified_at?: string | null
         }
         Update: {
           customers?: number | null
           launched_on?: string | null
+          livemode?: boolean | null
           mrr_cents?: number | null
           owner_id?: string
-          reported_at?: string
           saas_id?: string
+          verified_at?: string | null
         }
         Relationships: [
           {
@@ -142,6 +84,67 @@ export type Database = {
           },
           {
             foreignKeyName: "public_metrics_saas_id_owner_id_fkey"
+            columns: ["saas_id", "owner_id"]
+            isOneToOne: false
+            referencedRelation: "saas"
+            referencedColumns: ["id", "owner_id"]
+          },
+        ]
+      }
+      revenue_snapshots: {
+        Row: {
+          captured_at: string
+          currencies: Json
+          customers: number
+          fx_date: string | null
+          id: string
+          livemode: boolean
+          mrr_cents: number
+          owner_id: string
+          saas_id: string
+          seq: number
+        }
+        Insert: {
+          captured_at?: string
+          currencies?: Json
+          customers: number
+          fx_date?: string | null
+          id?: string
+          livemode: boolean
+          mrr_cents: number
+          owner_id: string
+          saas_id: string
+          seq?: never
+        }
+        Update: {
+          captured_at?: string
+          currencies?: Json
+          customers?: number
+          fx_date?: string | null
+          id?: string
+          livemode?: boolean
+          mrr_cents?: number
+          owner_id?: string
+          saas_id?: string
+          seq?: never
+        }
+        Relationships: [
+          {
+            foreignKeyName: "revenue_snapshots_saas_id_owner_id_fkey"
+            columns: ["saas_id", "owner_id"]
+            isOneToOne: false
+            referencedRelation: "leaderboard"
+            referencedColumns: ["id", "owner_id"]
+          },
+          {
+            foreignKeyName: "revenue_snapshots_saas_id_owner_id_fkey"
+            columns: ["saas_id", "owner_id"]
+            isOneToOne: false
+            referencedRelation: "public_saas"
+            referencedColumns: ["id", "owner_id"]
+          },
+          {
+            foreignKeyName: "revenue_snapshots_saas_id_owner_id_fkey"
             columns: ["saas_id", "owner_id"]
             isOneToOne: false
             referencedRelation: "saas"
@@ -196,6 +199,116 @@ export type Database = {
           },
         ]
       }
+      saas_settings: {
+        Row: {
+          launched_on: string | null
+          owner_id: string
+          saas_id: string
+          share_customers: boolean
+          share_launch: boolean
+          share_mrr: boolean
+          updated_at: string
+        }
+        Insert: {
+          launched_on?: string | null
+          owner_id: string
+          saas_id: string
+          share_customers?: boolean
+          share_launch?: boolean
+          share_mrr?: boolean
+          updated_at?: string
+        }
+        Update: {
+          launched_on?: string | null
+          owner_id?: string
+          saas_id?: string
+          share_customers?: boolean
+          share_launch?: boolean
+          share_mrr?: boolean
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "saas_settings_saas_id_owner_id_fkey"
+            columns: ["saas_id", "owner_id"]
+            isOneToOne: false
+            referencedRelation: "leaderboard"
+            referencedColumns: ["id", "owner_id"]
+          },
+          {
+            foreignKeyName: "saas_settings_saas_id_owner_id_fkey"
+            columns: ["saas_id", "owner_id"]
+            isOneToOne: false
+            referencedRelation: "public_saas"
+            referencedColumns: ["id", "owner_id"]
+          },
+          {
+            foreignKeyName: "saas_settings_saas_id_owner_id_fkey"
+            columns: ["saas_id", "owner_id"]
+            isOneToOne: false
+            referencedRelation: "saas"
+            referencedColumns: ["id", "owner_id"]
+          },
+        ]
+      }
+      stripe_connections: {
+        Row: {
+          connected_at: string
+          encrypted_key: string
+          key_hint: string
+          last_error: string | null
+          last_synced_at: string | null
+          livemode: boolean
+          owner_id: string
+          saas_id: string
+          status: string
+        }
+        Insert: {
+          connected_at?: string
+          encrypted_key: string
+          key_hint: string
+          last_error?: string | null
+          last_synced_at?: string | null
+          livemode: boolean
+          owner_id: string
+          saas_id: string
+          status?: string
+        }
+        Update: {
+          connected_at?: string
+          encrypted_key?: string
+          key_hint?: string
+          last_error?: string | null
+          last_synced_at?: string | null
+          livemode?: boolean
+          owner_id?: string
+          saas_id?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stripe_connections_saas_id_owner_id_fkey"
+            columns: ["saas_id", "owner_id"]
+            isOneToOne: false
+            referencedRelation: "leaderboard"
+            referencedColumns: ["id", "owner_id"]
+          },
+          {
+            foreignKeyName: "stripe_connections_saas_id_owner_id_fkey"
+            columns: ["saas_id", "owner_id"]
+            isOneToOne: false
+            referencedRelation: "public_saas"
+            referencedColumns: ["id", "owner_id"]
+          },
+          {
+            foreignKeyName: "stripe_connections_saas_id_owner_id_fkey"
+            columns: ["saas_id", "owner_id"]
+            isOneToOne: false
+            referencedRelation: "saas"
+            referencedColumns: ["id", "owner_id"]
+          },
+        ]
+      }
     }
     Views: {
       leaderboard: {
@@ -206,6 +319,7 @@ export type Database = {
           description: string | null
           id: string | null
           launched_on: string | null
+          livemode: boolean | null
           logo_path: string | null
           mrr_cents: number | null
           name: string | null
@@ -213,9 +327,10 @@ export type Database = {
           owner_id: string | null
           owner_name: string | null
           rank: number | null
-          reported_at: string | null
+          revenue_status: string | null
           tagline: string | null
           updated_at: string | null
+          verified_at: string | null
           website: string | null
         }
         Relationships: [
@@ -236,15 +351,17 @@ export type Database = {
           description: string | null
           id: string | null
           launched_on: string | null
+          livemode: boolean | null
           logo_path: string | null
           mrr_cents: number | null
           name: string | null
           owner_avatar_path: string | null
           owner_id: string | null
           owner_name: string | null
-          reported_at: string | null
+          revenue_status: string | null
           tagline: string | null
           updated_at: string | null
+          verified_at: string | null
           website: string | null
         }
         Relationships: [
@@ -259,19 +376,31 @@ export type Database = {
       }
     }
     Functions: {
+      record_stripe_verification: {
+        Args: {
+          p_currencies: Json
+          p_customers: number
+          p_encrypted_key: string
+          p_fx_date: string
+          p_key_hint: string
+          p_livemode: boolean
+          p_mrr_cents: number
+          p_saas_id: string
+          p_subscription_hashes: string[]
+        }
+        Returns: undefined
+      }
       save_saas: {
         Args: {
           p_category: string
-          p_customers: number
           p_description: string
           p_id: string
           p_launched_on: string
           p_logo_path: string
-          p_mrr_cents: number
           p_name: string
-          p_public_customers: boolean
-          p_public_launch: boolean
-          p_public_mrr: boolean
+          p_share_customers: boolean
+          p_share_launch: boolean
+          p_share_mrr: boolean
           p_tagline: string
           p_website: string
         }

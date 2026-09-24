@@ -1,18 +1,19 @@
 # The SaaS Harbor
 
-A focused, responsive home for independent SaaS: public maker profiles, product discovery, and a leaderboard of self-reported monthly recurring revenue.
+A focused, responsive home for independent SaaS: public maker profiles, product discovery, and a leaderboard of monthly recurring revenue verified through each product's Stripe account.
 
 ## Included
 
 - Email/password registration, email confirmation, sign-in, sign-out, and password recovery.
 - Public maker profiles with an image, bio, website and social link.
 - Multiple SaaS profiles per maker, with a logo, pitch, description, category and website.
-- Optional MRR in USD, paying customers and launch date, each with an independent public-sharing choice.
-- Dated private metric reports, exact USD cents, a public leaderboard, category/name filters and newest arrivals.
+- Revenue verified through a read-only Stripe restricted key: MRR and paying customers are read from Stripe, never typed in, and re-verified daily.
+- Verified MRR, paying customers and launch date, each with an independent public-sharing choice. Products without Stripe are listed but not ranked.
+- Private verification history, a public leaderboard, category/name filters and newest arrivals.
 - Supabase RLS, owner checks in Server Actions, and owner-scoped image uploads.
 - Light and dark themes.
 
-Sales, escrow, company profiles, messaging and advanced revenue verification are outside this release.
+Sales, escrow, company profiles, messaging and revenue sources other than Stripe are outside this release.
 
 ## Run locally
 
@@ -47,7 +48,13 @@ Local Auth can deliver email to real inboxes through any SMTP provider. The sett
 
 Without a password the stack falls back to Mailpit. The links in the emails point at this computer (`127.0.0.1`), so open them on the same computer and in the same browser you signed up in. The browser tests need Mailpit and refuse to run while real email is on; `npm run db:restart -- --mailpit` switches back until the next plain restart.
 
-Demo accounts from `npm run db:seed` are `<name>@demo.harbor.test` (for example `lena@demo.harbor.test`) with the password `harbor-demo-password`. Re-running the seed replaces earlier demo accounts, and `npm run db:reset` rebuilds the database from the migrations without any data. The ports 55320-55329 keep this stack clear of other local Supabase projects on the default 543xx ports. `npm run db:stop` stops the stack and keeps the data.
+### Stripe verification
+
+In a product's editor, the maker creates a restricted key in Stripe (Developers → API keys → Create restricted key) with **Read** for Subscriptions, Coupons and Prices, and pastes it. The key is verified first, then stored encrypted. Locally `rk_test_` keys are accepted (`STRIPE_ALLOW_TEST_KEYS=true`), so a Stripe test account works end to end. `npm run stripe:sync` re-verifies every connection through the running dev server, as the daily production job will.
+
+`npm run dev` generates the server-only secrets in `.env.local`: `SUPABASE_SECRET_KEY` (the local service-role key), `STRIPE_KEY_ENCRYPTION_KEY` and `CRON_SECRET`. The encryption key is kept once created; replacing it makes stored Stripe keys unreadable, and makers would have to reconnect. Production needs the same three secrets, `STRIPE_ALLOW_TEST_KEYS` unset, and a scheduler that calls `POST /api/stripe/sync` daily with `Authorization: Bearer $CRON_SECRET`.
+
+Demo accounts from `npm run db:seed` are `<name>@demo.harbor.test` (for example `lena@demo.harbor.test`) with the password `harbor-demo-password`. Their products carry verified test-mode snapshots with placeholder keys, so "Refresh now" on a demo product fails the way a revoked key would. Re-running the seed replaces earlier demo accounts, and `npm run db:reset` rebuilds the database from the migrations without any data. The ports 55320-55329 keep this stack clear of other local Supabase projects on the default 543xx ports. `npm run db:stop` stops the stack and keeps the data.
 
 | Variable                               | Meaning                                                             |
 | -------------------------------------- | ------------------------------------------------------------------- |
@@ -76,9 +83,9 @@ npm run test:db
 npm run test:e2e
 ```
 
-The browser test runner reads local CLI credentials and the Mailpit URL directly into its process environment, refuses non-loopback addresses, and starts the app on `http://127.0.0.1:3002` with a separate build directory, so it can run next to `npm run dev`. Do not share local CLI status output: it includes local test keys. Test users and files are removed afterward, and the tests work with or without demo data. Browser tests cover registration and confirmation, login and session persistence, profile/SaaS editing, error-state input retention, images, multiple SaaS, private/public MRR, revocation, cross-owner denial, password recovery, page titles, themes, responsive layout, and automated WCAG 2.1 AA scans of public, auth and owner pages in both themes.
+The browser test runner reads local CLI credentials and the Mailpit URL directly into its process environment, refuses non-loopback addresses, and starts the app on `http://127.0.0.1:3002` with a separate build directory, so it can run next to `npm run dev`. Do not share local CLI status output: it includes local test keys. Test users and files are removed afterward, and the tests work with or without demo data. Browser tests cover registration and confirmation, login and session persistence, profile/SaaS editing, error-state input retention, images, multiple SaaS, cross-owner denial, password recovery, page titles, themes, responsive layout, and automated WCAG 2.1 AA scans of public, auth and owner pages in both themes. Stripe verification runs against `tests/e2e/fake-stripe.mjs`, a local stand-in for the Stripe and exchange-rate APIs: rejected secret keys, missing permissions, a verified $104 account, encrypted storage, private and public MRR, the refresh rate limit, duplicate-account refusal, disconnection, and the protected sync endpoint.
 
-`supabase/tests/database/access.test.sql` is a pgTAP suite run by `npm run test:db`. It runs in a transaction that is rolled back and checks actual database grants, RLS, storage ownership, private history, numeric ranking, zero MRR, revocation and independent visibility.
+`supabase/tests/database/access.test.sql` is a pgTAP suite run by `npm run test:db`. It runs in a transaction that is rolled back and checks actual database grants, RLS and storage ownership, that makers can never write verified figures or read stored keys, the service-only verification RPC, duplicate subscription claims, numeric ranking, zero MRR, independent visibility, stale verifications, disconnection and cascading deletes.
 
 ### Database changes
 

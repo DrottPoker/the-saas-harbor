@@ -106,24 +106,17 @@ export async function saveSaas(_state: ActionState, form: FormData): Promise<Act
   const { user, client } = await requireUser();
   let uploaded: string | null = null;
   let savedId: string;
+  let existed: boolean;
   try {
     const fields = saasSchema.parse({
       ...Object.fromEntries(
-        [
-          "id",
-          "name",
-          "tagline",
-          "description",
-          "category",
-          "website",
-          "mrr",
-          "customers",
-          "launched_on",
-        ].map((key) => [key, value(form, key)]),
+        ["id", "name", "tagline", "description", "category", "website", "launched_on"].map(
+          (key) => [key, value(form, key)],
+        ),
       ),
-      public_mrr: form.has("public_mrr"),
-      public_customers: form.has("public_customers"),
-      public_launch: form.has("public_launch"),
+      share_mrr: form.has("share_mrr"),
+      share_customers: form.has("share_customers"),
+      share_launch: form.has("share_launch"),
     });
     const { data: existing, error: readError } = await client
       .from("saas")
@@ -133,6 +126,7 @@ export async function saveSaas(_state: ActionState, form: FormData): Promise<Act
     if (readError) return { error: "The SaaS profile could not be loaded." };
     if (existing && existing.owner_id !== user.id)
       return { error: "You can only edit your own SaaS." };
+    existed = !!existing;
     uploaded = await uploadImage(client, user.id, form.get("image"));
     const { data, error } = await client.rpc("save_saas", {
       p_id: fields.id,
@@ -142,12 +136,10 @@ export async function saveSaas(_state: ActionState, form: FormData): Promise<Act
       p_category: fields.category,
       p_website: fields.website,
       p_logo_path: uploaded || (form.has("remove_image") ? null : (existing?.logo_path ?? null)),
-      p_mrr_cents: fields.mrr,
-      p_customers: fields.customers,
       p_launched_on: fields.launched_on || null,
-      p_public_mrr: fields.public_mrr,
-      p_public_customers: fields.public_customers,
-      p_public_launch: fields.public_launch,
+      p_share_mrr: fields.share_mrr,
+      p_share_customers: fields.share_customers,
+      p_share_launch: fields.share_launch,
     });
     if (error)
       throw new Error(
@@ -159,5 +151,8 @@ export async function saveSaas(_state: ActionState, form: FormData): Promise<Act
     return { error: message(error) };
   }
   revalidatePath("/", "layout");
-  redirect(`/dashboard?saved=${savedId}`);
+  // New products continue to Stripe verification; edits return to the dashboard.
+  redirect(
+    existed ? `/dashboard?saved=${savedId}` : `/dashboard/saas/${savedId}?created=1#revenue`,
+  );
 }

@@ -2,11 +2,26 @@ import Link from "next/link";
 import { Plus } from "lucide-react";
 import { signOut } from "@/app/actions";
 import { requireUser } from "@/lib/supabase/server";
+import { cn } from "@/lib/utils";
 import { PersonAvatar, ProductLogo } from "@/components/avatars";
 import { EmptyState, Notice, PageHeader, Shell } from "@/components/shell";
 import { Button } from "@/components/ui/button";
 
 export const metadata = { title: "Dashboard" };
+
+function StripeBadge({ status }: { status: string | undefined }) {
+  const [label, tone] =
+    status === "ok"
+      ? ["Verified", "border-success-border text-success"]
+      : status === "error"
+        ? ["Sync failed", "border-error-border text-error"]
+        : ["Not verified", "text-muted-foreground"];
+  return (
+    <span className={cn("hidden shrink-0 rounded-full border px-2 py-0.5 text-xs sm:inline", tone)}>
+      {label}
+    </span>
+  );
+}
 
 export default async function Dashboard({
   searchParams,
@@ -15,15 +30,22 @@ export default async function Dashboard({
 }) {
   const { user, client } = await requireUser();
   const params = await searchParams;
-  const [{ data: profile, error: profileError }, { data: products, error }] = await Promise.all([
+  const [
+    { data: profile, error: profileError },
+    { data: products, error },
+    { data: connections, error: connectionError },
+  ] = await Promise.all([
     client.from("profiles").select("*").eq("id", user.id).maybeSingle(),
     client
       .from("saas")
       .select("id,name,tagline,logo_path")
       .eq("owner_id", user.id)
       .order("created_at", { ascending: false }),
+    client.from("stripe_connections").select("saas_id, status").eq("owner_id", user.id),
   ]);
-  if (error || profileError) throw new Error("Your dashboard could not be loaded.");
+  if (error || profileError || connectionError)
+    throw new Error("Your dashboard could not be loaded.");
+  const stripeStatus = new Map(connections?.map((row) => [row.saas_id, row.status]));
   const addButton = (
     <Button asChild>
       <Link href="/dashboard/saas/new">
@@ -88,6 +110,7 @@ export default async function Dashboard({
                   <h3 className="truncate font-medium">{product.name}</h3>
                   <p className="truncate text-sm text-muted-foreground">{product.tagline}</p>
                 </div>
+                <StripeBadge status={stripeStatus.get(product.id)} />
                 <div className="flex shrink-0 gap-1">
                   <Button asChild variant="ghost" size="sm">
                     <Link href={`/saas/${product.id}`}>View</Link>

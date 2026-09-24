@@ -216,44 +216,79 @@ test("registration, email confirmation, profile and SaaS editing, storage, priva
   ).toBe(true);
   await page.goto("/dashboard/saas/new");
   await fillProduct(page, productName);
-  await page
-    .getByLabel("Upload logo")
-    .setInputFiles({ name: "logo.png", mimeType: "image/png", buffer: png });
-  await page.getByLabel("Monthly recurring revenue (USD)").fill("-25");
+  await page.getByLabel("Upload logo").setInputFiles({
+    name: "invalid.png",
+    mimeType: "image/png",
+    buffer: Buffer.from("not an image"),
+  });
   await page.getByRole("button", { name: "Add SaaS", exact: true }).click();
-  await expect(page.getByRole("alert").filter({ hasText: "Enter a USD amount" })).toBeVisible();
+  await expect(page.getByRole("alert").filter({ hasText: "Choose a valid PNG" })).toBeVisible();
   await expect(page.getByLabel("Product name", { exact: true })).toHaveValue(productName);
   await page
     .getByLabel("Upload logo")
     .setInputFiles({ name: "logo.png", mimeType: "image/png", buffer: png });
-  await page.getByLabel("Monthly recurring revenue (USD)").fill("9876543.21");
-  await page.getByLabel("Paying customers", { exact: true }).fill("123");
   await page.getByRole("button", { name: "Add SaaS", exact: true }).click();
-  await expect(page).toHaveURL(/\/dashboard\?saved=/);
-  productId = new URL(page.url()).searchParams.get("saved")!;
+  // New products continue straight to Stripe verification.
+  await expect(page).toHaveURL(/\/dashboard\/saas\/[0-9a-f-]{36}\?created=1/);
+  productId = new URL(page.url()).pathname.split("/").at(-1)!;
+  await expect(
+    page.getByText("Product added. Connect Stripe to verify its revenue."),
+  ).toBeVisible();
+
+  // Revenue can only come from a read-only Stripe key, and the key is never echoed back.
+  const stripeKey = page.getByLabel("Restricted key", { exact: true });
+  const connect = page.getByRole("button", { name: "Connect and verify" });
+  await stripeKey.fill(`sk_live_${"x".repeat(24)}`);
+  await connect.click();
+  await expect(page.getByRole("alert").filter({ hasText: "Use a restricted key" })).toBeVisible();
+  await expect(stripeKey).toHaveValue("");
+  await stripeKey.fill("rk_test_harbornoperm00001");
+  await connect.click();
+  await expect(
+    page.getByRole("alert").filter({ hasText: "missing a read permission" }),
+  ).toBeVisible();
+  await stripeKey.fill("rk_test_harborfixture0001");
+  await connect.click();
+  const revenue = page.locator("#revenue");
+  await expect(revenue.getByText("Connected to Stripe")).toBeVisible();
+  await expect(revenue.getByText("Test mode")).toBeVisible();
+  await expect(revenue.getByText("$104", { exact: true })).toBeVisible();
+  await expect(revenue.getByText("3", { exact: true })).toBeVisible();
+  const { data: stored } = await admin
+    .from("stripe_connections")
+    .select("encrypted_key, key_hint")
+    .eq("saas_id", productId)
+    .single();
+  expect(stored!.encrypted_key).toMatch(/^v1:/);
+  expect(stored!.encrypted_key).not.toContain("harborfixture");
+  expect(stored!.key_hint).toBe("rk_test_…0001");
+
+  // Verified figures stay private until the maker shares them.
   await page.goto(`/saas/${productId}`);
   await expect(page.getByRole("heading", { name: productName, exact: true })).toBeVisible();
   await expect(page).toHaveTitle(`${productName} | The SaaS Harbor`);
-  expect(await page.content()).not.toContain("9876543");
+  await expect(page.getByText(/Verified with Stripe through a read-only key/)).toBeVisible();
   await expect(page.getByText("Not shared", { exact: true })).toHaveCount(3);
+  // Visible text only: the page source also carries framework references like "$104".
+  expect(await page.locator("main").innerText()).not.toContain("$104");
   const { data: publicData } = await anon
     .from("public_saas")
     .select("*")
     .eq("id", productId)
     .single();
   expect(publicData.mrr_cents).toBeNull();
-  expect(publicData.customers).toBeNull();
-  const { error: historyError } = await anon.from("metric_reports").select("*");
-  expect(historyError?.code).toBe("42501");
+  expect(publicData.revenue_status).toBe("private");
+  for (const table of ["revenue_snapshots", "stripe_connections"]) {
+    const { error: denied } = await anon.from(table).select("*");
+    expect(denied?.code, table).toBe("42501");
+  }
   await page.goto(`/dashboard/saas/${productId}`);
-  await expect(page.getByLabel("Monthly recurring revenue (USD)")).toHaveValue("9876543.21");
-  await page.getByLabel("Monthly recurring revenue (USD)").fill("1234.56");
-  await page.getByLabel("Share MRR publicly", { exact: true }).check();
+  await page.getByLabel("Show verified MRR publicly", { exact: true }).check();
   await page.getByRole("button", { name: "Save changes" }).click();
   await expect(page).toHaveURL(/saved=/);
   await page.goto(`/?q=${encodeURIComponent(productName)}`);
   await expect(
-    page.getByRole("link").filter({ hasText: productName }).getByText("$1,234.56", { exact: true }),
+    page.getByRole("link").filter({ hasText: productName }).getByText("$104", { exact: true }),
   ).toBeVisible();
   // Audit pages in both themes while they show real, shared data.
   const dataPages = [
@@ -272,21 +307,80 @@ test("registration, email confirmation, profile and SaaS editing, storage, priva
       await expectAccessible(page);
     }
   }
+
+  // Manual refresh is rate limited, then re-reads Stripe.
   await page.goto(`/dashboard/saas/${productId}`);
-  await page.getByLabel("Share MRR publicly", { exact: true }).uncheck();
+  await page.getByRole("button", { name: "Refresh now" }).click();
+  await expect(
+    page.getByRole("alert").filter({ hasText: "verified in the last few minutes" }),
+  ).toBeVisible();
+  await admin
+    .from("stripe_connections")
+    .update({ last_synced_at: new Date(Date.now() - 10 * 60_000).toISOString() })
+    .eq("saas_id", productId);
+  await page.reload();
+  await page.getByRole("button", { name: "Refresh now" }).click();
+  await expect(
+    page.getByText(
+      "Verified MRR: $104 from 3 paying customers. 1 usage-based item was not counted.",
+    ),
+  ).toBeVisible();
+
+  await page.getByLabel("Show verified MRR publicly", { exact: true }).uncheck();
   await page.getByRole("button", { name: "Save changes" }).click();
   await expect(page).toHaveURL(/saved=/);
   await page.goto(`/?q=${encodeURIComponent(productName)}`);
   await expect(page.getByText(productName, { exact: true })).toHaveCount(0);
   await page.goto(`/discover?q=${encodeURIComponent(productName)}`);
   await expect(page.getByRole("heading", { name: productName, exact: true })).toBeVisible();
+
+  // One Stripe account can verify one product only.
   await page.goto("/dashboard/saas/new");
   await fillProduct(page, `Second ${run}`);
   await page.getByRole("button", { name: "Add SaaS", exact: true }).click();
-  await expect(page).toHaveURL(/saved=/);
-  await expect(page.getByRole("list", { name: "Your products" }).getByRole("listitem")).toHaveCount(
-    2,
-  );
+  await expect(page).toHaveURL(/created=1/);
+  const secondId = new URL(page.url()).pathname.split("/").at(-1)!;
+  await page.getByLabel("Restricted key", { exact: true }).fill("rk_test_harborfixture0002");
+  await page.getByRole("button", { name: "Connect and verify" }).click();
+  await expect(
+    page.getByRole("alert").filter({ hasText: "already verifies another SaaS" }),
+  ).toBeVisible();
+  await page.goto("/dashboard");
+  const products = page.getByRole("list", { name: "Your products" }).getByRole("listitem");
+  await expect(products).toHaveCount(2);
+  await expect(products.filter({ hasText: productName }).getByText("Verified")).toBeVisible();
+  await expect(
+    products.filter({ hasText: `Second ${run}` }).getByText("Not verified"),
+  ).toBeVisible();
+
+  // Disconnecting deletes the key and the public verification, and frees the subscriptions.
+  await page.goto(`/dashboard/saas/${productId}`);
+  await page.getByRole("button", { name: "Disconnect" }).click();
+  await page.getByRole("button", { name: "Confirm disconnect" }).click();
+  await expect(page.getByLabel("Restricted key", { exact: true })).toBeVisible();
+  const { count: remaining } = await admin
+    .from("stripe_connections")
+    .select("saas_id", { count: "exact", head: true })
+    .eq("saas_id", productId);
+  expect(remaining).toBe(0);
+  const { data: afterDisconnect } = await anon
+    .from("public_saas")
+    .select("revenue_status")
+    .eq("id", productId)
+    .single();
+  expect(afterDisconnect?.revenue_status).toBe("unverified");
+  await page.goto(`/dashboard/saas/${secondId}`);
+  await page.getByLabel("Restricted key", { exact: true }).fill("rk_test_harborfixture0002");
+  await page.getByRole("button", { name: "Connect and verify" }).click();
+  await expect(page.locator("#revenue").getByText("Connected to Stripe")).toBeVisible();
+
+  // The scheduled sync endpoint refuses callers without the secret.
+  expect((await request.post("/api/stripe/sync")).status()).toBe(401);
+  expect(
+    (
+      await request.post("/api/stripe/sync", { headers: { Authorization: "Bearer wrong" } })
+    ).status(),
+  ).toBe(401);
   // The signed-in header carries extra links, so check it separately on a phone-sized screen.
   await page.setViewportSize({ width: 390, height: 844 });
   for (const path of ["/", "/dashboard", `/dashboard/saas/${productId}`, `/saas/${productId}`]) {
@@ -321,12 +415,14 @@ test("another owner cannot read private history, edit SaaS, or overwrite images"
     auth: { persistSession: false, autoRefreshToken: false },
   });
   await other.auth.signInWithPassword({ email: secondEmail, password: secondPassword });
-  const { data: reports, error: readError } = await other
-    .from("metric_reports")
-    .select("*")
-    .eq("saas_id", productId);
-  expect(readError).toBeNull();
-  expect(reports).toEqual([]);
+  for (const table of ["revenue_snapshots", "stripe_connections"]) {
+    const { data: rows, error: readError } = await other
+      .from(table)
+      .select("saas_id")
+      .eq("saas_id", productId);
+    expect(readError, table).toBeNull();
+    expect(rows, table).toEqual([]);
+  }
   const { data: updated } = await other
     .from("saas")
     .update({ name: "Hijacked" })

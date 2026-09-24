@@ -1,4 +1,5 @@
 import { spawnSync } from "node:child_process";
+import { randomBytes } from "node:crypto";
 import { emailDelivery, ensureLocalSupabase, npx, shell } from "./local-supabase.mjs";
 
 const local = ensureLocalSupabase();
@@ -10,6 +11,8 @@ if (emailDelivery() !== "mailpit")
 const testEnv = { ...process.env };
 delete testEnv.NO_COLOR;
 delete testEnv.FORCE_COLOR;
+const fakeStripe = "http://127.0.0.1:3011";
+const cronSecret = randomBytes(32).toString("base64");
 const result = spawnSync(npx, ["playwright", "test"], {
   shell,
   stdio: "inherit",
@@ -18,10 +21,19 @@ const result = spawnSync(npx, ["playwright", "test"], {
     TEST_SUPABASE_URL: local.url,
     TEST_SUPABASE_SECRET_KEY: local.secretKey,
     TEST_MAILPIT_URL: local.mailpit,
+    TEST_CRON_SECRET: cronSecret,
     NEXT_PUBLIC_SUPABASE_URL: local.url,
     NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: local.publishableKey,
     NEXT_PUBLIC_SITE_URL: "http://127.0.0.1:3002",
     NEXT_DIST_DIR: ".next-e2e",
+    LOCAL_MAILPIT_URL: local.mailpit,
+    // Stripe verification against the fake API, with test-only secrets.
+    SUPABASE_SECRET_KEY: local.secretKey,
+    STRIPE_KEY_ENCRYPTION_KEY: randomBytes(32).toString("base64"),
+    CRON_SECRET: cronSecret,
+    STRIPE_ALLOW_TEST_KEYS: "true",
+    STRIPE_API_BASE: fakeStripe,
+    FX_API_BASE: fakeStripe,
   },
 });
 process.exit(result.status ?? 1);

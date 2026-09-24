@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { PAGE_SIZE, type Listing } from "@/lib/data";
+import { BadgeCheck } from "lucide-react";
+import { PAGE_SIZE, type Listing, type RevenueStatus } from "@/lib/data";
 import { formatDate, formatUsd } from "@/lib/domain";
 import { cn } from "@/lib/utils";
 import { ProductLogo } from "./avatars";
@@ -20,8 +21,8 @@ export function Leaderboard({ items }: { items: Listing[] }) {
         <span>#</span>
         <span>Product</span>
         <span>Category</span>
-        <span className="text-right">MRR</span>
-        <span className="text-right">Updated</span>
+        <span className="text-right">Verified MRR</span>
+        <span className="text-right">Verified</span>
       </div>
       <ol className="divide-y">
         {items.map((item) => (
@@ -61,8 +62,8 @@ export function Leaderboard({ items }: { items: Listing[] }) {
                 <span className="font-semibold tabular-nums">{formatUsd(item.mrr_cents ?? 0)}</span>
               </span>
               <span className="hidden text-right text-sm text-muted-foreground tabular-nums md:block">
-                <span className="sr-only">Updated </span>
-                {formatDate(item.reported_at)}
+                <span className="sr-only">Verified </span>
+                {formatDate(item.verified_at)}
               </span>
             </Link>
           </li>
@@ -70,6 +71,25 @@ export function Leaderboard({ items }: { items: Listing[] }) {
       </ol>
     </div>
   );
+}
+
+const revenueCopy: Record<RevenueStatus, string> = {
+  verified: "",
+  private: "MRR private",
+  stale: "Verification out of date",
+  unverified: "Not verified",
+};
+
+function RevenueLabel({ item }: { item: Listing }) {
+  const status = (item.revenue_status ?? "unverified") as RevenueStatus;
+  if (status === "verified" && item.mrr_cents != null)
+    return (
+      <span className="flex shrink-0 items-center gap-1 font-medium tabular-nums">
+        <BadgeCheck aria-label="Verified with Stripe" className="size-3.5 text-brand" />
+        {formatUsd(item.mrr_cents)} <span className="font-normal text-muted-foreground">MRR</span>
+      </span>
+    );
+  return <span className="shrink-0 text-muted-foreground">{revenueCopy[status]}</span>;
 }
 
 export function ListingCard({ item, meta }: { item: Listing; meta: "maker" | "joined" }) {
@@ -90,14 +110,7 @@ export function ListingCard({ item, meta }: { item: Listing; meta: "maker" | "jo
         <span className="truncate text-muted-foreground">
           {meta === "joined" ? `Joined ${formatDate(item.created_at)}` : `by ${item.owner_name}`}
         </span>
-        {item.mrr_cents != null ? (
-          <span className="shrink-0 font-medium tabular-nums">
-            {formatUsd(item.mrr_cents)}{" "}
-            <span className="font-normal text-muted-foreground">MRR</span>
-          </span>
-        ) : (
-          <span className="shrink-0 text-muted-foreground">MRR private</span>
-        )}
+        <RevenueLabel item={item} />
       </div>
     </Link>
   );

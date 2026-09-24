@@ -6,7 +6,16 @@ import type { Database } from "./supabase/database.types";
 export type Listing = Database["public"]["Views"]["public_saas"]["Row"] & { rank?: number | null };
 export type Profile = Database["public"]["Tables"]["profiles"]["Row"];
 export type Saas = Database["public"]["Tables"]["saas"]["Row"];
-export type Report = Database["public"]["Tables"]["metric_reports"]["Row"];
+export type SaasSettings = Database["public"]["Tables"]["saas_settings"]["Row"];
+export type RevenueSnapshot = Database["public"]["Tables"]["revenue_snapshots"]["Row"];
+export type StripeConnection = Omit<
+  Database["public"]["Tables"]["stripe_connections"]["Row"],
+  "encrypted_key"
+>;
+// Columns owners may read; the encrypted key is never granted.
+export const STRIPE_CONNECTION_COLUMNS =
+  "saas_id, owner_id, key_hint, livemode, status, last_error, connected_at, last_synced_at";
+export type RevenueStatus = "unverified" | "stale" | "private" | "verified";
 export const PAGE_SIZE = 12;
 export type Sort = "rank" | "name" | "newest";
 export async function listings({

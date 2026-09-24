@@ -44,11 +44,19 @@ The browser tests no longer assume an empty database, check for horizontal scrol
 
 ## Verified 2026-09-24
 
-- `npm run check`: Prettier, ESLint with zero warnings, TypeScript, 26 unit tests.
+- `npm run check`: Prettier, ESLint with zero warnings, TypeScript, 41 unit tests (27 for Stripe MRR, keys and encryption).
 - `npm run build`: Next.js 16.3.5 production build.
-- `npm run test:db`: 24 pgTAP assertions against a local database rebuilt from the migrations with `supabase db reset`.
-- `npm run test:e2e`: 5 Chromium integration tests with Axe scans in both themes, against local Supabase.
+- `npm run test:db`: 41 pgTAP assertions, stable over repeated runs. `supabase db diff` reports no drift between the local database and the migrations, and `supabase db lint` reports no errors.
+- `npm run test:e2e`: 5 Chromium integration tests with Axe scans in both themes, against local Supabase and a fake Stripe API.
 - The CI workflow has not run on GitHub yet. Its commands were run locally with the same Supabase service exclusions.
+
+## Verified revenue through Stripe 2026-09-24
+
+Makers no longer type in revenue. Each product can connect a Stripe restricted key with read access; the server computes MRR and paying customers from the subscriptions, stores the key encrypted, and re-verifies daily. Decisions by the project owner: products without Stripe are still listed but not ranked; the metric is subscription MRR (standard definition, see ARCHITECTURE); makers choose whether verified figures are public, private by default.
+
+The migration removes the self-reported `metric_reports` and moves visibility choices and launch dates to `saas_settings`. Makers cannot write verified figures, directly or through RPC, and cannot read stored keys. A Stripe subscription can verify one product only, and verifications older than seven days leave the leaderboard. `npm run db:seed` gives demo products verified test-mode snapshots.
+
+Not yet verified against the real Stripe API: the tests use a fake Stripe server with the documented response shapes for API version 2026-08-26.dahlia. Connecting one real test-mode restricted key is the first step before launch, to confirm the permission names shown to makers (Subscriptions, Coupons, Prices) and the response shapes. Exchange rates come from Frankfurter's public API.
 
 ## Local-only Supabase 2026-09-24
 
@@ -66,16 +74,19 @@ The website is not deployed. Production needs a decision on where Supabase runs:
 
 Before a public launch:
 
-1. Account and SaaS deletion. There are no delete policies or UI, so users cannot remove their data (GDPR right to erasure). A privacy policy and terms are also missing.
-2. Abuse and trust. SaaS creation is unlimited, there is no moderation or reporting, and self-reported MRR is easy to inflate. The leaderboard's credibility needs a plan: moderation at minimum, verified revenue (for example through Stripe) later.
-3. Email links across devices. PKCE links fail when the email is opened in another browser, such as on a phone after signing up on a desktop. The `token_hash` + `verifyOtp` confirmation flow with custom email templates avoids this.
-4. Security headers. No Content Security Policy yet. HSTS depends on the hosting platform. A future CSP must allow the inline theme script in the root layout, by hash or nonce.
-5. Production hosting: where Supabase runs (self-hosted or Cloud), SMTP, Auth URLs and a deployment target for the app.
+1. Verify Stripe verification once against the real Stripe API with a test-mode restricted key (see above).
+2. Account and SaaS deletion. There are no delete policies or UI, so users cannot remove their data (GDPR right to erasure). A privacy policy and terms are also missing, and should describe the Stripe data read and stored.
+3. Abuse and moderation. Revenue is now verified, but SaaS creation is unlimited and there is no moderation or reporting of listings.
+4. Email links across devices. PKCE links fail when the email is opened in another browser, such as on a phone after signing up on a desktop. The `token_hash` + `verifyOtp` confirmation flow with custom email templates avoids this.
+5. Security headers. No Content Security Policy yet. HSTS depends on the hosting platform. A future CSP must allow the inline theme script in the root layout, by hash or nonce.
+6. Production hosting: where Supabase runs (self-hosted or Cloud), SMTP, Auth URLs, a deployment target for the app, a secrets store for `SUPABASE_SECRET_KEY`, `STRIPE_KEY_ENCRYPTION_KEY` and `CRON_SECRET`, and a daily scheduler for `POST /api/stripe/sync`.
 
 Product and quality:
 
-6. `save_saas` appends a metric report and refreshes `reported_at` on every save, even when only the description changed. "Metrics updated" can then show a date when no metric changed, and history fills with duplicates.
-7. SEO: no `sitemap.ts`, `robots.ts`, Open Graph images or canonical URLs. Public URLs use UUIDs rather than slugs.
-8. Old images stay in storage after replacement or removal.
-9. All routes are dynamic with `no-store`. Public pages could be cached once traffic grows, with private data kept separate.
-10. Image signature validation in `src/lib/upload.ts` has no unit tests.
+7. One Stripe account verifies one product. Makers who sell several products from one account need a per-product filter (Stripe product ids) to split revenue.
+8. Only Stripe is supported. Paddle, Lemon Squeezy and others are not.
+9. Encryption key rotation: stored keys carry a version prefix, but there is no re-encryption job yet.
+10. SEO: no `sitemap.ts`, `robots.ts`, Open Graph images or canonical URLs. Public URLs use UUIDs rather than slugs.
+11. Old images stay in storage after replacement or removal.
+12. All routes are dynamic with `no-store`. Public pages could be cached once traffic grows, with private data kept separate.
+13. Image signature validation in `src/lib/upload.ts` has no unit tests. Vitest can now import server-only modules, so this is straightforward.

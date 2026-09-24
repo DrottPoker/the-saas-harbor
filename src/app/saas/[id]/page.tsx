@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { z } from "zod";
-import { ArrowUpRight } from "lucide-react";
-import { publicSaas } from "@/lib/data";
+import { ArrowUpRight, BadgeCheck } from "lucide-react";
+import { publicSaas, type RevenueStatus } from "@/lib/data";
 import { formatDate, formatUsd } from "@/lib/domain";
 import { cn } from "@/lib/utils";
 import { PersonAvatar, ProductLogo } from "@/components/avatars";
@@ -27,7 +27,15 @@ function hostname(url: string | null) {
   }
 }
 
-function Metric({ label, value }: { label: string; value: string | null }) {
+function Metric({
+  label,
+  value,
+  empty = "Not shared",
+}: {
+  label: string;
+  value: string | null;
+  empty?: string;
+}) {
   return (
     <div className="px-5 py-4">
       <dt className="text-sm text-muted-foreground">{label}</dt>
@@ -37,11 +45,19 @@ function Metric({ label, value }: { label: string; value: string | null }) {
           value ? "text-2xl font-semibold tracking-tight" : "text-base text-faint-foreground",
         )}
       >
-        {value ?? "Not shared"}
+        {value ?? empty}
       </dd>
     </div>
   );
 }
+
+// Why a revenue figure is missing, for visitors.
+const missingRevenue: Record<RevenueStatus, string> = {
+  verified: "Not shared",
+  private: "Not shared",
+  stale: "Verification out of date",
+  unverified: "Not verified",
+};
 
 export default async function SaasProfile({ params }: Props) {
   const { id } = await params;
@@ -50,7 +66,7 @@ export default async function SaasProfile({ params }: Props) {
   if (!item) notFound();
   const name = item.name ?? "SaaS";
   const site = hostname(item.website);
-  const shared = item.mrr_cents != null || item.customers != null || item.launched_on != null;
+  const status = (item.revenue_status ?? "unverified") as RevenueStatus;
 
   return (
     <Shell size="medium">
@@ -99,16 +115,26 @@ export default async function SaasProfile({ params }: Props) {
         <Metric
           label="Monthly recurring revenue"
           value={item.mrr_cents == null ? null : formatUsd(item.mrr_cents)}
+          empty={missingRevenue[status]}
         />
-        <Metric label="Paying customers" value={item.customers?.toLocaleString("en-US") ?? null} />
+        <Metric
+          label="Paying customers"
+          value={item.customers?.toLocaleString("en-US") ?? null}
+          empty={missingRevenue[status]}
+        />
         <Metric label="Launched" value={item.launched_on ? formatDate(item.launched_on) : null} />
       </dl>
-      {shared && (
-        <p className="mt-3 text-[13px] text-faint-foreground">
-          Self-reported by the maker and not independently verified. Updated{" "}
-          {formatDate(item.reported_at)}.
-        </p>
-      )}
+      <p className="mt-3 flex items-center gap-1.5 text-[13px] text-muted-foreground">
+        {status === "unverified" ? (
+          "Revenue has not been verified. The maker has not connected Stripe."
+        ) : (
+          <>
+            <BadgeCheck aria-hidden="true" className="size-4 shrink-0 text-brand" />
+            Verified with Stripe through a read-only key. Last verified{" "}
+            {formatDate(item.verified_at)}.{!item.livemode && " Test mode data."}
+          </>
+        )}
+      </p>
 
       <div className="mt-12 grid gap-10 lg:grid-cols-[minmax(0,1fr)_17rem] lg:gap-14">
         <section>

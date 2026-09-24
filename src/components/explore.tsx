@@ -14,7 +14,7 @@ const intro: Record<Mode, { title: string; description: string; path: string; so
   ranked: {
     title: "Independent SaaS, ranked by revenue",
     description:
-      "Monthly recurring revenue shared publicly by the founders who build these products.",
+      "Monthly recurring revenue verified through each product's Stripe account and shared by its founder.",
     path: "/",
     sort: "rank",
   },
@@ -120,7 +120,7 @@ export async function Explore({
             }
           >
             {ranked
-              ? "Products appear on the leaderboard once their maker shares MRR publicly."
+              ? "Products appear here once their maker connects Stripe and shares verified MRR."
               : "Be the first to list a product."}
           </EmptyState>
         )
@@ -137,8 +137,9 @@ export async function Explore({
 
       {ranked && (
         <p className="mt-8 max-w-2xl text-[13px] text-faint-foreground">
-          MRR is self-reported by each maker and not independently verified. Equal amounts are
-          ordered by the date the product was listed.{" "}
+          MRR is read from each product&apos;s Stripe subscriptions through a read-only key and
+          refreshed daily. Figures older than seven days are not ranked. Equal amounts are ordered
+          by the date the product was listed.{" "}
           <Link href="/about" className="underline underline-offset-2 hover:text-foreground">
             How the ranking works
           </Link>

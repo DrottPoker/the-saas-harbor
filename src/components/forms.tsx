@@ -4,8 +4,8 @@ import { useEditorAction } from "./use-editor-action";
 import { useFormStatus } from "react-dom";
 import Link from "next/link";
 import { authenticate, saveProfile, saveSaas } from "@/app/actions";
-import { categories, usdInput, type ActionState } from "@/lib/domain";
-import type { Profile, Saas, Report } from "@/lib/data";
+import { categories, type ActionState } from "@/lib/domain";
+import type { Profile, Saas, SaasSettings } from "@/lib/data";
 import { cn } from "@/lib/utils";
 import { PersonAvatar, ProductLogo } from "./avatars";
 import { Notice } from "./shell";
@@ -14,7 +14,7 @@ import { Input, fieldClasses } from "./ui/input";
 import { Textarea } from "./ui/textarea";
 import { Label } from "./ui/label";
 
-function Submit({ className, children }: { className?: string; children: React.ReactNode }) {
+export function Submit({ className, children }: { className?: string; children: React.ReactNode }) {
   const { pending } = useFormStatus();
   return (
     <Button type="submit" disabled={pending} className={className}>
@@ -22,12 +22,12 @@ function Submit({ className, children }: { className?: string; children: React.R
     </Button>
   );
 }
-function Feedback({ state }: { state: ActionState }) {
+export function Feedback({ state }: { state: ActionState }) {
   if (state.error) return <Notice tone="error">{state.error}</Notice>;
   if (state.success) return <Notice tone="success">{state.success}</Notice>;
   return null;
 }
-function Field({
+export function Field({
   name,
   label,
   hint,
@@ -68,7 +68,7 @@ function Share({
   );
 }
 // Settings-style section: title and explanation on the left, fields on the right.
-function Section({
+export function Section({
   title,
   description,
   children,
@@ -111,7 +111,7 @@ function ImageField({
     </div>
   );
 }
-function Actions({ children }: { children: React.ReactNode }) {
+export function Actions({ children }: { children: React.ReactNode }) {
   return <div className="flex items-center justify-end gap-2 border-t pt-6">{children}</div>;
 }
 
@@ -259,15 +259,15 @@ export function ProfileForm({ profile }: { profile: Profile | null }) {
 export function SaasForm({
   id,
   saas,
-  report,
+  settings,
 }: {
   id: string;
   saas?: Saas;
-  report?: Report | null;
+  settings?: SaasSettings | null;
 }) {
   const [state, action] = useEditorAction(saveSaas);
-  const shared = (key: "public_mrr" | "public_customers" | "public_launch") =>
-    state.values ? !!state.values[key] : report?.[key];
+  const shared = (key: "share_mrr" | "share_customers" | "share_launch") =>
+    state.values ? !!state.values[key] : settings?.[key];
   return (
     <form action={action}>
       <input type="hidden" name="id" value={id} />
@@ -335,63 +335,35 @@ export function SaasForm({
         <ImageField label="Upload logo" current={saas?.logo_path} name={saas?.name ?? ""} />
       </Section>
       <Section
-        title="Metrics"
-        description="Private unless you share them. Only public MRR appears on the leaderboard. Each save records a dated report."
+        title="Visibility"
+        description="Revenue and customers come from Stripe and are private unless you share them. Only shared, verified MRR is ranked."
       >
-        <div className="grid gap-5 sm:grid-cols-2">
-          <div className="grid gap-2.5">
-            <Field name="mrr" label="Monthly recurring revenue (USD)">
-              <div className="relative">
-                <span
-                  aria-hidden="true"
-                  className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-muted-foreground"
-                >
-                  $
-                </span>
-                <Input
-                  id="mrr"
-                  name="mrr"
-                  inputMode="decimal"
-                  placeholder="0.00"
-                  className="pl-7 tabular-nums"
-                  defaultValue={state.values?.mrr ?? usdInput(report?.mrr_cents)}
-                />
-              </div>
-            </Field>
-            <Share name="public_mrr" label="Share MRR publicly" checked={shared("public_mrr")} />
-          </div>
-          <div className="grid gap-2.5">
-            <Field name="customers" label="Paying customers">
-              <Input
-                id="customers"
-                name="customers"
-                inputMode="numeric"
-                placeholder="0"
-                className="tabular-nums"
-                defaultValue={state.values?.customers ?? report?.customers ?? ""}
-              />
-            </Field>
-            <Share
-              name="public_customers"
-              label="Share customer count publicly"
-              checked={shared("public_customers")}
+        <div className="grid gap-2.5">
+          <Share
+            name="share_mrr"
+            label="Show verified MRR publicly"
+            checked={shared("share_mrr")}
+          />
+          <Share
+            name="share_customers"
+            label="Show paying customer count publicly"
+            checked={shared("share_customers")}
+          />
+        </div>
+        <div className="grid gap-2.5 sm:max-w-xs">
+          <Field name="launched_on" label="Launch date">
+            <Input
+              id="launched_on"
+              name="launched_on"
+              type="date"
+              defaultValue={state.values?.launched_on ?? settings?.launched_on ?? ""}
             />
-          </div>
-          <div className="grid gap-2.5">
-            <Field name="launched_on" label="Launch date">
-              <Input
-                id="launched_on"
-                name="launched_on"
-                type="date"
-                defaultValue={state.values?.launched_on ?? report?.launched_on ?? ""}
-              />
-            </Field>
-            <Share
-              name="public_launch"
-              label="Share launch date publicly"
-              checked={shared("public_launch")}
-            />
-          </div>
+          </Field>
+          <Share
+            name="share_launch"
+            label="Share launch date publicly"
+            checked={shared("share_launch")}
+          />
         </div>
       </Section>
       <div className="grid gap-4">

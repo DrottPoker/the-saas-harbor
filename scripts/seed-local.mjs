@@ -1,4 +1,6 @@
-import { randomUUID } from "node:crypto";
+import { createCipheriv, createHash, randomBytes, randomUUID } from "node:crypto";
+import { readFileSync } from "node:fs";
+import { parseEnv } from "node:util";
 import { deflateSync } from "node:zlib";
 import { createClient } from "@supabase/supabase-js";
 import { ensureLocalSupabase } from "./local-supabase.mjs";
@@ -85,6 +87,7 @@ const makers = [
       },
       {
         name: "Dialtone",
+        stripe: false,
         tagline: "An AI receptionist that answers the phone for dental clinics.",
         category: "AI & Machine Learning",
         mrr: 15800,
@@ -227,6 +230,7 @@ const makers = [
       },
       {
         name: "Kilnbook",
+        stripe: false,
         tagline: "Studio management for ceramic artists: firings, glazes and classes.",
         category: "Other",
         mrr: 890,
@@ -300,6 +304,38 @@ const local = ensureLocalSupabase();
 const options = { auth: { persistSession: false, autoRefreshToken: false } };
 const admin = createClient(local.url, local.secretKey, options);
 
+// Demo products get a verified snapshot through the same trusted RPC the app uses. Their test-mode
+// keys are placeholders: a later refresh fails with "Stripe rejected the key", as a revoked key
+// would. The encryption matches src/lib/stripe/crypto.ts.
+const encryptionKey = Buffer.from(
+  parseEnv(readFileSync(".env.local", "utf8")).STRIPE_KEY_ENCRYPTION_KEY ?? "",
+  "base64",
+);
+if (encryptionKey.length !== 32) throw new Error("Run `npm run env:local` before seeding.");
+function encrypt(plaintext, saasId) {
+  const iv = randomBytes(12);
+  const cipher = createCipheriv("aes-256-gcm", encryptionKey, iv);
+  cipher.setAAD(Buffer.from(saasId));
+  const data = Buffer.concat([cipher.update(plaintext, "utf8"), cipher.final()]);
+  return ["v1", iv, data, cipher.getAuthTag()]
+    .map((p) => (typeof p === "string" ? p : p.toString("base64url")))
+    .join(":");
+}
+async function verifyDemo(saasId, product) {
+  const { error } = await admin.rpc("record_stripe_verification", {
+    p_saas_id: saasId,
+    p_encrypted_key: encrypt(`rk_test_demo${randomBytes(12).toString("hex")}`, saasId),
+    p_key_hint: "rk_test_…demo",
+    p_livemode: false,
+    p_mrr_cents: product.mrr * 100,
+    p_customers: product.customers,
+    p_currencies: { usd: product.mrr * 100 },
+    p_fx_date: null,
+    p_subscription_hashes: [createHash("sha256").update(`demo-${saasId}`).digest("hex")],
+  });
+  if (error) throw new Error(`Could not verify ${product.name}.`);
+}
+
 const { data: existing, error: listError } = await admin.auth.admin.listUsers({ perPage: 1000 });
 if (listError) throw new Error("Could not list local users.");
 for (const user of existing.users.filter((user) => user.email?.endsWith(`@${DOMAIN}`))) {
@@ -348,19 +384,16 @@ for (const maker of makers) {
       p_category: product.category,
       p_website: `https://${product.name.toLowerCase()}.example`,
       p_logo_path: logoPath,
-      p_mrr_cents: product.mrr * 100,
-      p_customers: product.customers,
       p_launched_on: product.launched,
-      p_public_mrr: product.share.includes("mrr"),
-      p_public_customers: product.share.includes("customers"),
-      p_public_launch: product.share.includes("launch"),
+      p_share_mrr: product.share.includes("mrr"),
+      p_share_customers: product.share.includes("customers"),
+      p_share_launch: product.share.includes("launch"),
     });
     if (saveError) throw new Error(`Could not save ${product.name}.`);
     // Spread join dates so newest-first listings look realistic.
     const joined = new Date(Date.now() - product.age * day).toISOString();
-    const updated = new Date(Date.now() - Math.min(product.age, 9) * day).toISOString();
     await admin.from("saas").update({ created_at: joined }).eq("id", id);
-    await admin.from("public_metrics").update({ reported_at: updated }).eq("saas_id", id);
+    if (product.stripe !== false) await verifyDemo(id, product);
     count++;
   }
   await client.auth.signOut();
