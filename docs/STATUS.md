@@ -46,8 +46,8 @@ The browser tests no longer assume an empty database, check for horizontal scrol
 
 - `npm run check`: Prettier, ESLint with zero warnings, TypeScript, 67 unit tests: Stripe MRR, invoice history, keys and encryption, chart models, and the full Stripe read path against the fake Stripe server.
 - `npm run build`: Next.js 16.3.5 production build.
-- `npm run test:db`: 46 pgTAP assertions, stable over repeated runs. `supabase db diff` reports no drift between the local database and the migrations, and `supabase db lint` reports no errors.
-- `npm run test:e2e`: 5 Chromium integration tests with Axe scans in both themes (including the revenue charts), against local Supabase and a fake Stripe API, passing twice in a row.
+- `npm run test:db`: 59 pgTAP assertions, stable over repeated runs. `supabase db diff` reports no drift between the local database and the migrations, and `supabase db lint` reports no errors.
+- `npm run test:e2e`: 6 Chromium integration tests with Axe scans in both themes (including the revenue charts, the privacy policy and the delete account section), against local Supabase and a fake Stripe API, passing twice in a row.
 - The CI workflow has not run on GitHub yet. Its commands were run locally with the same Supabase service exclusions.
 
 ## Verified revenue through Stripe 2026-09-24
@@ -67,6 +67,13 @@ Verified products now show how their revenue developed. Decisions by the project
 - Makers need Invoices: Read on the restricted key. Keys created before this change still verify MRR; the editor tells the maker to replace the key to get history.
 - Migration `20260924180000_revenue_history.sql` stores history and the growth basis on each snapshot and projects them publicly only when MRR is shared and fresh (pgTAP covers shared, hidden and stale cases).
 
+## Account deletion and a privacy policy 2026-09-24
+
+- Makers can delete their account under Maker profile → Delete account, confirmed with their password. Their profile, products, images, Stripe keys, verification history and sign-in records are removed at once, their products leave the leaderboard, and they are signed out to a confirmation page. The database requires a password sign-in from the last five minutes, so a stolen session token alone cannot delete an account (see ARCHITECTURE).
+- A privacy policy at `/privacy`, linked from the footer, sign-up, the Stripe connection and the delete section. It is written from what the code actually stores and reads. It is a draft until the operator's name and contact address are set in `src/lib/legal.ts`.
+- The dark theme's destructive buttons had white text on a light red (2.9:1). They now use dark text (5.7:1) through a new `--destructive-foreground` token.
+- The "How it works" page now lists the Invoices permission and says that month-end history and growth are public when MRR is shared.
+
 ## Local-only Supabase 2026-09-24
 
 The project owner decided that Supabase runs locally for this project, not on Supabase Cloud. `npm run dev` now starts the local Docker stack when needed and points `.env.local` at it, the hosted check script was removed, and the sign-in pages link to the local Mailpit inbox. A sign-up that "never sent an email" was the expected local behavior: the message was waiting in Mailpit. A start right after a stop can fail when a container misses its health check; `npm run db:start` and `db:restart` then retry once and show the CLI error lines, never the keys.
@@ -84,7 +91,7 @@ The website is not deployed. Production needs a decision on where Supabase runs:
 Before a public launch:
 
 1. Verify Stripe verification once against the real Stripe API with a test-mode restricted key (see above).
-2. Account and SaaS deletion. There are no delete policies or UI, so users cannot remove their data (GDPR right to erasure). A privacy policy and terms are also missing, and should describe the Stripe data read and stored.
+2. Legal pages. The privacy policy is a draft: set the operator's name and contact address in `src/lib/legal.ts`, name the hosting, database and email providers once they are chosen (and any transfers outside the EU/EEA), and have it reviewed. Terms of service are missing. Makers can delete their whole account, but not a single product.
 3. Abuse and moderation. Revenue is now verified, but SaaS creation is unlimited and there is no moderation or reporting of listings.
 4. Email links across devices. PKCE links fail when the email is opened in another browser, such as on a phone after signing up on a desktop. The `token_hash` + `verifyOtp` confirmation flow with custom email templates avoids this.
 5. Security headers. No Content Security Policy yet. HSTS depends on the hosting platform. A future CSP must allow the inline theme script in the root layout, by hash or nonce.

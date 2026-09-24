@@ -28,6 +28,7 @@ Next.js 16 App Router and Supabase platform where independent SaaS products get 
 - Never stop or reset other projects' local Supabase containers (for example `one-life-at-sea` on the 543xx ports).
 - Every exposed table needs RLS and explicit grants. Views use `security_invoker = true`. Only `src/lib/supabase/admin.ts` uses the service-role key, for Stripe verification writes; never use it for anything a maker controls directly.
 - Revenue never comes from user input. Verified figures are written only through `record_stripe_verification`. Never log or print Stripe keys, encrypted or not, and never change `STRIPE_KEY_ENCRYPTION_KEY` without a re-encryption plan.
+- Personal data: anything new that stores data about a person must be described in the privacy policy (`src/app/privacy/page.tsx`, with a new `privacyUpdated` date in `src/lib/legal.ts`) and removed by account deletion (`public.delete_account()` and `src/lib/account.ts`), with a test.
 - Stored money is integer USD cents. MRR normalization may use fractions, but rounds once at the end (`src/lib/stripe/mrr.ts`).
 - Mutations are Server Actions that call `requireUser()`, with RLS as the second layer. Public reads use `publicClient()` so they never carry a session.
 - Validate input on the server with the zod schemas in `src/lib/domain.ts`.

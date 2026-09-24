@@ -395,6 +395,7 @@ export type Database = {
       }
     }
     Functions: {
+      delete_account: { Args: never; Returns: undefined }
       record_stripe_verification: {
         Args: {
           p_currencies: Json

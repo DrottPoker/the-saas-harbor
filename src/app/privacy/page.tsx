@@ -1,0 +1,211 @@
+import type { Metadata } from "next";
+import Link from "next/link";
+import { Notice, PageHeader, Shell } from "@/components/shell";
+import { operator, privacyUpdated } from "@/lib/legal";
+
+export const metadata: Metadata = {
+  title: "Privacy policy",
+  description: "What The SaaS Harbor stores about you, why, who can see it, and how to delete it.",
+};
+
+function Section({
+  id,
+  title,
+  children,
+}: {
+  id: string;
+  title: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <section id={id} aria-labelledby={`${id}-title`} className="scroll-mt-24">
+      <h2 id={`${id}-title`} className="text-lg font-semibold">
+        {title}
+      </h2>
+      <div className="mt-3 grid gap-3 leading-7 text-foreground/85">{children}</div>
+    </section>
+  );
+}
+
+function List({ children }: { children: React.ReactNode }) {
+  return <ul className="grid list-disc gap-2 pl-5 marker:text-faint-foreground">{children}</ul>;
+}
+
+const link = "font-medium text-foreground underline underline-offset-2";
+
+export default function Privacy() {
+  const contact = operator ? (
+    <a className={link} href={`mailto:${operator.email}`}>
+      {operator.email}
+    </a>
+  ) : (
+    "the contact address above, once it is published"
+  );
+  return (
+    <Shell size="narrow">
+      <PageHeader
+        title="Privacy policy"
+        description="What The SaaS Harbor stores about you, why, who can see it, and how to delete it."
+      />
+      <div className="grid gap-10 border-t pt-10">
+        <div className="grid gap-4">
+          <p className="text-sm text-muted-foreground">Last updated {privacyUpdated}.</p>
+          {!operator && (
+            <Notice>
+              This policy is a draft. The name of the operator and a contact address for privacy
+              requests are added before the site opens to the public.
+            </Notice>
+          )}
+        </div>
+
+        <Section id="responsible" title="Who is responsible">
+          {operator ? (
+            <p>
+              The SaaS Harbor is run by {operator.name}, which is responsible for the personal data
+              described here. For privacy questions and requests, email {contact}.
+            </p>
+          ) : (
+            <p>
+              The name of the operator, who is responsible for the personal data described here, and
+              a contact address for privacy questions will be listed here.
+            </p>
+          )}
+        </Section>
+
+        <Section id="data" title="What we store">
+          <List>
+            <li>
+              <strong className="font-medium text-foreground">Account.</strong> Your email address
+              and your password, which is stored only as a salted hash. We also record account
+              events, such as sign-ins, with their time and IP address, to keep accounts secure.
+            </li>
+            <li>
+              <strong className="font-medium text-foreground">Maker profile.</strong> Your name,
+              bio, website, social profile link and photo.
+            </li>
+            <li>
+              <strong className="font-medium text-foreground">Products.</strong> Name, tagline,
+              description, category, website, logo and launch date.
+            </li>
+            <li>
+              <strong className="font-medium text-foreground">Stripe verification.</strong> If you
+              connect Stripe: the restricted key you paste, stored encrypted, and the result of each
+              verification. That is your monthly recurring revenue, the number of paying customers,
+              totals per currency, revenue at each of the last twelve month-ends, and one-way hashes
+              of subscription IDs, which stop one Stripe account from verifying two products.
+            </li>
+            <li>
+              <strong className="font-medium text-foreground">Preferences.</strong> Whether you
+              chose the light or dark theme, in a cookie on your device.
+            </li>
+          </List>
+        </Section>
+
+        <Section id="stripe" title="What we read from Stripe">
+          <p>
+            With the key you provide, our server reads subscriptions, invoices, coupons and prices
+            from your Stripe account. It only reads and never changes anything in Stripe.
+          </p>
+          <p>
+            Invoices can include your customers&apos; names and email addresses. We use only
+            amounts, currencies, dates and plan details to calculate the figures above, and we never
+            store or log details about your customers.
+          </p>
+          <p>
+            Disconnecting Stripe deletes the stored key at once. Earlier verification results stay
+            in your private history until you delete your account. You can also delete the key in
+            Stripe under <span className="whitespace-nowrap">Developers → API keys</span>.
+          </p>
+        </Section>
+
+        <Section id="purposes" title="Why we use it">
+          <List>
+            <li>
+              To run your account and publish the maker profile and products you create. This is the
+              service you sign up for (performance of a contract, GDPR Article 6(1)(b)).
+            </li>
+            <li>
+              To verify revenue through Stripe when you connect it, and show the figures you choose
+              to share. This is part of the same service (Article 6(1)(b)).
+            </li>
+            <li>
+              To keep the service secure and fair, through the sign-in records and the subscription
+              hashes described above (our legitimate interests, Article 6(1)(f)).
+            </li>
+          </List>
+          <p>We do not sell data, show ads, or use analytics or tracking of any kind.</p>
+        </Section>
+
+        <Section id="visibility" title="Who can see it">
+          <List>
+            <li>
+              <strong className="font-medium text-foreground">Everyone:</strong> your maker profile,
+              your products and their logos, and the verified figures you choose to share. Sharing
+              MRR also shows its month-end history and 30-day growth. Paying customers and the
+              launch date each have their own setting.
+            </li>
+            <li>
+              <strong className="font-medium text-foreground">Only you:</strong> your email address,
+              your Stripe connection status, your verification history and any figures you keep
+              private. Stored Stripe keys are never shown, not even to you.
+            </li>
+            <li>
+              <strong className="font-medium text-foreground">Service providers:</strong> our
+              hosting, database and email providers process data on our behalf to run the site.
+              Account emails, such as confirmation and password reset messages, are sent through our
+              email provider. If a provider handles data outside the EU or EEA, we use the
+              safeguards the GDPR requires, such as the EU standard contractual clauses.
+            </li>
+          </List>
+          <p>
+            Exchange rates for other currencies come from a public service. Those requests contain
+            only currency codes.
+          </p>
+        </Section>
+
+        <Section id="cookies" title="Cookies">
+          <p>
+            We only use cookies the site needs: sign-in cookies that keep you signed in, and a theme
+            cookie that remembers light or dark mode. There are no advertising or analytics cookies.
+          </p>
+        </Section>
+
+        <Section id="retention" title="How long we keep it">
+          <p>
+            We keep your data for as long as you have an account. When you delete your account, your
+            profile, products, images, Stripe keys, verification history and sign-in records are
+            deleted right away. Copies in backups disappear when those backups expire.
+          </p>
+          <p>
+            Information that was public may already have been copied by others, such as search
+            engines, before it was deleted.
+          </p>
+        </Section>
+
+        <Section id="rights" title="Your rights">
+          <p>
+            You can see and change your profile and products at any time in your dashboard, and
+            delete your account yourself under{" "}
+            <Link className={link} href="/dashboard/profile#delete-account">
+              Maker profile → Delete account
+            </Link>
+            .
+          </p>
+          <p>
+            Under the GDPR you also have the right to access your data, have it corrected, erased or
+            moved to another service, restrict how it is used, and object to use based on our
+            legitimate interests. To use these rights, write to {contact}. You can also complain to
+            a data protection authority, for example in the country where you live or work.
+          </p>
+        </Section>
+
+        <Section id="changes" title="Changes to this policy">
+          <p>
+            When this policy changes, we update the date at the top. We will email registered makers
+            about changes that affect how we use data they have already given us.
+          </p>
+        </Section>
+      </div>
+    </Shell>
+  );
+}

@@ -1,5 +1,6 @@
 import { ProfileForm } from "@/components/forms";
 import { BackLink } from "@/components/back-link";
+import { DeleteAccount } from "@/components/delete-account";
 import { PageHeader, Shell } from "@/components/shell";
 import { requireUser } from "@/lib/supabase/server";
 
@@ -20,6 +21,7 @@ export default async function EditProfile() {
       <div className="pt-8">
         <ProfileForm profile={data} />
       </div>
+      <DeleteAccount />
     </Shell>
   );
 }

@@ -1,7 +1,7 @@
 -- Grants, RLS, storage ownership, verified revenue and ranking. Runs in a rolled-back transaction.
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(46);
+select plan(59);
 
 insert into auth.users(id) values
   ('b0000000-0000-4000-8000-000000000001'),
@@ -280,6 +280,106 @@ select results_eq(
     where id = 'c0000000-0000-4000-8000-000000000004' $$,
   $$ values (null::jsonb, null::numeric) $$,
   'stale history and growth are hidden'
+);
+
+
+-- Account deletion: only the signed-in maker, only after a recent password sign-in, and it
+-- removes everything they own while other makers keep theirs.
+reset role;
+insert into auth.audit_log_entries(id, payload) values
+  (gen_random_uuid(), json_build_object('action', 'login', 'actor_id', 'b0000000-0000-4000-8000-000000000001')),
+  (gen_random_uuid(), json_build_object('action', 'user_signedup',
+    'actor_id', '00000000-0000-0000-0000-000000000000', 'traits', json_build_object('user_id', 'b0000000-0000-4000-8000-000000000001'))),
+  (gen_random_uuid(), json_build_object('action', 'login', 'actor_id', 'b0000000-0000-4000-8000-000000000002'));
+insert into auth.refresh_tokens(token, user_id) values ('pgtap-refresh-token', 'b0000000-0000-4000-8000-000000000001');
+insert into auth.flow_state(id, user_id, provider_type, authentication_method)
+  values (gen_random_uuid(), 'b0000000-0000-4000-8000-000000000001', 'email', 'email/signup');
+
+set local role anon;
+select set_config('request.jwt.claim.sub', '', true);
+select throws_ok(
+  'select public.delete_account()',
+  '42501', null, 'visitors cannot call account deletion'
+);
+
+set local role authenticated;
+select set_config('request.jwt.claim.sub', 'b0000000-0000-4000-8000-000000000002', true);
+select lives_ok(
+  $$ select public.save_saas('c0000000-0000-4000-8000-000000000005', 'SQL Test Other Owner',
+    'Other fixture', 'A temporary fixture that is rolled back.', 'Other', 'https://example.com',
+    null, null, true, false, false) $$,
+  'another owner saves a product'
+);
+select set_config('request.jwt.claim.sub', 'b0000000-0000-4000-8000-000000000001', true);
+select set_config('request.jwt.claims', json_build_object('sub', 'b0000000-0000-4000-8000-000000000001')::text, true);
+select throws_ok(
+  'select public.delete_account()',
+  '42501', 'Confirm your password to delete your account',
+  'a session without a password sign-in cannot delete the account'
+);
+select set_config('request.jwt.claims', json_build_object('sub', 'b0000000-0000-4000-8000-000000000001', 'amr', json_build_array(json_build_object('method', 'password', 'timestamp', extract(epoch from now())::bigint - 600)))::text, true);
+select throws_ok(
+  'select public.delete_account()',
+  '42501', 'Confirm your password to delete your account',
+  'a password sign-in older than five minutes is not enough'
+);
+select set_config('request.jwt.claims', json_build_object('sub', 'b0000000-0000-4000-8000-000000000001', 'amr', json_build_array(json_build_object('method', 'otp', 'timestamp', extract(epoch from now())::bigint - 0)))::text, true);
+select throws_ok(
+  'select public.delete_account()',
+  '42501', 'Confirm your password to delete your account',
+  'an email link sign-in is not enough'
+);
+select set_config('request.jwt.claims', json_build_object('sub', 'b0000000-0000-4000-8000-000000000001', 'amr', json_build_array(json_build_object('method', 'password', 'timestamp', extract(epoch from now())::bigint - 5)))::text, true);
+select lives_ok(
+  'select public.delete_account()',
+  'a maker deletes their own account right after confirming the password'
+);
+select set_config('request.jwt.claims', '', true);
+
+reset role;
+select is_empty(
+  $$ select 1 from auth.users where id = 'b0000000-0000-4000-8000-000000000001' $$,
+  'the auth user is deleted'
+);
+select is(
+  (select count(*)::int from (
+    select id from public.profiles where id = 'b0000000-0000-4000-8000-000000000001'
+    union all select id from public.saas where owner_id = 'b0000000-0000-4000-8000-000000000001'
+    union all select saas_id from public.saas_settings where owner_id = 'b0000000-0000-4000-8000-000000000001'
+    union all select saas_id from public.public_metrics where owner_id = 'b0000000-0000-4000-8000-000000000001'
+    union all select saas_id from public.revenue_snapshots where owner_id = 'b0000000-0000-4000-8000-000000000001'
+    union all select saas_id from public.stripe_connections where owner_id = 'b0000000-0000-4000-8000-000000000001'
+  ) owned),
+  0, 'profile, products, settings, metrics, snapshots and Stripe keys are deleted'
+);
+select is_empty(
+  $$ select 1 from private.stripe_subscription_claims
+    where saas_id in ('c0000000-0000-4000-8000-000000000001', 'c0000000-0000-4000-8000-000000000002',
+      'c0000000-0000-4000-8000-000000000004') $$,
+  'subscription claims are deleted'
+);
+select is_empty(
+  $$ select 1 from auth.audit_log_entries
+    where payload ->> 'actor_id' = 'b0000000-0000-4000-8000-000000000001' or payload -> 'traits' ->> 'user_id' = 'b0000000-0000-4000-8000-000000000001'
+  union all select 1 from auth.refresh_tokens where user_id = 'b0000000-0000-4000-8000-000000000001'
+  union all select 1 from auth.flow_state where user_id = 'b0000000-0000-4000-8000-000000000001' $$,
+  'audit log entries, refresh tokens and sign-in flows are deleted'
+);
+select is(
+  (select count(*)::int from auth.audit_log_entries where payload ->> 'actor_id' = 'b0000000-0000-4000-8000-000000000002'),
+  1, 'other users keep their audit log entries'
+);
+select results_eq(
+  $$ select (select count(*)::int from auth.users where id = 'b0000000-0000-4000-8000-000000000002'),
+    (select count(*)::int from public.saas where owner_id = 'b0000000-0000-4000-8000-000000000002') $$,
+  $$ values (1, 1) $$,
+  'other users keep their account and products'
+);
+set local role service_role;
+select lives_ok(
+  $$ select public.record_stripe_verification('c0000000-0000-4000-8000-000000000005', 'v1:other',
+    'rk_live_…0005', true, 1000, 1, '{}', null, array[repeat('d', 64)], null, null, null) $$,
+  'subscriptions of a deleted account can verify another product'
 );
 
 reset role;

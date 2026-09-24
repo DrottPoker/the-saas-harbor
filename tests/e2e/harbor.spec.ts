@@ -1,6 +1,6 @@
 import { test, expect, type Page } from "@playwright/test";
 import { createClient } from "@supabase/supabase-js";
-import { randomBytes, randomUUID } from "node:crypto";
+import { createHash, randomBytes, randomUUID } from "node:crypto";
 import AxeBuilder from "@axe-core/playwright";
 
 const url = process.env.TEST_SUPABASE_URL!;
@@ -21,6 +21,8 @@ const email = `harbor-${run}@example.test`;
 const password = randomBytes(24).toString("hex");
 const secondEmail = `harbor-second-${run}@example.test`;
 const secondPassword = randomBytes(24).toString("hex");
+const leavingEmail = `harbor-leaving-${run}@example.test`;
+const leavingPassword = randomBytes(24).toString("hex");
 const userIds: string[] = [];
 const productName = `Harbor test ${run}`;
 let productId = "";
@@ -77,8 +79,8 @@ async function expectAccessible(page: Page) {
 test.describe.configure({ mode: "serial" });
 test.afterAll(async () => {
   const { data } = await admin.auth.admin.listUsers();
-  for (const user of data.users.filter(
-    (user) => user.email === email || user.email === secondEmail,
+  for (const user of data.users.filter((user) =>
+    [email, secondEmail, leavingEmail].includes(user.email ?? ""),
   )) {
     if (!userIds.includes(user.id)) userIds.push(user.id);
   }
@@ -89,7 +91,8 @@ test.afterAll(async () => {
         .from("profile-images")
         .remove(images.map((image) => `${id}/${image.name}`));
     const { error } = await admin.auth.admin.deleteUser(id);
-    if (error) throw new Error("Local fixture cleanup failed.");
+    // A user may already have deleted their own account.
+    if (error && error.status !== 404) throw new Error("Local fixture cleanup failed.");
   }
 });
 
@@ -106,7 +109,7 @@ test("anonymous navigation, private route protection and responsive empty state"
   await page.goto(`/discover?category=Design&q=missing-${run}`);
   await expect(page.getByRole("heading", { name: "No matching products" })).toBeVisible();
   await page.setViewportSize({ width: 390, height: 844 });
-  for (const path of ["/", "/discover", "/auth"]) {
+  for (const path of ["/", "/discover", "/auth", "/privacy"]) {
     await page.goto(path);
     await expectNoHorizontalScroll(page);
   }
@@ -119,7 +122,18 @@ test("anonymous navigation, private route protection and responsive empty state"
     caret: "initial",
   });
   await expectAccessible(page);
-  const publicPages = ["/discover", "/newest", "/about", "/auth", "/auth?mode=signup", "/missing"];
+  await page.getByRole("contentinfo").getByRole("link", { name: "Privacy" }).click();
+  await expect(page.getByRole("heading", { name: "Privacy policy", level: 1 })).toBeVisible();
+  const publicPages = [
+    "/discover",
+    "/newest",
+    "/about",
+    "/privacy",
+    "/account-deleted",
+    "/auth",
+    "/auth?mode=signup",
+    "/missing",
+  ];
   for (const path of publicPages) {
     await page.goto(path);
     await expectAccessible(page);
@@ -140,7 +154,7 @@ test("theme menu persists light and dark, and system follows the OS", async ({ p
   await page.reload();
   await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
   expect(await pageBackground(page)).toBe(dark);
-  for (const path of ["/", "/discover", "/newest", "/about", "/auth", "/missing"]) {
+  for (const path of ["/", "/discover", "/newest", "/about", "/privacy", "/auth", "/missing"]) {
     await page.goto(path);
     await expectAccessible(page);
   }
@@ -500,4 +514,115 @@ test("password recovery confirms a local email link and accepts the new password
   await expect(page).toHaveURL(/\/dashboard$/);
   await page.getByRole("button", { name: "Sign out", exact: true }).click();
   await login(page, email, replacement);
+});
+
+test("a maker deletes their account and everything in it", async ({ page }) => {
+  const { data: created, error } = await admin.auth.admin.createUser({
+    email: leavingEmail,
+    password: leavingPassword,
+    email_confirm: true,
+  });
+  if (error || !created.user) throw new Error("Unable to create the leaving maker.");
+  const id = created.user.id;
+  userIds.push(id);
+
+  // A profile with a photo, a product with a logo, an image in a subfolder, and a verified
+  // Stripe connection with its claims, snapshot and public projection.
+  const maker = createClient(url, publicKey, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+  await maker.auth.signInWithPassword({ email: leavingEmail, password: leavingPassword });
+  const images = maker.storage.from("profile-images");
+  for (const file of ["avatar.png", "logo.png", "nested/old.png"]) {
+    const { error: uploadError } = await images.upload(`${id}/${file}`, png, {
+      contentType: "image/png",
+    });
+    if (uploadError) throw new Error("Unable to upload fixture images.");
+  }
+  const { error: profileError } = await maker.from("profiles").upsert({
+    id,
+    name: "Leaving Maker",
+    bio: "",
+    website: "",
+    social_url: "",
+    avatar_path: `${id}/avatar.png`,
+  });
+  if (profileError) throw new Error("Unable to create the fixture profile.");
+  const productId = randomUUID();
+  const { error: saveError } = await maker.rpc("save_saas", {
+    p_id: productId,
+    p_name: `Leaving ${run}`,
+    p_tagline: "A product that is deleted with its maker's account.",
+    p_description: "This is an isolated local integration fixture for account deletion.",
+    p_category: "Other",
+    p_website: "https://example.com",
+    p_logo_path: `${id}/logo.png`,
+    p_launched_on: null,
+    p_share_mrr: true,
+    p_share_customers: false,
+    p_share_launch: false,
+  });
+  if (saveError) throw new Error("Unable to create the fixture product.");
+  const { error: verifyError } = await admin.rpc("record_stripe_verification", {
+    p_saas_id: productId,
+    p_encrypted_key: "v1:e2e-fixture",
+    p_key_hint: "rk_test_…e2e0",
+    p_livemode: false,
+    p_mrr_cents: 4200,
+    p_customers: 2,
+    p_currencies: { usd: 4200 },
+    p_fx_date: null,
+    p_subscription_hashes: [createHash("sha256").update(`leaving-${run}`).digest("hex")],
+    p_history: null,
+    p_mrr_invoice_cents: null,
+    p_mrr_30d_ago_cents: null,
+  });
+  if (verifyError) throw new Error("Unable to verify the fixture product.");
+  await maker.auth.signOut();
+
+  await login(page, leavingEmail, leavingPassword);
+  await page.goto("/dashboard/profile");
+  const confirm = page.getByLabel("Confirm with your password");
+  const remove = page.getByRole("button", { name: "Delete account" });
+  // A wrong password changes nothing, and the password is never written back into the field.
+  await confirm.fill("not-the-right-password");
+  await remove.click();
+  await expect(
+    page.getByRole("alert").filter({ hasText: "The password is incorrect." }),
+  ).toBeVisible();
+  await expect(confirm).toHaveValue("");
+  expect((await admin.auth.admin.getUserById(id)).error).toBeNull();
+  expect((await admin.storage.from("profile-images").list(id)).data).toHaveLength(3);
+
+  await confirm.fill(leavingPassword);
+  await remove.click();
+  await expect(page).toHaveURL(/\/account-deleted$/);
+  await expect(page.getByRole("heading", { name: "Your account has been deleted" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Sign in", exact: true })).toBeVisible();
+
+  expect((await admin.auth.admin.getUserById(id)).error?.status).toBe(404);
+  for (const [table, column] of [
+    ["profiles", "id"],
+    ["saas", "owner_id"],
+    ["saas_settings", "owner_id"],
+    ["public_metrics", "owner_id"],
+    ["revenue_snapshots", "owner_id"],
+    ["stripe_connections", "owner_id"],
+  ]) {
+    const { data: rows, error: readError } = await admin.from(table).select(column).eq(column, id);
+    expect(readError, table).toBeNull();
+    expect(rows, table).toEqual([]);
+  }
+  for (const folder of [id, `${id}/nested`]) {
+    const { data: files } = await admin.storage.from("profile-images").list(folder);
+    expect(files, folder).toEqual([]);
+  }
+  await page.goto(`/saas/${productId}`);
+  await expect(page.getByRole("heading", { name: "Page not found" })).toBeVisible();
+  await page.goto("/dashboard");
+  await expect(page).toHaveURL(/\/auth$/);
+  await page.getByLabel("Email address").fill(leavingEmail);
+  await page.getByLabel("Password", { exact: true }).fill(leavingPassword);
+  await page.getByRole("button", { name: "Sign in", exact: true }).click();
+  await expect(page.getByRole("alert").filter({ hasText: "Unable to sign in" })).toBeVisible();
 });

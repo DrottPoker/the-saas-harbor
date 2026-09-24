@@ -18,7 +18,7 @@ One Next.js App Router application uses React, TypeScript, Tailwind CSS and shad
 
 Every exposed table has RLS and explicit grants. Views use `security_invoker = true`. Composite foreign keys prevent attaching another owner's data to a product. The invoker `save_saas` RPC saves product details, visibility choices and launch date; it accepts no figures. Verified figures are written only by trusted server code with the service-role key, through `record_stripe_verification`, which is executable by `service_role` alone.
 
-The public projection `public_metrics` is maintained by `private.refresh_public_metrics`, called from triggers on `saas_settings`, `revenue_snapshots` and `stripe_connections`. It is the one SECURITY DEFINER function: a maker's own setting change must update a table the maker cannot write. It lives in the unexposed `private` schema, has an empty `search_path`, and its execute privilege is revoked from API roles. An unset sharing flag writes NULL into the projection. Snapshots carry an identity `seq` so "latest" is deterministic even for snapshots taken at the same instant.
+The public projection `public_metrics` is maintained by `private.refresh_public_metrics`, called from triggers on `saas_settings`, `revenue_snapshots` and `stripe_connections`. It and its trigger function are SECURITY DEFINER, because a maker's own setting change must update a table the maker cannot write. They live in the unexposed `private` schema, has an empty `search_path`, and its execute privilege is revoked from API roles. An unset sharing flag writes NULL into the projection. Snapshots carry an identity `seq` so "latest" is deterministic even for snapshots taken at the same instant.
 
 Public reads deliberately create a separate anonymous Supabase client. They do not inherit the current owner's session. This makes the public route's data shape identical for an owner and a visitor. All application routes are dynamic; data fetches use `no-store`, and the Proxy sends `Cache-Control: private, no-store`. No shared application/CDN cache holds private records. An already downloaded public page cannot be recalled from a visitor.
 
@@ -41,9 +41,22 @@ Makers connect a Stripe restricted key (`rk_live_`; `rk_test_` only when `STRIPE
 
 Server actions in `src/app/stripe-actions.ts` check ownership on every call, since the SaaS id is bound on the client. Manual refresh is limited to once per five minutes. `POST /api/stripe/sync` re-verifies every connection when called with `Authorization: Bearer $CRON_SECRET` (compared in constant time); production needs a daily scheduler for it. The service-role key (`SUPABASE_SECRET_KEY`) is only read by `src/lib/supabase/admin.ts`, a server-only module used for these trusted writes.
 
+## Account deletion
+
+Makers delete their account under Maker profile → Delete account, confirming with their password. `deleteAccountAction` (`src/app/actions.ts`) calls `deleteAccount` in `src/lib/account.ts`:
+
+1. It signs in again with the password on a separate client without cookies. Auth's rate limit applies, and a wrong password stops here with nothing changed.
+2. With that fresh session it removes every file under the maker's folder in `profile-images` through the Storage API, repeating until the folder lists empty. Storage blocks SQL deletes on `storage.objects`, which has no foreign key to `auth.users`, so files would otherwise outlive the account. If this fails, the account stays in place and can be deleted again.
+3. It calls `public.delete_account()`. This SECURITY DEFINER function deletes only `auth.uid()`, and only when the JWT's `amr` claim has a password sign-in from the last five minutes, so a leaked or long-lived session token alone cannot delete an account. It deletes the user's audit log entries (email and IP address), leftover refresh tokens and sign-in flows, then the auth user. Foreign keys cascade to the profile, products, settings, Stripe connections with their keys, subscription claims, snapshots and the public projection. Execute is granted to `authenticated` only.
+4. The action signs the browser out and redirects to `/account-deleted`.
+
+The pgTAP suite covers the recent-password requirement, the complete removal and that other makers are untouched. The browser test covers the whole flow, including images in a subfolder.
+
+The privacy policy is `src/app/privacy/page.tsx`. The operator's name and contact address come from `src/lib/legal.ts`; while they are unset, the page says it is a draft. Anything new that stores personal data must be described there and removed by account deletion.
+
 ## Interface
 
-Styling uses Tailwind utilities in the components. Design tokens (colors, fonts, radii) live as CSS variables in `src/app/globals.css` and map to Tailwind names such as `bg-muted`, `text-muted-foreground` and `text-brand`. There is no page-specific global CSS. The type is Geist, loaded with `next/font`, and body text is never smaller than 12 px. The palette is neutral with one teal accent (`--accent`) for links, focus rings and checkboxes, and a separate `--brand-mark` for the logo. Cards, tables and fields sit on `bg-surface`, one step lighter than the page background. Primary buttons use the foreground color.
+Styling uses Tailwind utilities in the components. Design tokens (colors, fonts, radii) live as CSS variables in `src/app/globals.css` and map to Tailwind names such as `bg-muted`, `text-muted-foreground` and `text-brand`. There is no page-specific global CSS. The type is Geist, loaded with `next/font`, and body text is never smaller than 12 px. The palette is neutral with one teal accent (`--accent`) for links, focus rings and checkboxes, and a separate `--brand-mark` for the logo. Cards, tables and fields sit on `bg-surface`, one step lighter than the page background. Primary buttons use the foreground color. Destructive buttons use `--destructive` with `--destructive-foreground`, which is dark in the dark theme because white text on the lighter red there fails contrast.
 
 There are two themes, light (warm paper, `#f6f5f1`) and dark (graphite, `#1b1f24`), and neither is pure white or black. `globals.css` defines each token once for light and once inside `@variant dark`. The custom `dark` variant matches `data-theme="dark"` on `<html>`, or the OS dark preference when light was not chosen, so "System" needs no JavaScript. The choice is stored in a `theme` cookie by the theme menu (`src/components/theme-menu.tsx`). A small inline script from `src/lib/theme.ts` runs in `<head>` before first paint and sets `data-theme` from the cookie, following the Next.js guide on preventing flash before hydration. The server never reads the cookie, so the theme does not stop pages from being cached later. `color-scheme` follows the theme, so native controls such as the date picker and scrollbars match. Components should rarely need `dark:` utilities, because the tokens switch instead.
 
@@ -69,7 +82,7 @@ Authentication is Supabase Auth (email and password). Signup and password recove
 
 ## Deliberate limits
 
-There are no company profiles, deletion/account-erasure UI, transaction features, messaging, revenue integrations other than Stripe, image garbage collector, or historical chart UI. The first version is an owner-usable profile and discovery application. Real usage may warrant abuse controls, moderation, optimized images and cache design before broader public launch.
+There are no company profiles, deletion of a single product (only the whole account), transaction features, messaging, revenue integrations other than Stripe, or image garbage collector. The first version is an owner-usable profile and discovery application. Real usage may warrant abuse controls, moderation, optimized images and cache design before broader public launch.
 
 ## Sources checked during implementation
 

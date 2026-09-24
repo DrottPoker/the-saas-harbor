@@ -1,8 +1,9 @@
 "use server";
 
-import { redirect } from "next/navigation";
+import { redirect, RedirectType } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
+import { deleteAccount } from "@/lib/account";
 import { profileSchema, saasSchema, type ActionState } from "@/lib/domain";
 import { requireUser, serverClient } from "@/lib/supabase/server";
 import { uploadImage } from "@/lib/upload";
@@ -70,6 +71,25 @@ export async function signOut() {
   if (error) throw new Error("Unable to sign out. Please try again.");
   revalidatePath("/", "layout");
   redirect("/");
+}
+
+export async function deleteAccountAction(
+  _state: ActionState,
+  form: FormData,
+): Promise<ActionState> {
+  const { user, client } = await requireUser();
+  const password = value(form, "password");
+  if (!password || password.length > 128) return { error: "Enter your password to confirm." };
+  if (!user.email) return { error: "Your account could not be deleted. Try again." };
+  try {
+    await deleteAccount(user.id, user.email, password);
+  } catch (error) {
+    return { error: message(error) };
+  }
+  // The account no longer exists, so this only clears the session cookies in this browser.
+  await client.auth.signOut({ scope: "local" });
+  revalidatePath("/", "layout");
+  redirect("/account-deleted", RedirectType.replace);
 }
 
 export async function saveProfile(_state: ActionState, form: FormData): Promise<ActionState> {

@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useActionState, useState } from "react";
 import { CircleAlert, CircleCheck } from "lucide-react";
 import {
@@ -51,7 +52,10 @@ function ConnectForm({ saasId, replace }: { saasId: string; replace: boolean }) 
       </Field>
       <p className="text-[13px] text-muted-foreground">
         The key is encrypted and only used to read subscriptions and paid invoices. You can revoke
-        it in Stripe at any time.
+        it in Stripe at any time.{" "}
+        <Link href="/privacy#stripe" className="font-medium text-foreground underline">
+          How we handle Stripe data
+        </Link>
       </p>
       <Feedback state={state} />
       <Actions>

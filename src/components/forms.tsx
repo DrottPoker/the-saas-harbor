@@ -14,11 +14,21 @@ import { Input, fieldClasses } from "./ui/input";
 import { Textarea } from "./ui/textarea";
 import { Label } from "./ui/label";
 
-export function Submit({ className, children }: { className?: string; children: React.ReactNode }) {
+export function Submit({
+  className,
+  variant,
+  pendingLabel = "Saving...",
+  children,
+}: {
+  className?: string;
+  variant?: "default" | "destructive";
+  pendingLabel?: string;
+  children: React.ReactNode;
+}) {
   const { pending } = useFormStatus();
   return (
-    <Button type="submit" disabled={pending} className={className}>
-      {pending ? "Saving..." : children}
+    <Button type="submit" variant={variant} disabled={pending} className={className}>
+      {pending ? pendingLabel : children}
     </Button>
   );
 }
@@ -168,6 +178,15 @@ export function AuthForm({ mode }: { mode: "login" | "signup" | "reset" | "updat
       )}
       <Feedback state={state} />
       <Submit className="h-10 w-full">{authCopy[mode]}</Submit>
+      {mode === "signup" && (
+        <p className="text-center text-[13px] text-muted-foreground">
+          Read how we handle your data in the{" "}
+          <Link className="font-medium text-foreground underline" href="/privacy">
+            privacy policy
+          </Link>
+          .
+        </p>
+      )}
       <p className="text-center text-sm text-muted-foreground">
         {mode === "login" ? (
           <>
