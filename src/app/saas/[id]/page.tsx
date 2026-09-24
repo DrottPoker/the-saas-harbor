@@ -7,9 +7,9 @@ import { parseHistory } from "@/lib/charts";
 import { publicProfile, publicSaas, type RevenueStatus } from "@/lib/data";
 import { currentUser } from "@/lib/supabase/server";
 import { formatDate, formatUsd } from "@/lib/domain";
-import { cn } from "@/lib/utils";
 import { PersonAvatar, ProductLogo } from "@/components/avatars";
 import { Growth } from "@/components/charts/growth";
+import { Metric } from "@/components/metric";
 import { RevenueHistory } from "@/components/charts/revenue-history";
 import { SendMessageButton } from "@/components/messages/send-message-button";
 import { Shell } from "@/components/shell";
@@ -30,33 +30,6 @@ function hostname(url: string | null) {
   } catch {
     return null;
   }
-}
-
-function Metric({
-  label,
-  value,
-  empty = "Not shared",
-  detail,
-}: {
-  label: string;
-  value: string | null;
-  empty?: string;
-  detail?: React.ReactNode;
-}) {
-  return (
-    <div className="px-5 py-4">
-      <dt className="text-sm text-muted-foreground">{label}</dt>
-      <dd
-        className={cn(
-          "mt-1 tabular-nums",
-          value ? "text-2xl font-semibold tracking-tight" : "text-base text-faint-foreground",
-        )}
-      >
-        {value ?? empty}
-      </dd>
-      {value && detail && <dd className="mt-1">{detail}</dd>}
-    </div>
-  );
 }
 
 // Why a revenue figure is missing, for visitors.

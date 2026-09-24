@@ -1,23 +1,24 @@
 import type { Metadata } from "next";
-import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { z } from "zod";
-import { MapPin, Pencil } from "lucide-react";
+import { BadgeCheck, Pencil } from "lucide-react";
 import { PersonAvatar } from "@/components/avatars";
 import { ListingGrid, ResultsFooter } from "@/components/listings";
 import { SendMessageButton } from "@/components/messages/send-message-button";
-import {
-  EntryList,
-  OpenTo,
-  ProfileCard,
-  ProfileLinks,
-  Skills,
-} from "@/components/profile/profile-sections";
+import { Metric } from "@/components/metric";
+import { ProfileDetails, RoleList, Skills } from "@/components/profile/profile-sections";
 import { EmptyState, Notice, Shell } from "@/components/shell";
 import { Button } from "@/components/ui/button";
-import { listings, PAGE_SIZE, publicProfile, publicProfileEntries, safePage } from "@/lib/data";
-import { imageUrl } from "@/lib/images";
+import {
+  listings,
+  makerTotals,
+  PAGE_SIZE,
+  publicProfile,
+  publicProfileExperience,
+  safePage,
+} from "@/lib/data";
+import { formatUsd } from "@/lib/domain";
 import { currentUser } from "@/lib/supabase/server";
 
 type Props = { params: Promise<{ id: string }>; searchParams: Promise<{ page?: string }> };
@@ -31,21 +32,22 @@ export async function generateMetadata({ params }: Pick<Props, "params">): Promi
     : {};
 }
 
+const across = (count: number) => `Across ${count} ${count === 1 ? "product" : "products"}`;
+
+// Laid out like the product page: a header, key figures, then the story with details at the side.
 export default async function Maker({ params, searchParams }: Props) {
   const { id } = await params;
   if (!z.uuid().safeParse(id).success) notFound();
   const profile = await publicProfile(id);
   if (!profile) notFound();
   const page = safePage((await searchParams).page);
-  const [entries, result, viewer] = await Promise.all([
-    publicProfileEntries(id),
+  const [experience, totals, result, viewer] = await Promise.all([
+    publicProfileExperience(id),
+    makerTotals(id),
     listings({ owner: id, page }),
     currentUser(),
   ]);
   const own = viewer?.id === id;
-  const experience = entries.filter((entry) => entry.kind === "experience");
-  const education = entries.filter((entry) => entry.kind === "education");
-  const cover = imageUrl(profile.cover_path);
   const missing = [
     !profile.headline && "a headline",
     !profile.bio && "an About section",
@@ -54,63 +56,53 @@ export default async function Maker({ params, searchParams }: Props) {
   ].filter(Boolean);
 
   return (
-    <Shell size="narrow">
-      <section
-        aria-labelledby="maker-name"
-        className="overflow-hidden rounded-xl border bg-surface"
-      >
-        <div className="relative aspect-[3/1] bg-linear-to-br from-brand-soft via-muted to-subtle sm:aspect-[4/1]">
-          {cover && (
-            <Image src={cover} alt="" fill sizes="768px" className="object-cover" unoptimized />
-          )}
-        </div>
-        <div className="px-5 pb-6 sm:px-8">
-          <div className="flex items-end justify-between gap-4">
-            <PersonAvatar
-              path={profile.avatar_path}
-              name={profile.name}
-              size="2xl"
-              decorative={false}
-              className="relative -mt-12 border-4 border-surface sm:-mt-16"
-            />
-            <div className="flex gap-2 pt-4">
-              {own ? (
-                <Button asChild variant="outline" size="sm">
-                  <Link href="/dashboard/profile">
-                    <Pencil />
-                    Edit profile
-                  </Link>
-                </Button>
-              ) : (
-                <SendMessageButton makerId={id} viewerId={viewer?.id ?? null} size="sm" />
-              )}
-            </div>
-          </div>
-          <h1
-            id="maker-name"
-            className="mt-4 text-2xl font-semibold tracking-tight [overflow-wrap:anywhere] sm:text-3xl"
-          >
+    <Shell size="medium">
+      <header className="flex flex-col gap-5 sm:flex-row sm:items-start">
+        <PersonAvatar path={profile.avatar_path} name={profile.name} size="xl" decorative={false} />
+        <div className="min-w-0 flex-1">
+          <h1 className="text-3xl font-semibold tracking-tight [overflow-wrap:anywhere]">
             {profile.name}
           </h1>
           {profile.headline && (
-            <p className="mt-1 text-base [overflow-wrap:anywhere] sm:text-lg">{profile.headline}</p>
+            <p className="mt-1.5 text-lg text-muted-foreground [overflow-wrap:anywhere]">
+              {profile.headline}
+            </p>
           )}
-          <p className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground">
-            {profile.location && (
-              <span className="inline-flex items-center gap-1">
-                <MapPin aria-hidden="true" className="size-4" />
-                {profile.location}
-              </span>
-            )}
-            {result.count > 0 && (
-              <span>
-                {result.count} {result.count === 1 ? "product" : "products"}
-              </span>
-            )}
-          </p>
-          <ProfileLinks profile={profile} className="mt-4" />
+          {profile.location && (
+            <p className="mt-3 text-sm text-muted-foreground">{profile.location}</p>
+          )}
         </div>
-      </section>
+        {own ? (
+          <Button asChild variant="outline" className="self-start">
+            <Link href="/dashboard/profile">
+              <Pencil />
+              Edit profile
+            </Link>
+          </Button>
+        ) : (
+          <SendMessageButton makerId={id} viewerId={viewer?.id ?? null} className="self-start" />
+        )}
+      </header>
+
+      <dl className="mt-10 grid divide-y rounded-xl border bg-surface sm:grid-cols-3 sm:divide-x sm:divide-y-0">
+        <Metric label="Products" value={String(totals.products)} />
+        <Metric
+          label="Verified MRR"
+          value={totals.mrr.total === null ? null : formatUsd(totals.mrr.total)}
+          detail={<span className="text-xs text-muted-foreground">{across(totals.mrr.count)}</span>}
+        />
+        <Metric
+          label="Paying customers"
+          value={totals.customers.total?.toLocaleString("en-US") ?? null}
+          detail={
+            <span className="text-xs text-muted-foreground">{across(totals.customers.count)}</span>
+          }
+        />
+      </dl>
+      <p className="mt-3 flex items-center gap-1.5 text-[13px] text-muted-foreground">
+        <BadgeCheck aria-hidden="true" className="size-4 shrink-0 text-brand" />
+        Figures are verified with Stripe and include only the products that share them.
+      </p>
 
       {own && missing.length > 0 && (
         <Notice className="mt-6">
@@ -121,47 +113,56 @@ export default async function Maker({ params, searchParams }: Props) {
         </Notice>
       )}
 
-      <div className="mt-6 grid gap-6">
-        {profile.open_to.length > 0 && <OpenTo name={profile.name} values={profile.open_to} />}
-        {profile.bio && (
-          <ProfileCard id="about" title="About">
-            <p className="leading-7 whitespace-pre-wrap text-foreground/85 [overflow-wrap:anywhere]">
-              {profile.bio}
-            </p>
-          </ProfileCard>
-        )}
-        <ProfileCard id="products" title="Products">
-          {result.error ? (
-            <Notice tone="error">{result.error}</Notice>
-          ) : !result.rows.length ? (
-            <EmptyState title="No products listed">
-              {profile.name} has not listed a product yet.
-            </EmptyState>
-          ) : (
-            <>
-              <ListingGrid items={result.rows} meta="joined" columns={2} />
-              {/* The header already shows the count; pages only matter for long lists. */}
-              {result.count > PAGE_SIZE && (
-                <ResultsFooter page={page} count={result.count} href={(next) => `?page=${next}`} />
-              )}
-            </>
+      <div className="mt-12 grid gap-10 lg:grid-cols-[minmax(0,1fr)_17rem] lg:gap-14">
+        <div className="grid min-w-0 content-start gap-12">
+          {profile.bio && (
+            <section>
+              <h2 className="text-lg font-semibold">About {profile.name}</h2>
+              <p className="mt-3 leading-7 whitespace-pre-wrap text-foreground/85 [overflow-wrap:anywhere]">
+                {profile.bio}
+              </p>
+            </section>
           )}
-        </ProfileCard>
-        {experience.length > 0 && (
-          <ProfileCard id="experience" title="Experience">
-            <EntryList entries={experience} />
-          </ProfileCard>
-        )}
-        {education.length > 0 && (
-          <ProfileCard id="education" title="Education">
-            <EntryList entries={education} />
-          </ProfileCard>
-        )}
-        {profile.skills.length > 0 && (
-          <ProfileCard id="skills" title="Skills">
-            <Skills skills={profile.skills} />
-          </ProfileCard>
-        )}
+          <section aria-labelledby="products">
+            <h2 id="products" className="text-lg font-semibold">
+              Products
+            </h2>
+            <div className="mt-4">
+              {result.error ? (
+                <Notice tone="error">{result.error}</Notice>
+              ) : !result.rows.length ? (
+                <EmptyState title="No products listed">
+                  {profile.name} has not listed a product yet.
+                </EmptyState>
+              ) : (
+                <>
+                  <ListingGrid items={result.rows} meta="joined" columns={2} />
+                  {result.count > PAGE_SIZE && (
+                    <ResultsFooter
+                      page={page}
+                      count={result.count}
+                      href={(next) => `?page=${next}`}
+                    />
+                  )}
+                </>
+              )}
+            </div>
+          </section>
+          {experience.length > 0 && (
+            <section aria-labelledby="experience">
+              <h2 id="experience" className="text-lg font-semibold">
+                Experience
+              </h2>
+              <div className="mt-4">
+                <RoleList roles={experience} />
+              </div>
+            </section>
+          )}
+        </div>
+        <aside className="grid content-start gap-4">
+          <ProfileDetails profile={profile} />
+          {profile.skills.length > 0 && <Skills skills={profile.skills} />}
+        </aside>
       </div>
     </Shell>
   );

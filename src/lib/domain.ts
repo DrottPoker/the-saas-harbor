@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { currentMonth, ENTRY_KINDS, OPEN_TO_VALUES } from "./profile";
+import { currentMonth } from "./profile";
 
 export const categories = [
   "AI & Machine Learning",
@@ -78,31 +78,29 @@ function profileLink(host: RegExp, site: string, example: string) {
 const month = z
   .string()
   .regex(/^\d{4}-(0[1-9]|1[0-2])$/, "Choose a month and a year for every date.");
-export const entrySchema = z
+export const roleSchema = z
   .object({
-    kind: z.enum(ENTRY_KINDS),
     title: z
       .string()
       .trim()
-      .min(1, "Every entry needs a title.")
+      .min(1, "Every role needs a title.")
       .max(100, "Keep titles under 100 characters."),
     organization: z
       .string()
       .trim()
-      .min(1, "Every entry needs a company or school.")
-      .max(100, "Keep company and school names under 100 characters."),
+      .min(1, "Every role needs a company.")
+      .max(100, "Keep company names under 100 characters."),
     start: month,
     end: month.nullable(),
     description: z.string().trim().max(1000, "Keep descriptions under 1,000 characters."),
   })
-  .refine((entry) => entry.start >= "1900-01", "Choose a start year after 1900.")
-  .refine((entry) => entry.start <= currentMonth(), "A start date cannot be in the future.")
+  .refine((role) => role.start >= "1900-01", "Choose a start year after 1900.")
+  .refine((role) => role.start <= currentMonth(), "A start date cannot be in the future.")
+  .refine((role) => !role.end || role.end >= role.start, "A role cannot end before it starts.")
   .refine(
-    (entry) => !entry.end || entry.end >= entry.start,
-    "An entry cannot end before it starts.",
-  )
-  .refine((entry) => !entry.end || entry.end <= "2100-12", "Choose an end year before 2100.");
-export type EntryInput = z.infer<typeof entrySchema>;
+    (role) => !role.end || role.end <= currentMonth(),
+    "An end date cannot be in the future.",
+  );
 export const profileSchema = z.object({
   name: z
     .string()
@@ -121,7 +119,6 @@ export const profileSchema = z.object({
   github_url: profileLink(/^(www\.)?github\.com$/i, "GitHub", "https://github.com/your-name"),
   x_url: profileLink(/^(www\.)?(x|twitter)\.com$/i, "X", "https://x.com/your-name"),
   social_url: optionalUrl,
-  open_to: z.array(z.enum(OPEN_TO_VALUES)).transform((values) => [...new Set(values)]),
   skills: z
     .array(
       z
@@ -130,7 +127,7 @@ export const profileSchema = z.object({
         .regex(/^\P{Cc}+$/u, "Skills cannot contain special characters."),
     )
     .max(20, "Add up to 20 skills."),
-  entries: z.array(entrySchema).max(40, "List up to 40 entries."),
+  experience: z.array(roleSchema).max(40, "List up to 40 roles."),
 });
 export const saasSchema = z.object({
   id: z.uuid(),

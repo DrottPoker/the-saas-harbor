@@ -212,13 +212,12 @@ export type Database = {
           },
         ]
       }
-      profile_entries: {
+      profile_experience: {
         Row: {
           created_at: string
           description: string
           ends_on: string | null
           id: string
-          kind: string
           organization: string
           profile_id: string
           starts_on: string
@@ -229,7 +228,6 @@ export type Database = {
           description?: string
           ends_on?: string | null
           id?: string
-          kind: string
           organization: string
           profile_id: string
           starts_on: string
@@ -240,7 +238,6 @@ export type Database = {
           description?: string
           ends_on?: string | null
           id?: string
-          kind?: string
           organization?: string
           profile_id?: string
           starts_on?: string
@@ -248,14 +245,14 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "profile_entries_profile_id_fkey"
+            foreignKeyName: "profile_experience_profile_id_fkey"
             columns: ["profile_id"]
             isOneToOne: false
             referencedRelation: "inbox"
             referencedColumns: ["other_id"]
           },
           {
-            foreignKeyName: "profile_entries_profile_id_fkey"
+            foreignKeyName: "profile_experience_profile_id_fkey"
             columns: ["profile_id"]
             isOneToOne: false
             referencedRelation: "profiles"
@@ -267,14 +264,12 @@ export type Database = {
         Row: {
           avatar_path: string | null
           bio: string
-          cover_path: string | null
           github_url: string
           headline: string
           id: string
           linkedin_url: string
           location: string
           name: string
-          open_to: string[]
           skills: string[]
           social_url: string
           updated_at: string
@@ -284,14 +279,12 @@ export type Database = {
         Insert: {
           avatar_path?: string | null
           bio?: string
-          cover_path?: string | null
           github_url?: string
           headline?: string
           id: string
           linkedin_url?: string
           location?: string
           name: string
-          open_to?: string[]
           skills?: string[]
           social_url?: string
           updated_at?: string
@@ -301,14 +294,12 @@ export type Database = {
         Update: {
           avatar_path?: string | null
           bio?: string
-          cover_path?: string | null
           github_url?: string
           headline?: string
           id?: string
           linkedin_url?: string
           location?: string
           name?: string
-          open_to?: string[]
           skills?: string[]
           social_url?: string
           updated_at?: string
@@ -749,14 +740,12 @@ export type Database = {
         Args: {
           p_avatar_path: string
           p_bio: string
-          p_cover_path: string
-          p_entries: Json
+          p_experience: Json
           p_github_url: string
           p_headline: string
           p_linkedin_url: string
           p_location: string
           p_name: string
-          p_open_to: string[]
           p_skills: string[]
           p_social_url: string
           p_website: string

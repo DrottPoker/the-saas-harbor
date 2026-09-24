@@ -208,10 +208,9 @@ test("registration, email confirmation, profile and SaaS editing, storage, priva
   await page.getByLabel("Headline").fill("Builds test fixtures for a living");
   await page.getByLabel("Location").fill("Gothenburg, Sweden");
   await page.getByLabel("About").fill("An isolated maker profile for browser verification.");
-  await page.getByLabel("Product feedback").check();
   await page.getByLabel("Skills").fill("Testing, Playwright, testing");
   await page.getByRole("button", { name: "Add experience" }).click();
-  const role = page.getByRole("group", { name: "Experience 1" });
+  const role = page.getByRole("group", { name: "Role 1" });
   await role.getByLabel("Title").fill("Test engineer");
   await role.getByLabel("Company").fill("Harbor QA");
   await role.getByLabel("Start month").selectOption("03");
@@ -226,8 +225,9 @@ test("registration, email confirmation, profile and SaaS editing, storage, priva
     page.getByRole("alert").filter({ hasText: "Use your LinkedIn address" }),
   ).toBeVisible();
   await expect(page.getByLabel("Headline")).toHaveValue("Builds test fixtures for a living");
-  await expect(page.getByLabel("Product feedback")).toBeChecked();
   await expect(role.getByLabel("Title")).toHaveValue("Test engineer");
+  await expect(role.getByLabel("Start month")).toHaveValue("03");
+  await expect(role.getByLabel("I work here now")).toBeChecked();
   await page.getByLabel("LinkedIn").fill("https://www.linkedin.com/in/local-test-maker");
   await page.getByLabel("Upload photo").setInputFiles({
     name: "invalid.png",
@@ -240,9 +240,6 @@ test("registration, email confirmation, profile and SaaS editing, storage, priva
   await page
     .getByLabel("Upload photo")
     .setInputFiles({ name: "avatar.png", mimeType: "image/png", buffer: png });
-  await page
-    .getByLabel("Upload cover image")
-    .setInputFiles({ name: "cover.png", mimeType: "image/png", buffer: png });
   await save.click();
   await expect(page.getByText("Profile saved.")).toBeVisible();
   await page.goto(`/makers/${firstUserId}`);
@@ -255,10 +252,7 @@ test("registration, email confirmation, profile and SaaS editing, storage, priva
   ).toBe(true);
   // The personal profile shows everything that was saved, and its owner can edit it from here.
   await expect(page.getByText("Builds test fixtures for a living")).toBeVisible();
-  await expect(page.getByText("Gothenburg, Sweden")).toBeVisible();
-  await expect(
-    page.getByRole("region", { name: "Open to" }).getByText("Product feedback"),
-  ).toBeVisible();
+  await expect(page.getByText("Gothenburg, Sweden").first()).toBeVisible();
   const experience = page.getByRole("region", { name: "Experience" });
   await expect(experience.getByText("Test engineer")).toBeVisible();
   await expect(experience.getByText(/^Mar 2021 - Present · /)).toBeVisible();
@@ -266,7 +260,7 @@ test("registration, email confirmation, profile and SaaS editing, storage, priva
     "Testing",
     "Playwright",
   ]);
-  await expect(page.getByRole("link", { name: "LinkedIn" })).toHaveAttribute(
+  await expect(page.getByRole("link", { name: "local-test-maker" })).toHaveAttribute(
     "href",
     "https://www.linkedin.com/in/local-test-maker",
   );

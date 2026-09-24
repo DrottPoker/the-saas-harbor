@@ -1,25 +1,7 @@
 // Personal profile data shared by the editor and the public profile. Pure functions only.
 import type { Database } from "./supabase/database.types";
 
-export type ProfileEntry = Database["public"]["Tables"]["profile_entries"]["Row"];
-
-// The values match the check constraint on profiles.open_to.
-export const OPEN_TO = [
-  ["cofounder", "Finding a co-founder"],
-  ["collaboration", "Collaborations"],
-  ["feedback", "Product feedback"],
-  ["mentoring", "Mentoring"],
-  ["investment", "Investment"],
-  ["hiring", "Hiring"],
-  ["freelance", "Freelance work"],
-  ["acquisition", "Acquisition offers"],
-] as const;
-export type OpenTo = (typeof OPEN_TO)[number][0];
-export const OPEN_TO_VALUES = OPEN_TO.map(([value]) => value) as [OpenTo, ...OpenTo[]];
-export const openToLabel = (value: string) => OPEN_TO.find(([key]) => key === value)?.[1] ?? value;
-
-export const ENTRY_KINDS = ["experience", "education"] as const;
-export type EntryKind = (typeof ENTRY_KINDS)[number];
+export type ProfileExperience = Database["public"]["Tables"]["profile_experience"]["Row"];
 
 export const MONTH_NAMES = [
   "January",
@@ -66,23 +48,18 @@ export function formatDuration(months: number) {
     .join(" ");
 }
 
-/** "Jan 2022 - Present · 2 yrs 9 mos" for experience; education shows only the years. */
-export function entryPeriod(
-  entry: Pick<ProfileEntry, "kind" | "starts_on" | "ends_on">,
+/** "Jan 2022 - Present · 2 yrs 9 mos". */
+export function rolePeriod(
+  role: Pick<ProfileExperience, "starts_on" | "ends_on">,
   now = new Date(),
 ) {
-  if (entry.kind === "education") {
-    const from = entry.starts_on.slice(0, 4);
-    const to = entry.ends_on?.slice(0, 4);
-    return to && to !== from ? `${from} - ${to}` : from;
-  }
-  const range = `${formatMonth(entry.starts_on)} - ${entry.ends_on ? formatMonth(entry.ends_on) : "Present"}`;
-  return `${range} · ${formatDuration(monthsBetween(entry.starts_on, entry.ends_on, now))}`;
+  const range = `${formatMonth(role.starts_on)} - ${role.ends_on ? formatMonth(role.ends_on) : "Present"}`;
+  return `${range} · ${formatDuration(monthsBetween(role.starts_on, role.ends_on, now))}`;
 }
 
-/** Current entries first, then the most recently ended, then the most recently started. */
-export function sortEntries<T extends Pick<ProfileEntry, "starts_on" | "ends_on">>(entries: T[]) {
-  return [...entries].sort(
+/** Current roles first, then the most recently ended, then the most recently started. */
+export function sortRoles<T extends Pick<ProfileExperience, "starts_on" | "ends_on">>(roles: T[]) {
+  return [...roles].sort(
     (a, b) =>
       Number(a.ends_on !== null) - Number(b.ends_on !== null) ||
       (b.ends_on ?? "").localeCompare(a.ends_on ?? "") ||

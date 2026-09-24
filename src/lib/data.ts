@@ -69,12 +69,35 @@ export const publicProfile = cache(async (id: string) => {
   if (error) throw new Error("This maker could not be loaded.");
   return data;
 });
-export const publicProfileEntries = cache(async (id: string) => {
+export const publicProfileExperience = cache(async (id: string) => {
   const client = publicClient();
   if (!client) throw new Error("Supabase is not configured.");
-  const { data, error } = await client.from("profile_entries").select("*").eq("profile_id", id);
+  const { data, error } = await client.from("profile_experience").select("*").eq("profile_id", id);
   if (error) throw new Error("This maker could not be loaded.");
   return data;
+});
+// A maker's key figures: every listed product, and verified MRR and paying customers summed over
+// the products that share them.
+export const makerTotals = cache(async (id: string) => {
+  const client = publicClient();
+  if (!client) throw new Error("Supabase is not configured.");
+  const { data, error } = await client
+    .from("public_saas")
+    .select("mrr_cents, customers")
+    .eq("owner_id", id);
+  if (error) throw new Error("This maker could not be loaded.");
+  const sum = (values: (number | null)[]) => {
+    const shared = values.filter((value): value is number => value !== null);
+    return {
+      total: shared.length ? shared.reduce((a, b) => a + b, 0) : null,
+      count: shared.length,
+    };
+  };
+  return {
+    products: data.length,
+    mrr: sum(data.map((row) => row.mrr_cents)),
+    customers: sum(data.map((row) => row.customers)),
+  };
 });
 export function safePage(value: string | undefined) {
   return Math.min(10000, Math.max(1, Number.parseInt(value || "1", 10) || 1));

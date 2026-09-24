@@ -95,12 +95,12 @@ export async function deleteAccountAction(
 
 type Client = Awaited<ReturnType<typeof serverClient>>;
 
-// A logo is removed only when it is in the maker's own folder and neither their profile photo,
-// their cover image nor another of their products uses the same file.
+// A logo is removed only when it is in the maker's own folder and neither their profile photo
+// nor another of their products uses the same file.
 async function logoIsUnused(client: Client, owner: string, path: string, saasId: string) {
   if (!path.startsWith(`${owner}/`)) return false;
   const [profile, products] = await Promise.all([
-    client.from("profiles").select("avatar_path, cover_path").eq("id", owner).maybeSingle(),
+    client.from("profiles").select("avatar_path").eq("id", owner).maybeSingle(),
     client
       .from("saas")
       .select("id", { count: "exact", head: true })
@@ -110,8 +110,7 @@ async function logoIsUnused(client: Client, owner: string, path: string, saasId:
   ]);
   if (profile.error || products.error)
     throw new Error("The SaaS could not be deleted. Please try again.");
-  const profileImages = [profile.data?.avatar_path, profile.data?.cover_path];
-  return !profileImages.includes(path) && !products.count;
+  return profile.data?.avatar_path !== path && !products.count;
 }
 
 export async function deleteSaasAction(
@@ -158,11 +157,11 @@ export async function deleteSaasAction(
   redirect("/dashboard?deleted=1", RedirectType.replace);
 }
 
-// Experience and education arrive as JSON from the entries editor.
-function entriesFrom(form: FormData) {
+// Roles arrive as JSON from the experience editor.
+function experienceFrom(form: FormData) {
   try {
-    const entries: unknown = JSON.parse(value(form, "entries") || "[]");
-    return Array.isArray(entries) ? entries : null;
+    const roles: unknown = JSON.parse(value(form, "experience") || "[]");
+    return Array.isArray(roles) ? roles : null;
   } catch {
     return null;
   }
@@ -172,8 +171,8 @@ export async function saveProfile(_state: ActionState, form: FormData): Promise<
   const { user, client } = await requireUser();
   const uploaded: string[] = [];
   try {
-    const entries = entriesFrom(form);
-    if (!entries) return { error: "Your experience and education could not be read. Try again." };
+    const experience = experienceFrom(form);
+    if (!experience) return { error: "Your experience could not be read. Please try again." };
     const fields = profileSchema.parse({
       ...Object.fromEntries(
         [
@@ -188,20 +187,17 @@ export async function saveProfile(_state: ActionState, form: FormData): Promise<
           "social_url",
         ].map((key) => [key, value(form, key)]),
       ),
-      open_to: form.getAll("open_to").map(String),
       skills: parseSkills(value(form, "skills")),
-      entries,
+      experience,
     });
     const { data: existing, error: readError } = await client
       .from("profiles")
-      .select("avatar_path, cover_path")
+      .select("avatar_path")
       .eq("id", user.id)
       .maybeSingle();
     if (readError) return { error: "Your profile could not be loaded. Please try again." };
     const avatar = await uploadImage(client, user.id, form.get("image"));
     if (avatar) uploaded.push(avatar);
-    const cover = await uploadImage(client, user.id, form.get("cover"));
-    if (cover) uploaded.push(cover);
     const { error } = await client.rpc("save_profile", {
       p_name: fields.name,
       p_headline: fields.headline,
@@ -212,17 +208,14 @@ export async function saveProfile(_state: ActionState, form: FormData): Promise<
       p_github_url: fields.github_url,
       p_x_url: fields.x_url,
       p_social_url: fields.social_url,
-      p_open_to: fields.open_to,
       p_skills: fields.skills,
       p_avatar_path: avatar || (form.has("remove_image") ? null : (existing?.avatar_path ?? null)),
-      p_cover_path: cover || (form.has("remove_cover") ? null : (existing?.cover_path ?? null)),
-      p_entries: fields.entries.map((entry) => ({
-        kind: entry.kind,
-        title: entry.title,
-        organization: entry.organization,
-        starts_on: `${entry.start}-01`,
-        ends_on: entry.end && `${entry.end}-01`,
-        description: entry.description,
+      p_experience: fields.experience.map((role) => ({
+        title: role.title,
+        organization: role.organization,
+        starts_on: `${role.start}-01`,
+        ends_on: role.end && `${role.end}-01`,
+        description: role.description,
       })),
     });
     if (error) throw new Error("Your profile could not be saved. Please try again.");

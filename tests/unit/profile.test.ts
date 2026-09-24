@@ -1,12 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { entrySchema, profileSchema } from "../../src/lib/domain";
+import { profileSchema, roleSchema } from "../../src/lib/domain";
 import {
-  entryPeriod,
   formatDuration,
   formatMonth,
   monthsBetween,
   parseSkills,
-  sortEntries,
+  rolePeriod,
+  sortRoles,
 } from "../../src/lib/profile";
 
 const now = new Date(Date.UTC(2026, 8, 24));
@@ -23,32 +23,23 @@ describe("profile dates", () => {
     expect(formatDuration(33)).toBe("2 yrs 9 mos");
   });
 
-  it("shows experience with its duration and education with its years", () => {
-    expect(entryPeriod({ kind: "experience", starts_on: "2024-01-01", ends_on: null }, now)).toBe(
+  it("shows each role with its dates and duration", () => {
+    expect(rolePeriod({ starts_on: "2024-01-01", ends_on: null }, now)).toBe(
       "Jan 2024 - Present · 2 yrs 9 mos",
     );
-    expect(
-      entryPeriod({ kind: "experience", starts_on: "2020-05-01", ends_on: "2021-04-01" }, now),
-    ).toBe("May 2020 - Apr 2021 · 1 yr");
-    expect(entryPeriod({ kind: "education", starts_on: "2015-09-01", ends_on: "2020-06-01" })).toBe(
-      "2015 - 2020",
+    expect(rolePeriod({ starts_on: "2020-05-01", ends_on: "2021-04-01" }, now)).toBe(
+      "May 2020 - Apr 2021 · 1 yr",
     );
-    expect(entryPeriod({ kind: "education", starts_on: "2019-09-01", ends_on: null })).toBe("2019");
   });
 
-  it("lists current entries first, then by end and by start, latest first", () => {
-    const entries = [
+  it("lists current roles first, then by end and by start, latest first", () => {
+    const roles = [
       { id: "old", starts_on: "2010-01-01", ends_on: "2012-01-01" },
       { id: "long", starts_on: "2015-01-01", ends_on: "2020-01-01" },
       { id: "current", starts_on: "2021-01-01", ends_on: null },
       { id: "short", starts_on: "2018-01-01", ends_on: "2020-01-01" },
     ];
-    expect(sortEntries(entries).map((entry) => entry.id)).toEqual([
-      "current",
-      "short",
-      "long",
-      "old",
-    ]);
+    expect(sortRoles(roles).map((role) => role.id)).toEqual(["current", "short", "long", "old"]);
   });
 });
 
@@ -63,13 +54,11 @@ describe("profile input", () => {
     github_url: "https://github.com/lena",
     x_url: "https://x.com/lena",
     social_url: "",
-    open_to: ["cofounder", "feedback", "cofounder"],
     skills: ["Postgres"],
-    entries: [],
+    experience: [],
   };
 
-  it("accepts a full profile and drops repeated choices", () =>
-    expect(profileSchema.parse(valid).open_to).toEqual(["cofounder", "feedback"]));
+  it("accepts a full profile", () => expect(profileSchema.safeParse(valid).success).toBe(true));
 
   it("checks that each link points to its own site", () => {
     for (const [field, value] of [
@@ -94,19 +83,18 @@ describe("profile input", () => {
     expect(profileSchema.safeParse({ ...valid, skills: many }).success).toBe(false);
   });
 
-  it("validates experience and education dates", () => {
-    const entry = {
-      kind: "experience",
+  it("validates role dates", () => {
+    const role = {
       title: "Founder",
       organization: "Ledgerloop",
       start: "2022-01",
       end: null,
       description: "",
     };
-    expect(entrySchema.safeParse(entry).success).toBe(true);
-    expect(entrySchema.safeParse({ ...entry, end: "2021-12" }).success).toBe(false);
-    expect(entrySchema.safeParse({ ...entry, start: "2999-01" }).success).toBe(false);
-    expect(entrySchema.safeParse({ ...entry, start: "2022-13" }).success).toBe(false);
-    expect(entrySchema.safeParse({ ...entry, title: " " }).success).toBe(false);
+    expect(roleSchema.safeParse(role).success).toBe(true);
+    expect(roleSchema.safeParse({ ...role, end: "2021-12" }).success).toBe(false);
+    expect(roleSchema.safeParse({ ...role, start: "2999-01" }).success).toBe(false);
+    expect(roleSchema.safeParse({ ...role, start: "2022-13" }).success).toBe(false);
+    expect(roleSchema.safeParse({ ...role, title: " " }).success).toBe(false);
   });
 });

@@ -69,7 +69,9 @@ Verified products now show how their revenue developed. Decisions by the project
 
 ## Personal profiles 2026-09-25
 
-Maker profiles are now personal, in the style of LinkedIn, as the project owner asked: a cover image behind the photo, a headline, a location, a longer About, experience and education with dates and durations, skills, an Open to box (co-founder, collaborations, feedback, mentoring, investment, hiring, freelance work, acquisition offers) and links to a website, LinkedIn, GitHub and X with icons. Headlines also show on the dashboard and next to the maker on product pages. Existing social links that pointed to LinkedIn, GitHub or X moved to their own fields. The demo data has full profiles. The privacy policy lists the new fields.
+Maker profiles are personal: a headline, a location, a longer About, experience with dates and durations, skills, and links to a website, LinkedIn, GitHub and X with icons. Headlines also show on the dashboard and next to the maker on product pages. Existing social links that pointed to LinkedIn, GitHub or X moved to their own fields. The demo data has full profiles. The privacy policy lists the fields.
+
+The first version followed LinkedIn, with a cover image behind the photo, an Open to box and education. The project owner then chose the product page's design for profiles too and dropped those three parts: migration `20260925090000_simpler_profiles.sql` removes their columns and the education rows, and renames the roles table to `profile_experience`. A profile now opens with the maker's key figures across their products, the way a product page opens with its own. No cover images were left in local storage.
 
 ## Messages 2026-09-24
 

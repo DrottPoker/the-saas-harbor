@@ -8,7 +8,7 @@ export type Database = Omit<GeneratedDatabase, "public"> & {
   public: Omit<GeneratedDatabase["public"], "Functions"> & {
     Functions: Omit<Functions, "save_saas" | "record_stripe_verification" | "save_profile"> & {
       save_profile: {
-        Args: Nullable<Functions["save_profile"]["Args"], "p_avatar_path" | "p_cover_path">;
+        Args: Nullable<Functions["save_profile"]["Args"], "p_avatar_path">;
         Returns: undefined;
       };
       save_saas: {
