@@ -1,4 +1,6 @@
 import type { MetadataRoute } from "next";
+import { categoryCounts } from "@/lib/data";
+import { categories, categorySlug } from "@/lib/domain";
 import { publicClient } from "@/lib/supabase/server";
 import { siteUrl } from "@/lib/seo";
 
@@ -18,6 +20,18 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   ];
   const client = publicClient();
   if (!client) return pages;
+  // Category pages with listed products; empty ones ask search engines not to index them.
+  const counts = await categoryCounts();
+  pages.push(
+    { url: `${base}/categories`, changeFrequency: "weekly", priority: 0.6 },
+    ...categories
+      .filter((category) => counts.get(category)?.products)
+      .map((category) => ({
+        url: `${base}/categories/${categorySlug(category)}`,
+        changeFrequency: "daily" as const,
+        priority: 0.6,
+      })),
+  );
   // The API returns at most 1,000 rows per request, so products are read a page at a time, up to
   // the 50,000 addresses one sitemap may hold.
   const data: { slug: string | null; owner_slug: string | null; updated_at: string | null }[] = [];

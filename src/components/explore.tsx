@@ -10,6 +10,12 @@ import { fieldClasses } from "./ui/input";
 
 type Mode = "ranked" | "discover" | "newest";
 
+/** A category link in a row of chips; `aria-current="page"` marks the chosen one. */
+export const categoryChip =
+  "shrink-0 rounded-full border bg-surface px-3 py-1 text-[13px] whitespace-nowrap text-muted-foreground transition-colors hover:border-border-strong hover:text-foreground aria-[current=page]:border-foreground aria-[current=page]:bg-foreground aria-[current=page]:text-background";
+export const categoryChipRow =
+  "-mx-4 mb-4 flex gap-1.5 overflow-x-auto px-4 pb-1 sm:-mx-6 sm:px-6 lg:mx-0 lg:flex-wrap lg:px-0 lg:pb-0";
+
 const intro: Record<Mode, { title: string; description: string; path: string; sort: Sort }> = {
   ranked: {
     title: "Independent SaaS, ranked by revenue",
@@ -82,16 +88,13 @@ export async function Explore({
         }
       />
 
-      <nav
-        aria-label="Categories"
-        className="-mx-4 mb-4 flex gap-1.5 overflow-x-auto px-4 pb-1 sm:-mx-6 sm:px-6 lg:mx-0 lg:flex-wrap lg:px-0 lg:pb-0"
-      >
+      <nav aria-label="Categories" className={categoryChipRow}>
         {["", ...categories].map((item) => (
           <Link
             key={item || "all"}
             href={url(item)}
             aria-current={category === item ? "page" : undefined}
-            className="shrink-0 rounded-full border bg-surface px-3 py-1 text-[13px] whitespace-nowrap text-muted-foreground transition-colors hover:border-border-strong hover:text-foreground aria-[current=page]:border-foreground aria-[current=page]:bg-foreground aria-[current=page]:text-background"
+            className={categoryChip}
           >
             {item || "All categories"}
           </Link>

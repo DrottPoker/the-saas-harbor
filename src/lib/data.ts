@@ -31,7 +31,16 @@ export async function listings({
   search = "",
   page = 1,
   owner,
-}: { sort?: Sort; category?: string; search?: string; page?: number; owner?: string } = {}) {
+  unranked = false,
+}: {
+  sort?: Sort;
+  category?: string;
+  search?: string;
+  page?: number;
+  owner?: string;
+  /** Only products that are not on the leaderboard. */
+  unranked?: boolean;
+} = {}) {
   const client = publicClient();
   if (!client)
     return {
@@ -47,6 +56,7 @@ export async function listings({
   const pattern = containsPattern(search);
   if (pattern) query = query.ilike("name", pattern);
   if (owner) query = query.eq("owner_id", owner);
+  if (unranked) query = query.neq("revenue_status", "verified");
   query =
     sort === "rank"
       ? query.order("rank", { ascending: true })
@@ -62,6 +72,51 @@ export async function listings({
     error: error ? "Products could not be loaded. Please try again shortly." : null,
   };
 }
+/** The top of the leaderboard, for llms.txt. */
+export async function topRanked(limit: number) {
+  const client = publicClient();
+  if (!client) throw new Error("Supabase is not configured.");
+  const { data, error } = await client
+    .from("leaderboard")
+    .select("*")
+    .order("rank", { ascending: true })
+    .limit(limit);
+  if (error) throw new Error("The leaderboard could not be loaded.");
+  return data as Listing[];
+}
+
+/** Every listed product of a maker, newest first. An account lists at most 20. */
+export async function makerListings(ownerId: string) {
+  const client = publicClient();
+  if (!client) throw new Error("Supabase is not configured.");
+  const { data, error } = await client
+    .from("public_saas")
+    .select("*")
+    .eq("owner_id", ownerId)
+    .order("created_at", { ascending: false })
+    .order("id")
+    .limit(100);
+  if (error) throw new Error("This maker's products could not be loaded.");
+  return data as Listing[];
+}
+
+export type CategoryCount = { products: number; ranked: number };
+
+/** Listed and ranked products per category. Categories without listed products are missing. */
+export const categoryCounts = cache(async () => {
+  const client = publicClient();
+  if (!client) throw new Error("Supabase is not configured.");
+  const { data, error } = await client.from("category_counts").select("*");
+  if (error) throw new Error("Categories could not be loaded.");
+  return new Map<string, CategoryCount>(
+    data.flatMap((row) =>
+      row.category
+        ? [[row.category, { products: row.products ?? 0, ranked: row.ranked ?? 0 }]]
+        : [],
+    ),
+  );
+});
+
 /**
  * Whether the made-up demo products show (src/lib/demo.ts): until a full page of real products
  * shares verified MRR, and never with DEMO_PRODUCTS=off. When the count cannot be read, they stay

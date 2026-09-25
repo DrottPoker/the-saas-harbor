@@ -6,6 +6,8 @@ import { cookieOptions, supabaseConfig } from "@/lib/supabase/config";
 import type { Database } from "@/lib/supabase/types";
 
 const PUBLIC_PAGE = /^\/(saas|makers)\/([^/]+)$/;
+// A public page's address with .md added serves its Markdown version (llmstxt.org).
+const MARKDOWN_PAGE = /^\/(saas|makers)\/([^/]+)\.md$/;
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 // Product and maker pages moved from ids to readable addresses. Links with an id or capital
@@ -36,6 +38,13 @@ async function movedAddress(request: NextRequest, config: ReturnType<typeof supa
 }
 
 export async function proxy(request: NextRequest) {
+  const markdown = request.nextUrl.pathname.match(MARKDOWN_PAGE);
+  if (markdown) {
+    // The route answers ids, earlier slugs and capital letters with a redirect of its own.
+    const url = request.nextUrl.clone();
+    url.pathname = `/md/${markdown[1]}/${markdown[2]}`;
+    return NextResponse.rewrite(url);
+  }
   const config = supabaseConfig();
   const moved = await movedAddress(request, config);
   if (moved) {

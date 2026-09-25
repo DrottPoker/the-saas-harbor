@@ -2,7 +2,7 @@ import Link from "next/link";
 import { ArrowUpRight, BadgeCheck } from "lucide-react";
 import { parseHistory } from "@/lib/charts";
 import type { Listing, RevenueStatus } from "@/lib/data";
-import { formatDate, formatUsd } from "@/lib/domain";
+import { categorySlug, formatDate, formatUsd } from "@/lib/domain";
 import { PersonAvatar, ProductLogo } from "./avatars";
 import { Badge } from "./badge";
 import { Growth } from "./charts/growth";
@@ -49,6 +49,10 @@ export function ProductProfile({
   const site = hostname(item.website);
   const status = (item.revenue_status ?? "unverified") as RevenueStatus;
   const history = parseHistory(item.mrr_history);
+  // Category pages list real products only, so demo products link to the filtered Browse list.
+  const categoryHref = demo
+    ? `/discover?category=${encodeURIComponent(item.category ?? "")}`
+    : `/categories/${categorySlug(item.category ?? "Other")}`;
   const title = (
     <h1 className="text-3xl font-semibold tracking-tight [overflow-wrap:anywhere]">{name}</h1>
   );
@@ -83,6 +87,16 @@ export function ProductProfile({
         <span aria-hidden="true" className="mx-2">
           /
         </span>
+        {!demo && item.category && (
+          <>
+            <Link href={categoryHref} className="hover:text-foreground">
+              {item.category}
+            </Link>
+            <span aria-hidden="true" className="mx-2">
+              /
+            </span>
+          </>
+        )}
         <span className="text-foreground [overflow-wrap:anywhere]">{name}</span>
       </nav>
 
@@ -106,10 +120,7 @@ export function ProductProfile({
             {item.tagline}
           </p>
           <p className="mt-3 text-sm text-muted-foreground">
-            <Link
-              href={`/discover?category=${encodeURIComponent(item.category ?? "")}`}
-              className="hover:text-foreground"
-            >
+            <Link href={categoryHref} className="hover:text-foreground">
               {item.category}
             </Link>
             <span aria-hidden="true" className="mx-2">

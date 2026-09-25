@@ -15,6 +15,8 @@ export default function robots(): MetadataRoute.Robots {
         "/auth",
         "/account-deleted",
         "/api",
+        // Where the proxy serves Markdown versions from; /saas/<slug>.md is the address to use.
+        "/md/",
       ],
     },
     sitemap: `${siteUrl()}/sitemap.xml`,

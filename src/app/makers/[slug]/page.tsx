@@ -21,6 +21,8 @@ import {
 import { formatUsd } from "@/lib/domain";
 import { excerpt } from "@/lib/moderation";
 import { pageMetadata, SITE_NAME } from "@/lib/seo";
+import { makerJsonLd } from "@/lib/structured-data";
+import { JsonLd } from "@/components/json-ld";
 import { currentUser } from "@/lib/supabase/server";
 import { firstValues } from "@/lib/params";
 
@@ -38,6 +40,7 @@ export async function generateMetadata({ params }: Pick<Props, "params">): Promi
       `${profile.name} on ${SITE_NAME}`,
     path: `/makers/${profile.slug}`,
     type: "profile",
+    markdown: true,
   });
 }
 
@@ -68,6 +71,7 @@ export default async function Maker({ params, searchParams }: Props) {
 
   return (
     <Shell size="medium">
+      <JsonLd data={makerJsonLd(profile)} />
       <header className="flex flex-col gap-5 sm:flex-row sm:items-start">
         <PersonAvatar path={profile.avatar_path} name={profile.name} size="xl" decorative={false} />
         <div className="min-w-0 flex-1">

@@ -12,6 +12,17 @@ export const categories = [
   "Analytics",
   "Other",
 ] as const;
+export type Category = (typeof categories)[number];
+/** The address of a category page: "AI & Machine Learning" is /categories/ai-machine-learning. */
+export function categorySlug(category: string) {
+  return category
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
+}
+export function categoryFromSlug(slug: string): Category | null {
+  return categories.find((category) => categorySlug(category) === slug) ?? null;
+}
 // PostgREST treats * like %, so every wildcard character is removed from user input.
 export function searchTerm(search: string) {
   return search

@@ -820,6 +820,14 @@ export type Database = {
       }
     }
     Views: {
+      category_counts: {
+        Row: {
+          category: string | null
+          products: number | null
+          ranked: number | null
+        }
+        Relationships: []
+      }
       inbox: {
         Row: {
           blocked: boolean | null

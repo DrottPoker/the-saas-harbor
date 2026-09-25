@@ -124,7 +124,8 @@ test.beforeAll(async ({ playwright }, info) => {
     ...["/dashboard", "/dashboard/profile", "/dashboard/reports", `/dashboard/saas/${id}`],
     ...["/dashboard/settings", "/api/email/send"],
     ...["/messages", `/messages/${id}`, `/report/saas/${id}`, "/api/stripe/sync"],
-    ...["/sitemap.xml", "/robots.txt", "/opengraph-image"],
+    ...["/sitemap.xml", "/robots.txt", "/opengraph-image", "/llms.txt"],
+    ...["/categories", "/categories/design", "/saas/any.md", "/makers/any.md"],
     ...["/saas/any/opengraph-image", "/makers/any/opengraph-image", "/saas/any/badge.svg"],
     ...["", "/reports", "/products", "/accounts", "/log"].map((section) => `/admin${section}`),
     ...["reports", "products", "accounts"].map((section) => `/admin/${section}/${id}`),
@@ -177,6 +178,24 @@ test("anonymous navigation, private route protection and responsive empty state"
   expect(sitemap.headers()["content-type"]).toContain("xml");
   expect(await sitemap.text()).toContain(`<loc>${origin}/discover</loc>`);
   expect(await sitemap.text()).not.toContain("/demo/");
+  expect(await sitemap.text()).toContain(`<loc>${origin}/categories</loc>`);
+  expect(robots).toContain("Disallow: /md/");
+  // AI assistants get a guide to the site, linked from every page.
+  const llms = await page.request.get("/llms.txt");
+  expect(llms.headers()["content-type"]).toBe("text/plain; charset=utf-8");
+  expect(await llms.text()).toContain(`- [Categories](${origin}/categories)`);
+  await expect(
+    page.getByRole("contentinfo").getByRole("link", { name: "For AI assistants" }),
+  ).toHaveAttribute("href", "/llms.txt");
+  // Every category has a page; others are not found.
+  await page.goto("/categories");
+  await page.getByRole("link", { name: /^AI & Machine Learning/ }).click();
+  await expect(page).toHaveURL("/categories/ai-machine-learning");
+  await expect(
+    page.getByRole("heading", { name: "AI & Machine Learning SaaS", level: 1 }),
+  ).toBeVisible();
+  await page.goto("/categories/crypto");
+  await expect(page.getByRole("heading", { name: "Page not found" })).toBeVisible();
   await page.goto("/dashboard");
   await expect(page).toHaveURL(/\/auth$/);
   await page.goto(`/discover?category=Design&q=missing-${run}`);
@@ -187,7 +206,15 @@ test("anonymous navigation, private route protection and responsive empty state"
   await page.goto(`/?q=missing-${run}&q=other`);
   await expect(page.getByRole("heading", { name: "No matching products" })).toBeVisible();
   await page.setViewportSize({ width: 390, height: 844 });
-  for (const path of ["/", "/discover", "/auth", "/privacy", "/terms"]) {
+  for (const path of [
+    "/",
+    "/discover",
+    "/categories",
+    "/categories/design",
+    "/auth",
+    "/privacy",
+    "/terms",
+  ]) {
     await page.goto(path);
     await expectNoHorizontalScroll(page);
   }
@@ -207,6 +234,8 @@ test("anonymous navigation, private route protection and responsive empty state"
   const publicPages = [
     "/discover",
     "/newest",
+    "/categories",
+    "/categories/design",
     "/about",
     "/privacy",
     "/terms",
@@ -321,6 +350,8 @@ test("theme menu persists light and dark, and system follows the OS", async ({ p
     "/",
     "/discover",
     "/newest",
+    "/categories",
+    "/categories/design",
     "/about",
     "/privacy",
     "/terms",
@@ -554,6 +585,31 @@ test("registration, email confirmation, profile and SaaS editing, storage, priva
   expect(movedBadge.status).toBe(308);
   expect(movedBadge.headers.location).toBe(`${productPath}/badge.svg?theme=dark`);
   expect((await badge("/saas/no-such-product-anywhere/badge.svg")).status).toBe(404);
+  // AI assistants read a Markdown version of the page, which shows no private figure either.
+  const markdown = await page.request.get(`${productPath}.md`);
+  expect(markdown.headers()["content-type"]).toBe("text/markdown; charset=utf-8");
+  expect(markdown.headers()["x-robots-tag"]).toBe("noindex");
+  const privateMarkdown = await markdown.text();
+  expect(privateMarkdown).toContain(`# ${productName}`);
+  expect(privateMarkdown).toContain("- Monthly recurring revenue: not shared");
+  expect(privateMarkdown).not.toContain("$104");
+  const movedMarkdown = await page.request.get(`/saas/${productId}.md`, { maxRedirects: 0 });
+  expect(movedMarkdown.status()).toBe(308);
+  expect(movedMarkdown.headers().location).toBe(`${productPath}.md`);
+  await expect(page.locator('link[rel="alternate"][type="text/markdown"]')).toHaveAttribute(
+    "href",
+    `${origin}${productPath}.md`,
+  );
+  // Structured data describes the product for search engines.
+  const structured = JSON.parse(
+    (await page.locator('script[type="application/ld+json"]').textContent())!,
+  );
+  expect(structured.mainEntity).toMatchObject({
+    "@type": "SoftwareApplication",
+    name: productName,
+    applicationSubCategory: "Design",
+  });
+  await expect(page.getByRole("navigation", { name: "Breadcrumb" })).toContainText("Design");
   await expect(page.getByText(/Verified with Stripe through a read-only key/)).toBeVisible();
   await expect(page.getByText("Not shared", { exact: true })).toHaveCount(3);
   // Visible text only: the page source also carries framework references like "$104".
@@ -576,6 +632,33 @@ test("registration, email confirmation, profile and SaaS editing, storage, priva
   // Shared MRR reaches the badge, and the editor gives the code to embed it in either theme.
   expect((await badge(`${productPath}/badge.svg`)).body).toContain(">$104</text>");
   expect((await badge(`${productPath}/badge.svg?theme=dark`)).body).toContain('fill="#22272d"');
+  // Shared MRR reaches the Markdown versions, llms.txt and the category page. The local database
+  // may rank other products above this one, so the lists are checked where it fits on them.
+  expect(await (await page.request.get(`${productPath}.md`)).text()).toContain(
+    "- Monthly recurring revenue: $104",
+  );
+  const { data: maker } = await anon.from("profiles").select("slug").eq("id", firstUserId).single();
+  expect(await (await page.request.get(`/makers/${maker!.slug}.md`)).text()).toContain(
+    `- [${productName}](${origin}${productPath}.md): A product created only by the local integration test. $104 verified MRR.`,
+  );
+  const { data: ranking } = await anon.from("leaderboard").select("id").order("rank");
+  if (ranking!.findIndex((row) => row.id === productId) < 50)
+    expect(await (await page.request.get("/llms.txt")).text()).toContain(
+      `[${productName}](${origin}${productPath}.md): $104 verified MRR, Design.`,
+    );
+  const { data: design } = await anon
+    .from("leaderboard")
+    .select("id")
+    .eq("category", "Design")
+    .order("rank");
+  if (design!.findIndex((row) => row.id === productId) < 12) {
+    await page.goto("/categories/design");
+    await expect(
+      page.getByRole("region", { name: "Ranked by verified MRR" }).getByText(productName, {
+        exact: true,
+      }),
+    ).toBeVisible();
+  }
   await page.goto(`/dashboard/saas/${productId}`);
   const embed = page.locator("#badge");
   await expect(embed.getByLabel("HTML", { exact: true })).toHaveValue(
@@ -597,6 +680,7 @@ test("registration, email confirmation, profile and SaaS editing, storage, priva
   await expect(row.getByText("+92.6%", { exact: true })).toBeVisible();
   await expect(row.locator("polyline")).toHaveCount(1);
   await page.goto(`/saas/${productId}`);
+  await expect(page).toHaveTitle(`${productName}: $104 verified MRR | The SaaS Harbor`);
   await expect(page.getByText("+92.6%", { exact: true })).toBeVisible();
   const chart = page.getByRole("group", { name: /MRR at month end/ });
   await expect(chart).toBeVisible();
@@ -617,6 +701,7 @@ test("registration, email confirmation, profile and SaaS editing, storage, priva
     `/saas/${productId}`,
     `/makers/${firstUserId}`,
     "/discover",
+    "/categories/design",
     "/dashboard",
     `/dashboard/saas/${productId}`,
     "/dashboard/profile",
@@ -1273,6 +1358,7 @@ test("reports reach the admin panel, where admins hide products and suspend acco
   }
   expect(await (await visitor.request.get("/sitemap.xml")).text()).not.toContain(productSlug);
   expect((await visitor.request.get(`/saas/${productSlug}/badge.svg`)).status()).toBe(404);
+  expect((await visitor.request.get(`/saas/${productSlug}.md`)).status()).toBe(404);
   // The maker gets the decision by email, with the reason and the explanation, and the reporter
   // learns that action was taken.
   const subjects = async (address: string) =>

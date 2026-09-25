@@ -38,13 +38,14 @@ group by r.rolname;
 
 select results_eq(
   $$ select relation, privileges from pgtap_table_privileges where role = 'anon' order by 1 $$,
-  $$ values ('leaderboard'::text, 'SELECT'::text), ('profile_experience', 'SELECT'),
-    ('profiles', 'SELECT'), ('public_metrics', 'SELECT'), ('public_saas', 'SELECT'),
-    ('saas', 'SELECT') $$,
+  $$ values ('category_counts'::text, 'SELECT'::text), ('leaderboard', 'SELECT'),
+    ('profile_experience', 'SELECT'), ('profiles', 'SELECT'), ('public_metrics', 'SELECT'),
+    ('public_saas', 'SELECT'), ('saas', 'SELECT') $$,
   'visitors only read listings, products and profiles');
 select results_eq(
   $$ select relation, privileges from pgtap_table_privileges where role = 'authenticated' order by 1 $$,
-  $$ values ('blocks'::text, 'DELETE,INSERT,SELECT'::text), ('conversation_reads', 'INSERT,SELECT'),
+  $$ values ('blocks'::text, 'DELETE,INSERT,SELECT'::text), ('category_counts', 'SELECT'),
+    ('conversation_reads', 'INSERT,SELECT'),
     ('conversations', 'SELECT'), ('inbox', 'SELECT'), ('leaderboard', 'SELECT'),
     ('messages', 'SELECT'), ('moderation_log', 'SELECT'), ('notification_settings', 'SELECT'),
     ('profile_experience', 'DELETE,INSERT,SELECT'), ('profiles', 'SELECT'),

@@ -73,6 +73,9 @@ export function SiteFooter() {
               {label}
             </Link>
           ))}
+          <Link className={quietLink} href="/categories">
+            Categories
+          </Link>
           <Link className={quietLink} href="/about">
             How it works
           </Link>
@@ -82,6 +85,9 @@ export function SiteFooter() {
           <Link className={quietLink} href="/terms">
             Terms
           </Link>
+          <a className={quietLink} href="/llms.txt">
+            For AI assistants
+          </a>
         </nav>
         <p className="text-[13px] text-faint-foreground sm:col-span-2">
           Revenue is verified through read-only Stripe connections and refreshed daily.

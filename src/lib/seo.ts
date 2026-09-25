@@ -18,16 +18,22 @@ export function pageMetadata({
   description,
   path,
   type = "website",
+  markdown = false,
 }: {
   title: string;
   description: string;
   path: string;
   type?: "website" | "profile";
+  /** The page has a Markdown version for AI assistants at the same address plus `.md`. */
+  markdown?: boolean;
 }): Metadata {
   return {
     title,
     description,
-    alternates: { canonical: path },
+    alternates: {
+      canonical: path,
+      ...(markdown && { types: { "text/markdown": `${path}.md` } }),
+    },
     openGraph: { title, description, url: path, siteName: SITE_NAME, type, locale: "en_US" },
     twitter: { card: "summary_large_image", title, description },
   };
