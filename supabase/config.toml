@@ -423,3 +423,27 @@ enabled = true
 # and column/key alignment. Set to "null" to emit raw, unformatted SQL.
 # format_options = "{\"keywordCase\":\"upper\",\"indent\":2,\"maxWidth\":180,\"commaStyle\":\"trailing\"}"
 
+
+# Production on Supabase Cloud (project "The SaaS Harbor", eu-central-1). `supabase config push`
+# applies the settings above with these overrides, without asking. Production reads its own SMTP
+# variables, so the per-machine settings in supabase/.env.local never reach it; they are off in
+# supabase/.env until an SMTP provider is chosen, and Supabase refuses the custom email templates
+# on the free plan until then.
+[remotes.production]
+project_id = "vgwgeennghaqpvfsqewq"
+
+[remotes.production.auth]
+site_url = "https://thesaasharbor.com"
+additional_redirect_urls = ["https://thesaasharbor.com/auth/confirm"]
+
+[remotes.production.auth.email]
+max_frequency = "60s"
+
+[remotes.production.auth.email.smtp]
+enabled = "env(HARBOR_PRODUCTION_SMTP_ENABLED)"
+host = "env(HARBOR_PRODUCTION_SMTP_HOST)"
+port = "env(HARBOR_PRODUCTION_SMTP_PORT)"
+user = "env(HARBOR_PRODUCTION_SMTP_USER)"
+pass = "env(HARBOR_PRODUCTION_SMTP_PASS)"
+admin_email = "env(HARBOR_PRODUCTION_SMTP_ADMIN_EMAIL)"
+sender_name = "env(HARBOR_PRODUCTION_SMTP_SENDER_NAME)"

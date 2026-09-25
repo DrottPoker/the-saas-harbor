@@ -29,7 +29,7 @@ Sales, escrow, company profiles and payment providers other than Stripe, Paddle,
 
 Requires Node.js 22.14 or later (see `.nvmrc`), npm and Docker Desktop. Dependencies have exact versions and a lockfile, and `.npmrc` keeps new installs exact.
 
-The whole backend runs locally: Supabase (PostgreSQL, Auth, Storage) runs in Docker through the Supabase CLI. There is no hosted Supabase project in use.
+Development and tests run the whole backend locally: Supabase (PostgreSQL, Auth, Storage) runs in Docker through the Supabase CLI. Production uses Supabase Cloud (see [Production](#production)).
 
 ```powershell
 npm ci
@@ -153,7 +153,20 @@ npm run build
 npm start
 ```
 
-This serves a production build on http://localhost:3001 against the local stack configured in `.env.local`. Where Supabase runs in production (self-hosted or Supabase Cloud), SMTP and deployment are still open decisions; see [status](docs/STATUS.md).
+This serves a production build on http://localhost:3001 against the local stack configured in `.env.local`.
+
+### Production
+
+Production Supabase is the Supabase Cloud project `vgwgeennghaqpvfsqewq` ("The SaaS Harbor", Frankfurt, eu-central-1) in the Auxron organization, at `https://vgwgeennghaqpvfsqewq.supabase.co`. The domain is `thesaasharbor.com`. Where the app runs and which SMTP provider sends email are still open; see [status](docs/STATUS.md).
+
+Link a machine once with `npx supabase link --project-ref vgwgeennghaqpvfsqewq` (the CLI must be logged in; it uses a temporary login role, so no database password is needed). Then, only with the owner's approval and after the local checks pass:
+
+- `npx supabase db push --linked --dry-run` lists the migrations production lacks, and `npx supabase db push --linked` applies them. `npx supabase db diff --linked` should then report no changes.
+- `npx supabase config push` applies `supabase/config.toml` with the `[remotes.production]` overrides (site URL, redirect URL, email frequency, SMTP). It pushes without asking. Production reads its own `HARBOR_PRODUCTION_SMTP_*` variables, which are off in `supabase/.env`; set the real ones in the shell that runs the push, never in a file. On the free plan Supabase refuses the custom email templates until SMTP is on, and the push fails as a whole.
+
+Never run `npm run db:*`, the database tests or the browser tests against production. The pgTAP suites cannot run there anyway: the CLI's temporary login role does not find the pgTAP functions.
+
+The app needs `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` (Project Settings → API Keys in the dashboard) and `SUPABASE_SECRET_KEY` (a secret key from the same page) in the host's secret store, together with the other variables in the table above. Generate new `STRIPE_KEY_ENCRYPTION_KEY` and `CRON_SECRET` values for production; never reuse the local ones.
 
 ## Project notes
 
