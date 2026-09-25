@@ -50,6 +50,7 @@ export type Database = Omit<GeneratedDatabase, "public"> & {
           | "p_history"
           | "p_mrr_invoice_cents"
           | "p_mrr_30d_ago_cents"
+          | "p_history_at"
         >;
         Returns: undefined;
       };

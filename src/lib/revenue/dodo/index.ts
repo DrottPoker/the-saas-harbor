@@ -28,7 +28,7 @@ async function environment(key: string, livemode: boolean | null, allowTest: boo
 export const dodo: ProviderAdapter = {
   id: "dodo",
   parseKey: (input) => parseDodoKey(input),
-  async read(key, livemode, { allowTest, now }) {
+  async read(key, livemode, { allowTest, now, history }) {
     const live = await environment(key, livemode, allowTest);
     const subscriptions = await fetchSubscriptions(key, live);
     const nowSeconds = Math.floor(now.getTime() / 1000);
@@ -49,8 +49,9 @@ export const dodo: ProviderAdapter = {
       livemode: live,
       ...dodoMrr(subscriptions, untaxed, nowSeconds),
       lines: null,
-      historyNote:
-        "Dodo Payments does not say which period a payment covers, so there is no revenue history.",
+      historyNote: history
+        ? "Dodo Payments does not say which period a payment covers, so there is no revenue history."
+        : null,
     };
   },
 };

@@ -643,6 +643,7 @@ export type Database = {
           customers: number
           fx_date: string | null
           history: Json | null
+          history_at: string | null
           id: string
           livemode: boolean
           mrr_30d_ago_cents: number | null
@@ -659,6 +660,7 @@ export type Database = {
           customers: number
           fx_date?: string | null
           history?: Json | null
+          history_at?: string | null
           id?: string
           livemode: boolean
           mrr_30d_ago_cents?: number | null
@@ -675,6 +677,7 @@ export type Database = {
           customers?: number
           fx_date?: string | null
           history?: Json | null
+          history_at?: string | null
           id?: string
           livemode?: boolean
           mrr_30d_ago_cents?: number | null
@@ -1016,6 +1019,10 @@ export type Database = {
         Args: { p_refresh: boolean; p_saas: string }
         Returns: undefined
       }
+      claim_due_connections: {
+        Args: { p_interval: string; p_limit: number }
+        Returns: string[]
+      }
       claim_emails: {
         Args: { p_limit: number; p_message_delay: number }
         Returns: {
@@ -1051,6 +1058,7 @@ export type Database = {
           p_encrypted_key: string
           p_fx_date: string
           p_history: Json
+          p_history_at?: string
           p_key_hint: string
           p_livemode: boolean
           p_mrr_30d_ago_cents: number

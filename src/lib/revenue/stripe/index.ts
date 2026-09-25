@@ -32,10 +32,10 @@ async function invoiceHistory(key: string, now: Date) {
 export const stripe: ProviderAdapter = {
   id: "stripe",
   parseKey: (input, options) => parseRestrictedKey(input, options),
-  async read(key, livemode, { now }) {
+  async read(key, livemode, { now, history }) {
     const { subscriptions, coupons } = await fetchStripeAccountData(key);
     const mrr = calculateMrr(subscriptions, coupons, Math.floor(now.getTime() / 1000));
-    const { lines, note } = await invoiceHistory(key, now);
+    const { lines, note } = history ? await invoiceHistory(key, now) : { lines: null, note: null };
     return {
       livemode: livemode ?? key.startsWith("rk_live_"),
       ...mrr,

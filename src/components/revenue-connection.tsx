@@ -312,7 +312,7 @@ export function RevenueConnectionSection({
     <div id="revenue" className="mt-2 scroll-mt-24 border-t pt-8">
       <Section
         title="Revenue verification"
-        description="MRR and paying customers are read from your payment provider with a read-only key and refreshed daily. They cannot be typed in."
+        description="MRR and paying customers are read from your payment provider with a read-only key and refreshed every hour. They cannot be typed in."
       >
         {created && !connection && (
           <Notice tone="success">

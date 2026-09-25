@@ -26,23 +26,27 @@ async function environment(key: string, livemode: boolean | null, allowTest: boo
 export const polar: ProviderAdapter = {
   id: "polar",
   parseKey: (input) => parsePolarToken(input),
-  async read(key, livemode, { allowTest, now }) {
+  async read(key, livemode, { allowTest, now, history }) {
     const live = await environment(key, livemode, allowTest);
     const subscriptions = await fetchSubscriptions(key, live);
+    const recent = () => fetchOrders(key, live, orderWindowStart(subscriptions, now));
     let orders;
     let historyNote: string | null = null;
-    try {
-      orders = await fetchOrders(key, live, historyWindowStart(now));
-    } catch (error) {
-      if (!(error instanceof ProviderRequestError && error.tooMuchData)) throw error;
-      orders = await fetchOrders(key, live, orderWindowStart(subscriptions, now));
-      historyNote =
-        "The Polar account has more orders than one verification reads, so there is no revenue history.";
-    }
+    if (!history) orders = await recent();
+    else
+      try {
+        orders = await fetchOrders(key, live, historyWindowStart(now));
+      } catch (error) {
+        if (!(error instanceof ProviderRequestError && error.tooMuchData)) throw error;
+        orders = await recent();
+        historyNote =
+          "The Polar account has more orders than one verification reads, so there is no revenue history.";
+      }
     return {
       livemode: live,
       ...polarMrr(subscriptions, orders),
-      lines: historyNote ? null : polarServiceLines(orders, meteredPrices(subscriptions)),
+      lines:
+        history && !historyNote ? polarServiceLines(orders, meteredPrices(subscriptions)) : null,
       historyNote,
     };
   },

@@ -167,8 +167,8 @@ export async function Explore({
       {ranked && (
         <p className="mt-8 max-w-2xl text-[13px] text-faint-foreground">
           MRR is read from each product&apos;s subscriptions through a read-only key to its payment
-          provider and refreshed daily. Figures older than seven days are not ranked. Equal amounts
-          are ordered by the date the product was listed.{" "}
+          provider and refreshed every hour. Figures older than seven days are not ranked. Equal
+          amounts are ordered by the date the product was listed.{" "}
           <Link href="/about" className="underline underline-offset-2 hover:text-foreground">
             How the ranking works
           </Link>

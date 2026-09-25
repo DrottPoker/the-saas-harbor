@@ -20,7 +20,8 @@ export type ProviderReading = {
   historyNote: string | null;
 };
 
-export type ReadOptions = { allowTest: boolean; now: Date };
+/** `history` false reads what MRR needs only, and returns no lines and no note. */
+export type ReadOptions = { allowTest: boolean; now: Date; history: boolean };
 
 export type ProviderAdapter = {
   id: ProviderId;

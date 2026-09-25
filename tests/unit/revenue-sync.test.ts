@@ -3,7 +3,7 @@
 import { spawn, type ChildProcess } from "node:child_process";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { DODO_KEYS, PADDLE_KEYS, POLAR_TOKENS } from "../e2e/fake-billing.mjs";
-import { verifyRevenue } from "../../src/lib/revenue/sync";
+import { historyToCarry, verifyRevenue } from "../../src/lib/revenue/sync";
 
 const PORT = 3912;
 const base = `http://127.0.0.1:${PORT}`;
@@ -171,5 +171,51 @@ describe("claims", () => {
     expect(stripe.subscriptionHashes).toContain(hash("sub_fixture_1"));
     const dodo = await verifyRevenue("dodo", DODO_KEYS.one, false);
     expect(dodo.subscriptionHashes).toContain(hash("dodo:sub_dodo_monthly"));
+  });
+});
+
+describe("hourly verification", () => {
+  it("reads only what MRR needs without the history", async () => {
+    for (const [provider, key] of [
+      ["stripe", "rk_test_harborfixture0001"],
+      ["paddle", PADDLE_KEYS.one],
+      ["polar", POLAR_TOKENS.one],
+      ["dodo", DODO_KEYS.one],
+    ] as const) {
+      const full = await verifyRevenue(provider, key, false);
+      const light = await verifyRevenue(provider, key, false, new Date(), { history: false });
+      expect(light.mrrCents, provider).toBe(full.mrrCents);
+      expect(light.customers, provider).toBe(full.customers);
+      expect(light, provider).toMatchObject({
+        history: null,
+        mrrInvoiceCents: null,
+        historyNote: null,
+        historyAt: null,
+      });
+      expect(full.historyAt, provider).not.toBeNull();
+    }
+  });
+
+  it("carries over a history from the same provider read less than a day ago", () => {
+    const now = Date.parse("2026-09-25T12:00:00Z");
+    const latest = {
+      provider: "paddle",
+      history: [{ month: "2026-08", mrr_cents: 100 }],
+      mrr_invoice_cents: 120,
+      mrr_30d_ago_cents: 100,
+      history_at: "2026-09-25T00:00:00Z",
+    };
+    expect(historyToCarry(latest, "paddle", now)).toEqual({
+      history: [{ month: "2026-08", mrr_cents: 100 }],
+      mrrInvoiceCents: 120,
+      mrr30dAgoCents: 100,
+      historyAt: "2026-09-25T00:00:00Z",
+    });
+    expect(
+      historyToCarry({ ...latest, history_at: "2026-09-24T12:00:00Z" }, "paddle", now),
+    ).toBeNull();
+    expect(historyToCarry(latest, "polar", now)).toBeNull();
+    expect(historyToCarry({ ...latest, history_at: null }, "paddle", now)).toBeNull();
+    expect(historyToCarry(null, "paddle", now)).toBeNull();
   });
 });

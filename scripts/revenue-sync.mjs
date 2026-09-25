@@ -13,5 +13,5 @@ const response = await fetch(new URL("/api/revenue/sync", origin), {
   throw new Error(`The app is not reachable at ${origin}. Start it with \`npm run dev\`.`);
 });
 if (!response.ok) throw new Error(`Revenue sync failed with HTTP ${response.status}.`);
-const { ok, failed } = await response.json();
-console.log(`Revenue sync: ${ok} verified, ${failed} failed.`);
+const { ok, failed, due } = await response.json();
+console.log(`Revenue sync: ${ok} verified, ${failed} failed, ${due} still due.`);

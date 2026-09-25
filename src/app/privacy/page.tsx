@@ -67,10 +67,11 @@ export default function Privacy() {
             <li>
               <strong className="font-medium text-foreground">Revenue verification.</strong> If you
               connect a payment provider (Stripe, Paddle, Polar or Dodo Payments): which one, the
-              read-only key you paste, stored encrypted, and the result of each verification. That
-              is your monthly recurring revenue, the number of paying customers, totals per
-              currency, revenue at each of the last twelve month-ends, and one-way hashes of
-              subscription IDs, which stop one account from verifying two products.
+              read-only key you paste, stored encrypted, and the results of verification, kept as
+              one result per day, the latest of that day. That is your monthly recurring revenue,
+              the number of paying customers, totals per currency, revenue at each of the last
+              twelve month-ends, and one-way hashes of subscription IDs, which stop one account from
+              verifying two products.
             </li>
             <li>
               <strong className="font-medium text-foreground">Messages.</strong> The messages you
