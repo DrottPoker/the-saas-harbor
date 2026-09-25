@@ -2,7 +2,7 @@ import Link from "next/link";
 import { PageHeader, Shell } from "@/components/shell";
 import { Button } from "@/components/ui/button";
 
-export const metadata = { title: "How it works" };
+export const metadata = { title: "How it works", alternates: { canonical: "/about" } };
 
 const sections = [
   {

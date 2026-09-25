@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { headers } from "next/headers";
 import { SiteFooter, SiteHeader } from "@/components/site-chrome";
+import { SITE_DESCRIPTION, SITE_NAME, siteUrl } from "@/lib/seo";
 import { currentUser, unreadMessageCount } from "@/lib/supabase/server";
 import { themeScript } from "@/lib/theme";
 import "./globals.css";
@@ -10,12 +11,21 @@ const sans = Geist({ subsets: ["latin"], variable: "--font-geist-sans" });
 const mono = Geist_Mono({ subsets: ["latin"], variable: "--font-geist-mono" });
 
 export const metadata: Metadata = {
+  // Makes image and canonical addresses absolute.
+  metadataBase: new URL(siteUrl()),
   title: {
-    default: "The SaaS Harbor | Independent SaaS, ranked by revenue",
-    template: "%s | The SaaS Harbor",
+    default: `${SITE_NAME} | Independent SaaS, ranked by revenue`,
+    template: `%s | ${SITE_NAME}`,
   },
-  description:
-    "A public directory of independent SaaS products, with a leaderboard of monthly recurring revenue verified through Stripe.",
+  description: SITE_DESCRIPTION,
+  openGraph: {
+    title: `${SITE_NAME} | Independent SaaS, ranked by revenue`,
+    description: SITE_DESCRIPTION,
+    siteName: SITE_NAME,
+    type: "website",
+    locale: "en_US",
+  },
+  twitter: { card: "summary_large_image" },
 };
 export const dynamic = "force-dynamic";
 export default async function RootLayout({ children }: { children: React.ReactNode }) {

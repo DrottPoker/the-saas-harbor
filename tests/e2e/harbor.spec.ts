@@ -103,6 +103,8 @@ test.beforeAll(async ({ playwright }, info) => {
     ...["/auth", "/auth/confirm", `/saas/${id}`, `/makers/${id}`, "/missing"],
     ...["/dashboard", "/dashboard/profile", "/dashboard/reports", `/dashboard/saas/${id}`],
     ...["/messages", `/messages/${id}`, `/report/saas/${id}`, "/api/stripe/sync"],
+    ...["/sitemap.xml", "/robots.txt", "/opengraph-image"],
+    ...["/saas/any/opengraph-image", "/makers/any/opengraph-image"],
     ...["", "/reports", "/products", "/accounts", "/log"].map((section) => `/admin${section}`),
     ...["reports", "products", "accounts"].map((section) => `/admin/${section}/${id}`),
   ])
@@ -145,6 +147,14 @@ test("anonymous navigation, private route protection and responsive empty state"
   await expect(
     page.getByRole("heading", { name: "Independent SaaS, ranked by revenue" }),
   ).toBeVisible();
+  // Crawlers get the sitemap and stay out of private areas.
+  const origin = test.info().project.use.baseURL!;
+  const robots = await (await page.request.get("/robots.txt")).text();
+  expect(robots).toContain("Disallow: /admin");
+  expect(robots).toContain(`Sitemap: ${origin}/sitemap.xml`);
+  const sitemap = await page.request.get("/sitemap.xml");
+  expect(sitemap.headers()["content-type"]).toContain("xml");
+  expect(await sitemap.text()).toContain(`<loc>${origin}/discover</loc>`);
   await page.goto("/dashboard");
   await expect(page).toHaveURL(/\/auth$/);
   await page.goto(`/discover?category=Design&q=missing-${run}`);
@@ -308,9 +318,15 @@ test("registration, email confirmation, profile and SaaS editing, storage, priva
     .setInputFiles({ name: "avatar.png", mimeType: "image/png", buffer: png });
   await save.click();
   await expect(page.getByText("Profile saved.")).toBeVisible();
+  // The maker's id leads to a readable address made from the name.
   await page.goto(`/makers/${firstUserId}`);
+  await expect(page).toHaveURL(/\/makers\/local-test-maker(-\d+)?$/);
   await expect(page.getByRole("heading", { name: "Local Test Maker", exact: true })).toBeVisible();
   await expect(page).toHaveTitle("Local Test Maker | The SaaS Harbor");
+  await expect(page.locator('link[rel="canonical"]')).toHaveAttribute(
+    "href",
+    new URL(page.url()).href,
+  );
   const image = page.getByRole("img", { name: "Local Test Maker" });
   await expect(image).toBeVisible();
   expect(
@@ -385,6 +401,26 @@ test("registration, email confirmation, profile and SaaS editing, storage, priva
   await page.goto(`/saas/${productId}`);
   await expect(page.getByRole("heading", { name: productName, exact: true })).toBeVisible();
   await expect(page).toHaveTitle(`${productName} | The SaaS Harbor`);
+  // The id leads to a readable address, which the canonical link, the sharing image and the
+  // sitemap use.
+  const origin = test.info().project.use.baseURL!;
+  const productPath = `/saas/harbor-test-${run}`;
+  await expect(page).toHaveURL(productPath);
+  const moved = await page.request.get(`/saas/${productId}`, { maxRedirects: 0 });
+  expect(moved.status()).toBe(308);
+  expect(moved.headers().location).toMatch(new RegExp(`${productPath}$`));
+  await expect(page.locator('link[rel="canonical"]')).toHaveAttribute(
+    "href",
+    `${origin}${productPath}`,
+  );
+  const card = page.locator('meta[property="og:image"]');
+  await expect(card).toHaveAttribute("content", new RegExp(`${productPath}/opengraph-image`));
+  const cardImage = await page.request.get((await card.getAttribute("content"))!);
+  expect(cardImage.status()).toBe(200);
+  expect(cardImage.headers()["content-type"]).toBe("image/png");
+  expect(await (await page.request.get("/sitemap.xml")).text()).toContain(
+    `<loc>${origin}${productPath}</loc>`,
+  );
   await expect(page.getByText(/Verified with Stripe through a read-only key/)).toBeVisible();
   await expect(page.getByText("Not shared", { exact: true })).toHaveCount(3);
   // Visible text only: the page source also carries framework references like "$104".
@@ -519,6 +555,14 @@ test("registration, email confirmation, profile and SaaS editing, storage, priva
       await request.post("/api/stripe/sync", { headers: { Authorization: "Bearer wrong" } })
     ).status(),
   ).toBe(401);
+  // A renamed product gets a new address, and the old one keeps leading to it.
+  await page.goto(`/dashboard/saas/${secondId}`);
+  await page.getByLabel("Product name", { exact: true }).fill(`Renamed ${run}`);
+  await page.getByRole("button", { name: "Save changes" }).click();
+  await expect(page).toHaveURL(/saved=/);
+  await page.goto(`/saas/second-${run}`);
+  await expect(page).toHaveURL(`/saas/renamed-${run}`);
+  await expect(page.getByRole("heading", { name: `Renamed ${run}`, exact: true })).toBeVisible();
   // The signed-in header carries extra links, so check it separately on a phone-sized screen.
   await page.setViewportSize({ width: 390, height: 844 });
   for (const path of [
@@ -1049,8 +1093,12 @@ test("reports reach the admin panel, where admins hide products and suspend acco
   // The product is gone for everyone else, including through the API.
   expect((await anon.from("public_saas").select("id").eq("id", productId)).data).toEqual([]);
   expect((await anon.from("saas").select("id").eq("id", productId)).data).toEqual([]);
-  await visitor.goto(`/saas/${productId}`);
-  await expect(visitor.getByRole("heading", { name: "Page not found" })).toBeVisible();
+  const productSlug = `reported-product-${run}`;
+  for (const path of [`/saas/${productId}`, `/saas/${productSlug}`]) {
+    await visitor.goto(path);
+    await expect(visitor.getByRole("heading", { name: "Page not found" })).toBeVisible();
+  }
+  expect(await (await visitor.request.get("/sitemap.xml")).text()).not.toContain(productSlug);
 
   // The maker sees the product as hidden, with the reason and the explanation.
   await login(makerPage, maker.email, maker.password);
@@ -1115,9 +1163,11 @@ test("reports reach the admin panel, where admins hide products and suspend acco
   await adminPage.getByRole("button", { name: "Show product again" }).click();
   await expect(adminPage.getByText("The product is shown again.")).toBeVisible();
   await visitor.goto(`/saas/${productId}`);
+  await expect(visitor).toHaveURL(`/saas/${productSlug}`);
   await expect(visitor.getByRole("heading", { name: product, exact: true })).toBeVisible();
   await visitor.goto(`/makers/${maker.id}`);
   await expect(visitor.getByRole("heading", { name: maker.name, exact: true })).toBeVisible();
+  expect(await (await visitor.request.get("/sitemap.xml")).text()).toContain(productSlug);
 
   // Every decision is in the log.
   await adminPage.goto("/admin/log");

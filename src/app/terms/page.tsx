@@ -8,6 +8,7 @@ import { DAILY_PRODUCT_LIMIT, PRODUCT_LIMIT } from "@/lib/moderation";
 export const metadata: Metadata = {
   title: "Terms",
   description: "The rules for using The SaaS Harbor, and how reports and moderation work.",
+  alternates: { canonical: "/terms" },
 };
 
 export default function Terms() {

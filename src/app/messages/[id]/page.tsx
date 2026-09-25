@@ -72,7 +72,7 @@ export default async function ConversationPage({ params }: Props) {
         <div className="min-w-0 flex-1">
           <h1 className="truncate text-2xl font-semibold tracking-tight">{other.name}</h1>
           <Link
-            href={`/makers/${other.id}`}
+            href={`/makers/${other.slug}`}
             className="text-sm text-muted-foreground hover:text-foreground hover:underline"
           >
             View profile

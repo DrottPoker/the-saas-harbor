@@ -17,7 +17,12 @@ export type Database = Omit<GeneratedDatabase, "public"> & {
       | "admin_suspend_account"
       | "admin_accounts"
       | "admin_account"
+      | "saas_slug_redirect"
     > & {
+      saas_slug_redirect: {
+        Args: Functions["saas_slug_redirect"]["Args"];
+        Returns: string | null;
+      };
       save_profile: {
         Args: Nullable<Functions["save_profile"]["Args"], "p_avatar_path">;
         Returns: undefined;

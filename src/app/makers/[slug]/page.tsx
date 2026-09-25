@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { notFound } from "next/navigation";
-import { z } from "zod";
+import { notFound, permanentRedirect } from "next/navigation";
 import { BadgeCheck, Pencil } from "lucide-react";
 import { PersonAvatar } from "@/components/avatars";
 import { ListingGrid, ResultsFooter } from "@/components/listings";
@@ -12,35 +11,45 @@ import { ReportLink } from "@/components/report-link";
 import { EmptyState, Notice, Shell } from "@/components/shell";
 import { Button } from "@/components/ui/button";
 import {
+  findProfile,
   listings,
   makerTotals,
   PAGE_SIZE,
-  publicProfile,
   publicProfileExperience,
   safePage,
 } from "@/lib/data";
 import { formatUsd } from "@/lib/domain";
+import { excerpt } from "@/lib/moderation";
+import { pageMetadata, SITE_NAME } from "@/lib/seo";
 import { currentUser } from "@/lib/supabase/server";
 
-type Props = { params: Promise<{ id: string }>; searchParams: Promise<{ page?: string }> };
+type Props = { params: Promise<{ slug: string }>; searchParams: Promise<{ page?: string }> };
 
 export async function generateMetadata({ params }: Pick<Props, "params">): Promise<Metadata> {
-  const { id } = await params;
-  if (!z.uuid().safeParse(id).success) return {};
-  const profile = await publicProfile(id);
-  return profile
-    ? { title: profile.name, description: profile.headline || profile.bio || undefined }
-    : {};
+  const found = await findProfile((await params).slug);
+  if (!found || "redirect" in found) return {};
+  const profile = found.item;
+  return pageMetadata({
+    title: profile.name,
+    description:
+      profile.headline ||
+      (profile.bio && excerpt(profile.bio, 160)) ||
+      `${profile.name} on ${SITE_NAME}`,
+    path: `/makers/${profile.slug}`,
+    type: "profile",
+  });
 }
 
 const across = (count: number) => `Across ${count} ${count === 1 ? "product" : "products"}`;
 
 // Laid out like the product page: a header, key figures, then the story with details at the side.
 export default async function Maker({ params, searchParams }: Props) {
-  const { id } = await params;
-  if (!z.uuid().safeParse(id).success) notFound();
-  const profile = await publicProfile(id);
-  if (!profile) notFound();
+  const found = await findProfile((await params).slug);
+  if (!found) notFound();
+  // An id or another letter case moves to the current address.
+  if ("redirect" in found) permanentRedirect(found.redirect);
+  const profile = found.item;
+  const id = profile.id;
   const page = safePage((await searchParams).page);
   const [experience, totals, result, viewer] = await Promise.all([
     publicProfileExperience(id),

@@ -36,7 +36,7 @@ export function Leaderboard({ items }: { items: Listing[] }) {
           return (
             <li key={item.id}>
               <Link
-                href={`/saas/${item.id}`}
+                href={`/saas/${item.slug}`}
                 className={cn(
                   "grid grid-cols-[1.75rem_minmax(0,1fr)_auto] items-center gap-3 px-4 py-3.5 transition-colors hover:bg-subtle",
                   columns,
@@ -110,7 +110,7 @@ function RevenueLabel({ item }: { item: Listing }) {
 export function ListingCard({ item, meta }: { item: Listing; meta: "maker" | "joined" }) {
   return (
     <Link
-      href={`/saas/${item.id}`}
+      href={`/saas/${item.slug}`}
       className="flex flex-col rounded-xl border bg-surface p-5 transition-colors hover:border-border-strong"
     >
       <div className="flex items-center gap-3">

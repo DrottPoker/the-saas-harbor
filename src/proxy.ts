@@ -1,10 +1,44 @@
 import { createServerClient } from "@supabase/ssr";
+import { createClient } from "@supabase/supabase-js";
 import { NextResponse, type NextRequest } from "next/server";
 import { contentSecurityPolicy, createNonce } from "@/lib/csp";
 import { supabaseConfig } from "@/lib/supabase/config";
+import type { Database } from "@/lib/supabase/types";
+
+const PUBLIC_PAGE = /^\/(saas|makers)\/([^/]+)$/;
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+// Product and maker pages moved from ids to readable addresses. Links with an id or capital
+// letters get a permanent redirect here, before rendering: a page that streams could only redirect
+// in the browser. Only these addresses cost a lookup, and it reads what a visitor may see.
+async function movedAddress(request: NextRequest, config: ReturnType<typeof supabaseConfig>) {
+  const match = request.nextUrl.pathname.match(PUBLIC_PAGE);
+  if (!match) return null;
+  const [, kind, address] = match;
+  let slug: string | null = null;
+  if (UUID.test(address) && config) {
+    const client = createClient<Database>(config.url, config.key, {
+      auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
+    });
+    const id = address.toLowerCase();
+    const { data } =
+      kind === "saas"
+        ? await client.from("public_saas").select("slug").eq("id", id).maybeSingle()
+        : await client.from("profiles").select("slug").eq("id", id).maybeSingle();
+    slug = data?.slug ?? null;
+  } else if (address !== address.toLowerCase()) {
+    slug = address.toLowerCase();
+  }
+  if (!slug) return null;
+  const url = request.nextUrl.clone();
+  url.pathname = `/${kind}/${slug}`;
+  return url;
+}
 
 export async function proxy(request: NextRequest) {
   const config = supabaseConfig();
+  const moved = await movedAddress(request, config);
+  if (moved) return NextResponse.redirect(moved, 308);
   const nonce = createNonce();
   const csp = contentSecurityPolicy({
     nonce,

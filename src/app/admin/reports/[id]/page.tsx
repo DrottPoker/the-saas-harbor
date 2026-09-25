@@ -65,7 +65,11 @@ export default async function AdminReport({ params, searchParams }: Props) {
     client.rpc("admin_account", { p_id: report.subject_id }).maybeSingle(),
     client.rpc("admin_account", { p_id: report.reporter_id }).maybeSingle(),
     report.saas_id
-      ? client.from("saas").select("id, name, hidden_at").eq("id", report.saas_id).maybeSingle()
+      ? client
+          .from("saas")
+          .select("id, slug, name, hidden_at")
+          .eq("id", report.saas_id)
+          .maybeSingle()
       : Promise.resolve({ data: null, error: null }),
     report.target === "saas" && !report.saas_id
       ? Promise.resolve({ data: [], error: null })
@@ -136,7 +140,7 @@ export default async function AdminReport({ params, searchParams }: Props) {
                   target === "saas" && <span>The product has since been deleted.</span>
                 )}
                 {productVisible && (
-                  <Link className={link} href={`/saas/${report.saas_id}`}>
+                  <Link className={link} href={`/saas/${product.data?.slug}`}>
                     Public product page
                   </Link>
                 )}

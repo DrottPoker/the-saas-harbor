@@ -1,12 +1,12 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { notFound } from "next/navigation";
-import { z } from "zod";
+import { notFound, permanentRedirect } from "next/navigation";
 import { ArrowUpRight, BadgeCheck } from "lucide-react";
 import { parseHistory } from "@/lib/charts";
-import { publicProfile, publicSaas, type RevenueStatus } from "@/lib/data";
+import { findSaas, publicProfile, type RevenueStatus } from "@/lib/data";
 import { currentUser } from "@/lib/supabase/server";
 import { formatDate, formatUsd } from "@/lib/domain";
+import { pageMetadata } from "@/lib/seo";
 import { PersonAvatar, ProductLogo } from "@/components/avatars";
 import { Growth } from "@/components/charts/growth";
 import { Metric } from "@/components/metric";
@@ -16,13 +16,16 @@ import { ReportLink } from "@/components/report-link";
 import { Shell } from "@/components/shell";
 import { Button } from "@/components/ui/button";
 
-type Props = { params: Promise<{ id: string }> };
+type Props = { params: Promise<{ slug: string }> };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const { id } = await params;
-  if (!z.uuid().safeParse(id).success) return {};
-  const item = await publicSaas(id);
-  return item ? { title: item.name, description: item.tagline } : {};
+  const found = await findSaas((await params).slug);
+  if (!found || "redirect" in found || !found.item.name || !found.item.tagline) return {};
+  return pageMetadata({
+    title: found.item.name,
+    description: found.item.tagline,
+    path: `/saas/${found.item.slug}`,
+  });
 }
 
 function hostname(url: string | null) {
@@ -42,10 +45,12 @@ const missingRevenue: Record<RevenueStatus, string> = {
 };
 
 export default async function SaasProfile({ params }: Props) {
-  const { id } = await params;
-  if (!z.uuid().safeParse(id).success) notFound();
-  const [item, viewer] = await Promise.all([publicSaas(id), currentUser()]);
-  if (!item) notFound();
+  const [found, viewer] = await Promise.all([findSaas((await params).slug), currentUser()]);
+  if (!found) notFound();
+  // An id, an earlier slug or another letter case moves to the current address.
+  if ("redirect" in found) permanentRedirect(found.redirect);
+  const item = found.item;
+  const id = item.id!;
   const maker = item.owner_id ? await publicProfile(item.owner_id) : null;
   const name = item.name ?? "SaaS";
   const site = hostname(item.website);
@@ -80,7 +85,7 @@ export default async function SaasProfile({ params }: Props) {
               ·
             </span>
             by{" "}
-            <Link href={`/makers/${item.owner_id}`} className="text-foreground hover:underline">
+            <Link href={`/makers/${item.owner_slug}`} className="text-foreground hover:underline">
               {item.owner_name}
             </Link>
           </p>
@@ -133,7 +138,10 @@ export default async function SaasProfile({ params }: Props) {
         <aside className="grid content-start gap-4">
           <div className="rounded-xl border bg-surface p-5">
             <h2 className="text-sm text-muted-foreground">Maker</h2>
-            <Link href={`/makers/${item.owner_id}`} className="group mt-3 flex items-center gap-3">
+            <Link
+              href={`/makers/${item.owner_slug}`}
+              className="group mt-3 flex items-center gap-3"
+            >
               <PersonAvatar path={item.owner_avatar_path} name={item.owner_name ?? "Maker"} />
               <span className="min-w-0">
                 <span className="block font-medium group-hover:underline">{item.owner_name}</span>

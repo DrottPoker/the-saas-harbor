@@ -100,7 +100,7 @@ export default async function AdminProduct({ params, searchParams }: Props) {
                 [
                   "Public page",
                   !item.hidden_at && !ownerSuspended ? (
-                    <Link className={link} href={`/saas/${id}`}>
+                    <Link className={link} href={`/saas/${item.slug}`}>
                       Open
                     </Link>
                   ) : (

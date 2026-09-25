@@ -1,5 +1,5 @@
 import { Explore } from "@/components/explore";
-export const metadata = { title: "New arrivals" };
+export const metadata = { title: "New arrivals", alternates: { canonical: "/newest" } };
 export default async function Newest({
   searchParams,
 }: {

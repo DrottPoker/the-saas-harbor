@@ -12,6 +12,7 @@ import { operator, privacyUpdated } from "@/lib/legal";
 export const metadata: Metadata = {
   title: "Privacy policy",
   description: "What The SaaS Harbor stores about you, why, who can see it, and how to delete it.",
+  alternates: { canonical: "/privacy" },
 };
 
 export default function Privacy() {
@@ -56,8 +57,8 @@ export default function Privacy() {
             </li>
             <li>
               <strong className="font-medium text-foreground">Maker profile.</strong> Your name,
-              headline, location, About text, experience, skills, links and photo. You decide what
-              to fill in.
+              headline, location, About text, experience, skills, links and photo, and the page
+              address made from your name. You decide what to fill in.
             </li>
             <li>
               <strong className="font-medium text-foreground">Products.</strong> Name, tagline,

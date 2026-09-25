@@ -4,25 +4,25 @@ One Next.js App Router application uses React, TypeScript, Tailwind CSS and shad
 
 ## Data and authorization
 
-| Resource                     | Public access                                              | Owner access                                                      |
-| ---------------------------- | ---------------------------------------------------------- | ----------------------------------------------------------------- |
-| `profiles`                   | Name, headline, location, About, links, skills, photo path | Insert/update own row, through `save_profile`                     |
-| `profile_experience`         | Roles with dates                                           | Insert/delete own roles, through `save_profile`                   |
-| `saas`                       | Product description, category, website, logo, owner        | Insert/update/delete own products                                 |
-| `reports`                    | None                                                       | Read reports they sent; write only through `submit_report`        |
-| `moderation_log`             | None                                                       | None; admins read it                                              |
-| `private.admins`             | None                                                       | None; granted with `set_admin` by the service role                |
-| `saas_settings`              | None                                                       | Read/write own visibility choices and launch date                 |
-| `stripe_connections`         | None                                                       | Read own status and key hint; never the key                       |
-| `revenue_snapshots`          | None                                                       | Read own verified history; no writes                              |
-| `public_metrics`             | Current shared, verified figures and shared launch date    | No writes; kept in sync by a trigger                              |
-| `private.*`                  | None (schema not exposed)                                  | None                                                              |
-| `public_saas`, `leaderboard` | Public projection with `revenue_status`                    | Same public fields                                                |
-| `conversations`, `messages`  | None                                                       | Read conversations they are in; write only through `send_message` |
-| `conversation_reads`         | None                                                       | Read/write own read position                                      |
-| `blocks`                     | None                                                       | Read/insert/delete own blocks                                     |
-| `inbox`                      | None                                                       | Own conversations with the latest message and unread count        |
-| `profile-images`             | Image bytes are public                                     | Upload/delete only within own UUID prefix                         |
+| Resource                     | Public access                                               | Owner access                                                      |
+| ---------------------------- | ----------------------------------------------------------- | ----------------------------------------------------------------- |
+| `profiles`                   | Name, slug, headline, location, About, links, skills, photo | Insert/update own row, through `save_profile`                     |
+| `profile_experience`         | Roles with dates                                            | Insert/delete own roles, through `save_profile`                   |
+| `saas`                       | Product description, slug, category, website, logo, owner   | Insert/update/delete own products                                 |
+| `reports`                    | None                                                        | Read reports they sent; write only through `submit_report`        |
+| `moderation_log`             | None                                                        | None; admins read it                                              |
+| `private.admins`             | None                                                        | None; granted with `set_admin` by the service role                |
+| `saas_settings`              | None                                                        | Read/write own visibility choices and launch date                 |
+| `stripe_connections`         | None                                                        | Read own status and key hint; never the key                       |
+| `revenue_snapshots`          | None                                                        | Read own verified history; no writes                              |
+| `public_metrics`             | Current shared, verified figures and shared launch date     | No writes; kept in sync by a trigger                              |
+| `private.*`                  | None (schema not exposed)                                   | None                                                              |
+| `public_saas`, `leaderboard` | Public projection with `revenue_status`                     | Same public fields                                                |
+| `conversations`, `messages`  | None                                                        | Read conversations they are in; write only through `send_message` |
+| `conversation_reads`         | None                                                        | Read/write own read position                                      |
+| `blocks`                     | None                                                        | Read/insert/delete own blocks                                     |
+| `inbox`                      | None                                                        | Own conversations with the latest message and unread count        |
+| `profile-images`             | Image bytes are public                                      | Upload/delete only within own UUID prefix                         |
 
 Every exposed table has RLS and explicit grants. Views use `security_invoker = true`. Composite foreign keys prevent attaching another owner's data to a product. Makers hold column grants on `profiles` and `saas` for exactly the fields they edit, so ids, `created_at` and the moderation columns are out of their reach; before these grants, a direct API insert could date a product into the future and keep it first in New arrivals. Hidden products and suspended profiles are left out of the public access above, and admins can read every row; see Reports and moderation. The invoker `save_saas` RPC saves product details, visibility choices and launch date; it accepts no figures. Verified figures are written only by trusted server code with the service-role key, through `record_stripe_verification`, which is executable by `service_role` alone.
 
@@ -97,6 +97,14 @@ Migration `20260925120000_moderation.sql` adds reports, admin decisions and prod
 - **Deletion.** A report is deleted when either the reporter's or the reported maker's account is deleted. Deleting the reported product or message keeps the report and its copy (`on delete set null`), so a maker cannot make a report disappear by deleting the product. `moderation_log` entries are deleted with the account they concern and keep no name once the admin who decided deletes their account. `private.admins` rows go with the account.
 
 The privacy policy describes all of this, and the terms at `/terms` list what is not allowed and how decisions and appeals work. Both are drafts until the operator is named in `src/lib/legal.ts`.
+
+## Addresses and sharing
+
+Products live at `/saas/<slug>` and makers at `/makers/<slug>` (migration `20260925150000_slugs.sql`). Triggers make the slug from the name (lowercase, accents removed with `unaccent`, words joined by hyphens, at most 60 characters) and add `-2`, `-3` and so on when it is taken; makers hold no grant on the column. Saving the same name at the same moment is serialized with an advisory lock. A renamed product keeps its earlier slugs in `private.saas_slug_redirects`, and `saas_slug_redirect()` answers them only while the product is listed. A renamed maker does not keep the old slug: it is made from the person's name, which should not stay reachable after a change, and it is released at once. Deleting a product or an account frees its slugs.
+
+The proxy answers links with an id, and addresses with capital letters, with a permanent 308 redirect before rendering, because a page that streams under `loading.tsx` can only redirect in the browser; it looks up only id-shaped addresses, as a visitor would. An earlier product slug redirects from the page itself (`findSaas` in `src/lib/data.ts`), which is rare enough for a browser-side redirect. Private areas, such as messages, reports and the admin panel, keep using ids.
+
+`metadataBase` comes from `NEXT_PUBLIC_SITE_URL` (`src/lib/seo.ts`), so canonical links, the sitemap and sharing images use the public origin. Product and maker pages set their canonical address and Open Graph and Twitter card metadata through `pageMetadata()`; list pages point search and filter variants at their plain address. `opengraph-image.tsx` for products, makers and the site draws a 1200 × 630 card with `next/og` in the Geist it bundles (`src/components/og-card.tsx`): name, tagline or headline, logo or photo (PNG and JPEG; WebP shows initials, as Satori cannot draw it), and only the figures the page shows publicly. `sitemap.xml` lists the static pages, every listed product and the makers behind them, read as a visitor, so hidden products and suspended makers never appear; `robots.txt` keeps crawlers out of the dashboard, admin panel, messages, reports, sign-in and the API.
 
 ## Security headers
 

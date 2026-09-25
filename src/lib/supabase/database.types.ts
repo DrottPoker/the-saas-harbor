@@ -353,6 +353,7 @@ export type Database = {
           location: string
           name: string
           skills: string[]
+          slug: string
           social_url: string
           suspended_at: string | null
           suspended_note: string
@@ -371,6 +372,7 @@ export type Database = {
           location?: string
           name: string
           skills?: string[]
+          slug: string
           social_url?: string
           suspended_at?: string | null
           suspended_note?: string
@@ -389,6 +391,7 @@ export type Database = {
           location?: string
           name?: string
           skills?: string[]
+          slug?: string
           social_url?: string
           suspended_at?: string | null
           suspended_note?: string
@@ -627,6 +630,7 @@ export type Database = {
           logo_path: string | null
           name: string
           owner_id: string
+          slug: string
           tagline: string
           updated_at: string
           website: string
@@ -642,6 +646,7 @@ export type Database = {
           logo_path?: string | null
           name: string
           owner_id: string
+          slug: string
           tagline: string
           updated_at?: string
           website: string
@@ -657,6 +662,7 @@ export type Database = {
           logo_path?: string | null
           name?: string
           owner_id?: string
+          slug?: string
           tagline?: string
           updated_at?: string
           website?: string
@@ -836,8 +842,10 @@ export type Database = {
           owner_avatar_path: string | null
           owner_id: string | null
           owner_name: string | null
+          owner_slug: string | null
           rank: number | null
           revenue_status: string | null
+          slug: string | null
           tagline: string | null
           updated_at: string | null
           verified_at: string | null
@@ -877,7 +885,9 @@ export type Database = {
           owner_avatar_path: string | null
           owner_id: string | null
           owner_name: string | null
+          owner_slug: string | null
           revenue_status: string | null
+          slug: string | null
           tagline: string | null
           updated_at: string | null
           verified_at: string | null
@@ -989,6 +999,7 @@ export type Database = {
         }
         Returns: undefined
       }
+      saas_slug_redirect: { Args: { p_slug: string }; Returns: string }
       save_profile: {
         Args: {
           p_avatar_path: string

@@ -8,6 +8,10 @@ The first release includes accounts, email confirmation and recovery, public mak
 
 Makers can message each other privately (see Messages below), and report products, profiles and messages to the admins, who decide in an admin panel (see Reports and moderation below). Other forms of connection, such as following or contact lists, are not implemented.
 
+## Addresses and sharing 2026-09-25
+
+Products and makers have readable addresses made from their names, such as `/saas/querybird` and `/makers/tomas-rivera`. Links with the old ids answer with a permanent redirect, a renamed product keeps its old address as a redirect, and a renamed maker's old address stops working, since it came from the person's name. Product, maker and site pages have canonical links, Open Graph and Twitter card metadata, and a generated sharing card that shows only public figures. `sitemap.xml` lists listed products and their makers, and `robots.txt` keeps crawlers out of private areas. pgTAP covers slug generation, uniqueness, renames, redirects and hidden products; the browser tests cover the redirect status, canonical links, the card image, the sitemap and renaming.
+
 ## Content Security Policy 2026-09-25
 
 Every response now carries a Content Security Policy with a fresh nonce per request: scripts run only with the nonce, `eval` only in development, and images and connections are limited to the site and Supabase (including the Realtime websocket). Framing, plugins, foreign form targets and `<base>` changes are refused. Production responses also send `Strict-Transport-Security`. The browser tests fail on any blocked resource and check that the nonce changes between requests; a probe confirmed that Chromium reports blocked scripts and images to the console, where the tests look.
@@ -141,7 +145,7 @@ Product and quality:
 7. One Stripe account verifies one product. Makers who sell several products from one account need a per-product filter (Stripe product ids) to split revenue.
 8. Only Stripe is supported. Paddle, Lemon Squeezy and others are not.
 9. Encryption key rotation: stored keys carry a version prefix, but there is no re-encryption job yet.
-10. SEO: no `sitemap.ts`, `robots.ts`, Open Graph images or canonical URLs. Public URLs use UUIDs rather than slugs.
+10. SEO follow-ups: structured data (JSON-LD) for products, and submitting the sitemap to search engines once the site is live.
 11. Old images stay in storage after replacement or removal, until the account is deleted.
 12. All routes are dynamic with `no-store`. Public pages could be cached once traffic grows, with private data kept separate. The nonce-based Content Security Policy needs a fresh render per request, so caching pages would mean moving to hashes or the experimental SRI support first.
 13. Image signature validation in `src/lib/upload.ts` has no unit tests. Vitest can now import server-only modules, so this is straightforward.

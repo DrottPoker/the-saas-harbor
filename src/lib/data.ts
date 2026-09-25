@@ -69,6 +69,58 @@ export const publicProfile = cache(async (id: string) => {
   if (error) throw new Error("This maker could not be loaded.");
   return data;
 });
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+
+// What an address points to: the item to show, or the address to send the visitor to instead.
+type Found<T> = { item: T } | { redirect: string } | null;
+
+/**
+ * A product by its address. The current slug shows the page. An id, an earlier slug or another
+ * letter case redirects to the current slug.
+ */
+export const findSaas = cache(async (address: string): Promise<Found<Listing>> => {
+  const client = publicClient();
+  if (!client) throw new Error("Supabase is not configured.");
+  const slug = address.toLowerCase();
+  if (SLUG.test(slug) && slug.length <= 64) {
+    const { data, error } = await client
+      .from("public_saas")
+      .select("*")
+      .eq("slug", slug)
+      .maybeSingle();
+    if (error) throw new Error("This SaaS profile could not be loaded.");
+    if (data) return slug === address ? { item: data } : { redirect: `/saas/${data.slug}` };
+    const { data: current, error: redirectError } = await client.rpc("saas_slug_redirect", {
+      p_slug: slug,
+    });
+    if (redirectError) throw new Error("This SaaS profile could not be loaded.");
+    if (current) return { redirect: `/saas/${current}` };
+  }
+  if (!UUID.test(address)) return null;
+  const item = await publicSaas(address.toLowerCase());
+  return item?.slug ? { redirect: `/saas/${item.slug}` } : null;
+});
+
+/** A maker by their address. An id or another letter case redirects to the current slug. */
+export const findProfile = cache(async (address: string): Promise<Found<Profile>> => {
+  const client = publicClient();
+  if (!client) throw new Error("Supabase is not configured.");
+  const slug = address.toLowerCase();
+  if (SLUG.test(slug) && slug.length <= 64) {
+    const { data, error } = await client
+      .from("profiles")
+      .select("*")
+      .eq("slug", slug)
+      .maybeSingle();
+    if (error) throw new Error("This maker could not be loaded.");
+    if (data) return slug === address ? { item: data } : { redirect: `/makers/${data.slug}` };
+  }
+  if (!UUID.test(address)) return null;
+  const profile = await publicProfile(address.toLowerCase());
+  return profile ? { redirect: `/makers/${profile.slug}` } : null;
+});
+
 export const publicProfileExperience = cache(async (id: string) => {
   const client = publicClient();
   if (!client) throw new Error("Supabase is not configured.");

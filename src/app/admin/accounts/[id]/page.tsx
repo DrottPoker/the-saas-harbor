@@ -103,7 +103,7 @@ export default async function AdminAccount({ params, searchParams }: Props) {
                 [
                   "Public profile",
                   maker && !maker.suspended_at ? (
-                    <Link className={link} href={`/makers/${id}`}>
+                    <Link className={link} href={`/makers/${maker.slug}`}>
                       Open
                     </Link>
                   ) : (

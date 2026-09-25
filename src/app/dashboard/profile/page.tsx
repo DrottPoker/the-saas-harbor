@@ -27,7 +27,7 @@ export default async function EditProfile() {
           profile.data &&
           !profile.data.suspended_at && (
             <Button asChild variant="outline">
-              <Link href={`/makers/${user.id}`}>View profile</Link>
+              <Link href={`/makers/${profile.data.slug}`}>View profile</Link>
             </Button>
           )
         }

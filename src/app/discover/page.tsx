@@ -1,5 +1,5 @@
 import { Explore } from "@/components/explore";
-export const metadata = { title: "Discover" };
+export const metadata = { title: "Discover", alternates: { canonical: "/discover" } };
 export default async function Discover({
   searchParams,
 }: {

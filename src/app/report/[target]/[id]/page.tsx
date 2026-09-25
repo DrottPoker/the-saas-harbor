@@ -22,7 +22,7 @@ async function subject(target: ReportTarget, id: string, viewer: string) {
     if (!item) return null;
     return {
       title: `Report ${item.name}`,
-      back: { href: `/saas/${id}`, label: item.name ?? "Product" },
+      back: { href: `/saas/${item.slug}`, label: item.name ?? "Product" },
       own: item.owner_id === viewer,
       ownCopy: "This is your product, so you cannot report it.",
       preview: (
@@ -41,7 +41,7 @@ async function subject(target: ReportTarget, id: string, viewer: string) {
     if (!profile) return null;
     return {
       title: `Report ${profile.name}`,
-      back: { href: `/makers/${id}`, label: profile.name },
+      back: { href: `/makers/${profile.slug}`, label: profile.name },
       own: id === viewer,
       ownCopy: "This is your profile, so you cannot report it.",
       preview: (

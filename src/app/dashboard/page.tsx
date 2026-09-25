@@ -42,7 +42,7 @@ export default async function Dashboard({
     client.from("profiles").select("*").eq("id", user.id).maybeSingle(),
     client
       .from("saas")
-      .select("id,name,tagline,logo_path,hidden_at")
+      .select("id,slug,name,tagline,logo_path,hidden_at")
       .eq("owner_id", user.id)
       .order("created_at", { ascending: false }),
     client.from("stripe_connections").select("saas_id, status").eq("owner_id", user.id),
@@ -130,7 +130,7 @@ export default async function Dashboard({
         <div className="flex gap-2">
           {profile && !suspended && (
             <Button asChild variant="ghost" size="sm">
-              <Link href={`/makers/${user.id}`}>View public profile</Link>
+              <Link href={`/makers/${profile.slug}`}>View public profile</Link>
             </Button>
           )}
           <Button asChild variant="outline" size="sm">
@@ -167,7 +167,7 @@ export default async function Dashboard({
                 <div className="flex shrink-0 gap-1">
                   {!product.hidden_at && !suspended && (
                     <Button asChild variant="ghost" size="sm">
-                      <Link href={`/saas/${product.id}`}>View</Link>
+                      <Link href={`/saas/${product.slug}`}>View</Link>
                     </Button>
                   )}
                   <Button asChild variant="outline" size="sm">
