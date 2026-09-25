@@ -1,7 +1,9 @@
 // Social sharing images, drawn by next/og (Satori): flexbox and inline styles only, and text in the
-// Geist that next/og bundles. The colors are the light theme's tokens from globals.css.
+// Geist that next/og bundles. The colors are the light theme's tokens from globals.css, and the
+// logo is drawn from src/lib/logo.ts.
 import { ImageResponse } from "next/og";
 import { imageUrl } from "@/lib/images";
+import { logoSvg } from "@/lib/logo";
 import { publicClient } from "@/lib/supabase/server";
 
 export const OG_SIZE = { width: 1200, height: 630 };
@@ -12,19 +14,12 @@ const colors = {
   border: "#e0ded7",
   foreground: "#1a1b1e",
   mutedForeground: "#585c61",
-  brand: "#0f6e6a",
 };
 
 export function OgMark({ size }: { size: number }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24">
-      <rect width="24" height="24" rx="6" fill={colors.brand} />
-      <g fill="none" stroke="#fff" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-        <circle cx="12" cy="6.6" r="1.9" />
-        <path d="M12 8.5v10M8.8 11.3h6.4M6.4 14.2a5.6 5.6 0 0 0 11.2 0" />
-      </g>
-    </svg>
-  );
+  const src = `data:image/svg+xml,${encodeURIComponent(logoSvg({ size }))}`;
+  // eslint-disable-next-line @next/next/no-img-element -- Satori draws plain img elements.
+  return <img src={src} alt="" width={size} height={size} />;
 }
 
 /** A logo or photo. Satori draws PNG and JPEG; other formats show initials, as the site does. */
@@ -94,7 +89,7 @@ export function OgCard({
       }}
     >
       <div style={{ display: "flex", alignItems: "center", gap: 16, fontSize: 30 }}>
-        <OgMark size={44} />
+        <OgMark size={56} />
         The SaaS Harbor
       </div>
       <div style={{ display: "flex", alignItems: "center", gap: 44 }}>

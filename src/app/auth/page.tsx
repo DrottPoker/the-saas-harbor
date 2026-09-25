@@ -49,7 +49,7 @@ export default async function Auth({ searchParams }: Props) {
   const inbox = localInbox();
   return (
     <div className="mx-auto w-full max-w-sm px-4 pt-14 sm:pt-24">
-      <LogoMark className="size-9 text-brand-mark" />
+      <LogoMark className="size-14" />
       <h1 className="mt-6 text-2xl font-semibold tracking-tight">{title}</h1>
       <p className="mt-1.5 text-muted-foreground">{description}</p>
       <div className="mt-8 grid gap-5">

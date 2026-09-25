@@ -32,7 +32,13 @@
   --primary-foreground: #fbfaf8;
   --accent: #0f6e6a;
   --accent-soft: #e2efec;
-  --brand-mark: #0f6e6a;
+  /* The logo, also in src/lib/logo.ts for images that cannot read this file. */
+  --logo-ink: #0b2a55;
+  --logo-sea-from: #0b2a55;
+  --logo-sea-to: #1b6fb3;
+  --logo-rise-from: #72d8b2;
+  --logo-rise-to: #0b6385;
+  --logo-light: #f7a531;
   --destructive: #b42318;
   --destructive-foreground: #fbfaf8;
   --success-bg: #eaf6ef;
@@ -60,7 +66,12 @@
     --primary-foreground: #1b1f24;
     --accent: #4cc2b6;
     --accent-soft: #183a38;
-    --brand-mark: #1a8a82;
+    --logo-ink: #dbe4ef;
+    --logo-sea-from: #9dbbe0;
+    --logo-sea-to: #3d8bd6;
+    --logo-rise-from: #86e3c0;
+    --logo-rise-to: #14909f;
+    --logo-light: #f7b246;
     --destructive: #f07067;
     --destructive-foreground: #1b1f24;
     --success-bg: #14291f;
@@ -93,7 +104,7 @@
   --color-accent-foreground: var(--foreground);
   --color-brand: var(--accent);
   --color-brand-soft: var(--accent-soft);
-  --color-brand-mark: var(--brand-mark);
+  --color-logo-ink: var(--logo-ink);
   --color-destructive: var(--destructive);
   --color-destructive-foreground: var(--destructive-foreground);
   --color-success: var(--success-foreground);

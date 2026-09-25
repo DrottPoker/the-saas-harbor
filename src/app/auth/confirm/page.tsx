@@ -34,7 +34,7 @@ export default async function Confirm({ searchParams }: Props) {
   const text = link && copy[link.type];
   return (
     <div className="mx-auto w-full max-w-sm px-4 pt-14 sm:pt-24">
-      <LogoMark className="size-9 text-brand-mark" />
+      <LogoMark className="size-14" />
       <h1 className="mt-6 text-2xl font-semibold tracking-tight">
         {text ? text.title : "This link is incomplete"}
       </h1>

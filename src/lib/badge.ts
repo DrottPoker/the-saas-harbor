@@ -1,28 +1,25 @@
 // The badge makers embed on their own sites: a self-contained SVG with the product's verified
 // MRR while it is public, and otherwise a plain "Listed on" line. It holds no text a maker wrote.
-// An image on another site cannot read globals.css, so the colors repeat its surface tokens.
+// An image on another site cannot read globals.css, so the colors repeat its surface tokens, and
+// the logo uses LOGO_COLORS.
 import { formatUsd } from "./domain";
+import { logoSvg } from "./logo";
 import { SITE_NAME } from "./seo";
 
 export type BadgeTheme = "light" | "dark";
 
-const THEMES: Record<
-  BadgeTheme,
-  Record<"surface" | "border" | "text" | "muted" | "mark", string>
-> = {
+const THEMES: Record<BadgeTheme, Record<"surface" | "border" | "text" | "muted", string>> = {
   light: {
     surface: "#fbfaf8",
     border: "#e0ded7",
     text: "#1a1b1e",
     muted: "#585c61",
-    mark: "#0f6e6a",
   },
   dark: {
     surface: "#22272d",
     border: "#343a42",
     text: "#e8eaed",
     muted: "#a3a9b2",
-    mark: "#1a8a82",
   },
 };
 
@@ -90,9 +87,7 @@ export function badgeSvg({ mrrCents, theme }: { mrrCents: number | null; theme: 
     `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${BADGE_HEIGHT}" viewBox="0 0 ${width} ${BADGE_HEIGHT}" role="img" aria-label="${escapeXml(title)}">`,
     `<title>${escapeXml(title)}</title>`,
     `<rect x="0.5" y="0.5" width="${width - 1}" height="${BADGE_HEIGHT - 1}" rx="10" fill="${colors.surface}" stroke="${colors.border}"/>`,
-    `<g transform="translate(12 14)"><rect width="24" height="24" rx="6" fill="${colors.mark}"/>`,
-    `<g fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">`,
-    `<circle cx="12" cy="6.6" r="1.9"/><path d="M12 8.5v10M8.8 11.3h6.4M6.4 14.2a5.6 5.6 0 0 0 11.2 0"/></g></g>`,
+    logoSvg({ theme, size: 32, x: 9, y: 10 }),
     line(22, 12, colors.muted, label, labelWidth),
     line(41, 18, colors.text, value, valueWidth, true),
     `</svg>`,

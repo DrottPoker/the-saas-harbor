@@ -8,6 +8,10 @@ The first release includes accounts, email confirmation and recovery, public mak
 
 Makers can message each other privately (see Messages below), and report products, profiles and messages to the admins, who decide in an admin panel (see Reports and moderation below). They get emails about unread messages and about decisions (see Email notifications below). Other forms of connection, such as following or contact lists, are not implemented.
 
+## New logo 2026-09-25
+
+At the project owner's request, the logo is a lighthouse whose beam lights a rising bar chart above the sea, with the name set in two lines, "The" above "SaaS Harbor". It is a vector drawing of the owner's sketch in `src/lib/logo.ts`, with its own light and dark colors, and replaces the old mark in the header, footer, sign-in pages, favicon, sharing images and badge. The favicon switches to the dark colors when the browser prefers dark.
+
 ## Users and founders 2026-09-25
 
 At the project owner's request, the site calls people users, and a user who owns a product its founder. Product pages, cards, sharing cards, the Markdown versions and the admin views of products say founder; profiles, messages, reports, settings, the privacy policy and the terms say user or profile. Profiles moved from `/makers/<slug>` to `/users/<slug>`, and the old addresses redirect permanently. Messages from the database that named a maker say user or profile (migration `20260926000000_user_wording.sql`). Code, the database and the docs keep the word maker. On the way, a flaw in the hourly sync was found and fixed: `claim_due_connections` could claim more connections than asked, since PostgreSQL may run an `IN` subquery with `LIMIT` and `FOR UPDATE SKIP LOCKED` more than once; a materialized CTE picks them once (migration `20260926000100_claim_due_once.sql`).
