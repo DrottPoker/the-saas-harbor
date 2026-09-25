@@ -207,7 +207,7 @@ export function AuthForm({
             className="mt-0.5 size-4 shrink-0 accent-brand"
           />
           <label htmlFor="terms" className="text-[13px] leading-5 text-muted-foreground">
-            I am at least 16 and agree to the{" "}
+            I agree to the{" "}
             <Link
               className="font-medium text-foreground underline"
               href="/terms"

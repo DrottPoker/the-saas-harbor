@@ -187,6 +187,12 @@ export default function Privacy() {
             Exchange rates for other currencies come from a public service. Those requests contain
             only currency codes.
           </p>
+          <p>
+            We may disclose personal data when the law requires it, to protect the rights and safety
+            of the site, its users or us, or to a buyer or successor if the service is sold or
+            merged, who then takes over this policy (a legal obligation, Article 6(1)(c), or our
+            legitimate interests, Article 6(1)(f)).
+          </p>
         </Section>
 
         <Section id="cookies" title="Cookies">
@@ -221,6 +227,11 @@ export default function Privacy() {
             Information that was public may already have been copied by others, such as search
             engines, before it was deleted.
           </p>
+          <p>
+            We protect your data with technical and organisational measures, such as encrypted
+            provider keys and access rules in the database, but no online service can guarantee
+            complete security.
+          </p>
         </Section>
 
         <Section id="rights" title="Your rights">
@@ -245,17 +256,6 @@ export default function Privacy() {
             moved to another service, restrict how it is used, and object to use based on our
             legitimate interests. To use these rights, write to {contact}. You can also complain to
             a data protection authority, for example in the country where you live or work.
-          </p>
-        </Section>
-
-        <Section id="age" title="Age">
-          <p>
-            Accounts are for people aged 16 and over, as the{" "}
-            <Link className={link} href="/terms">
-              Terms of Service
-            </Link>{" "}
-            say. We do not knowingly store data about anyone younger. If you believe a younger
-            person has an account, report their profile, and we will delete the account.
           </p>
         </Section>
 
