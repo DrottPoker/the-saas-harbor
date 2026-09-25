@@ -45,7 +45,7 @@ The project owner asked for an inspection before release: security, bugs, and wh
   - The sitemap and the daily Stripe sync stopped at 1,000 rows.
   - Browse was titled "Discover".
 
-For the owner to decide before launch:
+Decisions the owner made on 2026-09-25: the first two wait until later (known issues 13 and 18), and the production Auth settings in the third are agreed and apply when production is set up (known issue 4).
 
 1. **Faked revenue.** A maker can create subscriptions in their own live Stripe account that are never paid. Sent but unpaid invoices keep a subscription active, and invoices marked paid outside Stripe count as paid, so they show as verified MRR. Counting only subscriptions whose latest invoice was paid by an actual payment would close this. It changes the MRR definition, since past-due and unpaid invoiced subscriptions would no longer count.
 2. **Sign-in abuse.** Sign-in, sign-up and password reset run on the server, so Supabase Auth sees the server's address. Its limits per address then apply to all users together or not at all, depending on the host. A CAPTCHA on these forms (for example Cloudflare Turnstile or hCaptcha) is the usual fix. It needs an account with the provider and a line in the CSP.
@@ -223,8 +223,9 @@ Product and quality:
 10. SEO follow-ups: structured data (JSON-LD) for products, and submitting the sitemap to search engines once the site is live.
 11. Old images stay in storage after replacement or removal, until the account is deleted. There is no limit on how many files a maker stores in their folder; a cleanup of unreferenced files should come before a per-maker limit, so replacing a logo never fills it up.
 12. All routes are dynamic with `no-store`. Public pages could be cached once traffic grows, with private data kept separate. The nonce-based Content Security Policy needs a fresh render per request, so caching pages would mean moving to hashes or the experimental SRI support first.
-13. Faked revenue through the maker's own Stripe account (see Release review, decision 1).
+13. Faked revenue through the maker's own Stripe account (see Release review, point 1). Postponed by the owner.
 14. Realtime keeps its message event rows, which hold ids only, for a few days.
 15. Notification emails have no one-click unsubscribe (`List-Unsubscribe`, RFC 8058): turning them off takes a sign-in. Large senders to Gmail and Yahoo need it, so add it before volumes grow. The emails are in English only.
 16. Demo products retire themselves at 12 ranked products, but their code stays. Remove it once the directory has grown; ARCHITECTURE lists the parts.
 17. The browser tests run against `next dev`, which compiles routes on demand. Once, it answered Page not found for the product form in the registration test, and the failure did not repeat. Failed tests now keep a trace; if it happens again, the trace shows the address and the requests. Running the browser tests against a production build (`next build` and `next start`) would remove the dev server's compile timing from the tests.
+18. No CAPTCHA on sign-in, sign-up and password reset (see Release review, point 2). Postponed by the owner; until then the Auth limits per address protect little when the host shows Auth the server's address.
