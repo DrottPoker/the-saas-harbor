@@ -20,21 +20,25 @@ const managed = {
   NEXT_PUBLIC_SITE_URL: "http://localhost:3001",
   // Only while emails go to Mailpit; with real delivery the sign-in pages show no inbox link.
   LOCAL_MAILPIT_URL: delivery === "mailpit" ? local.mailpit : undefined,
-  // Server-only secrets for Stripe verification (never NEXT_PUBLIC_).
+  // Server-only secrets for revenue verification (never NEXT_PUBLIC_).
   SUPABASE_SECRET_KEY: local.secretKey,
   STRIPE_KEY_ENCRYPTION_KEY: generated("STRIPE_KEY_ENCRYPTION_KEY"),
   CRON_SECRET: generated("CRON_SECRET"),
-  STRIPE_ALLOW_TEST_KEYS: "true",
+  REVENUE_ALLOW_TEST_KEYS: "true",
   // Notification emails go to Mailpit unless .env.local already names another SMTP server.
   SMTP_HOST: current.SMTP_HOST || "127.0.0.1",
   SMTP_PORT: current.SMTP_PORT || String(mailpitSmtpPort),
   EMAIL_FROM: current.EMAIL_FROM || "The SaaS Harbor <notifications@harbor.localhost>",
 };
 const header = "# Managed by scripts/local-env.mjs from the local Supabase stack.";
+// Settings this script once wrote under another name.
+const retired = ["STRIPE_ALLOW_TEST_KEYS"];
 const kept = previous
   .split(/\r?\n/)
   .filter((line) => line.trim() && line !== header)
-  .filter((line) => !Object.keys(managed).some((key) => line.startsWith(`${key}=`)));
+  .filter(
+    (line) => ![...Object.keys(managed), ...retired].some((key) => line.startsWith(`${key}=`)),
+  );
 const entries = Object.entries(managed).filter(([, v]) => v !== undefined);
 const next = [header, ...entries.map(([k, v]) => `${k}=${v}`), ...kept, ""].join("\n");
 // Unchanged files are not rewritten, so the dev server does not reload its environment.

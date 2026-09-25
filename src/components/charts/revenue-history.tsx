@@ -22,8 +22,8 @@ export function RevenueHistory({
       <p className="mt-0.5 text-sm text-muted-foreground">
         {description ?? (
           <>
-            The last {months === 1 ? "month" : `${months} months`}, reconstructed from paid Stripe
-            invoices and converted to USD at today&apos;s rates.
+            The last {months === 1 ? "month" : `${months} months`}, reconstructed from paid charges
+            and converted to USD at today&apos;s rates.
           </>
         )}
       </p>

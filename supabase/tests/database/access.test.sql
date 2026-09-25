@@ -41,12 +41,12 @@ select throws_ok(
   '42501', null, 'owner cannot write the public projection'
 );
 select throws_ok(
-  $$ insert into public.stripe_connections(saas_id, owner_id, encrypted_key, key_hint, livemode)
+  $$ insert into public.revenue_connections(saas_id, owner_id, encrypted_key, key_hint, livemode)
     values ('c0000000-0000-4000-8000-000000000002', 'b0000000-0000-4000-8000-000000000001', 'v1:x', 'x', true) $$,
-  '42501', null, 'owner cannot create a Stripe connection directly'
+  '42501', null, 'owner cannot create a revenue connection directly'
 );
 select throws_ok(
-  $$ select public.record_stripe_verification('c0000000-0000-4000-8000-000000000002', null, null,
+  $$ select public.record_revenue_verification('c0000000-0000-4000-8000-000000000002', 'stripe', null, null,
     true, 999999, 1, '{}', null, '{}', null, null, null) $$,
   '42501', null, 'owner cannot record a verification'
 );
@@ -55,7 +55,7 @@ select throws_ok(
   '42501', null, 'owner cannot call the private refresh function'
 );
 select throws_ok(
-  'select count(*) from private.stripe_subscription_claims',
+  'select count(*) from private.subscription_claims',
   '42501', null, 'owner cannot read subscription claims'
 );
 select lives_ok(
@@ -77,28 +77,28 @@ select throws_ok(
 -- The trusted server records verified revenue.
 set local role service_role;
 select lives_ok(
-  $$ select public.record_stripe_verification('c0000000-0000-4000-8000-000000000001', 'v1:private',
+  $$ select public.record_revenue_verification('c0000000-0000-4000-8000-000000000001', 'stripe', 'v1:private',
     'rk_live_…0001', true, 99999900, 99, '{"usd": 99999900}', null,
     array[repeat('a', 64)], null, null, null) $$,
   'server verifies the private product'
 );
 select lives_ok(
-  $$ select public.record_stripe_verification('c0000000-0000-4000-8000-000000000002', 'v1:small',
+  $$ select public.record_revenue_verification('c0000000-0000-4000-8000-000000000002', 'stripe', 'v1:small',
     'rk_live_…0002', true, 1999, 1, '{"usd": 1999}', null, array[repeat('b', 64)], null, null, null) $$,
   'server verifies the small product'
 );
 select lives_ok(
-  $$ select public.record_stripe_verification('c0000000-0000-4000-8000-000000000003', 'v1:large',
+  $$ select public.record_revenue_verification('c0000000-0000-4000-8000-000000000003', 'stripe', 'v1:large',
     'rk_live_…0003', true, 100000, 2, '{"usd": 100000}', null, array[repeat('c', 64)], null, null, null) $$,
   'server verifies the large product'
 );
 select throws_ok(
-  $$ select public.record_stripe_verification('c0000000-0000-4000-8000-000000000003', null, null,
+  $$ select public.record_revenue_verification('c0000000-0000-4000-8000-000000000003', 'stripe', null, null,
     true, 100000, 2, '{}', null, array[repeat('a', 64), repeat('c', 64)], null, null, null) $$,
   '23505', null, 'a subscription cannot verify two products'
 );
 select throws_ok(
-  $$ select public.record_stripe_verification('c0000000-0000-4000-8000-000000000009', null, null,
+  $$ select public.record_revenue_verification('c0000000-0000-4000-8000-000000000009', 'stripe', null, null,
     true, 1, 1, '{}', null, '{}', null, null, null) $$,
   'P0002', null, 'verification requires an existing SaaS'
 );
@@ -108,18 +108,18 @@ set local role authenticated;
 select set_config('request.jwt.claim.sub', 'b0000000-0000-4000-8000-000000000001', true);
 select is((select count(*)::int from public.revenue_snapshots), 3, 'owner reads own verified history');
 select is(
-  (select status from public.stripe_connections where saas_id = 'c0000000-0000-4000-8000-000000000002'),
+  (select status from public.revenue_connections where saas_id = 'c0000000-0000-4000-8000-000000000002'),
   'ok', 'owner reads own connection status'
 );
 select throws_ok(
-  'select encrypted_key from public.stripe_connections',
+  'select encrypted_key from public.revenue_connections',
   '42501', null, 'owner cannot read the encrypted key'
 );
 
 -- Owner two sees and changes nothing of owner one's.
 select set_config('request.jwt.claim.sub', 'b0000000-0000-4000-8000-000000000002', true);
 select is_empty('select * from public.revenue_snapshots', 'another owner cannot read verified history');
-select is_empty('select saas_id from public.stripe_connections', 'another owner cannot see connections');
+select is_empty('select saas_id from public.revenue_connections', 'another owner cannot see connections');
 select is_empty('select * from public.saas_settings', 'another owner cannot read settings');
 with changed as (
   update public.saas_settings set share_mrr = true
@@ -159,7 +159,7 @@ select is(
 );
 select throws_ok('select count(*) from public.revenue_snapshots', '42501', null,
   'anonymous visitors cannot read verified history');
-select throws_ok('select count(*) from public.stripe_connections', '42501', null,
+select throws_ok('select count(*) from public.revenue_connections', '42501', null,
   'anonymous visitors cannot read connections');
 select ok(
   not has_function_privilege('anon',
@@ -173,7 +173,7 @@ select set_config('request.jwt.claim.sub', 'b0000000-0000-4000-8000-000000000001
 update public.saas_settings set share_mrr = false where saas_id = 'c0000000-0000-4000-8000-000000000003';
 set local role service_role;
 select lives_ok(
-  $$ select public.record_stripe_verification('c0000000-0000-4000-8000-000000000002', null, null,
+  $$ select public.record_revenue_verification('c0000000-0000-4000-8000-000000000002', 'stripe', null, null,
     true, 0, 0, '{}', null, array[repeat('b', 64)], null, null, null) $$,
   'server records zero MRR'
 );
@@ -200,7 +200,7 @@ update public.revenue_snapshots set captured_at = now() - interval '8 days'
   where saas_id = 'c0000000-0000-4000-8000-000000000002';
 select private.refresh_public_metrics('c0000000-0000-4000-8000-000000000002');
 set local role service_role;
-delete from public.stripe_connections where saas_id = 'c0000000-0000-4000-8000-000000000001';
+delete from public.revenue_connections where saas_id = 'c0000000-0000-4000-8000-000000000001';
 
 set local role anon;
 select set_config('request.jwt.claim.sub', '', true);
@@ -216,12 +216,12 @@ select is_empty(
 );
 select is(
   (select revenue_status from public.public_saas where id = 'c0000000-0000-4000-8000-000000000001'),
-  'unverified', 'disconnecting Stripe removes the verification'
+  'unverified', 'disconnecting the provider removes the verification'
 );
 
 set local role service_role;
 select lives_ok(
-  $$ select public.record_stripe_verification('c0000000-0000-4000-8000-000000000003', null, null,
+  $$ select public.record_revenue_verification('c0000000-0000-4000-8000-000000000003', 'stripe', null, null,
     true, 100000, 2, '{}', null, array[repeat('a', 64), repeat('c', 64)], null, null, null) $$,
   'subscriptions released by a disconnect can verify another product'
 );
@@ -241,7 +241,7 @@ select lives_ok(
 );
 set local role service_role;
 select lives_ok(
-  $$ select public.record_stripe_verification('c0000000-0000-4000-8000-000000000004', 'v1:history',
+  $$ select public.record_revenue_verification('c0000000-0000-4000-8000-000000000004', 'stripe', 'v1:history',
     'rk_live_…0004', true, 100000, 5, '{}', null, array[repeat('d', 64)],
     '[{"month": "2026-07", "mrr_cents": 70000}, {"month": "2026-08", "mrr_cents": 90000}]',
     100000, 80000) $$,
@@ -544,7 +544,7 @@ select lives_ok(
 );
 set local role service_role;
 select lives_ok(
-  $$ select public.record_stripe_verification('c0000000-0000-4000-8000-000000000006', 'v1:delete',
+  $$ select public.record_revenue_verification('c0000000-0000-4000-8000-000000000006', 'stripe', 'v1:delete',
     'rk_live_…0006', true, 5000, 3, '{"usd": 5000}', null, array[repeat('e', 64)],
     '[{"month": "2026-08", "mrr_cents": 4000}]', 5000, 4000) $$,
   'server verifies the product to delete'
@@ -576,16 +576,16 @@ select is_empty(
   $$ select saas_id from public.saas_settings where saas_id = 'c0000000-0000-4000-8000-000000000006'
   union all select saas_id from public.public_metrics where saas_id = 'c0000000-0000-4000-8000-000000000006'
   union all select saas_id from public.revenue_snapshots where saas_id = 'c0000000-0000-4000-8000-000000000006'
-  union all select saas_id from public.stripe_connections where saas_id = 'c0000000-0000-4000-8000-000000000006'
-  union all select saas_id from private.stripe_subscription_claims where saas_id = 'c0000000-0000-4000-8000-000000000006' $$,
-  'settings, metrics, snapshots, the Stripe key and claims go with the product'
+  union all select saas_id from public.revenue_connections where saas_id = 'c0000000-0000-4000-8000-000000000006'
+  union all select saas_id from private.subscription_claims where saas_id = 'c0000000-0000-4000-8000-000000000006' $$,
+  'settings, metrics, snapshots, the provider key and claims go with the product'
 );
 set local role service_role;
 select lives_ok(
-  $$ select public.record_stripe_verification('c0000000-0000-4000-8000-000000000001', 'v1:again',
+  $$ select public.record_revenue_verification('c0000000-0000-4000-8000-000000000001', 'stripe', 'v1:again',
     'rk_live_…0001', true, 5000, 3, '{"usd": 5000}', null, array[repeat('e', 64)],
     null, null, null) $$,
-  'the Stripe account of a deleted product can verify another product'
+  'the provider account of a deleted product can verify another product'
 );
 
 -- Account deletion: only the signed-in maker, only after a recent password sign-in, and it
@@ -653,13 +653,13 @@ select is(
     union all select saas_id from public.saas_settings where owner_id = 'b0000000-0000-4000-8000-000000000001'
     union all select saas_id from public.public_metrics where owner_id = 'b0000000-0000-4000-8000-000000000001'
     union all select saas_id from public.revenue_snapshots where owner_id = 'b0000000-0000-4000-8000-000000000001'
-    union all select saas_id from public.stripe_connections where owner_id = 'b0000000-0000-4000-8000-000000000001'
+    union all select saas_id from public.revenue_connections where owner_id = 'b0000000-0000-4000-8000-000000000001'
     union all select profile_id from public.profile_experience where profile_id = 'b0000000-0000-4000-8000-000000000001'
   ) owned),
-  0, 'profile, experience, products, settings, metrics, snapshots and Stripe keys are deleted'
+  0, 'profile, experience, products, settings, metrics, snapshots and provider keys are deleted'
 );
 select is_empty(
-  $$ select 1 from private.stripe_subscription_claims
+  $$ select 1 from private.subscription_claims
     where saas_id in ('c0000000-0000-4000-8000-000000000001', 'c0000000-0000-4000-8000-000000000002',
       'c0000000-0000-4000-8000-000000000004') $$,
   'subscription claims are deleted'
@@ -683,7 +683,7 @@ select results_eq(
 );
 set local role service_role;
 select lives_ok(
-  $$ select public.record_stripe_verification('c0000000-0000-4000-8000-000000000005', 'v1:other',
+  $$ select public.record_revenue_verification('c0000000-0000-4000-8000-000000000005', 'stripe', 'v1:other',
     'rk_live_…0005', true, 1000, 1, '{}', null, array[repeat('d', 64)], null, null, null) $$,
   'subscriptions of a deleted account can verify another product'
 );

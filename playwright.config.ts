@@ -1,6 +1,6 @@
 import { defineConfig, devices } from "@playwright/test";
-// Port 3002 keeps the test server clear of the regular dev server on 3001. The fake Stripe API
-// on 3011 replaces Stripe and the exchange-rate service (see tests/e2e/fake-stripe.mjs).
+// Port 3002 keeps the test server clear of the regular dev server on 3001. The fake server on
+// 3011 replaces the payment providers and the exchange-rate service (tests/e2e/fake-providers.mjs).
 export default defineConfig({
   testDir: "./tests/e2e",
   fullyParallel: false,
@@ -17,7 +17,7 @@ export default defineConfig({
   projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
   webServer: [
     {
-      command: "node tests/e2e/fake-stripe.mjs",
+      command: "node tests/e2e/fake-providers.mjs",
       url: "http://127.0.0.1:3011/health",
       reuseExistingServer: false,
       timeout: 30000,

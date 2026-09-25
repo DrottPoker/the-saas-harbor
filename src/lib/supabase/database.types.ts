@@ -432,6 +432,7 @@ export type Database = {
           mrr_growth_pct: number | null
           mrr_history: Json | null
           owner_id: string
+          provider: string | null
           saas_id: string
           verified_at: string | null
         }
@@ -443,6 +444,7 @@ export type Database = {
           mrr_growth_pct?: number | null
           mrr_history?: Json | null
           owner_id: string
+          provider?: string | null
           saas_id: string
           verified_at?: string | null
         }
@@ -454,6 +456,7 @@ export type Database = {
           mrr_growth_pct?: number | null
           mrr_history?: Json | null
           owner_id?: string
+          provider?: string | null
           saas_id?: string
           verified_at?: string | null
         }
@@ -569,6 +572,70 @@ export type Database = {
           },
         ]
       }
+      revenue_connections: {
+        Row: {
+          connected_at: string
+          encrypted_key: string
+          key_hint: string
+          last_checked_at: string | null
+          last_error: string | null
+          last_synced_at: string | null
+          livemode: boolean
+          owner_id: string
+          provider: string
+          saas_id: string
+          status: string
+        }
+        Insert: {
+          connected_at?: string
+          encrypted_key: string
+          key_hint: string
+          last_checked_at?: string | null
+          last_error?: string | null
+          last_synced_at?: string | null
+          livemode: boolean
+          owner_id: string
+          provider: string
+          saas_id: string
+          status?: string
+        }
+        Update: {
+          connected_at?: string
+          encrypted_key?: string
+          key_hint?: string
+          last_checked_at?: string | null
+          last_error?: string | null
+          last_synced_at?: string | null
+          livemode?: boolean
+          owner_id?: string
+          provider?: string
+          saas_id?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "revenue_connections_saas_id_owner_id_fkey"
+            columns: ["saas_id", "owner_id"]
+            isOneToOne: false
+            referencedRelation: "leaderboard"
+            referencedColumns: ["id", "owner_id"]
+          },
+          {
+            foreignKeyName: "revenue_connections_saas_id_owner_id_fkey"
+            columns: ["saas_id", "owner_id"]
+            isOneToOne: false
+            referencedRelation: "public_saas"
+            referencedColumns: ["id", "owner_id"]
+          },
+          {
+            foreignKeyName: "revenue_connections_saas_id_owner_id_fkey"
+            columns: ["saas_id", "owner_id"]
+            isOneToOne: false
+            referencedRelation: "saas"
+            referencedColumns: ["id", "owner_id"]
+          },
+        ]
+      }
       revenue_snapshots: {
         Row: {
           captured_at: string
@@ -582,6 +649,7 @@ export type Database = {
           mrr_cents: number
           mrr_invoice_cents: number | null
           owner_id: string
+          provider: string
           saas_id: string
           seq: number
         }
@@ -597,6 +665,7 @@ export type Database = {
           mrr_cents: number
           mrr_invoice_cents?: number | null
           owner_id: string
+          provider: string
           saas_id: string
           seq?: never
         }
@@ -612,6 +681,7 @@ export type Database = {
           mrr_cents?: number
           mrr_invoice_cents?: number | null
           owner_id?: string
+          provider?: string
           saas_id?: string
           seq?: never
         }
@@ -757,67 +827,6 @@ export type Database = {
           },
         ]
       }
-      stripe_connections: {
-        Row: {
-          connected_at: string
-          encrypted_key: string
-          key_hint: string
-          last_checked_at: string | null
-          last_error: string | null
-          last_synced_at: string | null
-          livemode: boolean
-          owner_id: string
-          saas_id: string
-          status: string
-        }
-        Insert: {
-          connected_at?: string
-          encrypted_key: string
-          key_hint: string
-          last_checked_at?: string | null
-          last_error?: string | null
-          last_synced_at?: string | null
-          livemode: boolean
-          owner_id: string
-          saas_id: string
-          status?: string
-        }
-        Update: {
-          connected_at?: string
-          encrypted_key?: string
-          key_hint?: string
-          last_checked_at?: string | null
-          last_error?: string | null
-          last_synced_at?: string | null
-          livemode?: boolean
-          owner_id?: string
-          saas_id?: string
-          status?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "stripe_connections_saas_id_owner_id_fkey"
-            columns: ["saas_id", "owner_id"]
-            isOneToOne: false
-            referencedRelation: "leaderboard"
-            referencedColumns: ["id", "owner_id"]
-          },
-          {
-            foreignKeyName: "stripe_connections_saas_id_owner_id_fkey"
-            columns: ["saas_id", "owner_id"]
-            isOneToOne: false
-            referencedRelation: "public_saas"
-            referencedColumns: ["id", "owner_id"]
-          },
-          {
-            foreignKeyName: "stripe_connections_saas_id_owner_id_fkey"
-            columns: ["saas_id", "owner_id"]
-            isOneToOne: false
-            referencedRelation: "saas"
-            referencedColumns: ["id", "owner_id"]
-          },
-        ]
-      }
     }
     Views: {
       category_counts: {
@@ -875,6 +884,7 @@ export type Database = {
           owner_id: string | null
           owner_name: string | null
           owner_slug: string | null
+          provider: string | null
           rank: number | null
           revenue_status: string | null
           slug: string | null
@@ -918,6 +928,7 @@ export type Database = {
           owner_id: string | null
           owner_name: string | null
           owner_slug: string | null
+          provider: string | null
           revenue_status: string | null
           slug: string | null
           tagline: string | null
@@ -1001,7 +1012,7 @@ export type Database = {
         }
         Returns: undefined
       }
-      begin_stripe_check: {
+      begin_revenue_check: {
         Args: { p_refresh: boolean; p_saas: string }
         Returns: undefined
       }
@@ -1033,7 +1044,7 @@ export type Database = {
         Args: { p_conversation: string; p_read_at: string }
         Returns: undefined
       }
-      record_stripe_verification: {
+      record_revenue_verification: {
         Args: {
           p_currencies: Json
           p_customers: number
@@ -1045,6 +1056,7 @@ export type Database = {
           p_mrr_30d_ago_cents: number
           p_mrr_cents: number
           p_mrr_invoice_cents: number
+          p_provider: string
           p_saas_id: string
           p_subscription_hashes: string[]
         }

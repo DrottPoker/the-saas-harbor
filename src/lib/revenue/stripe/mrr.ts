@@ -3,7 +3,7 @@
 // after forever and repeating discounts, before tax. Trials, paused collection, metered usage
 // and one-time discounts are excluded.
 
-import { VerificationError } from "./errors";
+import { addTo, intervalMonths } from "../money";
 
 export type StripeTier = {
   up_to: number | null;
@@ -68,19 +68,6 @@ export type StripeSubscription = {
 
 export const COUNTED_STATUSES = ["active", "past_due"] as const;
 
-/** Days in an average month, for daily and weekly prices here and in the history alike. */
-export const AVERAGE_MONTH_DAYS = 365.25 / 12;
-
-// Minor units per major unit, per Stripe's currency list.
-const ZERO_DECIMAL = new Set(
-  "bif clp djf gnf jpy kmf krw mga pyg rwf ugx vnd vuv xaf xof xpf".split(" "),
-);
-const THREE_DECIMAL = new Set("bhd jod kwd omr tnd".split(" "));
-export function minorUnitsPerMajor(currency: string) {
-  const code = currency.toLowerCase();
-  return ZERO_DECIMAL.has(code) ? 1 : THREE_DECIMAL.has(code) ? 1000 : 100;
-}
-
 const decimal = (exact: string | null | undefined, rounded: number | null | undefined) =>
   exact != null ? Number(exact) : (rounded ?? 0);
 
@@ -118,13 +105,7 @@ export function intervalAmount(price: StripePrice, quantity: number) {
 
 // Converts one billing interval to one month.
 export function monthlyFactor(recurring: NonNullable<StripePrice["recurring"]>) {
-  const perInterval = {
-    day: AVERAGE_MONTH_DAYS,
-    week: AVERAGE_MONTH_DAYS / 7,
-    month: 1,
-    year: 1 / 12,
-  }[recurring.interval];
-  return perInterval / recurring.interval_count;
+  return 1 / intervalMonths(recurring.interval, recurring.interval_count);
 }
 
 function activeCoupons(
@@ -201,24 +182,10 @@ export function calculateMrr(
     }
     total = applyCoupons(total, currency, factor, subscriptionCoupons);
     if (total > 0) {
-      byCurrency[currency] = (byCurrency[currency] ?? 0) + total;
+      addTo(byCurrency, currency, total);
       const customer = subscription.customer;
       payingCustomers.add(typeof customer === "string" ? customer : customer.id);
     }
   }
   return { byCurrency, customers: payingCustomers.size, subscriptionIds, skippedItems };
-}
-
-/**
- * Converts per-currency MRR to whole USD cents. `rates` maps a lowercase currency code to units
- * of that currency per 1 USD, which is the shape the exchange-rate source returns for base USD.
- */
-export function toUsdCents(byCurrency: Record<string, number>, rates: ReadonlyMap<string, number>) {
-  let usd = 0;
-  for (const [currency, minor] of Object.entries(byCurrency)) {
-    const rate = currency === "usd" ? 1 : rates.get(currency);
-    if (!rate) throw new VerificationError(`No exchange rate for ${currency.toUpperCase()}.`);
-    usd += minor / minorUnitsPerMajor(currency) / rate;
-  }
-  return Math.round(usd * 100);
 }

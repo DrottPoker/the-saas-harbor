@@ -14,13 +14,13 @@ export type Profile = Database["public"]["Tables"]["profiles"]["Row"];
 export type Saas = Database["public"]["Tables"]["saas"]["Row"];
 export type SaasSettings = Database["public"]["Tables"]["saas_settings"]["Row"];
 export type RevenueSnapshot = Database["public"]["Tables"]["revenue_snapshots"]["Row"];
-export type StripeConnection = Omit<
-  Database["public"]["Tables"]["stripe_connections"]["Row"],
-  "encrypted_key"
+export type RevenueConnection = Omit<
+  Database["public"]["Tables"]["revenue_connections"]["Row"],
+  "encrypted_key" | "last_checked_at"
 >;
 // Columns owners may read; the encrypted key is never granted.
-export const STRIPE_CONNECTION_COLUMNS =
-  "saas_id, owner_id, key_hint, livemode, status, last_error, connected_at, last_synced_at";
+export const CONNECTION_COLUMNS =
+  "saas_id, owner_id, provider, key_hint, livemode, status, last_error, connected_at, last_synced_at";
 export type RevenueStatus = "unverified" | "stale" | "private" | "verified";
 export const PAGE_SIZE = 12;
 /** PostgREST's answer to a page that starts past the last row. It means an empty page. */

@@ -11,7 +11,7 @@ export type Database = Omit<GeneratedDatabase, "public"> & {
     Functions: Omit<
       Functions,
       | "save_saas"
-      | "record_stripe_verification"
+      | "record_revenue_verification"
       | "save_profile"
       | "admin_hide_saas"
       | "admin_suspend_account"
@@ -41,9 +41,9 @@ export type Database = Omit<GeneratedDatabase, "public"> & {
         Args: Nullable<Functions["save_saas"]["Args"], "p_logo_path" | "p_launched_on">;
         Returns: string;
       };
-      record_stripe_verification: {
+      record_revenue_verification: {
         Args: Nullable<
-          Functions["record_stripe_verification"]["Args"],
+          Functions["record_revenue_verification"]["Args"],
           | "p_encrypted_key"
           | "p_key_hint"
           | "p_fx_date"

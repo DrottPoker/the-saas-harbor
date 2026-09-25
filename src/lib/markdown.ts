@@ -4,6 +4,7 @@
 import { monthLabel, parseHistory, wholeUsd } from "./charts";
 import type { CategoryCount, Listing, Profile, RevenueStatus } from "./data";
 import { categorySlug, formatDate, formatUsd } from "./domain";
+import { providerName } from "./revenue/catalog";
 import { rolePeriod, sortRoles, type ProfileExperience } from "./profile";
 import { SITE_DESCRIPTION, SITE_NAME, siteUrl } from "./seo";
 
@@ -84,6 +85,7 @@ export function productMarkdown(item: Listing) {
     ...(status === "unverified"
       ? []
       : [
+          `- Verified with: ${providerName(item.provider)}`,
           `- Last verified: ${formatDate(item.verified_at)}${item.livemode === false ? " (test mode data)" : ""}`,
         ]),
     ...(history

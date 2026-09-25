@@ -10,13 +10,12 @@ export default function AccountDeleted() {
     <Shell size="narrow">
       <PageHeader
         title="Your account has been deleted"
-        description="Your profile, products, images, Stripe connections, verification history and conversations are gone, and your products have left the leaderboard."
+        description="Your profile, products, images, payment provider connections, verification history and conversations are gone, and your products have left the leaderboard."
       />
       <div className="grid gap-4 border-t pt-8 leading-7 text-foreground/85">
         <p>
-          If you connected Stripe, you can also delete the restricted keys in your Stripe account
-          under <span className="whitespace-nowrap">Developers → API keys</span>. We no longer have
-          a copy of them.
+          If you connected a payment provider, you can also delete the keys you created there. We no
+          longer have a copy of them.
         </p>
         <p>
           Pages that were public can still show up in search engines for a while, until they update.

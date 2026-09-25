@@ -17,7 +17,7 @@ if (emailDelivery() !== "mailpit")
 const testEnv = { ...process.env };
 delete testEnv.NO_COLOR;
 delete testEnv.FORCE_COLOR;
-const fakeStripe = "http://127.0.0.1:3011";
+const fakeProviders = "http://127.0.0.1:3011";
 const cronSecret = randomBytes(32).toString("base64");
 // Extra arguments go to Playwright, such as `npm run test:e2e -- -g "message each other"`. A shell
 // joins arguments with spaces, so those with spaces or quotes are quoted.
@@ -38,13 +38,16 @@ const result = spawnSync(npx, ["playwright", "test", ...extra], {
     NEXT_PUBLIC_SITE_URL: "http://127.0.0.1:3002",
     NEXT_DIST_DIR: ".next-e2e",
     LOCAL_MAILPIT_URL: local.mailpit,
-    // Stripe verification against the fake API, with test-only secrets.
+    // Revenue verification against the fake provider APIs, with test-only secrets.
     SUPABASE_SECRET_KEY: local.secretKey,
     STRIPE_KEY_ENCRYPTION_KEY: randomBytes(32).toString("base64"),
     CRON_SECRET: cronSecret,
-    STRIPE_ALLOW_TEST_KEYS: "true",
-    STRIPE_API_BASE: fakeStripe,
-    FX_API_BASE: fakeStripe,
+    REVENUE_ALLOW_TEST_KEYS: "true",
+    STRIPE_API_BASE: fakeProviders,
+    PADDLE_API_BASE: `${fakeProviders}/paddle`,
+    POLAR_API_BASE: `${fakeProviders}/polar`,
+    DODO_API_BASE: `${fakeProviders}/dodo`,
+    FX_API_BASE: fakeProviders,
     // Notification emails go to Mailpit, and message emails are due at once.
     SMTP_HOST: "127.0.0.1",
     SMTP_PORT: String(mailpitSmtpPort),

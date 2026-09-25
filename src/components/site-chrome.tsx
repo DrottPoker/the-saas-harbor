@@ -93,7 +93,8 @@ export function SiteFooter() {
           </a>
         </nav>
         <p className="text-[13px] text-faint-foreground sm:col-span-2">
-          Revenue is verified through read-only Stripe connections and refreshed daily.
+          Revenue is verified through read-only connections to Stripe, Paddle, Polar and Dodo
+          Payments, and refreshed daily.
         </p>
       </div>
     </footer>

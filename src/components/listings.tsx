@@ -152,7 +152,7 @@ function RevenueLabel({ item }: { item: Listing }) {
   if (status === "verified" && item.mrr_cents != null)
     return (
       <span className="flex shrink-0 items-center gap-1 font-medium tabular-nums">
-        <BadgeCheck aria-label="Verified with Stripe" className="size-3.5 text-brand" />
+        <BadgeCheck aria-label="Verified" className="size-3.5 text-brand" />
         {formatUsd(item.mrr_cents)} <span className="font-normal text-muted-foreground">MRR</span>
       </span>
     );

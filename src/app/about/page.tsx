@@ -9,16 +9,16 @@ const sections = [
   {
     title: "Verified revenue",
     body: [
-      "Revenue is never typed in by makers. Each product connects its Stripe account with a restricted key that can only read subscriptions, invoices, coupons and prices. The key is encrypted when stored, used only by our server to read data, and can be revoked in Stripe at any time.",
-      "Monthly recurring revenue (MRR) is calculated from active and past-due subscriptions, normalized to one month, after ongoing discounts and before tax. Trials, paused subscriptions, one-time discounts and usage-based charges are not counted. Other currencies are converted to US dollars with daily central-bank reference rates. Paying customers are the customers with a subscription worth more than zero.",
-      "Verification runs again every day. A figure that has not been verified for seven days is hidden and removed from the leaderboard, so a revoked key cannot keep an old number on display. A Stripe account can only verify one product.",
+      "Revenue is never typed in by makers. Each product connects its payment provider, Stripe, Paddle, Polar or Dodo Payments, with a key that can only read: subscriptions and what was charged for them. The key is encrypted when stored, used only by our server to read data, and can be revoked with the provider at any time.",
+      "Monthly recurring revenue (MRR) is calculated the same way for every provider: active and past-due subscriptions, normalized to one month, after ongoing discounts and before tax. Trials, paused subscriptions, one-time discounts and usage-based charges are not counted. With Stripe each subscription is valued by its prices and discounts. Paddle bills in local prices and currencies, so a Paddle subscription is valued by its latest charge for a full period. Polar and Dodo Payments give each subscription its recurring amount, and where it includes tax, the tax is taken out at the share its latest payment shows. Other currencies are converted to US dollars with daily central-bank reference rates. Paying customers are the customers with a subscription worth more than zero.",
+      "Verification runs again every day. A figure that has not been verified for seven days is hidden and removed from the leaderboard, so a revoked key cannot keep an old number on display. The history and 30-day growth come from paid charges; Dodo Payments does not say which period a payment covers, so its products have no history. A payment provider account can only verify one product.",
     ],
   },
   {
     title: "The leaderboard",
     body: [
       "Products are ranked by verified MRR that their makers choose to share. Equal amounts are ordered by the date the product was listed. Category filters keep the overall rank, and a verified MRR of $0 is ranked too.",
-      "Products without Stripe, or that keep their revenue private, are still listed in Browse and New arrivals.",
+      "Products without a connected payment provider, or that keep their revenue private, are still listed in Browse and New arrivals.",
       "The statistics page adds up the same figures: combined and median MRR, how MRR is spread, the change over 30 days, and the figures by category and by time since launch. It shows them once five products share verified MRR.",
     ],
   },
@@ -71,7 +71,7 @@ export default async function About() {
     <Shell size="narrow">
       <PageHeader
         title="How The SaaS Harbor works"
-        description="A public directory of independent SaaS, with a leaderboard of revenue verified through Stripe."
+        description="A public directory of independent SaaS, with a leaderboard of revenue verified through each product's payment provider."
       />
       <div className="grid gap-10 border-t pt-10">
         {sections

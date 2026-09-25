@@ -50,7 +50,7 @@ select public.save_saas('a7100000-0000-4000-8000-000000000005', 'Counts Finance'
   true, false, false);
 
 set local role service_role;
-select public.record_stripe_verification(id, 'v1:counts', 'rk_live_…cnt', true, 5000, 2,
+select public.record_revenue_verification(id, 'stripe', 'v1:counts', 'rk_live_…cnt', true, 5000, 2,
   '{"usd": 5000}', null, array[md5(id::text) || md5(id::text)], null, null, null)
 from (values ('a7100000-0000-4000-8000-000000000001'::uuid),
   ('a7100000-0000-4000-8000-000000000002'::uuid), ('a7100000-0000-4000-8000-000000000004'::uuid),

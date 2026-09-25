@@ -1,35 +1,17 @@
 import "server-only";
 import type { StripeCoupon, StripePrice, StripeSubscription, StripeSubscriptionItem } from "./mrr";
 import { COUNTED_STATUSES } from "./mrr";
-import { VerificationError } from "./errors";
+import { VerificationError } from "../errors";
+import { apiBase, MAX_PAGES, ProviderRequestError } from "../http";
 import { linePriceId, type StripeInvoice, type StripeInvoiceLine } from "./history";
 
 // Every request pins the API version, because responses otherwise follow each account's own
 // default version and field shapes differ between versions.
 export const STRIPE_API_VERSION = "2026-08-26.dahlia";
-const MAX_PAGES = 200; // 20,000 objects per list
 
-export class StripeRequestError extends VerificationError {
-  constructor(
-    message: string,
-    readonly status?: number,
-    /** The endpoint that failed, such as /v1/prices/price_123. */
-    readonly path?: string,
-    /** A list had more pages than one run reads. */
-    readonly tooMuchData = false,
-  ) {
-    super(message);
-  }
-}
-
-// An override points at the browser tests' fake server. In production it must use https, so a
-// wrong setting cannot send restricted keys in the clear.
+// An override points at the browser tests' fake server.
 function baseUrl() {
-  const base = process.env.STRIPE_API_BASE;
-  if (!base) return "https://api.stripe.com";
-  if (process.env.NODE_ENV === "production" && !base.startsWith("https://"))
-    throw new VerificationError("Stripe verification is not configured correctly on this server.");
-  return base;
+  return apiBase(process.env.STRIPE_API_BASE, "https://api.stripe.com", "Stripe");
 }
 
 async function stripeGet<T>(
@@ -47,22 +29,22 @@ async function stripeGet<T>(
       signal: AbortSignal.timeout(20_000),
     });
   } catch {
-    throw new StripeRequestError("Stripe could not be reached. Try again shortly.");
+    throw new ProviderRequestError("Stripe could not be reached. Try again shortly.");
   }
   if (response.ok) return (await response.json()) as T;
   const body = (await response.json().catch(() => null)) as { error?: { message?: string } } | null;
   const detail = body?.error?.message?.slice(0, 300);
   if (response.status === 401)
-    throw new StripeRequestError("Stripe rejected the key. It may have been revoked.", 401);
+    throw new ProviderRequestError("Stripe rejected the key. It may have been revoked.", 401);
   if (response.status === 403)
-    throw new StripeRequestError(
+    throw new ProviderRequestError(
       `The key is missing a read permission.${detail ? ` Stripe says: ${detail}` : ""}`,
       403,
       path,
     );
   if (response.status === 429)
-    throw new StripeRequestError("Stripe is rate limiting requests. Try again later.", 429);
-  throw new StripeRequestError(`Stripe returned an error${detail ? `: ${detail}` : "."}`);
+    throw new ProviderRequestError("Stripe is rate limiting requests. Try again later.", 429);
+  throw new ProviderRequestError(`Stripe returned an error${detail ? `: ${detail}` : "."}`);
 }
 
 type List<T> = { data: T[]; has_more: boolean };
@@ -82,7 +64,7 @@ async function listAll<T extends { id: string }>(
     if (!list.has_more || list.data.length === 0) return items;
     startingAfter = list.data.at(-1)!.id;
   }
-  throw new StripeRequestError(
+  throw new ProviderRequestError(
     "The Stripe account has too much data to verify in one run.",
     undefined,
     path,

@@ -33,7 +33,7 @@ select public.save_saas('e0000000-0000-4000-8000-000000000002', 'Second Product'
   null, null, false, false, false);
 select public.send_message('d0000000-0000-4000-8000-000000000002', 'Buy my course now');
 set local role service_role;
-select public.record_stripe_verification('e0000000-0000-4000-8000-000000000001', 'v1:moderation',
+select public.record_revenue_verification('e0000000-0000-4000-8000-000000000001', 'stripe', 'v1:moderation',
   'rk_live_…mod1', true, 5000, 3, '{"usd": 5000}', null, array[repeat('f', 64)], null, null, null);
 set local role authenticated;
 select set_config('request.jwt.claim.sub', 'd0000000-0000-4000-8000-000000000002', true);

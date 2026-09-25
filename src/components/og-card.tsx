@@ -146,11 +146,11 @@ export async function siteImage() {
     figures.push(["Products listed", listed.count.toLocaleString("en-US")]);
   if (ranked?.count != null && !ranked.error)
     figures.push(["Ranked by verified MRR", ranked.count.toLocaleString("en-US")]);
-  figures.push(["Revenue verified with", "Stripe"]);
+  figures.push(["Verified with", "Stripe, Paddle, Polar, Dodo"]);
   return new ImageResponse(
     <OgCard
       title="Independent SaaS, ranked by revenue"
-      subtitle="Monthly recurring revenue verified through each product's Stripe account and shared by its founder."
+      subtitle="Monthly recurring revenue verified through each product's payment provider and shared by its founder."
       picture={<OgMark size={160} />}
       figures={figures}
     />,

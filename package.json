@@ -24,7 +24,7 @@
     "db:reset": "supabase db reset --local",
     "db:seed": "node scripts/seed-local.mjs",
     "env:local": "node scripts/local-env.mjs",
-    "stripe:sync": "node scripts/stripe-sync.mjs",
+    "revenue:sync": "node scripts/revenue-sync.mjs",
     "email:send": "node scripts/email-send.mjs",
     "admin": "node scripts/admin.mjs",
     "db:types": "supabase gen types typescript --local --schema public > src/lib/supabase/database.types.ts"

@@ -32,7 +32,7 @@ select public.save_saas('b7100000-0000-4000-8000-000000000005', 'Stats Private',
   false, true, false);
 
 set local role service_role;
-select public.record_stripe_verification(v.id, 'v1:stats', 'rk_live_…sta', true, v.mrr,
+select public.record_revenue_verification(v.id, 'stripe', 'v1:stats', 'rk_live_…sta', true, v.mrr,
   v.customers, '{}', null, array[md5(v.id::text) || md5(v.id::text)], v.history, v.now,
   v.before)
 from (values

@@ -65,11 +65,12 @@ export default function Privacy() {
               description, category, website, logo and launch date.
             </li>
             <li>
-              <strong className="font-medium text-foreground">Stripe verification.</strong> If you
-              connect Stripe: the restricted key you paste, stored encrypted, and the result of each
-              verification. That is your monthly recurring revenue, the number of paying customers,
-              totals per currency, revenue at each of the last twelve month-ends, and one-way hashes
-              of subscription IDs, which stop one Stripe account from verifying two products.
+              <strong className="font-medium text-foreground">Revenue verification.</strong> If you
+              connect a payment provider (Stripe, Paddle, Polar or Dodo Payments): which one, the
+              read-only key you paste, stored encrypted, and the result of each verification. That
+              is your monthly recurring revenue, the number of paying customers, totals per
+              currency, revenue at each of the last twelve month-ends, and one-way hashes of
+              subscription IDs, which stop one account from verifying two products.
             </li>
             <li>
               <strong className="font-medium text-foreground">Messages.</strong> The messages you
@@ -94,21 +95,24 @@ export default function Privacy() {
           </List>
         </Section>
 
-        <Section id="stripe" title="What we read from Stripe">
+        <Section id="revenue" title="What we read from your payment provider">
           <p>
-            With the key you provide, our server reads subscriptions, invoices, coupons and prices
-            from your Stripe account. It only reads and never changes anything in Stripe.
+            With the key you provide, our server reads from the account you connect: subscriptions,
+            invoices, coupons and prices from Stripe; subscriptions and transactions from Paddle;
+            your organization, subscriptions and orders from Polar; and brands, subscriptions and
+            payments from Dodo Payments. It only sends requests that read, and never changes
+            anything in your account.
           </p>
           <p>
-            Invoices can include your customers&apos; names and email addresses. We use only
-            amounts, currencies, dates and plan details to calculate the figures above, and we never
-            store or log details about your customers.
+            These records can include your customers&apos; names, email addresses and countries. We
+            use only amounts, taxes, currencies, dates, plan details and customer IDs, the last only
+            to count paying customers, to calculate the figures above, and we never store or log
+            details about your customers.
           </p>
           <p>
-            Disconnecting Stripe deletes the stored key at once. Earlier verification results stay
-            in your private history until you delete the product or your account. You can also
-            delete the key in Stripe under{" "}
-            <span className="whitespace-nowrap">Developers → API keys</span>.
+            Disconnecting deletes the stored key at once. Earlier verification results stay in your
+            private history until you delete the product or your account. You can also delete the
+            key with your payment provider.
           </p>
         </Section>
 
@@ -119,8 +123,8 @@ export default function Privacy() {
               service you sign up for (performance of a contract, GDPR Article 6(1)(b)).
             </li>
             <li>
-              To verify revenue through Stripe when you connect it, and show the figures you choose
-              to share. This is part of the same service (Article 6(1)(b)).
+              To verify revenue through the payment provider you connect, and show the figures you
+              choose to share. This is part of the same service (Article 6(1)(b)).
             </li>
             <li>
               To deliver the messages you send to other makers, and to email you about unread
@@ -129,8 +133,8 @@ export default function Privacy() {
             <li>
               To keep the service secure and fair, through the sign-in records, the subscription
               hashes described above, and limits on how many messages, reports and products an
-              account can add and how often it checks Stripe. The limits keep the times you added a
-              product for a day and the times you checked Stripe for an hour (our legitimate
+              account can add and how often it checks revenue. The limits keep the times you added a
+              product for a day and the times you checked revenue for an hour (our legitimate
               interests, Article 6(1)(f)).
             </li>
             <li>
@@ -154,9 +158,10 @@ export default function Privacy() {
               stop sharing.
             </li>
             <li>
-              <strong className="font-medium text-foreground">Only you:</strong> your Stripe
-              connection status, your verification history and any figures you keep private. Stored
-              Stripe keys are never shown, not even to you.
+              <strong className="font-medium text-foreground">Only you:</strong> your connection
+              status, your verification history and any figures you keep private. Stored keys are
+              never shown, not even to you. Which payment provider verified the figures is public
+              once they are verified.
             </li>
             <li>
               <strong className="font-medium text-foreground">The two of you:</strong> a
@@ -197,12 +202,12 @@ export default function Privacy() {
         <Section id="retention" title="How long we keep it">
           <p>
             We keep your data for as long as you have an account. When you delete your account, your
-            profile, products, images, Stripe keys, verification history, conversations and sign-in
-            records are deleted right away. A conversation is deleted for both makers when either of
-            them deletes their account. Deleting a single product removes its details, its logo, its
-            Stripe key and its verification history in the same way. Logos and photos you replaced
-            earlier are kept until you delete your account. Copies in backups disappear when those
-            backups expire.
+            profile, products, images, provider keys, verification history, conversations and
+            sign-in records are deleted right away. A conversation is deleted for both makers when
+            either of them deletes their account. Deleting a single product removes its details, its
+            logo, its provider key and its verification history in the same way. Logos and photos
+            you replaced earlier are kept until you delete your account. Copies in backups disappear
+            when those backups expire.
           </p>
           <p>
             An email waits in a queue until it is sent, and a record of it is kept for a week

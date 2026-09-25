@@ -12,7 +12,7 @@ import { firstValues, type SearchParams } from "@/lib/params";
 
 export const metadata = { title: "Dashboard" };
 
-function StripeBadge({ status }: { status: string | undefined }) {
+function RevenueBadge({ status }: { status: string | undefined }) {
   const [label, tone] =
     status === "ok"
       ? (["Verified", "success"] as const)
@@ -42,7 +42,7 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
       .select("id,slug,name,tagline,logo_path,hidden_at")
       .eq("owner_id", user.id)
       .order("created_at", { ascending: false }),
-    client.from("stripe_connections").select("saas_id, status").eq("owner_id", user.id),
+    client.from("revenue_connections").select("saas_id, status").eq("owner_id", user.id),
     client.from("reports").select("id", { count: "exact", head: true }).eq("reporter_id", user.id),
     isAdmin(),
   ]);
@@ -56,7 +56,7 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
           .eq("status", "open")
       ).count ?? 0)
     : 0;
-  const stripeStatus = new Map(connections?.map((row) => [row.saas_id, row.status]));
+  const revenueStatus = new Map(connections?.map((row) => [row.saas_id, row.status]));
   const suspended = !!profile?.suspended_at;
   const addButton = (
     <Button asChild>
@@ -159,7 +159,7 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
                 {product.hidden_at ? (
                   <Badge tone="error">Hidden</Badge>
                 ) : (
-                  <StripeBadge status={stripeStatus.get(product.id)} />
+                  <RevenueBadge status={revenueStatus.get(product.id)} />
                 )}
                 <div className="flex shrink-0 gap-1">
                   {!product.hidden_at && !suspended && (

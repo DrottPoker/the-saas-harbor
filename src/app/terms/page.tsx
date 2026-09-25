@@ -87,7 +87,7 @@ export default function Terms() {
             <li>Harassment, threats or hateful content aimed at a person or a group.</li>
             <li>
               Manipulating revenue verification or the leaderboard, for example with fake
-              subscriptions or a Stripe account that belongs to another business.
+              subscriptions or a payment provider account that belongs to another business.
             </li>
             <li>
               Trying to reach other makers&apos; accounts or data, collecting it for spam, or
@@ -98,8 +98,8 @@ export default function Terms() {
 
         <LegalSection id="revenue" title="Verified revenue">
           <p>
-            Revenue figures come from Stripe through a read-only key you provide, and are calculated
-            as described in{" "}
+            Revenue figures come from your payment provider through a read-only key you provide, and
+            are calculated as described in{" "}
             <Link className={legalLink} href="/about">
               How it works
             </Link>

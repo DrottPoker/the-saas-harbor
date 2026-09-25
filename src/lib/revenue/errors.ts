@@ -7,6 +7,6 @@ export class VerificationError extends Error {}
 /** The words a maker sees for a failure: its own message when it has one written for them. */
 export function makerMessage(error: unknown) {
   if (error instanceof VerificationError) return error.message;
-  console.error("Stripe verification failed:", error instanceof Error ? error.message : error);
+  console.error("Revenue verification failed:", error instanceof Error ? error.message : error);
   return "Verification failed. Try again shortly.";
 }

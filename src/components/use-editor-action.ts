@@ -3,7 +3,7 @@ import { useActionState } from "react";
 import type { ActionState } from "@/lib/domain";
 
 // Secrets are never kept in client state or written back into a field.
-const SECRET_FIELDS = new Set(["password", "stripe_key"]);
+const SECRET_FIELDS = new Set(["password", "provider_key"]);
 
 type EditorState = ActionState & { values?: Record<string, string> };
 export function useEditorAction(

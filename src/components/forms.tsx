@@ -412,7 +412,7 @@ export function SaasForm({
       </Section>
       <Section
         title="Visibility"
-        description="Revenue and customers come from Stripe and are private unless you share them. Only shared, verified MRR is ranked."
+        description="Revenue and customers come from your payment provider and are private unless you share them. Only shared, verified MRR is ranked."
       >
         <div className="grid gap-2.5">
           <Share

@@ -33,11 +33,11 @@ type DemoProduct = {
   category: (typeof categories)[number];
   maker: { name: string; headline: string };
   logo: DemoDetails["logo"];
-  /** Whole dollars. Null keeps MRR private; stripe: false means not verified at all. */
+  /** Whole dollars. Null keeps MRR private; verified: false means not verified at all. */
   mrr: number | null;
   customers: number | null;
   launched: string | null;
-  stripe?: false;
+  verified?: false;
   /** Where the 12-month history starts, as a share of today's MRR. Above 1 means shrinking. */
   start: number;
 };
@@ -273,7 +273,7 @@ const products: DemoProduct[] = [
     mrr: null,
     customers: null,
     launched: "2025-03-03",
-    stripe: false,
+    verified: false,
     start: 1,
   },
 ];
@@ -290,7 +290,7 @@ function unit(text: string) {
 
 /**
  * Twelve month-ends up to the last one before `now`, moving from `start` toward today's MRR with a
- * little variation, in the shape stored for real products (see src/lib/stripe/history.ts).
+ * little variation, in the shape stored for real products (see src/lib/revenue/history.ts).
  */
 export function demoHistory(product: { slug: string; mrr: number; start: number }, now: Date) {
   const seed = unit(product.slug);
@@ -308,7 +308,7 @@ export function demoHistory(product: { slug: string; mrr: number; start: number 
 }
 
 function toListing(product: DemoProduct, now: Date): Listing {
-  const shared = product.stripe !== false && product.mrr != null;
+  const shared = product.verified !== false && product.mrr != null;
   const history = shared ? demoHistory({ ...product, mrr: product.mrr! }, now) : null;
   const mrrCents = shared ? product.mrr! * 100 : null;
   const lastMonth = history?.at(-1)?.mrr_cents;
@@ -328,12 +328,13 @@ function toListing(product: DemoProduct, now: Date): Listing {
     created_at: null,
     updated_at: null,
     mrr_cents: mrrCents,
-    customers: product.stripe === false ? null : product.customers,
+    customers: product.verified === false ? null : product.customers,
     launched_on: product.launched,
     verified_at: null,
     livemode: null,
+    provider: null,
     // Never "verified": a demo figure must not read as one anywhere.
-    revenue_status: product.stripe === false ? "unverified" : shared ? "demo" : "private",
+    revenue_status: product.verified === false ? "unverified" : shared ? "demo" : "private",
     mrr_history: history,
     mrr_growth_pct:
       mrrCents != null && lastMonth

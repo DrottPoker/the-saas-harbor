@@ -3,7 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 import { supabaseConfig } from "./config";
 import type { Database } from "./types";
 
-// Privileged client for trusted server work only: Stripe verification and the email outbox. It
+// Privileged client for trusted server work only: revenue verification and the email outbox. It
 // bypasses RLS, so it is never used for anything a maker controls directly.
 export function adminClient() {
   const config = supabaseConfig();

@@ -34,6 +34,7 @@ function listing(overrides: Partial<Listing> = {}): Listing {
     launched_on: "2025-11-01",
     verified_at: "2026-09-25T08:00:00Z",
     livemode: true,
+    provider: "stripe",
     revenue_status: "verified",
     mrr_history: [
       { month: "2026-07", mrr_cents: 380_000 },

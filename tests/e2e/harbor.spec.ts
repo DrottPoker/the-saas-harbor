@@ -2,6 +2,7 @@ import { test, expect, type APIRequestContext, type Page } from "@playwright/tes
 import { createClient } from "@supabase/supabase-js";
 import { createHash, randomBytes, randomUUID } from "node:crypto";
 import AxeBuilder from "@axe-core/playwright";
+import { DODO_KEYS, PADDLE_KEYS, POLAR_TOKENS } from "./fake-billing.mjs";
 
 const url = process.env.TEST_SUPABASE_URL!;
 const mailpit = process.env.TEST_MAILPIT_URL!;
@@ -123,7 +124,7 @@ test.beforeAll(async ({ playwright }, info) => {
     ...["/auth", "/auth/confirm", `/saas/${id}`, `/makers/${id}`, "/demo/metricfold", "/missing"],
     ...["/dashboard", "/dashboard/profile", "/dashboard/reports", `/dashboard/saas/${id}`],
     ...["/dashboard/settings", "/api/email/send"],
-    ...["/messages", `/messages/${id}`, `/report/saas/${id}`, "/api/stripe/sync"],
+    ...["/messages", `/messages/${id}`, `/report/saas/${id}`, "/api/revenue/sync"],
     ...["/sitemap.xml", "/robots.txt", "/opengraph-image", "/llms.txt"],
     ...["/categories", "/categories/design", "/saas/any.md", "/makers/any.md"],
     ...["/stats", "/stats/opengraph-image"],
@@ -305,7 +306,7 @@ test("demo products fill the lists, marked as demos, until real products take th
     "Send message",
     "Visit website",
     "Report this product",
-    "Verified with Stripe through",
+    "through a read-only key",
   ])
     await expect(page.getByText(text)).toHaveCount(0);
   await page.goto("/demo/missing");
@@ -506,7 +507,7 @@ test("registration, email confirmation, profile and SaaS editing, storage, priva
   await expect(page).toHaveURL(/\/dashboard\/saas\/[0-9a-f-]{36}\?created=1/);
   productId = new URL(page.url()).pathname.split("/").at(-1)!;
   await expect(
-    page.getByText("Product added. Connect Stripe to verify its revenue."),
+    page.getByText("Product added. Connect your payment provider to verify its revenue."),
   ).toBeVisible();
 
   // Stripe's key form opens with the read permissions filled in.
@@ -537,7 +538,7 @@ test("registration, email confirmation, profile and SaaS editing, storage, priva
   await expect(revenue.getByText("$104", { exact: true })).toBeVisible();
   await expect(revenue.getByText("3", { exact: true })).toBeVisible();
   const { data: stored } = await admin
-    .from("stripe_connections")
+    .from("revenue_connections")
     .select("encrypted_key, key_hint")
     .eq("saas_id", productId)
     .single();
@@ -622,7 +623,7 @@ test("registration, email confirmation, profile and SaaS editing, storage, priva
     .single();
   expect(publicData.mrr_cents).toBeNull();
   expect(publicData.revenue_status).toBe("private");
-  for (const table of ["revenue_snapshots", "stripe_connections"]) {
+  for (const table of ["revenue_snapshots", "revenue_connections"]) {
     const { error: denied } = await anon.from(table).select("*");
     expect(denied?.code, table).toBe("42501");
   }
@@ -722,7 +723,7 @@ test("registration, email confirmation, profile and SaaS editing, storage, priva
     page.getByRole("alert").filter({ hasText: "checked in the last few minutes" }),
   ).toBeVisible();
   await admin
-    .from("stripe_connections")
+    .from("revenue_connections")
     .update({
       last_synced_at: new Date(Date.now() - 10 * 60_000).toISOString(),
       last_checked_at: new Date(Date.now() - 10 * 60_000).toISOString(),
@@ -769,7 +770,7 @@ test("registration, email confirmation, profile and SaaS editing, storage, priva
   await page.getByRole("button", { name: "Confirm disconnect" }).click();
   await expect(page.getByLabel("Restricted key", { exact: true })).toBeVisible();
   const { count: remaining } = await admin
-    .from("stripe_connections")
+    .from("revenue_connections")
     .select("saas_id", { count: "exact", head: true })
     .eq("saas_id", productId);
   expect(remaining).toBe(0);
@@ -787,10 +788,10 @@ test("registration, email confirmation, profile and SaaS editing, storage, priva
   await expect(page.getByText(/No revenue history yet/)).toBeVisible();
 
   // The scheduled sync endpoint refuses callers without the secret.
-  expect((await request.post("/api/stripe/sync")).status()).toBe(401);
+  expect((await request.post("/api/revenue/sync")).status()).toBe(401);
   expect(
     (
-      await request.post("/api/stripe/sync", { headers: { Authorization: "Bearer wrong" } })
+      await request.post("/api/revenue/sync", { headers: { Authorization: "Bearer wrong" } })
     ).status(),
   ).toBe(401);
   // A renamed product gets a new address, and the old one keeps leading to it.
@@ -842,7 +843,7 @@ test("another owner cannot read private history, edit SaaS, or overwrite images"
     auth: { persistSession: false, autoRefreshToken: false },
   });
   await other.auth.signInWithPassword({ email: secondEmail, password: secondPassword });
-  for (const table of ["revenue_snapshots", "stripe_connections"]) {
+  for (const table of ["revenue_snapshots", "revenue_connections"]) {
     const { data: rows, error: readError } = await other
       .from(table)
       .select("saas_id")
@@ -967,8 +968,9 @@ test("a maker deletes products, then their account and everything in it", async 
     });
     if (saveError) throw new Error("Unable to create a fixture product.");
     if (!verified) return productId;
-    const { error: verifyError } = await admin.rpc("record_stripe_verification", {
+    const { error: verifyError } = await admin.rpc("record_revenue_verification", {
       p_saas_id: productId,
+      p_provider: "stripe",
       p_encrypted_key: "v1:e2e-fixture",
       p_key_hint: "rk_test_…e2e0",
       p_livemode: false,
@@ -1014,7 +1016,7 @@ test("a maker deletes products, then their account and everything in it", async 
     "saas_settings",
     "public_metrics",
     "revenue_snapshots",
-    "stripe_connections",
+    "revenue_connections",
   ]) {
     const { data: rows, error: readError } = await admin
       .from(table)
@@ -1062,7 +1064,7 @@ test("a maker deletes products, then their account and everything in it", async 
     ["saas_settings", "owner_id"],
     ["public_metrics", "owner_id"],
     ["revenue_snapshots", "owner_id"],
-    ["stripe_connections", "owner_id"],
+    ["revenue_connections", "owner_id"],
   ]) {
     const { data: rows, error: readError } = await admin.from(table).select(column).eq(column, id);
     expect(readError, table).toBeNull();
@@ -1645,8 +1647,9 @@ test("statistics add up the leaderboard's figures once five products share them"
     await admin
       .from("saas_settings")
       .insert({ saas_id: id, owner_id: maker, share_mrr: true, share_customers: true });
-    const { error: verifyError } = await admin.rpc("record_stripe_verification", {
+    const { error: verifyError } = await admin.rpc("record_revenue_verification", {
       p_saas_id: id,
+      p_provider: "stripe",
       p_encrypted_key: "v1:stats",
       p_key_hint: "rk_test_…stat",
       p_livemode: false,
@@ -1699,5 +1702,86 @@ test("statistics add up the leaderboard's figures once five products share them"
   }
   await page.setViewportSize({ width: 390, height: 844 });
   await expectNoHorizontalScroll(page);
+  expect(violations).toEqual([]);
+});
+
+// Paddle, Polar and Dodo Payments verify revenue like Stripe. A product connects one provider at a
+// time, and a new key may switch it to another.
+test("makers verify revenue through Paddle, Polar and Dodo Payments", async ({ page }) => {
+  const violations: string[] = [];
+  watchPolicy(page, violations);
+  const address = `harbor-providers-${run}@example.test`;
+  const secret = randomBytes(24).toString("hex");
+  const { data: created, error } = await admin.auth.admin.createUser({
+    email: address,
+    password: secret,
+    email_confirm: true,
+  });
+  if (error || !created.user) throw new Error("Unable to create the provider maker.");
+  userIds.push(created.user.id);
+  await login(page, address, secret);
+  await page.goto("/dashboard/saas/new");
+  await fillProduct(page, `Providers ${run}`);
+  await page.getByRole("button", { name: "Add SaaS", exact: true }).click();
+  await expect(page).toHaveURL(/created=1/);
+  const id = new URL(page.url()).pathname.split("/").at(-1)!;
+  const revenue = page.locator("#revenue");
+  for (const theme of ["dark", "light"] as const) {
+    await setThemeCookie(page, theme);
+    await page.reload();
+    await expectAccessible(page);
+  }
+
+  // Paddle: each subscription is valued by its latest full charge, without tax.
+  await revenue.getByRole("radio", { name: "Paddle" }).check();
+  await expect(revenue.getByText("Give it Read for Subscriptions and Transactions")).toBeVisible();
+  await revenue.getByLabel("API key", { exact: true }).fill(`pdl_live_apikey_${"a".repeat(50)}`);
+  await revenue.getByRole("button", { name: "Connect and verify" }).click();
+  await expect(
+    revenue.getByRole("alert").filter({ hasText: "Paste a Paddle API key" }),
+  ).toBeVisible();
+  await revenue.getByLabel("API key", { exact: true }).fill(PADDLE_KEYS.one);
+  await revenue.getByRole("button", { name: "Connect and verify" }).click();
+  await expect(revenue.getByText("Connected to Paddle")).toBeVisible();
+  await expect(revenue.getByText("$182.50", { exact: true })).toBeVisible();
+  await page.goto(`/saas/providers-${run}`);
+  await expect(page.getByText(/Verified with Paddle through a read-only key/)).toBeVisible();
+
+  // Polar: a new token switches the provider.
+  await page.goto(`/dashboard/saas/${id}`);
+  await revenue.getByText("Replace the key or change the provider").click();
+  await revenue.getByRole("radio", { name: "Polar" }).check();
+  await revenue.getByLabel("New organization access token", { exact: true }).fill(POLAR_TOKENS.one);
+  await revenue.getByRole("button", { name: "Replace and verify" }).click();
+  await expect(revenue.getByText("Connected to Polar")).toBeVisible();
+  await expect(
+    revenue.getByText(/^Polar connected\. Verified MRR: \$59\.17 from 3 paying customers\./),
+  ).toBeVisible();
+  await expect(revenue.getByText("$59.17", { exact: true })).toBeVisible();
+
+  // Dodo Payments, from the same open form: MRR without history, and the maker is told why.
+  await revenue.getByRole("radio", { name: "Dodo Payments" }).check();
+  await revenue.getByLabel("New API key", { exact: true }).fill(DODO_KEYS.one);
+  await revenue.getByRole("button", { name: "Replace and verify" }).click();
+  await expect(revenue.getByText("Connected to Dodo Payments")).toBeVisible();
+  await expect(revenue.getByText("$50", { exact: true })).toBeVisible();
+  await expect(
+    revenue.getByText(
+      "No revenue history: Dodo Payments does not say which period a payment covers.",
+    ),
+  ).toBeVisible();
+  const { data: connection } = await admin
+    .from("revenue_connections")
+    .select("provider, key_hint, livemode, encrypted_key")
+    .eq("saas_id", id)
+    .single();
+  expect(connection).toMatchObject({ provider: "dodo", key_hint: "…0001", livemode: false });
+  expect(connection!.encrypted_key).not.toContain("harborfixture");
+  const { data: snapshots } = await admin
+    .from("revenue_snapshots")
+    .select("provider")
+    .eq("saas_id", id)
+    .order("seq");
+  expect(snapshots!.map((row) => row.provider)).toEqual(["paddle", "polar", "dodo"]);
   expect(violations).toEqual([]);
 });

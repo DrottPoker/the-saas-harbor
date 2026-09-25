@@ -1,20 +1,20 @@
 import { describe, expect, it } from "vitest";
+import { toUsdCents } from "../../src/lib/revenue/money";
 import {
   calculateMrr,
   intervalAmount,
   monthlyFactor,
-  toUsdCents,
   type StripeCoupon,
   type StripeDiscount,
   type StripePrice,
   type StripeSubscription,
-} from "../../src/lib/stripe/mrr";
+} from "../../src/lib/revenue/stripe/mrr";
 import {
   parseRestrictedKey,
   STRIPE_KEY_PERMISSIONS,
   stripeKeyCreationUrl,
-} from "../../src/lib/stripe/key";
-import { decryptStripeKey, encryptStripeKey } from "../../src/lib/stripe/crypto";
+} from "../../src/lib/revenue/stripe/key";
+import { decryptProviderKey, encryptProviderKey } from "../../src/lib/revenue/crypto";
 
 const NOW = 1_800_000_000;
 
@@ -291,26 +291,26 @@ describe("stored key encryption", () => {
   const secret = Buffer.alloc(32, 7).toString("base64");
   const saasId = "c0000000-0000-4000-8000-000000000001";
   it("round-trips and never stores the plaintext", () => {
-    const stored = encryptStripeKey("rk_live_secretvalue123", saasId, secret);
+    const stored = encryptProviderKey("rk_live_secretvalue123", saasId, secret);
     expect(stored).toMatch(/^v1:/);
     expect(stored).not.toContain("secretvalue");
-    expect(decryptStripeKey(stored, saasId, secret)).toBe("rk_live_secretvalue123");
+    expect(decryptProviderKey(stored, saasId, secret)).toBe("rk_live_secretvalue123");
   });
   it("only decrypts for the SaaS it was stored for", () => {
-    const stored = encryptStripeKey("rk_live_secretvalue123", saasId, secret);
+    const stored = encryptProviderKey("rk_live_secretvalue123", saasId, secret);
     expect(() =>
-      decryptStripeKey(stored, "c0000000-0000-4000-8000-000000000002", secret),
+      decryptProviderKey(stored, "c0000000-0000-4000-8000-000000000002", secret),
     ).toThrow();
   });
   it("detects tampering", () => {
-    const [v, iv, data, tag] = encryptStripeKey("rk_live_secretvalue123", saasId, secret).split(
+    const [v, iv, data, tag] = encryptProviderKey("rk_live_secretvalue123", saasId, secret).split(
       ":",
     );
     const flipped = data.slice(0, -2) + (data.at(-2) === "A" ? "B" : "A") + data.at(-1);
-    expect(() => decryptStripeKey([v, iv, flipped, tag].join(":"), saasId, secret)).toThrow();
+    expect(() => decryptProviderKey([v, iv, flipped, tag].join(":"), saasId, secret)).toThrow();
   });
   it("requires a 32-byte key", () =>
-    expect(() => encryptStripeKey("x", saasId, Buffer.alloc(16).toString("base64"))).toThrow(
+    expect(() => encryptProviderKey("x", saasId, Buffer.alloc(16).toString("base64"))).toThrow(
       /not configured/,
     ));
 });

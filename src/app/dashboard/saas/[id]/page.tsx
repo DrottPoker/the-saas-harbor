@@ -6,8 +6,8 @@ import { BadgeEmbed } from "@/components/badge-embed";
 import { DeleteProduct } from "@/components/delete-forms";
 import { ModerationNotice } from "@/components/moderation-notice";
 import { Notice, PageHeader, Shell } from "@/components/shell";
-import { StripeConnectionSection } from "@/components/stripe-connection";
-import { STRIPE_CONNECTION_COLUMNS, type StripeConnection } from "@/lib/data";
+import { RevenueConnectionSection } from "@/components/revenue-connection";
+import { CONNECTION_COLUMNS, type RevenueConnection } from "@/lib/data";
 import { PRODUCT_LIMIT } from "@/lib/moderation";
 import { requireUser } from "@/lib/supabase/server";
 import { firstValues, type SearchParams } from "@/lib/params";
@@ -39,7 +39,7 @@ export default async function EditSaas({ params, searchParams }: Props) {
         <PageHeader
           className="mt-4 border-b"
           title="Add a SaaS"
-          description="Product details are public. After saving, connect Stripe to verify revenue."
+          description="Product details are public. After saving, connect your payment provider to verify revenue."
         />
         <div className="pt-8">
           {(count ?? 0) >= PRODUCT_LIMIT ? (
@@ -58,11 +58,7 @@ export default async function EditSaas({ params, searchParams }: Props) {
   const [saas, settings, connection, snapshot] = await Promise.all([
     client.from("saas").select("*").eq("id", id).eq("owner_id", user.id).maybeSingle(),
     client.from("saas_settings").select("*").eq("saas_id", id).maybeSingle(),
-    client
-      .from("stripe_connections")
-      .select(STRIPE_CONNECTION_COLUMNS)
-      .eq("saas_id", id)
-      .maybeSingle(),
+    client.from("revenue_connections").select(CONNECTION_COLUMNS).eq("saas_id", id).maybeSingle(),
     client
       .from("revenue_snapshots")
       .select("*")
@@ -94,9 +90,9 @@ export default async function EditSaas({ params, searchParams }: Props) {
       )}
       <div className="pt-8">
         <SaasForm id={id} saas={saas.data} settings={settings.data} />
-        <StripeConnectionSection
+        <RevenueConnectionSection
           saasId={id}
-          connection={connection.data as StripeConnection | null}
+          connection={connection.data as RevenueConnection | null}
           snapshot={connection.data ? snapshot.data : null}
           created={firstValues(await searchParams).created === "1"}
         />

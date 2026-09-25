@@ -410,7 +410,7 @@ const admin = createClient(local.url, local.secretKey, options);
 
 // Demo products get a verified snapshot through the same trusted RPC the app uses. Their test-mode
 // keys are placeholders: a later refresh fails with "Stripe rejected the key", as a revoked key
-// would. The encryption matches src/lib/stripe/crypto.ts.
+// would. The encryption matches src/lib/revenue/crypto.ts.
 const encryptionKey = removeOnly
   ? null
   : Buffer.from(
@@ -428,7 +428,7 @@ function encrypt(plaintext, saasId) {
     .map((p) => (typeof p === "string" ? p : p.toString("base64url")))
     .join(":");
 }
-// Deterministic demo history: twelve month-ends (as src/lib/stripe/history.ts computes them) that
+// Deterministic demo history: twelve month-ends (as src/lib/revenue/history.ts computes them) that
 // move toward today's MRR from a per-product starting level, with a little noise. Some shrink.
 function unitHash(text) {
   return createHash("sha256").update(text).digest().readUInt32BE(0) / 2 ** 32;
@@ -450,8 +450,9 @@ function demoHistory(product, now = new Date()) {
 }
 async function verifyDemo(saasId, product) {
   const history = demoHistory(product);
-  const { error } = await admin.rpc("record_stripe_verification", {
+  const { error } = await admin.rpc("record_revenue_verification", {
     p_saas_id: saasId,
+    p_provider: "stripe",
     p_encrypted_key: encrypt(`rk_test_demo${randomBytes(12).toString("hex")}`, saasId),
     p_key_hint: "rk_test_…demo",
     p_livemode: false,

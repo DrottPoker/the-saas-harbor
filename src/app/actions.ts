@@ -191,7 +191,7 @@ export async function deleteSaasAction(
           "The logo could not be deleted, so the product was kept. Please try again.",
         );
     }
-    // Foreign keys remove the settings, figures, Stripe connection and verification history.
+    // Foreign keys remove the settings, figures, provider connection and verification history.
     const { data: deleted, error: deleteError } = await client
       .from("saas")
       .delete()
@@ -329,7 +329,7 @@ export async function saveSaas(_state: ActionState, form: FormData): Promise<Act
     return { error: message(error) };
   }
   revalidatePath("/", "layout");
-  // New products continue to Stripe verification; edits return to the dashboard.
+  // New products continue to revenue verification; edits return to the dashboard.
   redirect(
     existed ? `/dashboard?saved=${savedId}` : `/dashboard/saas/${savedId}?created=1#revenue`,
   );

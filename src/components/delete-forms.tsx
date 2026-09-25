@@ -6,8 +6,6 @@ import { Feedback, Field, Section, Submit } from "./forms";
 import { Input } from "./ui/input";
 import { useEditorAction } from "./use-editor-action";
 
-const stripeKeys = <span className="whitespace-nowrap">Developers → API keys</span>;
-
 function DeleteSection({
   id,
   title,
@@ -39,14 +37,13 @@ export function DeleteAccount() {
       <form action={action} className="grid gap-5">
         <div className="grid gap-2 text-sm text-muted-foreground">
           <p>
-            Your maker profile, your products and their logos, your Stripe connections with the
-            stored keys, all verification history, the reports you sent and your conversations are
-            deleted, also for the makers you wrote with. Your products leave the leaderboard at
-            once.
+            Your maker profile, your products and their logos, your payment provider connections
+            with the stored keys, all verification history, the reports you sent and your
+            conversations are deleted, also for the makers you wrote with. Your products leave the
+            leaderboard at once.
           </p>
           <p>
-            Restricted keys you created stay in your Stripe account until you delete them there,
-            under {stripeKeys}. See the{" "}
+            Keys you created stay with your payment provider until you delete them there. See the{" "}
             <Link href="/privacy" className="font-medium text-foreground underline">
               privacy policy
             </Link>{" "}
@@ -93,14 +90,14 @@ export function DeleteProduct({
       <form action={action} className="grid gap-5">
         <div className="grid gap-2 text-sm text-muted-foreground">
           <p>
-            The product page, its logo, its Stripe connection with the stored key, and all
+            The product page, its logo, its payment provider connection with the stored key, and all
             verification history are deleted, and the product leaves the leaderboard at once. Your
             maker profile and other products are not affected.
           </p>
           {connected && (
             <p>
-              The Stripe account can then verify another product. The restricted key stays in your
-              Stripe account until you delete it there, under {stripeKeys}.
+              The payment provider account can then verify another product. The key stays with your
+              provider until you delete it there.
             </p>
           )}
         </div>

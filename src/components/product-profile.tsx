@@ -3,6 +3,7 @@ import { ArrowUpRight, BadgeCheck } from "lucide-react";
 import { parseHistory } from "@/lib/charts";
 import type { Listing, RevenueStatus } from "@/lib/data";
 import { categorySlug, formatDate, formatUsd } from "@/lib/domain";
+import { providerName } from "@/lib/revenue/catalog";
 import { PersonAvatar, ProductLogo } from "./avatars";
 import { Badge } from "./badge";
 import { Growth } from "./charts/growth";
@@ -163,16 +164,16 @@ export function ProductProfile({
       <p className="mt-3 flex items-center gap-1.5 text-[13px] text-muted-foreground">
         {demo ? (
           status === "unverified" ? (
-            "A demo of a product whose maker has not connected Stripe, so it shows no revenue."
+            "A demo of a product whose maker has not connected a payment provider, so it shows no revenue."
           ) : (
-            "Demo figures, made up for this example and not verified with Stripe."
+            "Demo figures, made up for this example and not verified."
           )
         ) : status === "unverified" ? (
-          "Revenue has not been verified. The maker has not connected Stripe."
+          "Revenue has not been verified. The maker has not connected a payment provider."
         ) : (
           <>
             <BadgeCheck aria-hidden="true" className="size-4 shrink-0 text-brand" />
-            Verified with Stripe through a read-only key. Last verified{" "}
+            Verified with {providerName(item.provider)} through a read-only key. Last verified{" "}
             {formatDate(item.verified_at)}.{!item.livemode && " Test mode data."}
           </>
         )}

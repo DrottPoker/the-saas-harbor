@@ -10,7 +10,7 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 
 # The SaaS Harbor
 
-Next.js 16 App Router and Supabase platform where independent SaaS products get public profiles and rank on a leaderboard of MRR verified through read-only Stripe keys. Read `README.md`, `docs/ARCHITECTURE.md` and `docs/STATUS.md` before larger changes.
+Next.js 16 App Router and Supabase platform where independent SaaS products get public profiles and rank on a leaderboard of MRR verified through read-only keys to their payment provider (Stripe, Paddle, Polar or Dodo Payments). Read `README.md`, `docs/ARCHITECTURE.md` and `docs/STATUS.md` before larger changes.
 
 ## Commands
 
@@ -18,7 +18,7 @@ Next.js 16 App Router and Supabase platform where independent SaaS products get 
 - `npm run build` after changes to routing, config or the server/client boundary.
 - `npm run db:start`, then `npm run test:db` and `npm run test:e2e`, after changes to the schema, auth, forms or pages. Docker must be running. Local Supabase uses ports 55320-55329.
 - `npm run format` formats the codebase.
-- `npm run dev` starts local Supabase if needed, syncs `.env.local` (including generated server secrets) and serves the app on http://localhost:3001. `npm run stripe:sync` re-verifies Stripe connections through it. `npm run db:seed` adds fictional demo data. Mailpit at http://127.0.0.1:55324 receives every email; Studio is at http://127.0.0.1:55323. Browser tests start their own server on port 3002.
+- `npm run dev` starts local Supabase if needed, syncs `.env.local` (including generated server secrets) and serves the app on http://localhost:3001. `npm run revenue:sync` re-verifies provider connections through it. `npm run db:seed` adds fictional demo data. Mailpit at http://127.0.0.1:55324 receives every email; Studio is at http://127.0.0.1:55323. Browser tests start their own server on port 3002.
 
 ## Rules
 
@@ -29,12 +29,12 @@ Next.js 16 App Router and Supabase platform where independent SaaS products get 
 - Every exposed table needs RLS and explicit grants, and every new function a `revoke execute ... from public`. Add each new privilege to `supabase/tests/database/privileges.test.sql` on purpose; it fails on any other. Views use `security_invoker = true`. Only `src/lib/supabase/admin.ts` uses the service-role key, for Stripe verification writes and the email outbox worker; never use it for anything a maker controls directly.
 - Messages are written only through `send_message()`. Realtime events and notification emails carry ids or names, never message text; clients read messages under RLS. New ways of reading messages must keep the participant check.
 - Admin rights live in `private.admins` and are never granted from the app. Every admin page calls `requireAdmin()` and every admin Server Action `adminSession()`; moderation state changes only through the `admin_*` database functions, and reports only through `submit_report()`. Admins see a message only as the copy stored with a report. New public reads must keep hidden products and suspended accounts out.
-- Stripe failures shown to makers are `VerificationError`s (`src/lib/stripe/errors.ts`); anything else is logged and shown as a generic failure. Every Stripe check a maker starts goes through `begin_stripe_check`.
-- Revenue never comes from user input. Verified figures are written only through `record_stripe_verification`. Never log or print Stripe keys, encrypted or not, and never change `STRIPE_KEY_ENCRYPTION_KEY` without a re-encryption plan.
+- Provider failures shown to makers are `VerificationError`s (`src/lib/revenue/errors.ts`); anything else is logged and shown as a generic failure. Every revenue check a maker starts goes through `begin_revenue_check`. Provider clients only send GET requests.
+- Revenue never comes from user input. Verified figures are written only through `record_revenue_verification`. Never log or print provider keys, encrypted or not, and never change `STRIPE_KEY_ENCRYPTION_KEY` without a re-encryption plan.
 - Personal data: anything new that stores data about a person must be described in the privacy policy (`src/app/privacy/page.tsx`, with a new `privacyUpdated` date in `src/lib/legal.ts`) and removed by account deletion (`public.delete_account()` and `src/lib/account.ts`), with a test. Product-scoped tables need an `on delete cascade` foreign key to `saas`, so product deletion removes them too.
 - Demo products live only in `src/lib/demo.ts`, never in the database. Wherever they appear they are marked Demo and are never ranked, called verified, contactable, reportable, indexed or in the sitemap. A new place that lists products must handle `item.demo` or leave demo products out.
 - Public links to products and makers use their slugs (`/saas/<slug>`, `/makers/<slug>`); ids keep working through the proxy's redirect. Private areas keep using ids.
-- Stored money is integer USD cents. MRR normalization may use fractions, but rounds once at the end (`src/lib/stripe/mrr.ts`).
+- Stored money is integer USD cents. MRR normalization may use fractions, but rounds once at the end (`src/lib/revenue/money.ts`).
 - Mutations are Server Actions that call `requireUser()`, with RLS as the second layer. Public reads use `publicClient()` so they never carry a session.
 - Validate input on the server with the zod schemas in `src/lib/domain.ts`.
 - Keep the Axe scans in `tests/e2e` passing and add new pages to them.

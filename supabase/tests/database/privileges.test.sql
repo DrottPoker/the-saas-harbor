@@ -61,9 +61,9 @@ select results_eq(
   $$ values ('conversation_reads'::text, 'UPDATE'::text, 'read_at'::text),
     ('profiles', 'INSERT', 'avatar_path,bio,github_url,headline,id,linkedin_url,location,name,skills,social_url,website,x_url'),
     ('profiles', 'UPDATE', 'avatar_path,bio,github_url,headline,linkedin_url,location,name,skills,social_url,updated_at,website,x_url'),
+    ('revenue_connections', 'SELECT', 'connected_at,key_hint,last_error,last_synced_at,livemode,owner_id,provider,saas_id,status'),
     ('saas', 'INSERT', 'category,description,id,logo_path,name,owner_id,tagline,website'),
-    ('saas', 'UPDATE', 'category,description,logo_path,name,tagline,updated_at,website'),
-    ('stripe_connections', 'SELECT', 'connected_at,key_hint,last_error,last_synced_at,livemode,owner_id,saas_id,status') $$,
+    ('saas', 'UPDATE', 'category,description,logo_path,name,tagline,updated_at,website') $$,
   'makers write only the columns they edit, and never read a stored key');
 select results_eq(
   $$ select functions from pgtap_function_privileges where role = 'anon' $$,
@@ -71,7 +71,7 @@ select results_eq(
   'visitors run only the functions public pages need');
 select results_eq(
   $$ select functions from pgtap_function_privileges where role = 'authenticated' $$,
-  $$ values ('admin_account,admin_accounts,admin_dismiss_report,admin_hide_saas,admin_restore_account,admin_restore_saas,admin_suspend_account,begin_stripe_check,delete_account,directory_stats,is_admin,mark_conversation_read,saas_slug_redirect,save_notification_settings,save_profile,save_saas,send_message,submit_report,unread_message_count'::text) $$,
+  $$ values ('admin_account,admin_accounts,admin_dismiss_report,admin_hide_saas,admin_restore_account,admin_restore_saas,admin_suspend_account,begin_revenue_check,delete_account,directory_stats,is_admin,mark_conversation_read,saas_slug_redirect,save_notification_settings,save_profile,save_saas,send_message,submit_report,unread_message_count'::text) $$,
   'makers run only the functions the app calls');
 
 select * from finish();

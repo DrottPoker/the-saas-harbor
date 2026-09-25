@@ -1,6 +1,6 @@
 // Validation of Stripe keys pasted by makers. Only restricted keys are accepted.
 
-import { VerificationError } from "./errors";
+import { VerificationError } from "../errors";
 
 export type RestrictedKey = { key: string; livemode: boolean; hint: string };
 

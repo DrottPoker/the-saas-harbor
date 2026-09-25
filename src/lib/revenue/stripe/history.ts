@@ -1,7 +1,8 @@
-// MRR history from paid Stripe invoices, the way revenue analytics tools reconstruct it: each
-// paid subscription line contributes its monthly-normalized amount to every instant inside its
-// service period. Pure functions: no I/O, fully testable.
-import { AVERAGE_MONTH_DAYS, type StripePrice } from "./mrr";
+// Service lines from paid Stripe invoices, for the MRR history (see ../history.ts). Pure functions:
+// no I/O, fully testable.
+import type { ServiceLine } from "../history";
+import { AVERAGE_MONTH_DAYS, intervalMonths as monthsIn } from "../money";
+import type { StripePrice } from "./mrr";
 
 export type StripeInvoiceLine = {
   id: string;
@@ -23,8 +24,6 @@ export type StripeInvoice = {
   lines: { data: StripeInvoiceLine[]; has_more: boolean };
 };
 
-export type ServiceLine = { start: number; end: number; currency: string; monthly: number };
-
 const DAY = 86_400;
 
 export function linePriceId(line: StripeInvoiceLine) {
@@ -34,13 +33,7 @@ export function linePriceId(line: StripeInvoiceLine) {
 
 // Months covered by one full billing interval of the price.
 function intervalMonths(recurring: NonNullable<StripePrice["recurring"]>) {
-  const count = recurring.interval_count;
-  return {
-    day: count / AVERAGE_MONTH_DAYS,
-    week: (count * 7) / AVERAGE_MONTH_DAYS,
-    month: count,
-    year: count * 12,
-  }[recurring.interval];
+  return monthsIn(recurring.interval, recurring.interval_count);
 }
 
 // The start of the billing period that ends at `end`: one interval of the price earlier, with the
@@ -107,33 +100,4 @@ export function serviceLines(invoices: StripeInvoice[], prices: ReadonlyMap<stri
       .map((line) => serviceLine(line, prices))
       .filter((line): line is ServiceLine => line !== null),
   );
-}
-
-/** MRR per currency, in minor units, at one instant (period start inclusive, end exclusive). */
-export function mrrAt(lines: ServiceLine[], at: number) {
-  const byCurrency: Record<string, number> = {};
-  for (const line of lines) {
-    if (line.start <= at && at < line.end)
-      byCurrency[line.currency] = (byCurrency[line.currency] ?? 0) + line.monthly;
-  }
-  for (const [currency, value] of Object.entries(byCurrency))
-    if (value <= 0) delete byCurrency[currency];
-  return byCurrency;
-}
-
-/** The last instant of each of the `count` most recent completed calendar months, oldest first. */
-export function monthEnds(now: Date, count = 12) {
-  const points: { month: string; at: number }[] = [];
-  for (let back = count; back >= 1; back--) {
-    const nextMonthStart = Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - back + 1, 1);
-    const end = new Date(nextMonthStart - 1000);
-    const month = `${end.getUTCFullYear()}-${String(end.getUTCMonth() + 1).padStart(2, "0")}`;
-    points.push({ month, at: Math.floor(end.getTime() / 1000) });
-  }
-  return points;
-}
-
-/** Invoices created this far back cover every month-end in the history, annual plans included. */
-export function historyWindowStart(now: Date) {
-  return Math.floor(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - 25, 1) / 1000);
 }

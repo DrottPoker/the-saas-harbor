@@ -116,7 +116,8 @@ export default async function Maker({ params, searchParams }: Props) {
       </dl>
       <p className="mt-3 flex items-center gap-1.5 text-[13px] text-muted-foreground">
         <BadgeCheck aria-hidden="true" className="size-4 shrink-0 text-brand" />
-        Figures are verified with Stripe and include only the products that share them.
+        Figures are verified with each product's payment provider and include only the products that
+        share them.
       </p>
 
       {own && missing.length > 0 && (

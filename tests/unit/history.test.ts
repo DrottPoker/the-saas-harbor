@@ -1,14 +1,12 @@
 import { describe, expect, it } from "vitest";
+import { historyWindowStart, monthEnds, mrrAt } from "../../src/lib/revenue/history";
 import {
-  historyWindowStart,
   linePriceId,
-  monthEnds,
-  mrrAt,
   serviceLine,
   serviceLines,
   type StripeInvoiceLine,
-} from "../../src/lib/stripe/history";
-import type { StripePrice } from "../../src/lib/stripe/mrr";
+} from "../../src/lib/revenue/stripe/history";
+import type { StripePrice } from "../../src/lib/revenue/stripe/mrr";
 
 const DAY = 86_400;
 const JAN_1 = Date.UTC(2026, 0, 1) / 1000;
