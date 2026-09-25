@@ -2,7 +2,7 @@
 -- transaction.
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(25);
+select plan(27);
 
 insert into auth.users(id) values
   ('f0000000-0000-4000-8000-000000000001'),
@@ -77,7 +77,9 @@ select public.save_saas('f1000000-0000-4000-8000-000000000005', 'Slugtest Alpha'
   'Slug fixture', 'A temporary fixture that is rolled back.', 'Other', 'https://example.com',
   null, null, false, false, false);
 select is((select slug from public.saas where id = 'f1000000-0000-4000-8000-000000000005'),
-  'slugtest-alpha-3', 'a slug that redirects is not given to another product');
+  'slugtest-alpha', 'a new product takes a slug that only redirected');
+select is(public.saas_slug_redirect('slugtest-alpha'), null,
+  'the slug then no longer leads to the renamed product');
 select public.save_saas('f1000000-0000-4000-8000-000000000002', 'SlugTest  alpha!',
   'Edited fixture', 'A temporary fixture that is rolled back.', 'Other', 'https://example.com',
   null, null, false, false, false);
@@ -90,11 +92,10 @@ select public.save_saas('f1000000-0000-4000-8000-000000000001', 'Slugtest Alpha'
   'Slug fixture', 'A temporary fixture that is rolled back.', 'Other', 'https://example.com',
   null, null, true, false, false);
 select is((select slug from public.saas where id = 'f1000000-0000-4000-8000-000000000001'),
-  'slugtest-alpha', 'renaming back restores the original slug');
-select is(public.saas_slug_redirect('slugtest-beta'), 'slugtest-alpha',
+  'slugtest-alpha-3', 'renaming back to a name now in use gives the next free slug');
+select is(public.saas_slug_redirect('slugtest-beta'), 'slugtest-alpha-3',
   'the intermediate slug now redirects');
-select is(public.saas_slug_redirect('slugtest-alpha'), null,
-  'the current slug is no longer a redirect');
+select is(public.saas_slug_redirect('slugtest-alpha'), null, 'a slug in use never redirects');
 
 select public.save_profile('Slugtest Someone Else', '', '', '', '', '', '', '', '', '{}', null, '[]');
 select is((select slug from public.profiles where id = 'f0000000-0000-4000-8000-000000000001'),
@@ -111,7 +112,7 @@ set local role anon;
 select set_config('request.jwt.claim.sub', '', true);
 select is(public.saas_slug_redirect('slugtest-beta'), null,
   'the old slug of a hidden product leads nowhere');
-select is_empty($$ select 1 from public.public_saas where slug = 'slugtest-alpha' $$,
+select is_empty($$ select 1 from public.public_saas where slug = 'slugtest-alpha-3' $$,
   'a hidden product is not found by its slug');
 set local role authenticated;
 select set_config('request.jwt.claim.sub', 'f0000000-0000-4000-8000-000000000001', true);
@@ -136,6 +137,25 @@ select results_eq(
   $$ values ('slugtest-beta'::text, (select slug from public.profiles
     where id = 'f0000000-0000-4000-8000-000000000002')) $$,
   'listings carry the product slug and the maker slug');
+
+-- Renaming again and again keeps only the five latest earlier slugs, so it reserves nothing.
+set local role authenticated;
+select set_config('request.jwt.claim.sub', 'f0000000-0000-4000-8000-000000000002', true);
+do $$
+begin
+  for n in 1..7 loop
+    update public.saas set name = 'Slugtest Cap ' || n
+    where id = 'f1000000-0000-4000-8000-000000000006';
+  end loop;
+end;
+$$;
+reset role;
+select results_eq(
+  $$ select slug from private.saas_slug_redirects
+     where saas_id = 'f1000000-0000-4000-8000-000000000006' order by slug $$,
+  $$ values ('slugtest-cap-2'), ('slugtest-cap-3'), ('slugtest-cap-4'), ('slugtest-cap-5'),
+     ('slugtest-cap-6') $$,
+  'a product keeps its five latest earlier slugs');
 
 select * from finish();
 rollback;

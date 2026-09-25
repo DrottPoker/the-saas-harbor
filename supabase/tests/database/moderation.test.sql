@@ -2,7 +2,7 @@
 -- rolled-back transaction.
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(92);
+select plan(94);
 
 -- Makers, a reporter, a bystander and two admins. The maker has two products, experience and a
 -- verified MRR on the leaderboard, and has written to the reporter.
@@ -317,7 +317,7 @@ select is_empty($$ select 1 from public.inbox where other_id = 'd0000000-0000-40
 select is(public.unread_message_count(), 0, 'their messages no longer count as unread');
 select throws_ok(
   $$ select public.send_message('d0000000-0000-4000-8000-000000000001', 'Are you there?') $$,
-  'P0001', 'This maker cannot receive messages right now', 'suspended makers receive no messages');
+  'P0001', 'This maker cannot receive messages', 'suspended makers receive no messages, and are not told apart from deleted ones');
 
 set local role authenticated;
 select set_config('request.jwt.claim.sub', 'd0000000-0000-4000-8000-000000000001', true);
@@ -397,13 +397,28 @@ select throws_ok(
     'A temporary fixture that is rolled back.', 'Other', 'https://example.com', null, null,
     false, false, false) $$,
   'P0001', 'You can add up to 5 products a day. Try again tomorrow', 'the sixth product in a day is refused');
+select lives_ok(
+  $$ delete from public.saas where id = (select id from public.saas
+     where owner_id = 'd0000000-0000-4000-8000-000000000003' limit 1) $$,
+  'the maker deletes one of the five');
+select throws_ok(
+  $$ select public.save_saas(gen_random_uuid(), 'Limit again', 'Limit fixture',
+    'A temporary fixture that is rolled back.', 'Other', 'https://example.com', null, null,
+    false, false, false) $$,
+  'P0001', 'You can add up to 5 products a day. Try again tomorrow',
+  'deleting a product does not free a place for the day');
 reset role;
+-- Older products: added two days ago, so only the total limit applies to them.
 update public.saas set created_at = now() - interval '2 days'
   where owner_id = 'd0000000-0000-4000-8000-000000000003';
+update private.saas_additions set added_at = now() - interval '2 days'
+  where owner_id = 'd0000000-0000-4000-8000-000000000003';
+alter table public.saas disable trigger saas_limit;
 insert into public.saas(owner_id, name, tagline, description, category, website, created_at)
 select 'd0000000-0000-4000-8000-000000000003', 'Old ' || n, 'Older fixture',
   'A temporary fixture that is rolled back.', 'Other', 'https://example.com', now() - interval '2 days'
-from generate_series(1, 15) n;
+from generate_series(1, 16) n;
+alter table public.saas enable trigger saas_limit;
 set local role authenticated;
 select set_config('request.jwt.claim.sub', 'd0000000-0000-4000-8000-000000000003', true);
 select throws_ok(

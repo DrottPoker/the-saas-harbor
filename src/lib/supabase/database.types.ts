@@ -762,6 +762,7 @@ export type Database = {
           connected_at: string
           encrypted_key: string
           key_hint: string
+          last_checked_at: string | null
           last_error: string | null
           last_synced_at: string | null
           livemode: boolean
@@ -773,6 +774,7 @@ export type Database = {
           connected_at?: string
           encrypted_key: string
           key_hint: string
+          last_checked_at?: string | null
           last_error?: string | null
           last_synced_at?: string | null
           livemode: boolean
@@ -784,6 +786,7 @@ export type Database = {
           connected_at?: string
           encrypted_key?: string
           key_hint?: string
+          last_checked_at?: string | null
           last_error?: string | null
           last_synced_at?: string | null
           livemode?: boolean
@@ -988,6 +991,10 @@ export type Database = {
           p_reason: string
           p_report: string
         }
+        Returns: undefined
+      }
+      begin_stripe_check: {
+        Args: { p_refresh: boolean; p_saas: string }
         Returns: undefined
       }
       claim_emails: {

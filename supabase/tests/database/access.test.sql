@@ -404,7 +404,7 @@ select throws_ok(
 );
 select throws_ok(
   $$ select public.send_message('b0000000-0000-4000-8000-000000000009', 'Hello') $$,
-  'P0001', 'This maker no longer has an account', 'messages need an existing recipient'
+  'P0001', 'This maker cannot receive messages', 'messages need an existing recipient'
 );
 select lives_ok(
   $$ select public.send_message('b0000000-0000-4000-8000-000000000002', '  Hello from one  ') $$,

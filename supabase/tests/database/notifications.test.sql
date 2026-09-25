@@ -2,7 +2,7 @@
 -- completion. Runs in a rolled-back transaction.
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(31);
+select plan(32);
 
 insert into auth.users(id, email) values
   ('a1000000-0000-4000-8000-000000000001', 'writer@notify.test'),
@@ -54,8 +54,10 @@ select is_empty($$ select 1 from pgtap_outbox where payload::text like '%First m
   'the queued email holds no message text');
 set local role authenticated;
 select set_config('request.jwt.claim.sub', 'a1000000-0000-4000-8000-000000000002', true);
-select public.mark_conversation_read((select id from public.conversations
-  where 'a1000000-0000-4000-8000-000000000002' in (user_a, user_b)), clock_timestamp());
+-- Reading records the time of the latest message read, as the conversation page does.
+select public.mark_conversation_read(c.id, (select max(m.created_at) from public.messages m
+  where m.conversation_id = c.id))
+from public.conversations c where 'a1000000-0000-4000-8000-000000000002' in (c.user_a, c.user_b);
 set local role authenticated;
 select set_config('request.jwt.claim.sub', 'a1000000-0000-4000-8000-000000000001', true);
 select public.send_message('a1000000-0000-4000-8000-000000000002', 'After reading');
@@ -206,6 +208,25 @@ select isnt_empty(
 select ok(
   not has_function_privilege('authenticated', 'public.claim_emails(integer, integer)', 'execute'),
   'only the service role may claim emails');
+
+-- Reading exactly the message that queued an email counts as reading it, so the next message
+-- queues a new email. The page records the read message's own time.
+set local role authenticated;
+select set_config('request.jwt.claim.sub', 'a1000000-0000-4000-8000-000000000003', true);
+select public.send_message('a1000000-0000-4000-8000-000000000004', 'Only message');
+set local role authenticated;
+select set_config('request.jwt.claim.sub', 'a1000000-0000-4000-8000-000000000004', true);
+select public.mark_conversation_read(c.id, (select max(m.created_at) from public.messages m
+  where m.conversation_id = c.id))
+from public.conversations c
+where 'a1000000-0000-4000-8000-000000000004' in (c.user_a, c.user_b);
+set local role authenticated;
+select set_config('request.jwt.claim.sub', 'a1000000-0000-4000-8000-000000000003', true);
+select public.send_message('a1000000-0000-4000-8000-000000000004', 'Next message');
+reset role;
+select is((select count(*)::int from pgtap_outbox
+    where kind = 'message' and user_id = 'a1000000-0000-4000-8000-000000000004'), 2,
+  'a message after reading the one that queued an email queues a new email');
 
 select * from finish();
 rollback;
