@@ -1,10 +1,12 @@
 "use client";
 
+import { startTransition, useEffect, useRef, useState, useTransition } from "react";
 import { useEditorAction } from "./use-editor-action";
 import { useFormStatus } from "react-dom";
 import Link from "next/link";
 import {
   authenticate,
+  checkSignupDetails,
   confirmEmailLinkAction,
   saveEmailSettingsAction,
   saveSaas,
@@ -13,6 +15,8 @@ import {
   categories,
   PASSWORD_MAX_LENGTH,
   PASSWORD_MIN_LENGTH,
+  USERNAME_MAX_LENGTH,
+  USERNAME_MIN_LENGTH,
   type ActionState,
 } from "@/lib/domain";
 import type { Saas, SaasSettings } from "@/lib/data";
@@ -76,7 +80,7 @@ export function Field({
         <span className="flex items-baseline gap-0.5">
           <Label htmlFor={name}>{label}</Label>
           {required && (
-            <span aria-hidden="true" className="text-sm font-medium text-destructive">
+            <span aria-hidden="true" className="text-sm leading-none font-medium text-destructive">
               *
             </span>
           )}
@@ -152,6 +156,33 @@ export function Actions({ children }: { children: React.ReactNode }) {
   return <div className="flex items-center justify-end gap-2 border-t pt-6">{children}</div>;
 }
 
+/** A username field, with the @ in front of it. */
+export function UsernameInput(props: Omit<React.ComponentProps<typeof Input>, "type">) {
+  return (
+    <div className="relative">
+      <span
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-muted-foreground"
+      >
+        @
+      </span>
+      <Input
+        id="username"
+        name="username"
+        autoComplete="username"
+        autoCapitalize="none"
+        spellCheck={false}
+        required
+        minLength={USERNAME_MIN_LENGTH}
+        // One more for an @ typed in front, which the server removes.
+        maxLength={USERNAME_MAX_LENGTH + 1}
+        {...props}
+        className={cn("pl-7", props.className)}
+      />
+    </div>
+  );
+}
+
 const authCopy = {
   login: "Sign in",
   signup: "Create account",
@@ -159,6 +190,13 @@ const authCopy = {
   update: "Update password",
 } as const;
 
+const USERNAME_HINT =
+  "Shown as @username and used as your profile address. You can change it later.";
+
+// Sign-up has two steps: the email address, password and terms, which the server checks first,
+// then only the username, after which the account is created. Both steps stay in one form, so the
+// hidden first step is sent along with the username; it is submitted from onSubmit rather than
+// the action prop, so React does not reset the password when the username is refused.
 export function AuthForm({
   mode,
   next,
@@ -167,90 +205,127 @@ export function AuthForm({
   /** Where to continue after signing in, already checked with safeNext(). */
   next?: string | null;
 }) {
-  const [state, action] = useEditorAction(authenticate.bind(null, mode));
+  const [state, action, creating] = useEditorAction(authenticate.bind(null, mode));
+  const signup = mode === "signup";
+  const [step, setStep] = useState<"details" | "username">("details");
+  const [details, setDetails] = useState<ActionState>({});
+  const [checking, startChecking] = useTransition();
+  const username = useRef<HTMLInputElement>(null);
+  const choosing = signup && step === "username";
+  useEffect(() => {
+    if (choosing) username.current?.focus();
+  }, [choosing]);
+
+  const submit = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const data = new FormData(event.currentTarget);
+    if (!choosing)
+      startChecking(async () => {
+        const result = await checkSignupDetails({}, data);
+        setDetails(result);
+        if (result.success) setStep("username");
+      });
+    else startTransition(() => action(data));
+  };
+
   return (
-    <form action={action} className="grid gap-5">
+    <form
+      action={signup ? undefined : action}
+      onSubmit={signup ? submit : undefined}
+      className="grid gap-5"
+    >
       {mode === "login" && next && <input type="hidden" name="next" value={next} />}
-      {mode !== "update" && (
-        <Field name="email" label="Email address">
-          <Input
-            id="email"
-            name="email"
-            type="email"
-            autoComplete="email"
-            defaultValue={state.values?.email}
-            required
-            maxLength={254}
-          />
+      {choosing && (
+        <Field name="username" label="Username" hint={USERNAME_HINT}>
+          <UsernameInput ref={username} defaultValue={state.values?.username} />
         </Field>
       )}
-      {mode !== "reset" && (
-        <Field
-          name="password"
-          label={mode === "update" ? "New password" : "Password"}
-          hint={
-            mode === "signup" || mode === "update"
-              ? `At least ${PASSWORD_MIN_LENGTH} characters.`
-              : undefined
-          }
-          aside={
-            mode === "login" && (
-              <Link
-                className="text-[13px] text-muted-foreground hover:text-foreground"
-                href="/auth?mode=reset"
-              >
-                Forgot password?
-              </Link>
-            )
-          }
-        >
-          <Input
-            id="password"
+      <div className={cn("grid gap-5", choosing && "hidden")}>
+        {mode !== "update" && (
+          <Field name="email" label="Email address">
+            <Input
+              id="email"
+              name="email"
+              type="email"
+              autoComplete="email"
+              defaultValue={state.values?.email}
+              required
+              maxLength={254}
+            />
+          </Field>
+        )}
+        {mode !== "reset" && (
+          <Field
             name="password"
-            type="password"
-            autoComplete={mode === "login" ? "current-password" : "new-password"}
-            minLength={mode === "login" ? 1 : PASSWORD_MIN_LENGTH}
-            maxLength={PASSWORD_MAX_LENGTH}
-            required
-          />
-        </Field>
-      )}
-      {mode === "signup" && (
-        // Required here and checked again by the server, which records the accepted version.
-        <div className="flex items-start gap-3">
-          <input
-            id="terms"
-            name="terms"
-            type="checkbox"
-            required
-            defaultChecked={state.values?.terms === "on"}
-            className="mt-0.5 size-4 shrink-0 accent-brand"
-          />
-          <label htmlFor="terms" className="text-[13px] leading-5 text-muted-foreground">
-            I agree to the{" "}
-            <Link
-              className="font-medium text-foreground underline"
-              href="/terms"
-              target="_blank"
-              rel="noopener"
-            >
-              Terms of Service
-            </Link>
-            . I have read the{" "}
-            <Link
-              className="font-medium text-foreground underline"
-              href="/privacy"
-              target="_blank"
-              rel="noopener"
-            >
-              Privacy Policy
-            </Link>
-            .
-          </label>
-        </div>
-      )}
-      <Feedback state={state} />
-      <Submit className="h-10 w-full">{authCopy[mode]}</Submit>
+            label={mode === "update" ? "New password" : "Password"}
+            hint={
+              mode === "signup" || mode === "update"
+                ? `At least ${PASSWORD_MIN_LENGTH} characters.`
+                : undefined
+            }
+            aside={
+              mode === "login" && (
+                // No taller than the label, so the field sits where it does on the other forms;
+                // the padding keeps the link easy to tap.
+                <Link
+                  className="-my-1.5 py-1.5 text-[13px] leading-none text-muted-foreground hover:text-foreground"
+                  href="/auth?mode=reset"
+                >
+                  Forgot password?
+                </Link>
+              )
+            }
+          >
+            <Input
+              id="password"
+              name="password"
+              type="password"
+              autoComplete={mode === "login" ? "current-password" : "new-password"}
+              minLength={mode === "login" ? 1 : PASSWORD_MIN_LENGTH}
+              maxLength={PASSWORD_MAX_LENGTH}
+              required
+            />
+          </Field>
+        )}
+        {signup && (
+          // Required here and checked again by the server, which records the accepted version.
+          <div className="flex items-start gap-3">
+            <input
+              id="terms"
+              name="terms"
+              type="checkbox"
+              required
+              defaultChecked={state.values?.terms === "on"}
+              className="mt-0.5 size-4 shrink-0 accent-brand"
+            />
+            <label htmlFor="terms" className="text-[13px] leading-5 text-muted-foreground">
+              I agree to the{" "}
+              <Link
+                className="font-medium text-foreground underline"
+                href="/terms"
+                target="_blank"
+                rel="noopener"
+              >
+                Terms of Service
+              </Link>
+              . I have read the{" "}
+              <Link
+                className="font-medium text-foreground underline"
+                href="/privacy"
+                target="_blank"
+                rel="noopener"
+              >
+                Privacy Policy
+              </Link>
+              .
+            </label>
+          </div>
+        )}
+      </div>
+      <Feedback state={signup && !choosing ? details : state} />
+      <Submit className="h-10 w-full" pending={signup ? checking || creating : undefined}>
+        {choosing ? "Continue" : authCopy[mode]}
+      </Submit>
       <p className="text-center text-sm text-muted-foreground">
         {mode === "login" ? (
           <>
@@ -259,6 +334,14 @@ export function AuthForm({
               Create one
             </Link>
           </>
+        ) : choosing ? (
+          <button
+            type="button"
+            className="font-medium text-foreground hover:underline"
+            onClick={() => setStep("details")}
+          >
+            Back
+          </button>
         ) : (
           <Link className="font-medium text-foreground hover:underline" href="/auth">
             Back to sign in

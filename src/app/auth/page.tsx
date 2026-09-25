@@ -10,15 +10,16 @@ import { firstValues, type SearchParams } from "@/lib/params";
 type Mode = "login" | "signup" | "reset" | "update";
 type Props = { searchParams: Promise<SearchParams> };
 
+// Each description fits on one line at the form's width, so every form starts at the same height.
 const copy: Record<Mode, { title: string; description: string }> = {
   login: { title: "Sign in", description: "Welcome back. Sign in to manage your products." },
   signup: {
     title: "Create your account",
-    description: "List your SaaS and choose which numbers to share.",
+    description: "List your SaaS and choose what to share.",
   },
   reset: {
     title: "Reset your password",
-    description: "We will email you a link to choose a new password.",
+    description: "We will email you a link to set a new password.",
   },
   update: {
     title: "Choose a new password",

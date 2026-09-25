@@ -78,6 +78,7 @@ export default async function Maker({ params, searchParams }: Props) {
           <h1 className="text-3xl font-semibold tracking-tight [overflow-wrap:anywhere]">
             {profile.name}
           </h1>
+          <p className="mt-0.5 text-sm text-muted-foreground">@{profile.slug}</p>
           {profile.headline && (
             <p className="mt-1.5 text-lg text-muted-foreground [overflow-wrap:anywhere]">
               {profile.headline}

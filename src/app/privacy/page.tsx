@@ -50,9 +50,10 @@ export default function Privacy() {
               secure.
             </li>
             <li>
-              <strong className="font-medium text-foreground">Profile.</strong> Your name, headline,
-              location, About text, experience, skills, links and photo, and the page address made
-              from your name. You decide what to fill in.
+              <strong className="font-medium text-foreground">Profile.</strong> Your username, which
+              is also your page address, and your name, headline, location, About text, experience,
+              skills, links and photo. You choose the username when you sign up; everything else is
+              up to you to fill in.
             </li>
             <li>
               <strong className="font-medium text-foreground">Products.</strong> Name, tagline,

@@ -1019,6 +1019,7 @@ export type Database = {
         Args: { p_refresh: boolean; p_saas: string }
         Returns: undefined
       }
+      check_username: { Args: { p_username: string }; Returns: string }
       claim_due_connections: {
         Args: { p_interval: string; p_limit: number }
         Returns: string[]
@@ -1128,6 +1129,7 @@ export type Database = {
         Args: { p_admin: boolean; p_email: string }
         Returns: string
       }
+      set_username: { Args: { p_username: string }; Returns: undefined }
       submit_report: {
         Args: {
           p_details: string

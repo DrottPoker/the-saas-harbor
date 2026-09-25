@@ -7,7 +7,7 @@ import { saveProfile } from "@/app/actions";
 import type { Profile } from "@/lib/data";
 import { MONTH_NAMES, type ProfileExperience } from "@/lib/profile";
 import { cn } from "@/lib/utils";
-import { Actions, Feedback, Field, ImageField, Section, Submit } from "../forms";
+import { Actions, Feedback, Field, ImageField, Section, Submit, UsernameInput } from "../forms";
 import { Button } from "../ui/button";
 import { fieldClasses, Input } from "../ui/input";
 import { Textarea } from "../ui/textarea";
@@ -261,6 +261,13 @@ export function ProfileForm({
             autoComplete="name"
             defaultValue={text("name")}
           />
+        </Field>
+        <Field
+          name="username"
+          label="Username"
+          hint="Shown as @username under your name, and used as your profile address."
+        >
+          <UsernameInput defaultValue={state.values?.username ?? profile?.slug ?? ""} />
         </Field>
         <Field
           name="headline"

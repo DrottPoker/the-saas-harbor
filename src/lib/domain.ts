@@ -168,6 +168,31 @@ export const saasSchema = z.object({
 });
 export type ActionState = { error?: string; success?: string };
 
+/**
+ * A username is the profile's slug: shown as @username and used in /users/<username>. The
+ * database checks the same rules (private.username_problem) and which names are reserved.
+ */
+export const USERNAME_MIN_LENGTH = 3;
+export const USERNAME_MAX_LENGTH = 30;
+const USERNAME_RULES = "Use 3 to 30 letters, numbers and single hyphens, like jane-doe.";
+export const usernameSchema = z
+  .string()
+  .trim()
+  .transform((value) => value.replace(/^@/, "").toLowerCase())
+  .pipe(
+    z
+      .string()
+      .min(USERNAME_MIN_LENGTH, USERNAME_RULES)
+      .max(USERNAME_MAX_LENGTH, USERNAME_RULES)
+      .regex(/^[a-z0-9]+(-[a-z0-9]+)*$/, USERNAME_RULES),
+  );
+export const USERNAME_PROBLEMS = {
+  format: USERNAME_RULES,
+  reserved: "That username is reserved. Choose another one.",
+  taken: "That username is taken. Choose another one.",
+} as const;
+export type UsernameProblem = keyof typeof USERNAME_PROBLEMS;
+
 /** Password length for new passwords, also set in Supabase Auth (supabase/config.toml). */
 export const PASSWORD_MIN_LENGTH = 6;
 export const PASSWORD_MAX_LENGTH = 128;

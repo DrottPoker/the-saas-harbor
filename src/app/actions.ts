@@ -12,6 +12,8 @@ import {
   profileSchema,
   safeNext,
   saasSchema,
+  USERNAME_PROBLEMS,
+  usernameSchema,
   type ActionState,
 } from "@/lib/domain";
 import { addressAcceptsMail } from "@/lib/email-domain";
@@ -35,6 +37,46 @@ async function openedFromEmailLink(client: Awaited<ReturnType<typeof serverClien
   );
 }
 
+// What is wrong with the email address, password and, for sign-up, the Terms of Service box.
+async function detailsProblem(mode: string, email: string, password: string, form: FormData) {
+  if (mode !== "update" && !z.email().safeParse(email).success)
+    return "Enter a valid email address.";
+  const minimum = mode === "login" ? 1 : PASSWORD_MIN_LENGTH;
+  if (mode !== "reset" && (password.length < minimum || password.length > PASSWORD_MAX_LENGTH))
+    return `Use a password between ${PASSWORD_MIN_LENGTH} and ${PASSWORD_MAX_LENGTH} characters.`;
+  if (mode === "signup" && form.get("terms") !== "on")
+    return "Tick the box to accept the Terms of Service.";
+  if (mode === "signup" && !(await addressAcceptsMail(email)))
+    return "This email address cannot receive email. Check it for typos.";
+  return null;
+}
+
+// Why a username cannot be used by the current visitor or user, or null when it can.
+async function usernameProblem(
+  client: Awaited<ReturnType<typeof serverClient>>,
+  input: string,
+): Promise<{ username: string; problem: string | null }> {
+  const parsed = usernameSchema.safeParse(input);
+  if (!parsed.success) return { username: input, problem: message(parsed.error) };
+  const { data, error } = await client.rpc("check_username", { p_username: parsed.data });
+  if (error) return { username: parsed.data, problem: "The username could not be checked." };
+  return { username: parsed.data, problem: data && USERNAME_PROBLEMS[data] };
+}
+
+/** The first sign-up step: the details are checked before the username is asked for. */
+export async function checkSignupDetails(
+  _state: ActionState,
+  form: FormData,
+): Promise<ActionState> {
+  const problem = await detailsProblem(
+    "signup",
+    value(form, "email").trim(),
+    value(form, "password"),
+    form,
+  );
+  return problem ? { error: problem } : { success: "details" };
+}
+
 export async function authenticate(
   mode: string,
   _state: ActionState,
@@ -42,27 +84,21 @@ export async function authenticate(
 ): Promise<ActionState> {
   const email = value(form, "email").trim();
   const password = value(form, "password");
-  if (mode !== "update" && !z.email().safeParse(email).success)
-    return { error: "Enter a valid email address." };
-  const minimum = mode === "login" ? 1 : PASSWORD_MIN_LENGTH;
-  if (mode !== "reset" && (password.length < minimum || password.length > PASSWORD_MAX_LENGTH))
-    return {
-      error: `Use a password between ${PASSWORD_MIN_LENGTH} and ${PASSWORD_MAX_LENGTH} characters.`,
-    };
-  if (mode === "signup" && form.get("terms") !== "on")
-    return { error: "Tick the box to accept the Terms of Service." };
-  if (mode === "signup" && !(await addressAcceptsMail(email)))
-    return { error: "This email address cannot receive email. Check it for typos." };
+  const problem = await detailsProblem(mode, email, password, form);
+  if (problem) return { error: problem };
   const client = await serverClient();
   const origin = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3001";
   // Both emails link to the confirm page, which verifies the token in whichever browser opens it.
   const confirm = `${origin}/auth/confirm`;
   if (mode === "signup") {
+    const { username, problem: taken } = await usernameProblem(client, value(form, "username"));
+    if (taken) return { error: taken };
     const { data, error } = await client.auth.signUp({
       email,
       password,
-      // A trigger copies the accepted version into private.terms_acceptances.
-      options: { emailRedirectTo: confirm, data: { terms_version: termsUpdated } },
+      // Triggers create the profile with the username (as name and address) and copy the
+      // accepted version of the terms into private.terms_acceptances.
+      options: { emailRedirectTo: confirm, data: { terms_version: termsUpdated, username } },
     });
     if (error)
       return {
@@ -238,6 +274,7 @@ function experienceFrom(form: FormData) {
 export async function saveProfile(_state: ActionState, form: FormData): Promise<ActionState> {
   const { user, client } = await requireUser();
   const uploaded: string[] = [];
+  let unsaved: string | null = null;
   try {
     const experience = experienceFrom(form);
     if (!experience) return { error: "Your experience could not be read. Please try again." };
@@ -260,10 +297,12 @@ export async function saveProfile(_state: ActionState, form: FormData): Promise<
     });
     const { data: existing, error: readError } = await client
       .from("profiles")
-      .select("avatar_path")
+      .select("avatar_path, slug")
       .eq("id", user.id)
       .maybeSingle();
     if (readError) return { error: "Your profile could not be loaded. Please try again." };
+    const { username, problem } = await usernameProblem(client, value(form, "username"));
+    if (problem) return { error: problem };
     const avatar = await uploadImage(client, user.id, form.get("image"));
     if (avatar) uploaded.push(avatar);
     const { error } = await client.rpc("save_profile", {
@@ -287,12 +326,20 @@ export async function saveProfile(_state: ActionState, form: FormData): Promise<
       })),
     });
     if (error) throw new Error("Your profile could not be saved. Please try again.");
+    // Checked above, so this fails only when someone took the username in the meantime.
+    if (username !== existing?.slug) {
+      const { error: usernameError } = await client.rpc("set_username", { p_username: username });
+      if (usernameError)
+        unsaved = usernameError.message.includes("taken")
+          ? "Your profile was saved, but that username was just taken. Choose another one."
+          : "Your profile was saved, but the username could not be changed. Please try again.";
+    }
   } catch (error) {
     if (uploaded.length) await client.storage.from("profile-images").remove(uploaded);
     return { error: message(error) };
   }
   revalidatePath("/", "layout");
-  return { success: "Profile saved." };
+  return unsaved ? { error: unsaved } : { success: "Profile saved." };
 }
 
 export async function saveSaas(_state: ActionState, form: FormData): Promise<ActionState> {

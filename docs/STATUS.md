@@ -8,6 +8,12 @@ The first release includes accounts, email confirmation and recovery, public mak
 
 Makers can message each other privately (see Messages below), and report products, profiles and messages to the admins, who decide in an admin panel (see Reports and moderation below). They get emails about unread messages and about decisions (see Email notifications below). Other forms of connection, such as following or contact lists, are not implemented.
 
+## Usernames and even auth forms 2026-09-26
+
+At the project owner's request, sign-up now asks for a username in a second step: after Create account checks the email address, password and terms, one field asks for the username, and Continue creates the account and sends the confirmation email. The username becomes the profile's name and its address, `/users/<username>`, and the profile shows it as @username under the name in smaller, grey text. Users change both on their profile; the name no longer changes the address. Existing profiles keep their slug as username. The owner's production profile is still named Harbor maker, with the username harbor-maker; both can be changed on the profile.
+
+The sign-in, sign-up and reset forms now line up to the pixel at 390 and 1440 px: the sign-up description wrapped onto two lines and pushed its fields 24 px down, and the Forgot password link made the password label 3 px lower on sign-in. The required-field star no longer makes its label row taller either. The username field of the second step sits where the email field was, and takes the focus.
+
 ## Sign-up checks 2026-09-26
 
 At the project owner's request, passwords need at least 6 characters instead of 12 (`PASSWORD_MIN_LENGTH` in `src/lib/domain.ts`, the same as `minimum_password_length` in `supabase/config.toml`). NIST recommends at least 8. Production Auth keeps refusing shorter passwords than 12 until `npm run auth:production` pushes the new minimum. On a site served over https, sign-up now also checks in DNS that the address's domain can receive email (`src/lib/email-domain.ts`): a domain that does not exist, such as gmail.con, or that publishes a null MX, such as example.com, is refused with a request to check for typos. A domain without MX records passes when it has an address, and a DNS failure never blocks sign-up. A misspelled domain that really exists still passes; the confirmation email remains the proof. Locally and in the browser tests the check is off, since they use reserved test domains. The required fields of the product form now carry a red star.

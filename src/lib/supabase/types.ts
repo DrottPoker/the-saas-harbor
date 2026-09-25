@@ -18,6 +18,7 @@ export type Database = Omit<GeneratedDatabase, "public"> & {
       | "admin_accounts"
       | "admin_account"
       | "saas_slug_redirect"
+      | "check_username"
       | "claim_emails"
       | "complete_email"
     > & {
@@ -32,6 +33,10 @@ export type Database = Omit<GeneratedDatabase, "public"> & {
       saas_slug_redirect: {
         Args: Functions["saas_slug_redirect"]["Args"];
         Returns: string | null;
+      };
+      check_username: {
+        Args: Functions["check_username"]["Args"];
+        Returns: "format" | "reserved" | "taken" | null;
       };
       save_profile: {
         Args: Nullable<Functions["save_profile"]["Args"], "p_avatar_path">;

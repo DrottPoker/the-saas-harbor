@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
+  USERNAME_PROBLEMS,
+  usernameSchema,
   containsPattern,
   emailLink,
   formatUsd,
@@ -86,5 +88,25 @@ describe("profile boundaries", () => {
     expect(parsed).not.toHaveProperty("mrr");
     expect(parsed).not.toHaveProperty("mrr_cents");
     expect(parsed).not.toHaveProperty("customers");
+  });
+});
+
+describe("usernames", () => {
+  it("are lowercased, lose an @ in front, and follow the rules", () => {
+    expect(usernameSchema.parse("  @Jane-Doe ")).toBe("jane-doe");
+    expect(usernameSchema.parse("abc")).toBe("abc");
+    for (const bad of [
+      "ab",
+      "a".repeat(31),
+      "-jane",
+      "jane-",
+      "ja--ne",
+      "jane_doe",
+      "jane doe",
+      "jané",
+    ])
+      expect(usernameSchema.safeParse(bad).error?.issues[0]?.message).toBe(
+        USERNAME_PROBLEMS.format,
+      );
   });
 });

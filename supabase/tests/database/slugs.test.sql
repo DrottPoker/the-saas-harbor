@@ -21,8 +21,10 @@ select ok(
     where id = 'f0000000-0000-4000-8000-000000000001'),
   'a maker without a name yet gets a slug from the default name');
 select public.save_profile('Slugtest Zoë Ångström', '', '', '', '', '', '', '', '', '{}', null, '[]');
-select is((select slug from public.profiles where id = 'f0000000-0000-4000-8000-000000000001'),
-  'slugtest-zoe-angstrom', 'naming the profile gives it a slug without accents');
+select ok(
+  (select slug ~ '^harbor-maker(-[0-9]+)?$' from public.profiles
+    where id = 'f0000000-0000-4000-8000-000000000001'),
+  'naming the profile keeps its username (usernames.test.sql)');
 
 set local role authenticated;
 select set_config('request.jwt.claim.sub', 'f0000000-0000-4000-8000-000000000002', true);
@@ -98,11 +100,13 @@ select is(public.saas_slug_redirect('slugtest-beta'), 'slugtest-alpha-3',
 select is(public.saas_slug_redirect('slugtest-alpha'), null, 'a slug in use never redirects');
 
 select public.save_profile('Slugtest Someone Else', '', '', '', '', '', '', '', '', '{}', null, '[]');
-select is((select slug from public.profiles where id = 'f0000000-0000-4000-8000-000000000001'),
-  'slugtest-someone-else', 'renaming a maker gives a new slug');
+select ok(
+  (select slug ~ '^harbor-maker(-[0-9]+)?$' from public.profiles
+    where id = 'f0000000-0000-4000-8000-000000000001'),
+  'renaming a user keeps their username');
 reset role;
-select is_empty($$ select 1 from public.profiles where slug = 'slugtest-zoe-angstrom' $$,
-  'the maker''s old slug is released, not kept');
+select is_empty($$ select 1 from public.profiles where slug like 'slugtest-someone%' $$,
+  'a new name makes no new address');
 
 -- Hidden products do not resolve, and deleting a product frees its slugs.
 reset role;

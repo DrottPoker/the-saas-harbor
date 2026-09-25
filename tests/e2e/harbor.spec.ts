@@ -395,6 +395,16 @@ test("registration, email confirmation, profile and SaaS editing, storage, priva
   await page.getByLabel("Password", { exact: true }).fill(password);
   await terms.check();
   await page.getByRole("button", { name: "Create account" }).click();
+  // Then only the username is asked for, in the same place, and the account is created with it.
+  const username = page.getByLabel("Username");
+  await expect(username).toBeFocused();
+  await username.fill("admin");
+  await page.getByRole("button", { name: "Continue" }).click();
+  await expect(
+    page.getByRole("alert").filter({ hasText: "That username is reserved." }),
+  ).toBeVisible();
+  await username.fill(`@Tester-${run}`);
+  await page.getByRole("button", { name: "Continue" }).click();
   await expect(
     page.getByText("Check your email and open the link to confirm your account."),
   ).toBeVisible();
@@ -432,8 +442,14 @@ test("registration, email confirmation, profile and SaaS editing, storage, priva
   userIds.push(firstUserId);
   // Sign-up sends the accepted version, which the database records (terms.test.sql).
   expect(signedUp.user_metadata.terms_version).toBe(termsUpdated);
+  // The username, typed with an @ and capitals, is the profile's name and address to begin with.
+  await page.goto(`/users/tester-${run}`);
+  await expect(page.getByRole("heading", { name: `tester-${run}`, exact: true })).toBeVisible();
+  await expect(page.getByText(`@tester-${run}`, { exact: true })).toBeVisible();
   await page.goto("/dashboard/profile");
   await page.getByLabel("Name", { exact: true }).fill("Local Test Maker");
+  await expect(page.getByLabel("Username")).toHaveValue(`tester-${run}`);
+  await page.getByLabel("Username").fill(`local-test-maker-${run}`);
   await page.getByLabel("Headline").fill("Builds test fixtures for a living");
   await page.getByLabel("Location").fill("Gothenburg, Sweden");
   await page.getByLabel("About").fill("An isolated maker profile for browser verification.");
@@ -471,14 +487,19 @@ test("registration, email confirmation, profile and SaaS editing, storage, priva
     .setInputFiles({ name: "avatar.png", mimeType: "image/png", buffer: png });
   await save.click();
   await expect(page.getByText("Profile saved.")).toBeVisible();
-  // The maker's id leads to a readable address made from the name.
+  // The maker's id leads to the address made from the new username; the old one is free again.
   // Profiles moved from /makers to /users, and the old addresses lead on.
   const oldAddress = await page.request.get(`/makers/${firstUserId}`, { maxRedirects: 0 });
   expect(oldAddress.status()).toBe(308);
   expect(oldAddress.headers().location).toBe(`/users/${firstUserId}`);
   await page.goto(`/users/${firstUserId}`);
-  await expect(page).toHaveURL(/\/users\/local-test-maker(-\d+)?$/);
+  await expect(page).toHaveURL(new RegExp(`/users/local-test-maker-${run}$`));
   await expect(page.getByRole("heading", { name: "Local Test Maker", exact: true })).toBeVisible();
+  await expect(page.getByText(`@local-test-maker-${run}`, { exact: true })).toBeVisible();
+  const current = page.url();
+  await page.goto(`/users/tester-${run}`);
+  await expect(page.getByRole("heading", { name: "Page not found" })).toBeVisible();
+  await page.goto(current);
   await expect(page).toHaveTitle("Local Test Maker | The SaaS Harbor");
   await expect(page.locator('link[rel="canonical"]')).toHaveAttribute(
     "href",
