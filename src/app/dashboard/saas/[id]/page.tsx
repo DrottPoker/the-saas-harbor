@@ -3,9 +3,11 @@ import { z } from "zod";
 import { SaasForm } from "@/components/forms";
 import { BackLink } from "@/components/back-link";
 import { DeleteProduct } from "@/components/delete-forms";
-import { PageHeader, Shell } from "@/components/shell";
+import { ModerationNotice } from "@/components/moderation-notice";
+import { Notice, PageHeader, Shell } from "@/components/shell";
 import { StripeConnectionSection } from "@/components/stripe-connection";
 import { STRIPE_CONNECTION_COLUMNS, type StripeConnection } from "@/lib/data";
+import { PRODUCT_LIMIT } from "@/lib/moderation";
 import { requireUser } from "@/lib/supabase/server";
 
 type Props = {
@@ -23,6 +25,11 @@ export default async function EditSaas({ params, searchParams }: Props) {
   const isNew = id === "new";
   if (!isNew && !z.uuid().safeParse(id).success) notFound();
   if (isNew) {
+    const { count, error } = await client
+      .from("saas")
+      .select("id", { count: "exact", head: true })
+      .eq("owner_id", user.id);
+    if (error) throw new Error("Your products could not be loaded.");
     return (
       <Shell size="medium">
         <BackLink href="/dashboard">Dashboard</BackLink>
@@ -32,7 +39,14 @@ export default async function EditSaas({ params, searchParams }: Props) {
           description="Product details are public. After saving, connect Stripe to verify revenue."
         />
         <div className="pt-8">
-          <SaasForm id={crypto.randomUUID()} />
+          {(count ?? 0) >= PRODUCT_LIMIT ? (
+            <Notice>
+              You have listed {PRODUCT_LIMIT} products, which is the most an account can have.
+              Delete a product to add another.
+            </Notice>
+          ) : (
+            <SaasForm id={crypto.randomUUID()} />
+          )}
         </div>
       </Shell>
     );
@@ -66,6 +80,15 @@ export default async function EditSaas({ params, searchParams }: Props) {
         title={`Edit ${saas.data.name}`}
         description="Product details are public. Verified figures stay private unless you share them."
       />
+      {saas.data.hidden_at && (
+        <ModerationNotice
+          kind="product"
+          at={saas.data.hidden_at}
+          reason={saas.data.hidden_reason}
+          note={saas.data.hidden_note}
+          className="mt-8"
+        />
+      )}
       <div className="pt-8">
         <SaasForm id={id} saas={saas.data} settings={settings.data} />
         <StripeConnectionSection

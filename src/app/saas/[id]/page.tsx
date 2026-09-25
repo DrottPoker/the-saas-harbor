@@ -12,6 +12,7 @@ import { Growth } from "@/components/charts/growth";
 import { Metric } from "@/components/metric";
 import { RevenueHistory } from "@/components/charts/revenue-history";
 import { SendMessageButton } from "@/components/messages/send-message-button";
+import { ReportLink } from "@/components/report-link";
 import { Shell } from "@/components/shell";
 import { Button } from "@/components/ui/button";
 
@@ -168,6 +169,11 @@ export default async function SaasProfile({ params }: Props) {
               <dd className="text-right">{formatDate(item.created_at)}</dd>
             </div>
           </dl>
+          {viewer?.id !== item.owner_id && (
+            <ReportLink target="saas" id={id} className="mt-1">
+              Report this product
+            </ReportLink>
+          )}
         </aside>
       </div>
     </Shell>

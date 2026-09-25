@@ -2,11 +2,22 @@ import type { Database as GeneratedDatabase } from "./database.types";
 
 type Functions = GeneratedDatabase["public"]["Functions"];
 type Nullable<T, K extends keyof T> = Omit<T, K> & { [P in K]: T[P] | null };
+type Row<F extends keyof Functions> = Functions[F]["Returns"] extends (infer R)[] ? R : never;
 
-// PostgreSQL function argument nullability is not included in generated types.
+// PostgreSQL function argument nullability, and the nullability of columns returned by functions,
+// are not included in generated types.
 export type Database = Omit<GeneratedDatabase, "public"> & {
   public: Omit<GeneratedDatabase["public"], "Functions"> & {
-    Functions: Omit<Functions, "save_saas" | "record_stripe_verification" | "save_profile"> & {
+    Functions: Omit<
+      Functions,
+      | "save_saas"
+      | "record_stripe_verification"
+      | "save_profile"
+      | "admin_hide_saas"
+      | "admin_suspend_account"
+      | "admin_accounts"
+      | "admin_account"
+    > & {
       save_profile: {
         Args: Nullable<Functions["save_profile"]["Args"], "p_avatar_path">;
         Returns: undefined;
@@ -26,6 +37,26 @@ export type Database = Omit<GeneratedDatabase, "public"> & {
           | "p_mrr_30d_ago_cents"
         >;
         Returns: undefined;
+      };
+      admin_hide_saas: {
+        Args: Nullable<Functions["admin_hide_saas"]["Args"], "p_report">;
+        Returns: undefined;
+      };
+      admin_suspend_account: {
+        Args: Nullable<Functions["admin_suspend_account"]["Args"], "p_report">;
+        Returns: undefined;
+      };
+      // Accounts without a maker profile have no name, headline, photo or suspension.
+      admin_accounts: {
+        Args: Functions["admin_accounts"]["Args"];
+        Returns: Nullable<
+          Row<"admin_accounts">,
+          "name" | "headline" | "avatar_path" | "last_sign_in_at" | "suspended_at"
+        >[];
+      };
+      admin_account: {
+        Args: Functions["admin_account"]["Args"];
+        Returns: Nullable<Row<"admin_account">, "last_sign_in_at" | "email_confirmed_at">[];
       };
     };
   };

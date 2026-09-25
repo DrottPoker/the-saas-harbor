@@ -473,6 +473,8 @@ for (const user of existing.users.filter((user) => user.email?.endsWith(`@${DOMA
 
 const day = 24 * 60 * 60 * 1000;
 let count = 0;
+const accounts = {};
+const productIds = {};
 for (const maker of makers) {
   const email = `${maker.key}@${DOMAIN}`;
   const { data: created, error } = await admin.auth.admin.createUser({
@@ -482,6 +484,7 @@ for (const maker of makers) {
   });
   if (error || !created.user) throw new Error(`Could not create ${email}.`);
   const userId = created.user.id;
+  accounts[maker.key] = userId;
   const client = createClient(local.url, local.publishableKey, options);
   await client.auth.signInWithPassword({ email, password: PASSWORD });
   const details = personal[maker.key] ?? {};
@@ -530,6 +533,7 @@ for (const maker of makers) {
       p_share_launch: product.share.includes("launch"),
     });
     if (saveError) throw new Error(`Could not save ${product.name}.`);
+    productIds[product.name] = id;
     // Spread join dates so newest-first listings look realistic.
     const joined = new Date(Date.now() - product.age * day).toISOString();
     await admin.from("saas").update({ created_at: joined }).eq("id", id);
@@ -539,6 +543,88 @@ for (const maker of makers) {
   await client.auth.signOut();
 }
 
+// Moderation: an admin, a spam message, and reports in different states, so the admin panel and
+// Your reports have something to show. Everything goes through the functions the app uses.
+async function signIn(key) {
+  const client = createClient(local.url, local.publishableKey, options);
+  const { error } = await client.auth.signInWithPassword({
+    email: `${key}@${DOMAIN}`,
+    password: PASSWORD,
+  });
+  if (error) throw new Error(`Could not sign in as ${key}@${DOMAIN}.`);
+  return client;
+}
+async function report(key, target, id, reason, details) {
+  const client = await signIn(key);
+  const { data, error } = await client.rpc("submit_report", {
+    p_target: target,
+    p_id: id,
+    p_reason: reason,
+    p_details: details,
+  });
+  await client.auth.signOut();
+  if (error) throw new Error(`Could not add a demo report by ${key}@${DOMAIN}.`);
+  return data;
+}
+
+const { error: moderatorError } = await admin.auth.admin.createUser({
+  email: `admin@${DOMAIN}`,
+  password: PASSWORD,
+  email_confirm: true,
+});
+if (moderatorError) throw new Error(`Could not create admin@${DOMAIN}.`);
+const { error: grantError } = await admin.rpc("set_admin", {
+  p_email: `admin@${DOMAIN}`,
+  p_admin: true,
+});
+if (grantError) throw new Error("Could not grant admin rights to the demo admin.");
+const moderator = await signIn("admin");
+const { error: moderatorProfileError } = await moderator.rpc("save_profile", {
+  p_name: "Harbor Admin",
+  p_headline: "Reviews reports for The SaaS Harbor",
+  p_location: "",
+  p_bio: "",
+  p_website: "",
+  p_linkedin_url: "",
+  p_github_url: "",
+  p_x_url: "",
+  p_social_url: "",
+  p_skills: [],
+  p_avatar_path: null,
+  p_experience: [],
+});
+if (moderatorProfileError) throw new Error("Could not save the demo admin's profile.");
+
+const spammer = await signIn("sam");
+const { data: spam, error: spamError } = await spammer.rpc("send_message", {
+  p_recipient: accounts.oskar,
+  p_body: "Get 10,000 new followers for $5. Reply YES to start today!",
+});
+await spammer.auth.signOut();
+if (spamError) throw new Error("Could not send the demo message.");
+await report("oskar", "message", spam.id, "spam", "");
+await report(
+  "tomas",
+  "saas",
+  productIds.Paletteer,
+  "misleading",
+  "The page promises a Figma plugin that does not exist.",
+);
+await report(
+  "priya",
+  "profile",
+  accounts.jonas,
+  "impersonation",
+  "Lists a role at a company that says it never employed this person.",
+);
+const dismissed = await report("lena", "saas", productIds.Relay, "spam", "");
+const { error: dismissError } = await moderator.rpc("admin_dismiss_report", {
+  p_report: dismissed,
+  p_note: "Relay is a real product, and the listing is accurate.",
+});
+await moderator.auth.signOut();
+if (dismissError) throw new Error("Could not dismiss the demo report.");
+
 console.log(
-  `Seeded ${makers.length} demo makers and ${count} SaaS. Sign in as <name>@${DOMAIN} with the password "${PASSWORD}".`,
+  `Seeded ${makers.length} demo makers, ${count} SaaS and 4 reports. Sign in as <name>@${DOMAIN}, or admin@${DOMAIN} for the admin panel, with the password "${PASSWORD}".`,
 );

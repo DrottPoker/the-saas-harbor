@@ -194,7 +194,11 @@ export function AuthForm({
       <Submit className="h-10 w-full">{authCopy[mode]}</Submit>
       {mode === "signup" && (
         <p className="text-center text-[13px] text-muted-foreground">
-          Read how we handle your data in the{" "}
+          By creating an account you agree to the{" "}
+          <Link className="font-medium text-foreground underline" href="/terms">
+            terms
+          </Link>
+          . Read how we handle your data in the{" "}
           <Link className="font-medium text-foreground underline" href="/privacy">
             privacy policy
           </Link>

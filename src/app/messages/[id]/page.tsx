@@ -33,7 +33,7 @@ export default async function ConversationPage({ params }: Props) {
 
   const client = await serverClient();
   const [me, conversation, block] = await Promise.all([
-    client.from("profiles").select("id").eq("id", user.id).maybeSingle(),
+    client.from("profiles").select("id, suspended_at").eq("id", user.id).maybeSingle(),
     client
       .from("conversations")
       .select("id")
@@ -62,6 +62,7 @@ export default async function ConversationPage({ params }: Props) {
     messages = data.reverse();
   }
   const blocked = !!block.data;
+  const suspended = !!me.data?.suspended_at;
 
   return (
     <Shell size="narrow">
@@ -86,7 +87,7 @@ export default async function ConversationPage({ params }: Props) {
           initialConversationId={conversation.data?.id ?? null}
           initialMessages={messages}
           initialHasEarlier={messages.length === MESSAGE_PAGE_SIZE}
-          canSend={!!me.data && !blocked}
+          canSend={!!me.data && !blocked && !suspended}
           closedNotice={
             !me.data ? (
               <Notice>
@@ -95,6 +96,14 @@ export default async function ConversationPage({ params }: Props) {
                   maker profile
                 </Link>{" "}
                 before sending messages. Other makers see your name and photo.
+              </Notice>
+            ) : suspended ? (
+              <Notice>
+                Your account is suspended, so you cannot send messages. Your{" "}
+                <Link href="/dashboard" className="font-medium underline">
+                  dashboard
+                </Link>{" "}
+                explains why.
               </Notice>
             ) : (
               <Notice>

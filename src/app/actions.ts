@@ -268,7 +268,10 @@ export async function saveSaas(_state: ActionState, form: FormData): Promise<Act
     });
     if (error)
       throw new Error(
-        "The SaaS profile could not be saved. Please check your fields and try again.",
+        // P0001 errors, such as the product limits, are written for makers by the database.
+        error.code === "P0001"
+          ? `${error.message}.`
+          : "The SaaS profile could not be saved. Please check your fields and try again.",
       );
     savedId = data;
   } catch (error) {

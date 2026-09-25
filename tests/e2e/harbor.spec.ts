@@ -77,6 +77,24 @@ async function expectAccessible(page: Page) {
 }
 
 test.describe.configure({ mode: "serial" });
+// The test server compiles each route on its first request, which can take longer than an
+// expectation waits when the machine is busy. Every route is requested once before the tests, so
+// their waits measure the app and not the compiler. None of these requests changes data.
+test.beforeAll(async ({ playwright }, info) => {
+  test.setTimeout(300000);
+  const client = await playwright.request.newContext({ baseURL: info.project.use.baseURL });
+  const id = randomUUID();
+  for (const path of [
+    ...["/", "/discover", "/newest", "/about", "/privacy", "/terms", "/account-deleted"],
+    ...["/auth", "/auth/callback", `/saas/${id}`, `/makers/${id}`, "/missing"],
+    ...["/dashboard", "/dashboard/profile", "/dashboard/reports", `/dashboard/saas/${id}`],
+    ...["/messages", `/messages/${id}`, `/report/saas/${id}`, "/api/stripe/sync"],
+    ...["", "/reports", "/products", "/accounts", "/log"].map((section) => `/admin${section}`),
+    ...["reports", "products", "accounts"].map((section) => `/admin/${section}/${id}`),
+  ])
+    await client.get(path, { maxRedirects: 0 });
+  await client.dispose();
+});
 test.afterAll(async () => {
   const { data } = await admin.auth.admin.listUsers();
   for (const user of data.users.filter((user) =>
@@ -109,7 +127,7 @@ test("anonymous navigation, private route protection and responsive empty state"
   await page.goto(`/discover?category=Design&q=missing-${run}`);
   await expect(page.getByRole("heading", { name: "No matching products" })).toBeVisible();
   await page.setViewportSize({ width: 390, height: 844 });
-  for (const path of ["/", "/discover", "/auth", "/privacy"]) {
+  for (const path of ["/", "/discover", "/auth", "/privacy", "/terms"]) {
     await page.goto(path);
     await expectNoHorizontalScroll(page);
   }
@@ -124,11 +142,14 @@ test("anonymous navigation, private route protection and responsive empty state"
   await expectAccessible(page);
   await page.getByRole("contentinfo").getByRole("link", { name: "Privacy" }).click();
   await expect(page.getByRole("heading", { name: "Privacy policy", level: 1 })).toBeVisible();
+  await page.getByRole("contentinfo").getByRole("link", { name: "Terms" }).click();
+  await expect(page.getByRole("heading", { name: "Terms", level: 1 })).toBeVisible();
   const publicPages = [
     "/discover",
     "/newest",
     "/about",
     "/privacy",
+    "/terms",
     "/account-deleted",
     "/auth",
     "/auth?mode=signup",
@@ -154,7 +175,16 @@ test("theme menu persists light and dark, and system follows the OS", async ({ p
   await page.reload();
   await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
   expect(await pageBackground(page)).toBe(dark);
-  for (const path of ["/", "/discover", "/newest", "/about", "/privacy", "/auth", "/missing"]) {
+  for (const path of [
+    "/",
+    "/discover",
+    "/newest",
+    "/about",
+    "/privacy",
+    "/terms",
+    "/auth",
+    "/missing",
+  ]) {
     await page.goto(path);
     await expectAccessible(page);
   }
@@ -585,7 +615,7 @@ test("a maker deletes products, then their account and everything in it", async 
     });
     if (uploadError) throw new Error("Unable to upload fixture images.");
   }
-  const { error: profileError } = await maker.from("profiles").upsert({
+  const { error: profileError } = await maker.from("profiles").insert({
     id,
     name: "Leaving Maker",
     bio: "",
@@ -833,4 +863,263 @@ test("makers message each other live, with unread counts and blocking", async ({
     await expectNoHorizontalScroll(readerPage);
   }
   expect(hydrationErrors).toEqual([]);
+});
+
+test("reports reach the admin panel, where admins hide products and suspend accounts", async ({
+  browser,
+}) => {
+  test.setTimeout(240000);
+  const baseURL = test.info().project.use.baseURL;
+  const people = {} as Record<
+    "maker" | "reporter" | "moderator",
+    { id: string; email: string; password: string; name: string }
+  >;
+  for (const role of ["maker", "reporter", "moderator"] as const) {
+    const address = `harbor-${role}-${run}@example.test`;
+    const secret = randomBytes(24).toString("hex");
+    const { data, error } = await admin.auth.admin.createUser({
+      email: address,
+      password: secret,
+      email_confirm: true,
+    });
+    if (error || !data.user) throw new Error("Unable to create a moderation fixture.");
+    userIds.push(data.user.id);
+    const name = `Moderation ${role} ${run}`;
+    const { error: profileError } = await admin.from("profiles").insert({ id: data.user.id, name });
+    if (profileError) throw new Error("Unable to create a moderation profile.");
+    people[role] = { id: data.user.id, email: address, password: secret, name };
+  }
+  const { maker, reporter, moderator } = people;
+  const { error: grantError } = await admin.rpc("set_admin", {
+    p_email: moderator.email,
+    p_admin: true,
+  });
+  if (grantError) throw new Error("Unable to grant admin rights.");
+
+  // The maker lists a product and writes to the reporter, through the app's own functions.
+  const makerClient = createClient(url, publicKey, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+  await makerClient.auth.signInWithPassword({ email: maker.email, password: maker.password });
+  const productId = randomUUID();
+  const product = `Reported product ${run}`;
+  const { error: saveError } = await makerClient.rpc("save_saas", {
+    p_id: productId,
+    p_name: product,
+    p_tagline: "A product created only by the local moderation test.",
+    p_description: "This is an isolated local integration fixture for moderation.",
+    p_category: "Other",
+    p_website: "https://example.com",
+    p_logo_path: null,
+    p_launched_on: null,
+    p_share_mrr: false,
+    p_share_customers: false,
+    p_share_launch: false,
+  });
+  if (saveError) throw new Error("Unable to create the reported product.");
+  const offer = `Buy my course today ${run}`;
+  const { error: sendError } = await makerClient.rpc("send_message", {
+    p_recipient: reporter.id,
+    p_body: offer,
+  });
+  if (sendError) throw new Error("Unable to send the reported message.");
+  await makerClient.auth.signOut();
+  const open = async () => (await browser.newContext({ baseURL })).newPage();
+  const [reporterPage, adminPage, makerPage, visitor] = await Promise.all([
+    open(),
+    open(),
+    open(),
+    open(),
+  ]);
+
+  // A visitor who chooses Report signs in first and continues to the report.
+  await reporterPage.goto(`/saas/${productId}`);
+  await reporterPage.getByRole("link", { name: "Report this product" }).click();
+  await expect(reporterPage).toHaveURL(
+    `/auth?next=${encodeURIComponent(`/report/saas/${productId}`)}`,
+  );
+  await reporterPage.getByLabel("Email address").fill(reporter.email);
+  await reporterPage.getByLabel("Password", { exact: true }).fill(reporter.password);
+  await reporterPage.getByRole("button", { name: "Sign in", exact: true }).click();
+  await expect(reporterPage).toHaveURL(`/report/saas/${productId}`);
+  await expect(reporterPage.getByRole("heading", { name: `Report ${product}` })).toBeVisible();
+  // Illegal content needs an explanation, and the choice stays after the error.
+  const illegal = reporterPage.getByRole("radio", { name: /^Illegal content/ });
+  await illegal.check();
+  const send = reporterPage.getByRole("button", { name: "Send report" });
+  await send.click();
+  await expect(
+    reporterPage.getByRole("alert").filter({ hasText: "Describe the problem" }),
+  ).toBeVisible();
+  await expect(illegal).toBeChecked();
+  await reporterPage.getByRole("radio", { name: /^Misleading or false information/ }).check();
+  await reporterPage.getByLabel("Details").fill("The listing claims customers it does not have.");
+  await send.click();
+  await expect(reporterPage).toHaveURL("/dashboard/reports?sent=1");
+  await expect(reporterPage.getByText("Thanks. Your report was sent")).toBeVisible();
+  const sent = reporterPage.getByRole("list", { name: "Reports you sent" }).getByRole("listitem");
+  await expect(sent.filter({ hasText: product }).getByText("Waiting for review")).toBeVisible();
+
+  // A message is reported from the conversation.
+  await reporterPage.goto(`/messages/${maker.id}`);
+  const received = reporterPage.getByRole("log").getByRole("listitem").filter({ hasText: offer });
+  await received.hover();
+  await received.getByRole("link", { name: "Report this message" }).click();
+  await expect(reporterPage).toHaveURL(/\/report\/message\/[0-9a-f-]{36}$/);
+  await expect(reporterPage.getByText(offer)).toBeVisible();
+  await reporterPage.getByRole("radio", { name: /^Spam or advertising/ }).check();
+  await reporterPage.getByRole("button", { name: "Send report" }).click();
+  await expect(reporterPage).toHaveURL("/dashboard/reports?sent=1");
+  await expect(sent).toHaveCount(2);
+
+  // Everyone but an admin gets a 404 from the admin panel.
+  await reporterPage.goto("/admin");
+  await expect(reporterPage.getByRole("heading", { name: "Page not found" })).toBeVisible();
+  await visitor.goto("/admin/reports");
+  await expect(visitor.getByRole("heading", { name: "Page not found" })).toBeVisible();
+
+  // The admin opens the product report from the queue and hides the product.
+  await login(adminPage, moderator.email, moderator.password);
+  await adminPage.getByRole("link", { name: "Open admin panel" }).click();
+  await expect(adminPage).toHaveURL("/admin");
+  await adminPage
+    .getByRole("navigation", { name: "Admin" })
+    .getByRole("link", { name: "Reports" })
+    .click();
+  await adminPage.getByRole("link").filter({ hasText: product }).click();
+  await expect(adminPage.getByRole("heading", { name: `Report about ${product}` })).toBeVisible();
+  const reportPage = new URL(adminPage.url()).pathname;
+  await expect(adminPage.getByText("The listing claims customers it does not have.")).toBeVisible();
+  await expect(adminPage.getByText(reporter.email)).toBeVisible();
+  const hide = adminPage.getByRole("region", { name: "Hide the product" });
+  await expect(hide.getByLabel("Reason")).toHaveValue("misleading");
+  await hide
+    .getByLabel("Explanation for the maker")
+    .fill("The customer numbers in the description are not true.");
+  await hide.getByRole("button", { name: "Hide product" }).click();
+  await expect(adminPage.getByText("Product hidden. The maker sees")).toBeVisible();
+  await expect(adminPage.getByRole("region", { name: "Outcome" })).toBeVisible();
+
+  // The product is gone for everyone else, including through the API.
+  expect((await anon.from("public_saas").select("id").eq("id", productId)).data).toEqual([]);
+  expect((await anon.from("saas").select("id").eq("id", productId)).data).toEqual([]);
+  await visitor.goto(`/saas/${productId}`);
+  await expect(visitor.getByRole("heading", { name: "Page not found" })).toBeVisible();
+
+  // The maker sees the product as hidden, with the reason and the explanation.
+  await login(makerPage, maker.email, maker.password);
+  const ownProduct = makerPage
+    .getByRole("list", { name: "Your products" })
+    .getByRole("listitem")
+    .filter({ hasText: product });
+  await expect(ownProduct.getByText("Hidden", { exact: true })).toBeVisible();
+  await ownProduct.getByRole("link", { name: "Edit" }).click();
+  const hiddenNotice = makerPage.getByRole("region", { name: /Product hidden/ });
+  await expect(hiddenNotice.getByText("Misleading or false information")).toBeVisible();
+  await expect(
+    hiddenNotice.getByText("The customer numbers in the description are not true."),
+  ).toBeVisible();
+  // The reporter sees the outcome, never the maker.
+  await reporterPage.goto("/dashboard/reports");
+  await expect(sent.filter({ hasText: product }).getByText("Action taken")).toBeVisible();
+
+  // The admin finds the maker by email and suspends the account.
+  await adminPage.goto(`/admin/accounts?q=${encodeURIComponent(maker.email)}`);
+  await adminPage.getByRole("link").filter({ hasText: maker.email }).click();
+  await expect(adminPage.getByRole("heading", { name: maker.name, level: 1 })).toBeVisible();
+  const suspend = adminPage.getByRole("region", { name: "Suspend the account" });
+  await suspend.getByLabel("Reason").selectOption("spam");
+  await suspend
+    .getByLabel("Explanation for the maker")
+    .fill("Sent the same advertisement to many makers.");
+  await suspend.getByRole("button", { name: "Suspend account" }).click();
+  await expect(adminPage.getByText("Account suspended. The maker sees")).toBeVisible();
+
+  // The profile disappears, the conversation leaves the reporter's inbox, and the maker is told
+  // why and can no longer send messages.
+  await visitor.goto(`/makers/${maker.id}`);
+  await expect(visitor.getByRole("heading", { name: "Page not found" })).toBeVisible();
+  await reporterPage.goto("/messages");
+  await expect(reporterPage.getByRole("heading", { name: "Messages", level: 1 })).toBeVisible();
+  await expect(reporterPage.getByText(maker.name)).toHaveCount(0);
+  await makerPage.goto("/dashboard");
+  await expect(
+    makerPage
+      .getByRole("region", { name: /Account suspended/ })
+      .getByText("Sent the same advertisement to many makers."),
+  ).toBeVisible();
+  await makerPage.goto(`/messages/${reporter.id}`);
+  await expect(
+    makerPage.getByText("Your account is suspended, so you cannot send messages."),
+  ).toBeVisible();
+  // Audit the maker's view of both decisions in both themes.
+  for (const theme of ["dark", "light"] as const) {
+    await setThemeCookie(makerPage, theme);
+    for (const path of ["/dashboard", `/dashboard/saas/${productId}`, "/dashboard/profile"]) {
+      await makerPage.goto(path);
+      await expectAccessible(makerPage);
+    }
+  }
+
+  // Lifting the suspension and showing the product bring everything back.
+  await adminPage.goto(`/admin/accounts/${maker.id}`);
+  await adminPage.getByRole("button", { name: "Lift suspension" }).click();
+  await expect(adminPage.getByText("The suspension is lifted.")).toBeVisible();
+  await adminPage.goto(`/admin/products/${productId}`);
+  await adminPage.getByRole("button", { name: "Show product again" }).click();
+  await expect(adminPage.getByText("The product is shown again.")).toBeVisible();
+  await visitor.goto(`/saas/${productId}`);
+  await expect(visitor.getByRole("heading", { name: product, exact: true })).toBeVisible();
+  await visitor.goto(`/makers/${maker.id}`);
+  await expect(visitor.getByRole("heading", { name: maker.name, exact: true })).toBeVisible();
+
+  // Every decision is in the log.
+  await adminPage.goto("/admin/log");
+  const decisions = adminPage.getByRole("list", { name: "Decisions" }).getByRole("listitem");
+  await expect(decisions.filter({ hasText: product })).toHaveText([
+    /^Showed product again:/,
+    /^Hid product:/,
+  ]);
+  await expect(decisions.filter({ hasText: maker.name })).toHaveText([
+    /^Lifted suspension:/,
+    /^Suspended account:/,
+  ]);
+
+  // Axe on every admin page and the report pages, in both themes, and no sideways scrolling on a
+  // phone.
+  const adminPages = [
+    "/admin",
+    "/admin/reports",
+    "/admin/reports?status=closed",
+    reportPage,
+    "/admin/products",
+    `/admin/products/${productId}`,
+    "/admin/accounts",
+    `/admin/accounts/${maker.id}`,
+    "/admin/log",
+  ];
+  const reporterPages = [`/report/profile/${maker.id}`, "/dashboard/reports"];
+  for (const theme of ["dark", "light"] as const) {
+    await setThemeCookie(adminPage, theme);
+    for (const path of adminPages) {
+      await adminPage.goto(path);
+      await expect(adminPage.getByRole("heading", { level: 1 })).toBeVisible();
+      await expectAccessible(adminPage);
+    }
+    await setThemeCookie(reporterPage, theme);
+    for (const path of reporterPages) {
+      await reporterPage.goto(path);
+      await expectAccessible(reporterPage);
+    }
+  }
+  await adminPage.setViewportSize({ width: 390, height: 844 });
+  for (const path of adminPages) {
+    await adminPage.goto(path);
+    await expectNoHorizontalScroll(adminPage);
+  }
+  await reporterPage.setViewportSize({ width: 390, height: 844 });
+  for (const path of [...reporterPages, `/messages/${maker.id}`]) {
+    await reporterPage.goto(path);
+    await expectNoHorizontalScroll(reporterPage);
+  }
 });

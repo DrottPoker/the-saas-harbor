@@ -212,6 +212,88 @@ export type Database = {
           },
         ]
       }
+      moderation_log: {
+        Row: {
+          action: string
+          admin_id: string | null
+          created_at: string
+          id: string
+          note: string
+          reason: string | null
+          report_id: string | null
+          saas_id: string | null
+          subject_id: string
+          target_label: string
+        }
+        Insert: {
+          action: string
+          admin_id?: string | null
+          created_at?: string
+          id?: string
+          note?: string
+          reason?: string | null
+          report_id?: string | null
+          saas_id?: string | null
+          subject_id: string
+          target_label: string
+        }
+        Update: {
+          action?: string
+          admin_id?: string | null
+          created_at?: string
+          id?: string
+          note?: string
+          reason?: string | null
+          report_id?: string | null
+          saas_id?: string | null
+          subject_id?: string
+          target_label?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "moderation_log_report_id_fkey"
+            columns: ["report_id"]
+            isOneToOne: false
+            referencedRelation: "reports"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "moderation_log_saas_id_fkey"
+            columns: ["saas_id"]
+            isOneToOne: false
+            referencedRelation: "leaderboard"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "moderation_log_saas_id_fkey"
+            columns: ["saas_id"]
+            isOneToOne: false
+            referencedRelation: "public_saas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "moderation_log_saas_id_fkey"
+            columns: ["saas_id"]
+            isOneToOne: false
+            referencedRelation: "saas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "moderation_log_subject_id_fkey"
+            columns: ["subject_id"]
+            isOneToOne: false
+            referencedRelation: "inbox"
+            referencedColumns: ["other_id"]
+          },
+          {
+            foreignKeyName: "moderation_log_subject_id_fkey"
+            columns: ["subject_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profile_experience: {
         Row: {
           created_at: string
@@ -272,6 +354,9 @@ export type Database = {
           name: string
           skills: string[]
           social_url: string
+          suspended_at: string | null
+          suspended_note: string
+          suspended_reason: string | null
           updated_at: string
           website: string
           x_url: string
@@ -287,6 +372,9 @@ export type Database = {
           name: string
           skills?: string[]
           social_url?: string
+          suspended_at?: string | null
+          suspended_note?: string
+          suspended_reason?: string | null
           updated_at?: string
           website?: string
           x_url?: string
@@ -302,6 +390,9 @@ export type Database = {
           name?: string
           skills?: string[]
           social_url?: string
+          suspended_at?: string | null
+          suspended_note?: string
+          suspended_reason?: string | null
           updated_at?: string
           website?: string
           x_url?: string
@@ -363,6 +454,94 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "saas"
             referencedColumns: ["id", "owner_id"]
+          },
+        ]
+      }
+      reports: {
+        Row: {
+          content: Json
+          created_at: string
+          details: string
+          id: string
+          message_id: string | null
+          reason: string
+          reporter_id: string
+          resolved_at: string | null
+          saas_id: string | null
+          status: string
+          subject_id: string
+          target: string
+        }
+        Insert: {
+          content: Json
+          created_at?: string
+          details?: string
+          id?: string
+          message_id?: string | null
+          reason: string
+          reporter_id: string
+          resolved_at?: string | null
+          saas_id?: string | null
+          status?: string
+          subject_id: string
+          target: string
+        }
+        Update: {
+          content?: Json
+          created_at?: string
+          details?: string
+          id?: string
+          message_id?: string | null
+          reason?: string
+          reporter_id?: string
+          resolved_at?: string | null
+          saas_id?: string | null
+          status?: string
+          subject_id?: string
+          target?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reports_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "messages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reports_saas_id_fkey"
+            columns: ["saas_id"]
+            isOneToOne: false
+            referencedRelation: "leaderboard"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reports_saas_id_fkey"
+            columns: ["saas_id"]
+            isOneToOne: false
+            referencedRelation: "public_saas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reports_saas_id_fkey"
+            columns: ["saas_id"]
+            isOneToOne: false
+            referencedRelation: "saas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reports_subject_id_fkey"
+            columns: ["subject_id"]
+            isOneToOne: false
+            referencedRelation: "inbox"
+            referencedColumns: ["other_id"]
+          },
+          {
+            foreignKeyName: "reports_subject_id_fkey"
+            columns: ["subject_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -441,6 +620,9 @@ export type Database = {
           category: string
           created_at: string
           description: string
+          hidden_at: string | null
+          hidden_note: string
+          hidden_reason: string | null
           id: string
           logo_path: string | null
           name: string
@@ -453,6 +635,9 @@ export type Database = {
           category: string
           created_at?: string
           description: string
+          hidden_at?: string | null
+          hidden_note?: string
+          hidden_reason?: string | null
           id?: string
           logo_path?: string | null
           name: string
@@ -465,6 +650,9 @@ export type Database = {
           category?: string
           created_at?: string
           description?: string
+          hidden_at?: string | null
+          hidden_note?: string
+          hidden_reason?: string | null
           id?: string
           logo_path?: string | null
           name?: string
@@ -714,7 +902,72 @@ export type Database = {
       }
     }
     Functions: {
+      admin_account: {
+        Args: { p_id: string }
+        Returns: {
+          created_at: string
+          email: string
+          email_confirmed_at: string
+          id: string
+          is_admin: boolean
+          last_sign_in_at: string
+        }[]
+      }
+      admin_accounts: {
+        Args: { p_filter: string; p_search: string }
+        Returns: {
+          avatar_path: string
+          created_at: string
+          email: string
+          headline: string
+          id: string
+          is_admin: boolean
+          last_sign_in_at: string
+          name: string
+          open_reports: number
+          products: number
+          suspended_at: string
+        }[]
+      }
+      admin_dismiss_report: {
+        Args: { p_note: string; p_report: string }
+        Returns: undefined
+      }
+      admin_hide_saas: {
+        Args: {
+          p_note: string
+          p_reason: string
+          p_report: string
+          p_saas: string
+        }
+        Returns: undefined
+      }
+      admin_restore_account: {
+        Args: { p_note: string; p_profile: string }
+        Returns: undefined
+      }
+      admin_restore_saas: {
+        Args: { p_note: string; p_saas: string }
+        Returns: undefined
+      }
+      admin_suspend_account: {
+        Args: {
+          p_note: string
+          p_profile: string
+          p_reason: string
+          p_report: string
+        }
+        Returns: undefined
+      }
       delete_account: { Args: never; Returns: undefined }
+      is_admin: { Args: never; Returns: boolean }
+      list_admins: {
+        Args: never
+        Returns: {
+          created_at: string
+          email: string
+        }[]
+      }
       mark_conversation_read: {
         Args: { p_conversation: string; p_read_at: string }
         Returns: undefined
@@ -784,6 +1037,19 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      set_admin: {
+        Args: { p_admin: boolean; p_email: string }
+        Returns: string
+      }
+      submit_report: {
+        Args: {
+          p_details: string
+          p_id: string
+          p_reason: string
+          p_target: string
+        }
+        Returns: string
       }
       unread_message_count: { Args: never; Returns: number }
     }

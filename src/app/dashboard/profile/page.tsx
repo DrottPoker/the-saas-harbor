@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { BackLink } from "@/components/back-link";
 import { DeleteAccount } from "@/components/delete-forms";
+import { ModerationNotice } from "@/components/moderation-notice";
 import { ProfileForm } from "@/components/profile/profile-form";
 import { PageHeader, Shell } from "@/components/shell";
 import { Button } from "@/components/ui/button";
@@ -23,13 +24,23 @@ export default async function EditProfile() {
         title="Maker profile"
         description="Everything on your maker profile is public."
         actions={
-          profile.data && (
+          profile.data &&
+          !profile.data.suspended_at && (
             <Button asChild variant="outline">
               <Link href={`/makers/${user.id}`}>View profile</Link>
             </Button>
           )
         }
       />
+      {profile.data?.suspended_at && (
+        <ModerationNotice
+          kind="account"
+          at={profile.data.suspended_at}
+          reason={profile.data.suspended_reason}
+          note={profile.data.suspended_note}
+          className="mt-8"
+        />
+      )}
       <div className="pt-8">
         <ProfileForm
           profile={profile.data}

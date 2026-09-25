@@ -40,8 +40,9 @@ export function DeleteAccount() {
         <div className="grid gap-2 text-sm text-muted-foreground">
           <p>
             Your maker profile, your products and their logos, your Stripe connections with the
-            stored keys, all verification history and your conversations are deleted, also for the
-            makers you wrote with. Your products leave the leaderboard at once.
+            stored keys, all verification history, the reports you sent and your conversations are
+            deleted, also for the makers you wrote with. Your products leave the leaderboard at
+            once.
           </p>
           <p>
             Restricted keys you created stay in your Stripe account until you delete them there,

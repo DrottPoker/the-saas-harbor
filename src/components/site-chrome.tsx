@@ -79,6 +79,9 @@ export function SiteFooter() {
           <Link className={quietLink} href="/privacy">
             Privacy
           </Link>
+          <Link className={quietLink} href="/terms">
+            Terms
+          </Link>
         </nav>
         <p className="text-[13px] text-faint-foreground sm:col-span-2">
           Revenue is verified through read-only Stripe connections and refreshed daily.

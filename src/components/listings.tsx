@@ -153,21 +153,26 @@ export function ResultsFooter({
   page,
   count,
   href,
+  pageSize = PAGE_SIZE,
+  noun = ["product", "products"],
 }: {
   page: number;
   count: number;
   href: (page: number) => string;
+  pageSize?: number;
+  /** Singular and plural, for the count. */
+  noun?: [string, string];
 }) {
-  const first = (page - 1) * PAGE_SIZE + 1;
-  const last = Math.min(page * PAGE_SIZE, count);
+  const first = (page - 1) * pageSize + 1;
+  const last = Math.min(page * pageSize, count);
   return (
     <nav
       aria-label="Pagination"
       className="mt-4 flex items-center justify-between gap-4 text-sm text-muted-foreground"
     >
       <span>
-        {count <= PAGE_SIZE
-          ? `${count} ${count === 1 ? "product" : "products"}`
+        {count <= pageSize
+          ? `${count} ${count === 1 ? noun[0] : noun[1]}`
           : `Showing ${first}-${last} of ${count}`}
       </span>
       <div className="flex gap-2">

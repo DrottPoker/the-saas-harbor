@@ -34,6 +34,20 @@ const sections = [
     ],
   },
   {
+    title: "Reports and moderation",
+    body: [
+      <>
+        Makers can report a product, a profile or a message they received. Admins review every
+        report themselves and can hide a product or suspend an account. The maker then sees the
+        reason in their dashboard, but never who reported. The{" "}
+        <Link className="font-medium text-foreground underline" href="/terms">
+          terms
+        </Link>{" "}
+        list what is not allowed.
+      </>,
+    ],
+  },
+  {
     title: "What this is not",
     body: [
       "The SaaS Harbor is a directory and leaderboard where makers can also write to each other privately. There are no sales, deal rooms or payments here.",

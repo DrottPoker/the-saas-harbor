@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { DETAILS_MAX_LENGTH, DETAILS_REQUIRED, NOTE_MAX_LENGTH, REASONS } from "./moderation";
 import { currentMonth } from "./profile";
 
 export const categories = [
@@ -154,8 +155,35 @@ export type ActionState = { error?: string; success?: string };
 
 export const MESSAGE_MAX_LENGTH = 4000;
 
+const reason = z.enum(REASONS, { message: "Choose a reason." });
+export const reportSchema = z
+  .object({
+    reason,
+    details: z.string().trim().max(DETAILS_MAX_LENGTH, "Keep the details under 1,000 characters."),
+  })
+  .refine((report) => !DETAILS_REQUIRED.includes(report.reason) || report.details.length > 0, {
+    message: "Describe the problem so it can be reviewed.",
+    path: ["details"],
+  });
+// An admin's decision. The explanation is shown to the maker.
+export const decisionSchema = z.object({
+  reason,
+  note: z
+    .string()
+    .trim()
+    .min(1, "Explain the decision. The maker sees this explanation.")
+    .max(NOTE_MAX_LENGTH, "Keep the explanation under 1,000 characters."),
+});
+export const noteSchema = z
+  .string()
+  .trim()
+  .max(NOTE_MAX_LENGTH, "Keep the note under 1,000 characters.");
+
 // Where sign-in may continue to. Only known internal paths, so the parameter cannot be used to
 // send people to another site.
 export function safeNext(value: string | null | undefined) {
-  return value && /^\/messages(\/[0-9a-f-]{36})?$/.test(value) ? value : null;
+  return value &&
+    /^\/(messages(\/[0-9a-f-]{36})?|report\/(saas|profile|message)\/[0-9a-f-]{36})$/.test(value)
+    ? value
+    : null;
 }

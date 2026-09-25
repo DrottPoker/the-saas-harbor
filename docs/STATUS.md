@@ -1,12 +1,26 @@
 # Implementation status
 
-Updated 2026-09-24 after a full project review and handover. The first release was built 2026-09-12 and committed on the `development` branch.
+Updated 2026-09-25 with reports, moderation and the admin panel. The project was reviewed and handed over 2026-09-24; the first release was built 2026-09-12 and committed on the `development` branch.
 
 ## Implemented
 
-The first release includes accounts, email confirmation and recovery, public maker profiles, multiple editable SaaS per owner, profile/logo uploads, SaaS and maker pages, category/name filtering, newest arrivals, and a USD MRR leaderboard. Each optional metric has a sharing control. Private reports and the current public projection are separate and protected by RLS. No demo data is displayed as real activity.
+The first release includes accounts, email confirmation and recovery, public maker profiles, multiple editable SaaS per owner, profile/logo uploads, SaaS and maker pages, category/name filtering, newest arrivals, and a USD MRR leaderboard. Each optional metric has a sharing control. Private verification history and the current public projection are separate and protected by RLS. No demo data is displayed as real activity.
 
-Makers can message each other privately (see Messages below). Other forms of connection, such as following or contact lists, are not implemented.
+Makers can message each other privately (see Messages below), and report products, profiles and messages to the admins, who decide in an admin panel (see Reports and moderation below). Other forms of connection, such as following or contact lists, are not implemented.
+
+## Reports and moderation 2026-09-25
+
+The project owner asked for reporting and moderation, the step recommended before a public launch, with a full admin panel.
+
+- Report links on product pages, maker profiles and every received message. Visitors sign in first and continue to the report. A report takes a reason (spam, misleading, impersonation, harassment, illegal content or something else) and, for illegal content and something else, an explanation. Reporters follow their reports under Dashboard → Your reports.
+- The admin panel at `/admin`: an overview with open reports and the latest decisions, the report queue (oldest first), products and accounts with search and filters, and a log of every decision. A report page shows the copy of what was reported, the reporter, the maker and other reports about the same thing, next to the possible decisions.
+- Admins hide a product or suspend an account with a reason and an explanation. The maker sees both in their dashboard and editors, with a line on how to disagree; the reporter sees whether action was taken. A suspended maker's profile, products and conversations disappear for everyone else, and the account can no longer send messages or reports, but can still sign in, edit and delete it. Both decisions can be reversed.
+- An account lists at most 20 products and adds at most 5 a day.
+- Terms at `/terms` (a draft), linked from the footer, sign-up and the report form. The privacy policy covers reports, decisions and what admins see. Admins are granted with `npm run admin` (see README); the demo data has an admin and four reports.
+- Found and fixed on the way: makers had table-wide insert and update grants on `profiles` and `saas`, so a direct API insert could set `created_at` in the future and keep a product first in New arrivals indefinitely. Column grants now limit makers to the fields they edit.
+- Two sources of flaky checks, also fixed: the browser tests could time out while the test server compiled a route for the first time on a busy machine (seen twice, once in the existing registration test), so every route is now requested once before the tests; and the typecheck read the test server's generated route types, which a stopped test run can leave half-written, so `tsconfig.json` now excludes `.next-e2e`.
+
+Choices made here that the owner should confirm: the terms require makers to be at least 18; the product limits of 20 and 5 a day; admins see account email addresses, and join and sign-in dates, in the panel; suspended makers can still sign in; a reported message is stored as a copy with the report; and there are no emails about reports or decisions until an email provider is chosen.
 
 ## Handover review 2026-09-24
 
@@ -42,12 +56,13 @@ The first interface was generated with ChatGPT and read as generic: a slogan her
 
 The browser tests no longer assume an empty database, check for horizontal scrolling on phone-sized screens both signed out and signed in, and run Axe on every redesigned page.
 
-## Verified 2026-09-24
+## Verified 2026-09-25
 
-- `npm run check`: Prettier, ESLint with zero warnings, TypeScript, 80 unit tests: Stripe MRR, invoice history, keys and encryption, chart models, message threads, profile dates and input, sign-in continuation, and the full Stripe read path against the fake Stripe server.
+- `npm run check`: Prettier, ESLint with zero warnings, TypeScript, 92 unit tests: Stripe MRR, invoice history, keys and encryption, chart models, message threads, profile dates and input, sign-in continuation, report and decision input, and the full Stripe read path against the fake Stripe server.
 - `npm run build`: Next.js 16.3.5 production build.
-- `npm run test:db`: 113 pgTAP assertions, stable over repeated runs. `supabase db diff` reports no drift between the local database and the migrations, and `supabase db lint` reports no errors.
-- `npm run test:e2e`: 7 Chromium integration tests with Axe scans in both themes (including the revenue charts, the privacy policy, the delete sections, messaging and personal profiles), against local Supabase, local Realtime and a fake Stripe API, passing twice in a row.
+- `npm run test:db`: 205 pgTAP assertions in two suites (`access` 113, `moderation` 92). Two deliberately weakened policies (product visibility and report visibility) were each caught by the moderation suite before being restored. `supabase db diff` reports no drift between the local database and the migrations, and `supabase db lint` reports no errors.
+- `npm run test:e2e`: 8 Chromium integration tests with Axe scans in both themes (including the revenue charts, the privacy policy and the terms, the delete sections, messaging, personal profiles, the report pages, every admin page and the notices makers see), against local Supabase, local Realtime and a fake Stripe API, passing twice in a row.
+- The admin and report pages were checked at 390 px and 1440 px in both themes, and with touch emulation for the message Report link.
 - The CI workflow has not run on GitHub yet. Its commands were run locally with the same Supabase service exclusions.
 
 ## Verified revenue through Stripe 2026-09-24
@@ -107,8 +122,8 @@ The website is not deployed. Production needs a decision on where Supabase runs:
 Before a public launch:
 
 1. Verify Stripe verification once against the real Stripe API with a test-mode restricted key (see above).
-2. Legal pages. The privacy policy is a draft: set the operator's name and contact address in `src/lib/legal.ts`, name the hosting, database and email providers once they are chosen (and any transfers outside the EU/EEA), and have it reviewed. Terms of service are missing.
-3. Abuse and moderation. Revenue is now verified, but SaaS creation is unlimited and there is no moderation or reporting of listings.
+2. Legal pages. The privacy policy and the terms are drafts: set the operator's name and contact address in `src/lib/legal.ts`, name the hosting, database and email providers once they are chosen (and any transfers outside the EU/EEA), and have both reviewed, including the age limit, liability and governing law, which the terms leave out. The contact address is also where reports from people without an account and appeals go.
+3. Moderation follow-ups. Reports, decisions and product limits exist (see above). Still missing: an email to admins about new reports and to makers about decisions (needs the email provider), a retention period for closed reports, and a way for admins to remove a single message.
 4. Email links across devices. PKCE links fail when the email is opened in another browser, such as on a phone after signing up on a desktop. The `token_hash` + `verifyOtp` confirmation flow with custom email templates avoids this.
 5. Security headers. No Content Security Policy yet. HSTS depends on the hosting platform. A future CSP must allow the inline theme script in the root layout, by hash or nonce.
 6. Production hosting: where Supabase runs (self-hosted or Cloud), SMTP, Auth URLs, a deployment target for the app, a secrets store for `SUPABASE_SECRET_KEY`, `STRIPE_KEY_ENCRYPTION_KEY` and `CRON_SECRET`, and a daily scheduler for `POST /api/stripe/sync`.
@@ -122,4 +137,4 @@ Product and quality:
 11. Old images stay in storage after replacement or removal, until the account is deleted.
 12. All routes are dynamic with `no-store`. Public pages could be cached once traffic grows, with private data kept separate.
 13. Image signature validation in `src/lib/upload.ts` has no unit tests. Vitest can now import server-only modules, so this is straightforward.
-14. Messages: no email notifications (they need an email provider), and messages cannot be reported. Realtime keeps its event rows, which hold ids only, for a few days.
+14. Messages: no email notifications (they need an email provider). Realtime keeps its event rows, which hold ids only, for a few days.

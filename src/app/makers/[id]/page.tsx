@@ -8,6 +8,7 @@ import { ListingGrid, ResultsFooter } from "@/components/listings";
 import { SendMessageButton } from "@/components/messages/send-message-button";
 import { Metric } from "@/components/metric";
 import { ProfileDetails, RoleList, Skills } from "@/components/profile/profile-sections";
+import { ReportLink } from "@/components/report-link";
 import { EmptyState, Notice, Shell } from "@/components/shell";
 import { Button } from "@/components/ui/button";
 import {
@@ -162,6 +163,11 @@ export default async function Maker({ params, searchParams }: Props) {
         <aside className="grid content-start gap-4">
           <ProfileDetails profile={profile} />
           {profile.skills.length > 0 && <Skills skills={profile.skills} />}
+          {!own && (
+            <ReportLink target="profile" id={id} className="mt-1">
+              Report this profile
+            </ReportLink>
+          )}
         </aside>
       </div>
     </Shell>

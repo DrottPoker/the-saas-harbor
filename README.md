@@ -11,8 +11,9 @@ A focused, responsive home for independent SaaS: public maker profiles, product 
 - Verified MRR, paying customers and launch date, each with an independent public-sharing choice. Products without Stripe are listed but not ranked.
 - Private verification history, a public leaderboard, category/name filters and newest arrivals.
 - Private messages between makers: Send message on maker profiles and product pages, live delivery and unread counts, blocking, and limits against spam.
+- Reports and moderation: signed-in makers report a product, a profile or a message they received, and follow the outcome under Dashboard → Your reports. An admin panel at `/admin` lists reports, products, accounts and every decision. Admins hide products and suspend accounts with a reason and an explanation the maker sees in their dashboard. An account lists at most 20 products and adds at most 5 a day.
 - Deletion by the maker: a single product, confirmed by typing its name, or the whole account, confirmed with the password. Everything that belongs to it goes, including images, Stripe keys and verification history, and for the account also the sign-in records.
-- A privacy policy at `/privacy` (a draft until the operator's name and contact address are filled in `src/lib/legal.ts`).
+- A privacy policy at `/privacy` and terms at `/terms` (drafts until the operator's name and contact address are filled in `src/lib/legal.ts`).
 - Supabase RLS, owner checks in Server Actions, and owner-scoped image uploads.
 - Light and dark themes.
 
@@ -27,7 +28,7 @@ The whole backend runs locally: Supabase (PostgreSQL, Auth, Storage) runs in Doc
 ```powershell
 npm ci
 npm run dev        # starts local Supabase if needed, then http://localhost:3001
-npm run db:seed    # optional: 8 fictional makers and 16 SaaS
+npm run db:seed    # optional: 8 fictional makers, 16 SaaS, an admin and a few reports
 ```
 
 Before the dev server starts, `npm run dev` runs `scripts/local-env.mjs`. It starts the local Supabase stack when it is not running (the first start downloads Docker images) and writes the local URLs and public key into `.env.local`. Other lines in `.env.local` are kept. `npm run env:local` does the same without starting the app.
@@ -61,7 +62,7 @@ In a product's editor, the maker creates a restricted key in Stripe (Developers 
 
 `npm run dev` generates the server-only secrets in `.env.local`: `SUPABASE_SECRET_KEY` (the local service-role key), `STRIPE_KEY_ENCRYPTION_KEY` and `CRON_SECRET`. The encryption key is kept once created; replacing it makes stored Stripe keys unreadable, and makers would have to reconnect. Production needs the same three secrets, `STRIPE_ALLOW_TEST_KEYS` unset, and a scheduler that calls `POST /api/stripe/sync` daily with `Authorization: Bearer $CRON_SECRET`.
 
-Demo accounts from `npm run db:seed` are `<name>@demo.harbor.test` (for example `lena@demo.harbor.test`) with the password `harbor-demo-password`. Their products carry verified test-mode snapshots, with a generated 12-month history, and placeholder keys, so "Refresh now" on a demo product fails the way a revoked key would. Re-running the seed replaces earlier demo accounts, and `npm run db:reset` rebuilds the database from the migrations without any data. The ports 55320-55329 keep this stack clear of other local Supabase projects on the default 543xx ports. `npm run db:stop` stops the stack and keeps the data.
+Demo accounts from `npm run db:seed` are `<name>@demo.harbor.test` (for example `lena@demo.harbor.test`) with the password `harbor-demo-password`; `admin@demo.harbor.test` opens the admin panel, where a spam message, a product and a profile wait for review. Their products carry verified test-mode snapshots, with a generated 12-month history, and placeholder keys, so "Refresh now" on a demo product fails the way a revoked key would. Re-running the seed replaces earlier demo accounts, and `npm run db:reset` rebuilds the database from the migrations without any data. The ports 55320-55329 keep this stack clear of other local Supabase projects on the default 543xx ports. `npm run db:stop` stops the stack and keeps the data.
 
 | Variable                               | Meaning                                                             |
 | -------------------------------------- | ------------------------------------------------------------------- |
@@ -69,6 +70,18 @@ Demo accounts from `npm run db:seed` are `<name>@demo.harbor.test` (for example 
 | `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Public publishable key, never a secret or service-role key          |
 | `NEXT_PUBLIC_SITE_URL`                 | Canonical app origin, locally `http://localhost:3001`               |
 | `LOCAL_MAILPIT_URL`                    | Local development only: shows the local inbox link on sign-in pages |
+
+### Admins
+
+Admins review reports in the admin panel at `/admin`, which is reached from the dashboard. Everyone else gets a 404 there. Admin rights are rows in `private.admins`, which the app cannot write, so they are granted outside it:
+
+```powershell
+npm run admin -- grant you@example.com    # the account must exist
+npm run admin -- revoke you@example.com
+npm run admin -- list
+```
+
+The script works on the local stack only. On a production database, run `select public.set_admin('you@example.com', true);` as the database owner, for example in the SQL editor, or call the same function with the service role. Admins cannot be suspended, so remove the rights first. Real email is not sent for reports or decisions yet: makers see decisions in their dashboard and reporters under Dashboard → Your reports.
 
 ## Verification
 
@@ -90,13 +103,13 @@ npm run test:db
 npm run test:e2e
 ```
 
-The browser test runner reads local CLI credentials and the Mailpit URL directly into its process environment, refuses non-loopback addresses, and starts the app on `http://127.0.0.1:3002` with a separate build directory, so it can run next to `npm run dev`. Do not share local CLI status output: it includes local test keys. Test users and files are removed afterward, and the tests work with or without demo data. Browser tests cover registration and confirmation, login and session persistence, profile/SaaS editing (including links that must point to their own site, and experience that survives a failed save), error-state input retention, images, multiple SaaS, cross-owner denial, password recovery, page titles, themes, responsive layout, and automated WCAG 2.1 AA scans of public, auth and owner pages in both themes. Stripe verification runs against `tests/e2e/fake-stripe.mjs`, a local stand-in for the Stripe and exchange-rate APIs: rejected secret keys, missing permissions, a verified $104 account with twelve months of invoice history, the product chart with its table view and keyboard reading, leaderboard trend and growth, a key without invoice access, encrypted storage, private and public MRR, product and account deletion (a wrong name or password changes nothing, a logo that is also the profile photo is kept, and deleting the account removes the user, every owned row and image, and signs out), messaging between two makers (the unread count and replies arrive live, blocks work both ways, a refused message stays in the field, and Send message continues after sign-in), the privacy page, the refresh rate limit, duplicate-account refusal, disconnection, and the protected sync endpoint.
+The browser test runner reads local CLI credentials and the Mailpit URL directly into its process environment, refuses non-loopback addresses, and starts the app on `http://127.0.0.1:3002` with a separate build directory, so it can run next to `npm run dev`. Do not share local CLI status output: it includes local test keys. Test users and files are removed afterward, and the tests work with or without demo data. Browser tests cover registration and confirmation, login and session persistence, profile/SaaS editing (including links that must point to their own site, and experience that survives a failed save), error-state input retention, images, multiple SaaS, cross-owner denial, password recovery, page titles, themes, responsive layout, and automated WCAG 2.1 AA scans of public, auth and owner pages in both themes. Stripe verification runs against `tests/e2e/fake-stripe.mjs`, a local stand-in for the Stripe and exchange-rate APIs: rejected secret keys, missing permissions, a verified $104 account with twelve months of invoice history, the product chart with its table view and keyboard reading, leaderboard trend and growth, a key without invoice access, encrypted storage, private and public MRR, product and account deletion (a wrong name or password changes nothing, a logo that is also the profile photo is kept, and deleting the account removes the user, every owned row and image, and signs out), messaging between two makers (the unread count and replies arrive live, blocks work both ways, a refused message stays in the field, and Send message continues after sign-in), reports and moderation (Report continues after sign-in, a report without the required explanation keeps its choice, a message is reported from the conversation, the admin panel is a 404 for everyone but admins, hiding a product and suspending an account take effect for visitors, the API, the inbox and the maker, who sees the reason, the reporter sees the outcome, both are reversed, and the log lists every decision), the privacy page and the terms, the refresh rate limit, duplicate-account refusal, disconnection, and the protected sync endpoint.
 
-`supabase/tests/database/access.test.sql` is a pgTAP suite run by `npm run test:db`. It runs in a transaction that is rolled back and checks actual database grants, RLS and storage ownership, that makers can never write verified figures or read stored keys, the service-only verification RPC, duplicate subscription claims, numeric ranking, zero MRR, independent visibility, stale verifications, disconnection and cascading deletes.
+`supabase/tests/database` holds the pgTAP suites run by `npm run test:db`. Each runs in a transaction that is rolled back. `access.test.sql` checks actual database grants, RLS and storage ownership, that makers can never write verified figures or read stored keys, the service-only verification RPC, duplicate subscription claims, numeric ranking, zero MRR, independent visibility, stale verifications, disconnection and cascading deletes. `moderation.test.sql` checks that admin rights come only from `private.admins`, that makers cannot write moderation state or date a product, what can be reported and by whom, that reporters and admins alone read reports, that hidden products and suspended accounts disappear from every public read while their owners and admins still see them, the product limits, and what account deletion removes.
 
 ### Database changes
 
-Add every schema change as a new file in `supabase/migrations` (`npx supabase migration new <name>`), never by editing applied migrations. Apply it locally with `npm run db:reset`, regenerate `src/lib/supabase/database.types.ts` with `npm run db:types`, and extend the pgTAP suite.
+Add every schema change as a new file in `supabase/migrations` (`npx supabase migration new <name>`), never by editing applied migrations. Apply it locally with `npx supabase migration up --local`, which keeps local accounts (`npm run db:reset` rebuilds the database without any data), check that `npx supabase db diff --local` reports no changes, regenerate `src/lib/supabase/database.types.ts` with `npm run db:types`, and extend the pgTAP suites.
 
 ### Production preview
 

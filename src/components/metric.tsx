@@ -6,14 +6,16 @@ export function Metric({
   value,
   empty = "Not shared",
   detail,
+  className,
 }: {
   label: string;
   value: string | null;
   empty?: string;
   detail?: React.ReactNode;
+  className?: string;
 }) {
   return (
-    <div className="px-5 py-4">
+    <div className={cn("px-5 py-4", className)}>
       <dt className="text-sm text-muted-foreground">{label}</dt>
       <dd
         className={cn(

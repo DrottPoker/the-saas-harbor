@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import {
   useActionState,
   useEffect,
@@ -18,6 +19,7 @@ import {
   type ChatMessage,
   type SendState,
 } from "@/lib/messages";
+import { reportPath } from "@/lib/moderation";
 import { browserClient } from "@/lib/supabase/browser";
 import { cn } from "@/lib/utils";
 import { Submit } from "../forms";
@@ -197,7 +199,7 @@ export function Conversation({
                 <li
                   key={message.id}
                   className={cn(
-                    "flex flex-col",
+                    "group flex flex-col",
                     mine ? "items-end" : "items-start",
                     group && index > 0 && "mt-4",
                   )}
@@ -219,6 +221,16 @@ export function Conversation({
                     <span className="sr-only">{mine ? "You" : other.name}: </span>
                     {message.body}
                   </p>
+                  {/* With a mouse the link appears on hover or focus; on touch screens it stays. */}
+                  {!mine && (
+                    <Link
+                      href={reportPath("message", message.id)}
+                      rel="nofollow"
+                      className="px-1.5 py-1 text-xs text-muted-foreground transition-opacity group-focus-within:opacity-100 group-hover:opacity-100 hover:text-foreground hover:underline focus-visible:opacity-100 [@media(hover:hover)]:opacity-0"
+                    >
+                      Report<span className="sr-only"> this message from {other.name}</span>
+                    </Link>
+                  )}
                 </li>
               );
             })}

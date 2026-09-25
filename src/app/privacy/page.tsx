@@ -1,5 +1,11 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import {
+  Contact,
+  LegalList as List,
+  LegalSection as Section,
+  legalLink as link,
+} from "@/components/legal";
 import { Notice, PageHeader, Shell } from "@/components/shell";
 import { operator, privacyUpdated } from "@/lib/legal";
 
@@ -8,39 +14,8 @@ export const metadata: Metadata = {
   description: "What The SaaS Harbor stores about you, why, who can see it, and how to delete it.",
 };
 
-function Section({
-  id,
-  title,
-  children,
-}: {
-  id: string;
-  title: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <section id={id} aria-labelledby={`${id}-title`} className="scroll-mt-24">
-      <h2 id={`${id}-title`} className="text-lg font-semibold">
-        {title}
-      </h2>
-      <div className="mt-3 grid gap-3 leading-7 text-foreground/85">{children}</div>
-    </section>
-  );
-}
-
-function List({ children }: { children: React.ReactNode }) {
-  return <ul className="grid list-disc gap-2 pl-5 marker:text-faint-foreground">{children}</ul>;
-}
-
-const link = "font-medium text-foreground underline underline-offset-2";
-
 export default function Privacy() {
-  const contact = operator ? (
-    <a className={link} href={`mailto:${operator.email}`}>
-      {operator.email}
-    </a>
-  ) : (
-    "the contact address above, once it is published"
-  );
+  const contact = <Contact />;
   return (
     <Shell size="narrow">
       <PageHeader
@@ -100,6 +75,13 @@ export default function Privacy() {
               send and receive, how far you have read each conversation, and the makers you block.
             </li>
             <li>
+              <strong className="font-medium text-foreground">Reports and moderation.</strong> When
+              you report something: the reason, your explanation and a copy of what you reported,
+              which for a message is its text and time. When an admin decides about your product or
+              account: the decision, its reason and explanation, when it was made and by which
+              admin.
+            </li>
+            <li>
               <strong className="font-medium text-foreground">Preferences.</strong> Whether you
               chose the light or dark theme, in a cookie on your device.
             </li>
@@ -140,7 +122,13 @@ export default function Privacy() {
             </li>
             <li>
               To keep the service secure and fair, through the sign-in records, the subscription
-              hashes described above, and limits on how many messages an account can send (our
+              hashes described above, and limits on how many messages and products an account can
+              add (our legitimate interests, Article 6(1)(f)).
+            </li>
+            <li>
+              To handle reports and moderate the site. The EU Digital Services Act requires us to
+              act on reports of illegal content and to explain our decisions (a legal obligation,
+              Article 6(1)(c)). Other reports and decisions keep the site safe for its users (our
               legitimate interests, Article 6(1)(f)).
             </li>
           </List>
@@ -156,16 +144,23 @@ export default function Privacy() {
               launch date each have their own setting.
             </li>
             <li>
-              <strong className="font-medium text-foreground">Only you:</strong> your email address,
-              your Stripe connection status, your verification history and any figures you keep
-              private. Stored Stripe keys are never shown, not even to you.
+              <strong className="font-medium text-foreground">Only you:</strong> your Stripe
+              connection status, your verification history and any figures you keep private. Stored
+              Stripe keys are never shown, not even to you.
             </li>
             <li>
               <strong className="font-medium text-foreground">The two of you:</strong> a
               conversation and its messages are visible only to the two makers in it. A block is
               visible only to the maker who made it. Messages are not end-to-end encrypted, so
-              people who run the site could technically access them; we only do so when the law
-              requires it or to investigate abuse.
+              people who run the site&apos;s systems could technically access them; we only do so
+              when the law requires it.
+            </li>
+            <li>
+              <strong className="font-medium text-foreground">Admins:</strong> the people the
+              operator appoints to review reports. They see your email address, when you joined and
+              last signed in, reports about you or by you, and the decisions about your account. An
+              admin sees a private message only when one of the two makers reports it, and then only
+              a copy of that message. A maker who is reported never learns who reported them.
             </li>
             <li>
               <strong className="font-medium text-foreground">Service providers:</strong> our
@@ -199,6 +194,11 @@ export default function Privacy() {
             backups expire.
           </p>
           <p>
+            A report is deleted when either the maker who sent it or the maker it is about deletes
+            their account. Deleting a reported product or message keeps the report and its copy, so
+            admins can still review it. Admin decisions are deleted with the account they concern.
+          </p>
+          <p>
             Information that was public may already have been copied by others, such as search
             engines, before it was deleted.
           </p>
@@ -206,8 +206,12 @@ export default function Privacy() {
 
         <Section id="rights" title="Your rights">
           <p>
-            You can see and change your profile and products at any time in your dashboard, delete a
-            product at the bottom of its editor, and delete your account yourself under{" "}
+            You can see and change your profile and products at any time in your dashboard, follow
+            the reports you sent under{" "}
+            <Link className={link} href="/dashboard/reports">
+              Your reports
+            </Link>
+            , delete a product at the bottom of its editor, and delete your account yourself under{" "}
             <Link className={link} href="/dashboard/profile#delete-account">
               Maker profile → Delete account
             </Link>
