@@ -22,6 +22,7 @@ import { formatUsd } from "@/lib/domain";
 import { excerpt } from "@/lib/moderation";
 import { pageMetadata, SITE_NAME } from "@/lib/seo";
 import { currentUser } from "@/lib/supabase/server";
+import { firstValues } from "@/lib/params";
 
 type Props = { params: Promise<{ slug: string }>; searchParams: Promise<{ page?: string }> };
 
@@ -50,7 +51,7 @@ export default async function Maker({ params, searchParams }: Props) {
   if ("redirect" in found) permanentRedirect(found.redirect);
   const profile = found.item;
   const id = profile.id;
-  const page = safePage((await searchParams).page);
+  const page = safePage(firstValues(await searchParams).page);
   const [experience, totals, result, viewer] = await Promise.all([
     publicProfileExperience(id),
     makerTotals(id),

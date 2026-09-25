@@ -357,7 +357,10 @@ export function SaasForm({
             />
           </Field>
           <Field name="category" label="Category">
+            {/* React resets the form after the action but not a select's default, so the select
+                is mounted again with the value that was sent. */}
             <select
+              key={state.values?.category ?? saas?.category ?? "Productivity"}
               id="category"
               name="category"
               defaultValue={state.values?.category ?? saas?.category ?? "Productivity"}

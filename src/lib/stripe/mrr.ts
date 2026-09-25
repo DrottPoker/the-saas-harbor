@@ -3,6 +3,8 @@
 // after forever and repeating discounts, before tax. Trials, paused collection, metered usage
 // and one-time discounts are excluded.
 
+import { VerificationError } from "./errors";
+
 export type StripeTier = {
   up_to: number | null;
   unit_amount: number | null;
@@ -25,6 +27,11 @@ export type StripePrice = {
     usage_type: "licensed" | "metered";
   } | null;
   transform_quantity: { divide_by: number; round: "up" | "down" } | null;
+  /** Amounts in other currencies, present when the price is read with them expanded. */
+  currency_options?: Record<
+    string,
+    { unit_amount: number | null; unit_amount_decimal: string | null; tiers?: StripeTier[] | null }
+  >;
 };
 
 export type StripeCoupon = {
@@ -60,6 +67,9 @@ export type StripeSubscription = {
 };
 
 export const COUNTED_STATUSES = ["active", "past_due"] as const;
+
+/** Days in an average month, for daily and weekly prices here and in the history alike. */
+export const AVERAGE_MONTH_DAYS = 365.25 / 12;
 
 // Minor units per major unit, per Stripe's currency list.
 const ZERO_DECIMAL = new Set(
@@ -108,7 +118,12 @@ export function intervalAmount(price: StripePrice, quantity: number) {
 
 // Converts one billing interval to one month.
 export function monthlyFactor(recurring: NonNullable<StripePrice["recurring"]>) {
-  const perInterval = { day: 365 / 12, week: 52 / 12, month: 1, year: 1 / 12 }[recurring.interval];
+  const perInterval = {
+    day: AVERAGE_MONTH_DAYS,
+    week: AVERAGE_MONTH_DAYS / 7,
+    month: 1,
+    year: 1 / 12,
+  }[recurring.interval];
   return perInterval / recurring.interval_count;
 }
 
@@ -202,7 +217,7 @@ export function toUsdCents(byCurrency: Record<string, number>, rates: ReadonlyMa
   let usd = 0;
   for (const [currency, minor] of Object.entries(byCurrency)) {
     const rate = currency === "usd" ? 1 : rates.get(currency);
-    if (!rate) throw new Error(`No exchange rate for ${currency.toUpperCase()}.`);
+    if (!rate) throw new VerificationError(`No exchange rate for ${currency.toUpperCase()}.`);
     usd += minor / minorUnitsPerMajor(currency) / rate;
   }
   return Math.round(usd * 100);

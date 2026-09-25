@@ -1,15 +1,15 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { unstable_rethrow } from "next/navigation";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { formatUsd, type ActionState } from "@/lib/domain";
+import { makerMessage, VerificationError } from "@/lib/stripe/errors";
 import { parseRestrictedKey } from "@/lib/stripe/key";
 import { connectStripe, disconnectStripe, syncStripeConnection } from "@/lib/stripe/sync";
 import type { Verification } from "@/lib/stripe/sync";
 import { requireUser } from "@/lib/supabase/server";
 import type { Database } from "@/lib/supabase/types";
-
-const REFRESH_INTERVAL_MS = 5 * 60 * 1000;
 
 // The SaaS id is bound on the client, so ownership is checked on every call.
 async function requireOwnedSaas(saasId: string) {
@@ -20,8 +20,16 @@ async function requireOwnedSaas(saasId: string) {
     .eq("id", saasId)
     .eq("owner_id", user.id)
     .maybeSingle();
-  if (!data) throw new Error("You can only manage Stripe for your own SaaS.");
+  if (!data) throw new VerificationError("You can only manage Stripe for your own SaaS.");
   return client as SupabaseClient<Database>;
+}
+
+// Every check, successful or not, counts against the limits in begin_stripe_check: a refresh at
+// most every five minutes per product, and 20 checks an hour per maker.
+async function beginCheck(client: SupabaseClient<Database>, saasId: string, refresh: boolean) {
+  const { error } = await client.rpc("begin_stripe_check", { p_saas: saasId, p_refresh: refresh });
+  if (error?.code === "P0001") throw new VerificationError(`${error.message}.`);
+  if (error) throw new Error(`The Stripe check could not start: ${error.message}`);
 }
 
 function summary(result: Verification) {
@@ -33,9 +41,11 @@ function summary(result: Verification) {
   return `Verified MRR: ${formatUsd(result.mrrCents)} from ${customers}.${skipped}${history}`;
 }
 
-const failure = (error: unknown): ActionState => ({
-  error: error instanceof Error ? error.message : "Something went wrong. Please try again.",
-});
+// Redirects, such as to sign-in, pass through; failures show only words written for makers.
+function failure(error: unknown): ActionState {
+  unstable_rethrow(error);
+  return { error: makerMessage(error) };
+}
 
 export async function connectStripeAction(
   saasId: string,
@@ -43,10 +53,11 @@ export async function connectStripeAction(
   form: FormData,
 ): Promise<ActionState> {
   try {
-    await requireOwnedSaas(saasId);
+    const client = await requireOwnedSaas(saasId);
     const key = parseRestrictedKey(String(form.get("stripe_key") ?? ""), {
       allowTest: process.env.STRIPE_ALLOW_TEST_KEYS === "true",
     });
+    await beginCheck(client, saasId, false);
     const result = await connectStripe(saasId, key);
     revalidatePath("/", "layout");
     return { success: `Stripe connected. ${summary(result)}` };
@@ -58,14 +69,7 @@ export async function connectStripeAction(
 export async function refreshStripeAction(saasId: string): Promise<ActionState> {
   try {
     const client = await requireOwnedSaas(saasId);
-    const { data } = await client
-      .from("stripe_connections")
-      .select("last_synced_at")
-      .eq("saas_id", saasId)
-      .maybeSingle();
-    const last = data?.last_synced_at ? Date.parse(data.last_synced_at) : 0;
-    if (Date.now() - last < REFRESH_INTERVAL_MS)
-      return { error: "Revenue was verified in the last few minutes. Try again later." };
+    await beginCheck(client, saasId, true);
     const result = await syncStripeConnection(saasId);
     revalidatePath("/", "layout");
     return { success: summary(result) };

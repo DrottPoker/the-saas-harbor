@@ -72,6 +72,15 @@ describe("profile boundaries", () => {
   };
   it("rejects invalid calendar dates", () =>
     expect(saasSchema.safeParse({ ...product, launched_on: "2026-02-30" }).success).toBe(false));
+  it("takes launch dates from 1970 until today, wherever today is", () => {
+    const launched = (launched_on: string) =>
+      saasSchema.safeParse({ ...product, launched_on }).success;
+    expect(launched("0000-01-01")).toBe(false);
+    expect(launched("1969-12-31")).toBe(false);
+    expect(launched("1970-01-01")).toBe(true);
+    expect(launched(new Date(Date.now() + 3 * 86_400_000).toISOString().slice(0, 10))).toBe(false);
+    expect(launched(new Date().toISOString().slice(0, 10))).toBe(true);
+  });
   it("never accepts revenue from the form", () => {
     const parsed = saasSchema.parse({ ...product, mrr: "99999", mrr_cents: 1, customers: "5" });
     expect(parsed).not.toHaveProperty("mrr");

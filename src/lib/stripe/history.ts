@@ -1,7 +1,7 @@
 // MRR history from paid Stripe invoices, the way revenue analytics tools reconstruct it: each
 // paid subscription line contributes its monthly-normalized amount to every instant inside its
 // service period. Pure functions: no I/O, fully testable.
-import type { StripePrice } from "./mrr";
+import { AVERAGE_MONTH_DAYS, type StripePrice } from "./mrr";
 
 export type StripeInvoiceLine = {
   id: string;
@@ -26,7 +26,6 @@ export type StripeInvoice = {
 export type ServiceLine = { start: number; end: number; currency: string; monthly: number };
 
 const DAY = 86_400;
-const AVERAGE_MONTH_DAYS = 365.25 / 12;
 
 export function linePriceId(line: StripeInvoiceLine) {
   const price = line.pricing?.price_details?.price;
@@ -42,6 +41,21 @@ function intervalMonths(recurring: NonNullable<StripePrice["recurring"]>) {
     month: count,
     year: count * 12,
   }[recurring.interval];
+}
+
+// The start of the billing period that ends at `end`: one interval of the price earlier, with the
+// day of the month capped at the month's last day, as Stripe bills a subscription begun on the 31st.
+function periodStart(end: number, recurring: NonNullable<StripePrice["recurring"]>) {
+  const count = recurring.interval_count;
+  if (recurring.interval === "day") return end - count * DAY;
+  if (recurring.interval === "week") return end - count * 7 * DAY;
+  const date = new Date(end * 1000);
+  const year = date.getUTCFullYear();
+  const month = date.getUTCMonth() - (recurring.interval === "month" ? count : count * 12);
+  const lastDay = new Date(Date.UTC(year, month + 1, 0)).getUTCDate();
+  const day = Math.min(date.getUTCDate(), lastDay);
+  const time = end * 1000 - Date.UTC(year, date.getUTCMonth(), date.getUTCDate());
+  return (Date.UTC(year, month, day) + time) / 1000;
 }
 
 /**
@@ -71,10 +85,14 @@ export function serviceLine(
     .reduce((sum, tax) => sum + tax.amount, 0);
   const net = line.amount - discounts - includedTax;
 
-  // Prorations are already pro rata by day; full periods use the price's nominal interval so a
-  // 28-day February does not inflate MRR.
-  const months =
-    proration || !price?.recurring ? days / AVERAGE_MONTH_DAYS : intervalMonths(price.recurring);
+  // A full period counts at the price's interval, so a 28-day February does not inflate MRR. A
+  // proration counts at its share of the billing period it falls in, which ends where it ends.
+  let months = days / AVERAGE_MONTH_DAYS;
+  if (price?.recurring) {
+    const interval = intervalMonths(price.recurring);
+    const periodDays = (line.period.end - periodStart(line.period.end, price.recurring)) / DAY;
+    months = proration ? (days / periodDays) * interval : interval;
+  }
   return {
     start: line.period.start,
     end: line.period.end,

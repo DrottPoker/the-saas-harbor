@@ -68,8 +68,8 @@ describe("monthly normalization", () => {
     [{ interval: "month", interval_count: 1 }, 1],
     [{ interval: "month", interval_count: 3 }, 1 / 3],
     [{ interval: "year", interval_count: 1 }, 1 / 12],
-    [{ interval: "week", interval_count: 2 }, 52 / 12 / 2],
-    [{ interval: "day", interval_count: 1 }, 365 / 12],
+    [{ interval: "week", interval_count: 2 }, 365.25 / 12 / 7 / 2],
+    [{ interval: "day", interval_count: 1 }, 365.25 / 12],
   ] as const)("%o", (recurring, factor) =>
     expect(monthlyFactor({ ...recurring, usage_type: "licensed" })).toBeCloseTo(factor, 10),
   );

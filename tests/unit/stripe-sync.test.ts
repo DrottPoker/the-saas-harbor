@@ -56,4 +56,16 @@ describe("Stripe verification", () => {
     expect(result.mrrInvoiceCents).toBeNull();
     expect(result.historyNote).toMatch(/Invoices: Read/);
   });
+  it("values a multi-currency price in the currency the subscription pays", async () => {
+    const result = await verifyStripeRevenue("rk_test_harborfixture0003");
+    expect(result).toMatchObject({
+      mrrCents: 4500,
+      customers: 1,
+      currencies: { eur: 3600 },
+      history: null,
+    });
+    expect(result.historyNote).toBe(
+      "Revenue history needs the Invoices: Read permission on the restricted key.",
+    );
+  });
 });

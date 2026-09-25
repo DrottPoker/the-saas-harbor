@@ -1,5 +1,6 @@
 import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { imageInfo, MAX_IMAGE_SIDE } from "./image-format";
 import type { Database } from "./supabase/types";
 
 export async function uploadImage(
@@ -10,24 +11,16 @@ export async function uploadImage(
   if (!(file instanceof File) || !file.size) return null;
   if (file.size > 2 * 1024 * 1024) throw new Error("Choose an image smaller than 2 MB.");
   const bytes = new Uint8Array(await file.arrayBuffer());
-  const png = [137, 80, 78, 71, 13, 10, 26, 10].every((n, i) => bytes[i] === n);
-  const jpeg = bytes[0] === 255 && bytes[1] === 216 && bytes[2] === 255;
-  const webp =
-    String.fromCharCode(...bytes.slice(0, 4)) === "RIFF" &&
-    String.fromCharCode(...bytes.slice(8, 12)) === "WEBP";
-  const format = png
-    ? ["png", "image/png"]
-    : jpeg
-      ? ["jpg", "image/jpeg"]
-      : webp
-        ? ["webp", "image/webp"]
-        : null;
-  if (!format || file.type !== format[1])
+  const image = imageInfo(bytes);
+  if (!image || file.type !== image.type)
     throw new Error("Choose a valid PNG, JPEG, or WebP image.");
-  const path = `${owner}/${crypto.randomUUID()}.${format[0]}`;
+  // A small file can still unpack to a huge picture that every visitor's browser would decode.
+  if (!image.width || !image.height || Math.max(image.width, image.height) > MAX_IMAGE_SIDE)
+    throw new Error(`Choose an image up to ${MAX_IMAGE_SIDE} pixels wide and tall.`);
+  const path = `${owner}/${crypto.randomUUID()}.${image.extension}`;
   const { error } = await client.storage
     .from("profile-images")
-    .upload(path, bytes, { contentType: format[1], upsert: false });
+    .upload(path, bytes, { contentType: image.type, upsert: false });
   if (error) throw new Error("The image could not be uploaded. Please try again.");
   return path;
 }

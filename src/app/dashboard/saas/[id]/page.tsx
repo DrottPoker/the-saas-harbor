@@ -9,10 +9,11 @@ import { StripeConnectionSection } from "@/components/stripe-connection";
 import { STRIPE_CONNECTION_COLUMNS, type StripeConnection } from "@/lib/data";
 import { PRODUCT_LIMIT } from "@/lib/moderation";
 import { requireUser } from "@/lib/supabase/server";
+import { firstValues, type SearchParams } from "@/lib/params";
 
 type Props = {
   params: Promise<{ id: string }>;
-  searchParams: Promise<Record<string, string | undefined>>;
+  searchParams: Promise<SearchParams>;
 };
 
 export async function generateMetadata({ params }: Pick<Props, "params">) {
@@ -95,7 +96,7 @@ export default async function EditSaas({ params, searchParams }: Props) {
           saasId={id}
           connection={connection.data as StripeConnection | null}
           snapshot={connection.data ? snapshot.data : null}
-          created={(await searchParams).created === "1"}
+          created={firstValues(await searchParams).created === "1"}
         />
       </div>
       <DeleteProduct saasId={id} name={saas.data.name} connected={!!connection.data} />

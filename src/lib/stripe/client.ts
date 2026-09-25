@@ -1,6 +1,7 @@
 import "server-only";
 import type { StripeCoupon, StripePrice, StripeSubscription, StripeSubscriptionItem } from "./mrr";
 import { COUNTED_STATUSES } from "./mrr";
+import { VerificationError } from "./errors";
 import { linePriceId, type StripeInvoice, type StripeInvoiceLine } from "./history";
 
 // Every request pins the API version, because responses otherwise follow each account's own
@@ -8,17 +9,27 @@ import { linePriceId, type StripeInvoice, type StripeInvoiceLine } from "./histo
 export const STRIPE_API_VERSION = "2026-08-26.dahlia";
 const MAX_PAGES = 200; // 20,000 objects per list
 
-export class StripeRequestError extends Error {
+export class StripeRequestError extends VerificationError {
   constructor(
     message: string,
     readonly status?: number,
+    /** The endpoint that failed, such as /v1/prices/price_123. */
+    readonly path?: string,
+    /** A list had more pages than one run reads. */
+    readonly tooMuchData = false,
   ) {
     super(message);
   }
 }
 
+// An override points at the browser tests' fake server. In production it must use https, so a
+// wrong setting cannot send restricted keys in the clear.
 function baseUrl() {
-  return process.env.STRIPE_API_BASE || "https://api.stripe.com";
+  const base = process.env.STRIPE_API_BASE;
+  if (!base) return "https://api.stripe.com";
+  if (process.env.NODE_ENV === "production" && !base.startsWith("https://"))
+    throw new VerificationError("Stripe verification is not configured correctly on this server.");
+  return base;
 }
 
 async function stripeGet<T>(
@@ -47,6 +58,7 @@ async function stripeGet<T>(
     throw new StripeRequestError(
       `The key is missing a read permission.${detail ? ` Stripe says: ${detail}` : ""}`,
       403,
+      path,
     );
   if (response.status === 429)
     throw new StripeRequestError("Stripe is rate limiting requests. Try again later.", 429);
@@ -70,7 +82,12 @@ async function listAll<T extends { id: string }>(
     if (!list.has_more || list.data.length === 0) return items;
     startingAfter = list.data.at(-1)!.id;
   }
-  throw new StripeRequestError("The Stripe account has too much data to verify in one run.");
+  throw new StripeRequestError(
+    "The Stripe account has too much data to verify in one run.",
+    undefined,
+    path,
+    true,
+  );
 }
 
 export type StripeAccountData = {
@@ -127,6 +144,42 @@ export async function fetchStripeAccountData(key: string): Promise<StripeAccount
       ["expand[]", "tiers"],
     ]);
     for (const price of prices) price.tiers = full.tiers;
+  }
+
+  // A multi-currency price charges a subscription in another currency the amount set for that
+  // currency, not the price's default amount.
+  const localized = new Map<string, StripePrice>();
+  for (const subscription of subscriptions) {
+    const currency = subscription.currency.toLowerCase();
+    for (const item of subscription.items.data) {
+      if (item.price.currency.toLowerCase() === currency) continue;
+      const cached = localized.get(`${item.price.id}:${currency}`);
+      if (cached) {
+        item.price = cached;
+        continue;
+      }
+      const expand: [string, string][] = [["expand[]", "currency_options"]];
+      if (item.price.billing_scheme === "tiered")
+        expand.push(["expand[]", `currency_options.${currency}.tiers`]);
+      const full = await stripeGet<StripePrice>(
+        key,
+        `/v1/prices/${encodeURIComponent(item.price.id)}`,
+        expand,
+      );
+      const option = full.currency_options?.[currency];
+      if (!option)
+        throw new VerificationError(
+          `The price ${item.price.id} has no amount in ${currency.toUpperCase()}.`,
+        );
+      item.price = {
+        ...item.price,
+        currency,
+        unit_amount: option.unit_amount,
+        unit_amount_decimal: option.unit_amount_decimal,
+        tiers: option.tiers ?? undefined,
+      };
+      localized.set(`${item.price.id}:${currency}`, item.price);
+    }
   }
   return { subscriptions, coupons };
 }

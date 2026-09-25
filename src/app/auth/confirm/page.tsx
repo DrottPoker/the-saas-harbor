@@ -3,8 +3,9 @@ import Link from "next/link";
 import { ConfirmLinkForm } from "@/components/forms";
 import { LogoMark } from "@/components/logo";
 import { emailLink } from "@/lib/domain";
+import { firstValues, type SearchParams } from "@/lib/params";
 
-type Props = { searchParams: Promise<Record<string, string | undefined>> };
+type Props = { searchParams: Promise<SearchParams> };
 
 const copy = {
   email: {
@@ -20,7 +21,7 @@ const copy = {
 };
 
 export async function generateMetadata({ searchParams }: Props): Promise<Metadata> {
-  const params = await searchParams;
+  const params = firstValues(await searchParams);
   const link = emailLink(params.token_hash, params.type);
   // The address holds a one-time token, so it is never sent to another page as a referrer.
   return { title: link ? copy[link.type].title : "Link incomplete", referrer: "no-referrer" };
@@ -28,7 +29,7 @@ export async function generateMetadata({ searchParams }: Props): Promise<Metadat
 
 // Email links open here in any browser. The token is only used when the button is pressed.
 export default async function Confirm({ searchParams }: Props) {
-  const params = await searchParams;
+  const params = firstValues(await searchParams);
   const link = emailLink(params.token_hash, params.type);
   const text = link && copy[link.type];
   return (

@@ -83,7 +83,7 @@ export function ProductProfile({
         <span aria-hidden="true" className="mx-2">
           /
         </span>
-        <span className="text-foreground">{name}</span>
+        <span className="text-foreground [overflow-wrap:anywhere]">{name}</span>
       </nav>
 
       <header className="flex flex-col gap-5 sm:flex-row sm:items-start">
@@ -102,7 +102,9 @@ export function ProductProfile({
           ) : (
             title
           )}
-          <p className="mt-1.5 text-lg text-muted-foreground">{item.tagline}</p>
+          <p className="mt-1.5 text-lg text-muted-foreground [overflow-wrap:anywhere]">
+            {item.tagline}
+          </p>
           <p className="mt-3 text-sm text-muted-foreground">
             <Link
               href={`/discover?category=${encodeURIComponent(item.category ?? "")}`}

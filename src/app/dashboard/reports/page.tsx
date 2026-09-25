@@ -15,13 +15,14 @@ import {
   type ReportTarget,
 } from "@/lib/moderation";
 import { requireUser } from "@/lib/supabase/server";
+import { firstValues, type SearchParams } from "@/lib/params";
 
 export const metadata = { title: "Your reports" };
 
 export default async function YourReports({
   searchParams,
 }: {
-  searchParams: Promise<Record<string, string | undefined>>;
+  searchParams: Promise<SearchParams>;
 }) {
   const { user, client } = await requireUser();
   const { data: reports, error } = await client
@@ -40,7 +41,7 @@ export default async function YourReports({
         title="Your reports"
         description="Reports you sent about products, profiles and messages, and what happened to them."
       />
-      {(await searchParams).sent && (
+      {firstValues(await searchParams).sent && (
         <Notice tone="success" className="mb-6">
           Thanks. Your report was sent, and an admin will review it.
         </Notice>

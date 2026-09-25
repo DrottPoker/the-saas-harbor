@@ -18,12 +18,20 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   ];
   const client = publicClient();
   if (!client) return pages;
-  const { data, error } = await client
-    .from("public_saas")
-    .select("slug, owner_slug, updated_at")
-    .order("created_at")
-    .limit(50000);
-  if (error) throw new Error("The sitemap could not be built.");
+  // The API returns at most 1,000 rows per request, so products are read a page at a time, up to
+  // the 50,000 addresses one sitemap may hold.
+  const data: { slug: string | null; owner_slug: string | null; updated_at: string | null }[] = [];
+  for (let start = 0; start < 50_000; start += 1000) {
+    const { data: page, error } = await client
+      .from("public_saas")
+      .select("slug, owner_slug, updated_at")
+      .order("created_at")
+      .order("id")
+      .range(start, start + 999);
+    if (error) throw new Error("The sitemap could not be built.");
+    data.push(...page);
+    if (page.length < 1000) break;
+  }
   // A maker page is listed once, dated by their latest product change.
   const makers = new Map<string, string>();
   for (const row of data) {

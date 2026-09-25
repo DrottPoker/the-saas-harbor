@@ -31,6 +31,9 @@ describe("stored history", () => {
 describe("axis scale", () => {
   it("rounds up to clean steps from zero", () => {
     expect(niceScale(2900)).toEqual({ max: 3000, ticks: [0, 1000, 2000, 3000] });
+    // Whole dollars only, never $2.50 steps.
+    expect(niceScale(999).ticks).toEqual([0, 200, 400, 600, 800, 1000]);
+    expect(niceScale(1250).ticks).toEqual([0, 500, 1000, 1500]);
     expect(niceScale(104_000).ticks).toEqual([0, 25_000, 50_000, 75_000, 100_000, 125_000]);
     expect(niceScale(100_000)).toEqual({
       max: 100_000,

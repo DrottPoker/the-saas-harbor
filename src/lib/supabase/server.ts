@@ -4,7 +4,7 @@ import { createServerClient } from "@supabase/ssr";
 import { createClient } from "@supabase/supabase-js";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import { supabaseConfig } from "./config";
+import { cookieOptions, supabaseConfig } from "./config";
 import type { Database } from "./types";
 
 export async function serverClient() {
@@ -12,6 +12,7 @@ export async function serverClient() {
   if (!config) throw new Error("Supabase is not configured. See .env.example.");
   const cookieStore = await cookies();
   return createServerClient<Database>(config.url, config.key, {
+    cookieOptions,
     cookies: {
       getAll: () => cookieStore.getAll(),
       setAll(values) {

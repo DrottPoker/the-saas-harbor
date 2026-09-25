@@ -27,7 +27,7 @@ import { LocalTime } from "../local-time";
 import { Notice } from "../shell";
 import { Button } from "../ui/button";
 import { Textarea } from "../ui/textarea";
-import { notifyUnreadChange, onMessage, type MessageEvent } from "./live";
+import { notifyUnreadChange, onMessage, onReconnect, type MessageEvent } from "./live";
 
 type Scroll = "bottom" | { fromBottom: number } | null;
 
@@ -86,18 +86,27 @@ export function Conversation({
     notifyUnreadChange();
   });
 
-  // Messages that arrived while the tab was hidden or the connection was down.
+  // Messages that arrived while the tab was hidden or the connection was down: everything after
+  // the newest one on screen, page by page, so a long absence leaves no gap.
   const catchUp = useEffectEvent(async () => {
     const client = browserClient();
     if (!conversationId || !client) return;
-    const { data } = await client
-      .from("messages")
-      .select(MESSAGE_COLUMNS)
-      .eq("conversation_id", conversationId)
-      .order("created_at", { ascending: false })
-      .order("id", { ascending: false })
-      .limit(MESSAGE_PAGE_SIZE);
-    if (data) add(data);
+    let after = messages.at(-1)?.created_at;
+    for (let page = 0; page < 20; page++) {
+      let query = client
+        .from("messages")
+        .select(MESSAGE_COLUMNS)
+        .eq("conversation_id", conversationId)
+        .order("created_at", { ascending: !!after })
+        .order("id", { ascending: !!after })
+        .limit(MESSAGE_PAGE_SIZE);
+      if (after) query = query.gte("created_at", after);
+      const { data } = await query;
+      if (!data?.length) return;
+      add(data);
+      if (!after || data.length < MESSAGE_PAGE_SIZE) return;
+      after = data.at(-1)!.created_at;
+    }
   });
 
   const receive = useEffectEvent(async (event: MessageEvent) => {
@@ -127,6 +136,14 @@ export function Conversation({
   }, []);
 
   useEffect(() => onMessage(userId, (event) => void receive(event)), [userId]);
+  useEffect(
+    () =>
+      onReconnect(() => {
+        void catchUp();
+        void markRead();
+      }),
+    [],
+  );
 
   async function loadEarlier() {
     const client = browserClient();

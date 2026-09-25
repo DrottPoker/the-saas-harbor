@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { DETAILS_MAX_LENGTH, DETAILS_REQUIRED, NOTE_MAX_LENGTH, REASONS } from "./moderation";
-import { currentMonth } from "./profile";
+import { latestDate, latestMonth } from "./profile";
 
 export const categories = [
   "AI & Machine Learning",
@@ -99,12 +99,9 @@ export const roleSchema = z
     description: z.string().trim().max(1000, "Keep descriptions under 1,000 characters."),
   })
   .refine((role) => role.start >= "1900-01", "Choose a start year after 1900.")
-  .refine((role) => role.start <= currentMonth(), "A start date cannot be in the future.")
+  .refine((role) => role.start <= latestMonth(), "A start date cannot be in the future.")
   .refine((role) => !role.end || role.end >= role.start, "A role cannot end before it starts.")
-  .refine(
-    (role) => !role.end || role.end <= currentMonth(),
-    "An end date cannot be in the future.",
-  );
+  .refine((role) => !role.end || role.end <= latestMonth(), "An end date cannot be in the future.");
 export const profileSchema = z.object({
   name: z
     .string()
@@ -149,6 +146,10 @@ export const saasSchema = z.object({
           !Number.isNaN(Date.parse(v)) &&
           new Date(v).toISOString().slice(0, 10) === v),
       "Enter a valid date.",
+    )
+    .refine(
+      (v) => !v || (v >= "1970-01-01" && v <= latestDate()),
+      "Enter a launch date between 1970 and today.",
     ),
   share_mrr: z.boolean(),
   share_customers: z.boolean(),

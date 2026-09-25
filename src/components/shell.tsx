@@ -37,7 +37,9 @@ export function PageHeader({
       )}
     >
       <div className="max-w-2xl">
-        <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">{title}</h1>
+        <h1 className="text-3xl font-semibold tracking-tight [overflow-wrap:anywhere] sm:text-4xl">
+          {title}
+        </h1>
         {description && (
           <p className="mt-2.5 text-base text-muted-foreground sm:text-lg">{description}</p>
         )}

@@ -9,3 +9,9 @@ export function supabaseConfig() {
   }
   return { url, key };
 }
+
+// Session cookies travel only over https where the site is served over https, so a visit over
+// plain http before the https redirect cannot expose them.
+export const cookieOptions = {
+  secure: (process.env.NEXT_PUBLIC_SITE_URL ?? "").startsWith("https://"),
+};

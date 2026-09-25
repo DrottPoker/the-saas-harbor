@@ -7,6 +7,7 @@ import {
   parseSkills,
   rolePeriod,
   sortRoles,
+  latestMonth,
 } from "../../src/lib/profile";
 
 const now = new Date(Date.UTC(2026, 8, 24));
@@ -96,5 +97,12 @@ describe("profile input", () => {
     expect(roleSchema.safeParse({ ...role, start: "2999-01" }).success).toBe(false);
     expect(roleSchema.safeParse({ ...role, start: "2022-13" }).success).toBe(false);
     expect(roleSchema.safeParse({ ...role, title: " " }).success).toBe(false);
+  });
+});
+
+describe("the latest month", () => {
+  it("is already next month east of UTC late on the last day", () => {
+    expect(latestMonth(new Date("2026-09-30T12:00:00Z"))).toBe("2026-10");
+    expect(latestMonth(new Date("2026-09-30T09:00:00Z"))).toBe("2026-09");
   });
 });

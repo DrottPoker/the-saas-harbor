@@ -1,5 +1,6 @@
 import "server-only";
 import { createCipheriv, createDecipheriv, randomBytes } from "node:crypto";
+import { VerificationError } from "./errors";
 
 // AES-256-GCM with the SaaS id as associated data, so a ciphertext only decrypts for the product
 // it was stored for. Format: v1:<iv>:<ciphertext>:<tag>, base64url. The version prefix leaves
@@ -25,7 +26,7 @@ export function encryptStripeKey(plaintext: string, saasId: string, secret?: str
 export function decryptStripeKey(stored: string, saasId: string, secret?: string) {
   const [version, iv, encrypted, tag] = stored.split(":");
   if (version !== VERSION || !iv || !encrypted || !tag)
-    throw new Error("The stored Stripe key is not readable. Reconnect Stripe.");
+    throw new VerificationError("The stored Stripe key is not readable. Reconnect Stripe.");
   const decipher = createDecipheriv(
     "aes-256-gcm",
     encryptionKey(secret),
@@ -39,6 +40,6 @@ export function decryptStripeKey(stored: string, saasId: string, secret?: string
       decipher.final(),
     ]).toString("utf8");
   } catch {
-    throw new Error("The stored Stripe key is not readable. Reconnect Stripe.");
+    throw new VerificationError("The stored Stripe key is not readable. Reconnect Stripe.");
   }
 }

@@ -3,7 +3,8 @@ import { ReportList } from "@/components/admin/rows";
 import { ResultsFooter } from "@/components/listings";
 import { EmptyState, PageHeader } from "@/components/shell";
 import { ADMIN_PAGE_SIZE, profileNames, requireAdmin } from "@/lib/admin";
-import { safePage } from "@/lib/data";
+import { PAST_LAST_PAGE, safePage } from "@/lib/data";
+import { firstValues, type SearchParams } from "@/lib/params";
 
 export const metadata = { title: "Reports" };
 
@@ -17,10 +18,10 @@ type Filter = (typeof filters)[number][0];
 export default async function AdminReports({
   searchParams,
 }: {
-  searchParams: Promise<Record<string, string | undefined>>;
+  searchParams: Promise<SearchParams>;
 }) {
   const { client } = await requireAdmin();
-  const params = await searchParams;
+  const params = firstValues(await searchParams);
   const status: Filter =
     params.status === "closed" || params.status === "all" ? params.status : "open";
   const page = safePage(params.page);
@@ -42,8 +43,9 @@ export default async function AdminReports({
         ? query.neq("status", "open").order("resolved_at", { ascending: false }).order("id")
         : query.order("created_at", { ascending: false }).order("id");
   const start = (page - 1) * ADMIN_PAGE_SIZE;
-  const { data: reports, count, error } = await query.range(start, start + ADMIN_PAGE_SIZE - 1);
-  if (error) throw new Error("Reports could not be loaded.");
+  const { data: reportRows, count, error } = await query.range(start, start + ADMIN_PAGE_SIZE - 1);
+  if (error && error.code !== PAST_LAST_PAGE) throw new Error("Reports could not be loaded.");
+  const reports = reportRows ?? [];
   const names = await profileNames(
     client,
     reports.map((report) => report.subject_id),

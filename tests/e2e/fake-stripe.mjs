@@ -5,7 +5,8 @@
 // plan for the last five months, and the EUR plan from this month: invoice MRR is $104 now and $54
 // thirty days ago, so growth is +92.6%. A metered line and a one-off setup fee are not counted.
 // Account "two" shares a subscription with "one", so connecting both must be refused. Its key has
-// no invoice permission, so it verifies MRR without history.
+// no invoice permission, so it verifies MRR without history. Account "three" charges EUR 36 on a
+// multi-currency price whose default is USD 50, so MRR is $45; its key cannot read invoices.
 import { createServer } from "node:http";
 
 const PORT = Number(process.env.FAKE_STRIPE_PORT || 3011);
@@ -71,6 +72,12 @@ const accounts = {
     ],
     past_due: [],
   },
+  rk_test_harborfixture0003: {
+    active: [
+      subscription("sub_fixture_5", "cus_5", "active", "eur", [price("price_multi", "usd", 5000)]),
+    ],
+    past_due: [],
+  },
 };
 const prices = Object.fromEntries(
   [
@@ -79,8 +86,13 @@ const prices = Object.fromEntries(
     price("price_eur", "eur", 4000),
     price("price_metered", "usd", 5, "month", "metered"),
     { ...price("price_setup", "usd", 5000), recurring: null },
+    price("price_multi", "usd", 5000),
   ].map((p) => [p.id, p]),
 );
+// Amounts in other currencies, returned only when a request expands them.
+const currencyOptions = {
+  price_multi: { eur: { unit_amount: 3600, unit_amount_decimal: "3600" } },
+};
 
 // Invoices are placed relative to the current time, as Stripe would have created them.
 const DAY = 86_400;
@@ -214,6 +226,15 @@ createServer((request, response) => {
     if (!expand.includes("data.discounts"))
       return send(response, 400, stripeError("Discounts must be expanded."));
     return send(response, 200, { object: "list", has_more: false, data: account[status] ?? [] });
+  }
+  if (url.pathname.startsWith("/v1/prices/") && key === "rk_test_harborfixture0003") {
+    const priceId = url.pathname.slice("/v1/prices/".length);
+    const expanded = url.searchParams.getAll("expand[]").includes("currency_options");
+    if (!prices[priceId]) return send(response, 404, stripeError(`Unknown path ${url.pathname}`));
+    return send(response, 200, {
+      ...prices[priceId],
+      ...(expanded ? { currency_options: currencyOptions[priceId] ?? {} } : {}),
+    });
   }
   if (url.pathname.startsWith("/v1/invoices") || url.pathname.startsWith("/v1/prices/")) {
     if (key !== "rk_test_harborfixture0001")

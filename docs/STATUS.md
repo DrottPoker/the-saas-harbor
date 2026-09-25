@@ -1,12 +1,63 @@
 # Implementation status
 
-Updated 2026-09-25 with demo products, email notifications, readable addresses and sharing cards, a Content Security Policy, email links that work on any device, and reports with an admin panel. The project was reviewed and handed over 2026-09-24; the first release was built 2026-09-12 and committed on the `development` branch.
+Updated 2026-09-25 with a review before release, demo products, email notifications, readable addresses and sharing cards, a Content Security Policy, email links that work on any device, and reports with an admin panel. The project was reviewed and handed over 2026-09-24; the first release was built 2026-09-12 and committed on the `development` branch.
 
 ## Implemented
 
 The first release includes accounts, email confirmation and recovery, public maker profiles, multiple editable SaaS per owner, profile/logo uploads, SaaS and maker pages, category/name filtering, newest arrivals, and a USD MRR leaderboard. Each optional metric has a sharing control. Private verification history and the current public projection are separate and protected by RLS. No demo data is displayed as real activity.
 
 Makers can message each other privately (see Messages below), and report products, profiles and messages to the admins, who decide in an admin panel (see Reports and moderation below). They get emails about unread messages and about decisions (see Email notifications below). Other forms of connection, such as following or contact lists, are not implemented.
+
+## Release review 2026-09-25
+
+The project owner asked for an inspection before release: security, bugs, and whether everything works. Three reviews (the database, the application's security, and functional bugs) were checked against the code and the local database. A production build was inspected in the browser, its headers checked, and the dependencies and the whole git history searched for known flaws and committed secrets. Every confirmed defect below was fixed with a test.
+
+- **Critical, dependency:** Next.js 16.3.5 had a remote code execution flaw in `next/og` ImageResponse (CVE-2026-94545), which the sharing cards use with text makers write. `npm audit` did not report it yet. Next.js is now 16.3.6.
+- **Database** (migration `20260925190000_release_hardening.sql`):
+  - Renaming a product could reserve any number of slugs. A slug in use now wins over a redirect, and a product keeps five earlier slugs.
+  - Deleting and adding a product reset the daily limit. Additions are now counted in their own log.
+  - Parallel requests could exceed the message and report limits. They now count one at a time.
+  - An image path could climb into another folder with `..`.
+  - `send_message` told a suspended recipient apart from a deleted one.
+  - New objects in `public` were open to the API roles by default, and the public views held write privileges. Both are closed, and a new test lists every privilege.
+  - Account deletion left the maker's id in other makers' queued emails and live-update events.
+- **Application:**
+  - Stripe checks were not limited, and failed checks never were. Now a product refreshes at most every five minutes, and a maker starts at most 20 checks an hour.
+  - Database and internal error messages reached makers.
+  - Session cookies lacked `Secure`, and any signed-in session could set a new password. Cookies are `Secure` over https, a new password needs a fresh reset link, and other sessions end.
+  - Images could unpack to huge sizes. They are now limited to 4096 pixels per side.
+  - The proxy's redirects from ids could be cached forever.
+  - The CSP blocked the script on the global error page.
+  - Stripe and exchange-rate overrides could use http in production.
+- **Bugs:**
+  - A message email never came after the recipient had read the previous message without replying.
+  - Accounts with more than 20,000 invoices failed verification entirely. History is now skipped with a note, and the note names the permission that is missing.
+  - Multi-currency prices were valued in the price's default currency.
+  - A repeated search parameter crashed the list pages, and a page past the last showed an error.
+  - The category reset after a failed save.
+  - Prorations were spread over an average month instead of their billing period.
+  - Weekly prices differed between the MRR and the history.
+  - The chart could show $2.50 steps.
+  - A long disconnection could leave gaps in an open conversation, and a reconnect did not catch up.
+  - Long names without spaces overflowed on phones.
+  - Launch dates accepted year 0 and the future.
+  - Roles "this month" were refused east of UTC.
+  - The sitemap and the daily Stripe sync stopped at 1,000 rows.
+  - Browse was titled "Discover".
+
+For the owner to decide before launch:
+
+1. **Faked revenue.** A maker can create subscriptions in their own live Stripe account that are never paid. Sent but unpaid invoices keep a subscription active, and invoices marked paid outside Stripe count as paid, so they show as verified MRR. Counting only subscriptions whose latest invoice was paid by an actual payment would close this. It changes the MRR definition, since past-due and unpaid invoiced subscriptions would no longer count.
+2. **Sign-in abuse.** Sign-in, sign-up and password reset run on the server, so Supabase Auth sees the server's address. Its limits per address then apply to all users together or not at all, depending on the host. A CAPTCHA on these forms (for example Cloudflare Turnstile or hCaptcha) is the usual fix. It needs an account with the provider and a line in the CSP.
+3. **Production Auth settings** (known issue 4). Allow at least 60 seconds between emails to one address (`max_frequency`; it is 1 second locally for the tests), turn `secure_password_change` on, and set email rate limits for the SMTP provider.
+
+Accepted and documented:
+
+- A maker may delete a hidden product and add it again. The right to delete comes first, and the daily limit, reports and suspension still apply.
+- Makers can upload files straight to their own storage folder through the Storage API, which checks only the type and size.
+- Missing pages answer with status 200 and `noindex`, because pages stream under `loading.tsx`.
+- A maker's name appears in message email subjects.
+- A confirmation link that an attacker sends can sign the reader into the attacker's account.
 
 ## Demo products 2026-09-25
 
@@ -94,10 +145,10 @@ The browser tests no longer assume an empty database, check for horizontal scrol
 
 ## Verified 2026-09-25
 
-- `npm run check`: Prettier, ESLint with zero warnings, TypeScript, 133 unit tests: Stripe MRR, invoice history, keys and encryption, chart models, message threads, profile dates and input, sign-in continuation, report and decision input, the Content Security Policy, the notification emails, the demo products and how they fill a list, and the full Stripe read path against the fake Stripe server.
-- `npm run build`: Next.js 16.3.5 production build.
-- `npm run test:db`: 261 pgTAP assertions in four suites (`access` 113, `moderation` 92, `slugs` 25, `notifications` 31). Two deliberately weakened policies (product visibility and report visibility) were each caught by the moderation suite before being restored, and the notifications suite failed on a version that counted one unread message in two emails. `supabase db diff` reports no drift between the local database and the migrations, and `supabase db lint` reports no errors.
-- `npm run test:e2e`: 10 Chromium integration tests with Axe scans in both themes (including the revenue charts, the privacy policy and the terms, the delete sections, messaging, personal profiles, the report pages, every admin page, the notices makers see, the email settings and the demo products and their pages), against local Supabase, local Realtime, Mailpit and a fake Stripe API, passing three times in a row. One run before that failed once in the registration test, where the test server answered Page not found for the new product form; it passed in the four runs after, once alone and three times in the full suite. Failed tests now keep a Playwright trace (see known issue 17).
+- `npm run check`: Prettier, ESLint with zero warnings, TypeScript, 142 unit tests: Stripe MRR, invoice history and prorations, keys and encryption, chart models, message threads, profile dates and input, sign-in continuation, report and decision input, the Content Security Policy, the notification emails, the demo products and how they fill a list, image formats and sizes, and the full Stripe read path against the fake Stripe server, multi-currency prices included.
+- `npm run build`: Next.js 16.3.6 production build. The production build was also run locally and checked in the browser: security headers, robots, the sitemap, the sharing card, every public page without console errors, and responses under 0.1 seconds.
+- `npm run test:db`: 285 pgTAP assertions in six suites (`access` 113, `moderation` 94, `slugs` 27, `notifications` 32, `hardening` 13, `privileges` 6). Two deliberately weakened policies (product visibility and report visibility) were each caught by the moderation suite before being restored. The notifications suite failed on a version that counted one unread message in two emails, and on the version that sent no email after a read without a reply. `supabase db diff` reports no drift between the local database and the migrations, and `supabase db lint` reports no errors.
+- `npm run test:e2e`: 10 Chromium integration tests with Axe scans in both themes (including the revenue charts, the privacy policy and the terms, the delete sections, messaging, personal profiles, the report pages, every admin page, the notices makers see, the email settings and the demo products and their pages), against local Supabase, local Realtime, Mailpit and a fake Stripe API, passing twice in a row after the release review. Before the review, one run failed once in the registration test, where the test server answered Page not found for the new product form; it did not repeat in any run since. Failed tests now keep a Playwright trace (see known issue 17).
 - The admin and report pages were checked at 390 px and 1440 px in both themes, and with touch emulation for the message Report link.
 - CI ran on GitHub for the first time on 2026-09-25. The checks and the build passed, and the browser tests failed: the workflow started Supabase without Realtime, which the messaging test needs to receive messages live. The list of left-out services was older than messaging. The workflow now starts Realtime, uses version 7 of the GitHub actions (Node.js 24, as GitHub now requires), and runs on Ubuntu 24.04 instead of `ubuntu-latest`, which moves to Ubuntu 26 from 2026-10-19. The database and browser tests passed locally with exactly the services the workflow starts, and failed as on GitHub without Realtime. The next run on GitHub passed both jobs, without warnings.
 
@@ -160,7 +211,7 @@ Before a public launch:
 1. Verify Stripe verification once against the real Stripe API with a test-mode restricted key (see above).
 2. Legal pages. The privacy policy and the terms are drafts: set the operator's name and contact address in `src/lib/legal.ts`, name the hosting, database and email providers once they are chosen (and any transfers outside the EU/EEA), and have both reviewed, including the age limit, liability and governing law, which the terms leave out. The contact address is also where reports from people without an account and appeals go.
 3. Moderation follow-ups. Reports, decisions, their emails and product limits exist (see above). Still missing: a retention period for closed reports, and a way for admins to remove a single message.
-4. Production Auth settings: the email templates in `supabase/templates` with their subjects, the site URL, and `https://<domain>/auth/confirm` as an allowed redirect URL. Without the redirect URL, links fall back to the site URL and stop working.
+4. Production Auth settings: the email templates in `supabase/templates` with their subjects, the site URL, and `https://<domain>/auth/confirm` as an allowed redirect URL. Without the redirect URL, links fall back to the site URL and stop working. Also at least 60 seconds between emails to one address, `secure_password_change` on, email rate limits for the SMTP provider, and the CAPTCHA decision (see Release review).
 5. Security headers are in place (see below and ARCHITECTURE). Check them once on the production domain, for example with securityheaders.com, since a proxy or CDN in front of the app can change or drop headers.
 6. Production hosting: where Supabase runs (self-hosted or Cloud), SMTP for Auth and for notification emails (`SMTP_*` and `EMAIL_FROM`, with SPF, DKIM and DMARC for the sender's domain), Auth URLs, a deployment target for the app, a secrets store for `SUPABASE_SECRET_KEY`, `STRIPE_KEY_ENCRYPTION_KEY`, `CRON_SECRET` and `SMTP_PASS`, a daily scheduler for `POST /api/stripe/sync`, and one that calls `POST /api/email/send` every minute.
 
@@ -170,9 +221,9 @@ Product and quality:
 8. Only Stripe is supported. Paddle, Lemon Squeezy and others are not.
 9. Encryption key rotation: stored keys carry a version prefix, but there is no re-encryption job yet.
 10. SEO follow-ups: structured data (JSON-LD) for products, and submitting the sitemap to search engines once the site is live.
-11. Old images stay in storage after replacement or removal, until the account is deleted.
+11. Old images stay in storage after replacement or removal, until the account is deleted. There is no limit on how many files a maker stores in their folder; a cleanup of unreferenced files should come before a per-maker limit, so replacing a logo never fills it up.
 12. All routes are dynamic with `no-store`. Public pages could be cached once traffic grows, with private data kept separate. The nonce-based Content Security Policy needs a fresh render per request, so caching pages would mean moving to hashes or the experimental SRI support first.
-13. Image signature validation in `src/lib/upload.ts` has no unit tests. Vitest can now import server-only modules, so this is straightforward.
+13. Faked revenue through the maker's own Stripe account (see Release review, decision 1).
 14. Realtime keeps its message event rows, which hold ids only, for a few days.
 15. Notification emails have no one-click unsubscribe (`List-Unsubscribe`, RFC 8058): turning them off takes a sign-in. Large senders to Gmail and Yahoo need it, so add it before volumes grow. The emails are in English only.
 16. Demo products retire themselves at 12 ranked products, but their code stays. Remove it once the directory has grown; ARCHITECTURE lists the parts.

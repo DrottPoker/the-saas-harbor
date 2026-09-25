@@ -1,11 +1,15 @@
 import "server-only";
+import { VerificationError } from "./errors";
 
 // Daily reference rates (Frankfurter, central-bank data, no API key). Returns units of each
 // currency per 1 USD and the rate date.
 export async function usdRates(currencies: string[]) {
   const quotes = [...new Set(currencies.map((c) => c.toLowerCase()))].filter((c) => c !== "usd");
   if (!quotes.length) return { rates: new Map<string, number>(), date: null };
+  // An override points at the browser tests' fake server; production uses https only.
   const base = process.env.FX_API_BASE || "https://api.frankfurter.dev";
+  if (process.env.NODE_ENV === "production" && !base.startsWith("https://"))
+    throw new VerificationError("Exchange rates are not configured correctly on this server.");
   const url = new URL("/v2/rates", base);
   url.searchParams.set("base", "usd");
   url.searchParams.set("quotes", quotes.join(","));
@@ -15,7 +19,7 @@ export async function usdRates(currencies: string[]) {
     if (!response.ok) throw new Error();
     rows = await response.json();
   } catch {
-    throw new Error("Exchange rates are unavailable right now. Try again shortly.");
+    throw new VerificationError("Exchange rates are unavailable right now. Try again shortly.");
   }
   const rates = new Map(rows.map((row) => [row.quote.toLowerCase(), row.rate]));
   const date =

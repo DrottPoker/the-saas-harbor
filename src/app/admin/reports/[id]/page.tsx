@@ -22,10 +22,11 @@ import {
   targetLabels,
   type ReportTarget,
 } from "@/lib/moderation";
+import { firstValues, type SearchParams } from "@/lib/params";
 
 type Props = {
   params: Promise<{ id: string }>;
-  searchParams: Promise<Record<string, string | undefined>>;
+  searchParams: Promise<SearchParams>;
 };
 
 export const metadata = { title: "Report" };
@@ -123,7 +124,7 @@ export default async function AdminReport({ params, searchParams }: Props) {
 
       <div className="grid grid-cols-[minmax(0,1fr)] gap-8 pt-8 lg:grid-cols-[minmax(0,1fr)_22rem] lg:gap-10">
         <div className="grid grid-cols-[minmax(0,1fr)] content-start gap-6">
-          <DoneNotice done={(await searchParams).done} />
+          <DoneNotice done={firstValues(await searchParams).done} />
           <Panel
             id="content"
             title={`Reported ${targetLabels[target].toLowerCase()}`}

@@ -38,7 +38,10 @@ export function DecisionForm({
   return (
     <form action={action} className="grid gap-4">
       <Field name={`${kind}-reason`} label="Reason">
+        {/* Mounted again with the value that was sent: React resets the form after the action,
+            but not a select's default. */}
         <select
+          key={state.values?.reason ?? defaultReason ?? ""}
           id={`${kind}-reason`}
           name="reason"
           required

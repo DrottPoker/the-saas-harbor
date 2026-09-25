@@ -15,6 +15,16 @@ function message(error: unknown) {
   return error instanceof Error ? error.message : "Something went wrong. Please try again.";
 }
 
+async function openedFromEmailLink(client: Awaited<ReturnType<typeof serverClient>>) {
+  const { data } = await client.auth.getClaims();
+  const amr: unknown = data?.claims.amr;
+  const since = Date.now() / 1000 - 15 * 60;
+  return (
+    Array.isArray(amr) &&
+    amr.some((entry) => entry?.method === "otp" && Number(entry?.timestamp) >= since)
+  );
+}
+
 export async function authenticate(
   mode: string,
   _state: ActionState,
@@ -53,8 +63,13 @@ export async function authenticate(
     return { success: "If an account exists, you will receive a password reset link." };
   } else if (mode === "update") {
     await requireUser();
+    // Only a session opened from an email link in the last 15 minutes may set a new password, so
+    // a stolen session cannot take over the account. Every other session ends afterwards.
+    if (!(await openedFromEmailLink(client)))
+      return { error: "This reset link has expired. Request a new one to choose a password." };
     const { error } = await client.auth.updateUser({ password });
     if (error) return { error: "Password could not be updated. Request a new reset link." };
+    await client.auth.signOut({ scope: "others" });
   } else {
     const { error } = await client.auth.signInWithPassword({ email, password });
     if (error)

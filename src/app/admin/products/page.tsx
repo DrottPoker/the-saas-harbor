@@ -3,8 +3,9 @@ import { ProductList, type AdminProduct } from "@/components/admin/rows";
 import { ResultsFooter } from "@/components/listings";
 import { EmptyState, PageHeader } from "@/components/shell";
 import { ADMIN_PAGE_SIZE, openReportCounts, requireAdmin } from "@/lib/admin";
-import { safePage } from "@/lib/data";
+import { PAST_LAST_PAGE, safePage } from "@/lib/data";
 import { containsPattern } from "@/lib/domain";
+import { firstValues, type SearchParams } from "@/lib/params";
 
 export const metadata = { title: "Products" };
 
@@ -18,10 +19,10 @@ type Filter = (typeof filters)[number][0];
 export default async function AdminProducts({
   searchParams,
 }: {
-  searchParams: Promise<Record<string, string | undefined>>;
+  searchParams: Promise<SearchParams>;
 }) {
   const { client } = await requireAdmin();
-  const params = await searchParams;
+  const params = firstValues(await searchParams);
   const filter: Filter =
     params.filter === "hidden" || params.filter === "reported" ? params.filter : "all";
   const search = (params.q ?? "").slice(0, 80);
@@ -64,8 +65,9 @@ export default async function AdminProducts({
       .order("created_at", { ascending: false })
       .order("id")
       .range(start, start + ADMIN_PAGE_SIZE - 1);
-    if (result.error) throw new Error("Products could not be loaded.");
-    products = result.data;
+    if (result.error && result.error.code !== PAST_LAST_PAGE)
+      throw new Error("Products could not be loaded.");
+    products = result.data ?? [];
     count = result.count ?? 0;
   }
   const reports = await openReportCounts(

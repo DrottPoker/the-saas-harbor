@@ -23,6 +23,17 @@ export function currentMonth(now = new Date()) {
   return `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, "0")}`;
 }
 
+/**
+ * The latest date and month anywhere, in the time zone furthest ahead (UTC+14): what "today" or
+ * "this month" is for a maker east of UTC is never in the future by these.
+ */
+export function latestDate(now = new Date()) {
+  return new Date(now.getTime() + 14 * 3_600_000).toISOString().slice(0, 10);
+}
+export function latestMonth(now = new Date()) {
+  return latestDate(now).slice(0, 7);
+}
+
 /** "Mar 2024" for a stored date or a "YYYY-MM" month. */
 export function formatMonth(value: string) {
   const [year, month] = value.split("-").map(Number);

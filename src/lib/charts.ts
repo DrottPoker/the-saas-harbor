@@ -85,12 +85,12 @@ export function compactUsd(cents: number) {
  * lowest top (then the fewest intervals) so the line uses as much of the height as it can.
  */
 export function niceScale(maxCents: number, intervals = 4) {
-  // At least $4, so every step is a whole number of dollars or more.
+  // At least $4, and steps of whole dollars only: $2.50 steps below $12.50 are left out.
   const max = maxCents > 0 ? Math.max(maxCents, 400) : 10_000;
   const magnitude = 10 ** Math.floor(Math.log10(max / intervals));
   const [step, steps] = [1, 2, 2.5, 5, 10]
     .map((f) => [f * magnitude, Math.ceil(max / (f * magnitude) - 1e-9)] as const)
-    .filter(([, n]) => n >= intervals - 1 && n <= intervals + 1)
+    .filter(([s, n]) => s % 100 === 0 && n >= intervals - 1 && n <= intervals + 1)
     .sort(([a, n], [b, m]) => a * n - b * m || n - m)[0];
   return {
     max: steps * step,

@@ -2,7 +2,7 @@ import { createServerClient } from "@supabase/ssr";
 import { createClient } from "@supabase/supabase-js";
 import { NextResponse, type NextRequest } from "next/server";
 import { contentSecurityPolicy, createNonce } from "@/lib/csp";
-import { supabaseConfig } from "@/lib/supabase/config";
+import { cookieOptions, supabaseConfig } from "@/lib/supabase/config";
 import type { Database } from "@/lib/supabase/types";
 
 const PUBLIC_PAGE = /^\/(saas|makers)\/([^/]+)$/;
@@ -38,7 +38,12 @@ async function movedAddress(request: NextRequest, config: ReturnType<typeof supa
 export async function proxy(request: NextRequest) {
   const config = supabaseConfig();
   const moved = await movedAddress(request, config);
-  if (moved) return NextResponse.redirect(moved, 308);
+  if (moved) {
+    // Not cached: a maker's slug follows their name, so an id may point elsewhere later.
+    const redirect = NextResponse.redirect(moved, 308);
+    redirect.headers.set("Cache-Control", "private, no-store");
+    return redirect;
+  }
   const nonce = createNonce();
   const csp = contentSecurityPolicy({
     nonce,
@@ -61,6 +66,7 @@ export async function proxy(request: NextRequest) {
   let response = next();
   if (!config) return response;
   const client = createServerClient(config.url, config.key, {
+    cookieOptions,
     cookies: {
       getAll: () => request.cookies.getAll(),
       setAll(values) {

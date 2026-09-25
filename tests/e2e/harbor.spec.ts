@@ -181,6 +181,11 @@ test("anonymous navigation, private route protection and responsive empty state"
   await expect(page).toHaveURL(/\/auth$/);
   await page.goto(`/discover?category=Design&q=missing-${run}`);
   await expect(page.getByRole("heading", { name: "No matching products" })).toBeVisible();
+  // A page past the last one is empty rather than an error, and a repeated search reads its first.
+  await page.goto("/discover?page=999");
+  await expect(page.getByRole("heading", { name: "No matching products" })).toBeVisible();
+  await page.goto(`/?q=missing-${run}&q=other`);
+  await expect(page.getByRole("heading", { name: "No matching products" })).toBeVisible();
   await page.setViewportSize({ width: 390, height: 844 });
   for (const path of ["/", "/discover", "/auth", "/privacy", "/terms"]) {
     await page.goto(path);
@@ -451,6 +456,7 @@ test("registration, email confirmation, profile and SaaS editing, storage, priva
   await expect(page.getByRole("link", { name: "Send message" })).toHaveCount(0);
   await page.goto("/dashboard/saas/new");
   await fillProduct(page, productName);
+  await page.getByLabel("Category").selectOption("Design");
   await page.getByLabel("Upload logo").setInputFiles({
     name: "invalid.png",
     mimeType: "image/png",
@@ -459,6 +465,7 @@ test("registration, email confirmation, profile and SaaS editing, storage, priva
   await page.getByRole("button", { name: "Add SaaS", exact: true }).click();
   await expect(page.getByRole("alert").filter({ hasText: "Choose a valid PNG" })).toBeVisible();
   await expect(page.getByLabel("Product name", { exact: true })).toHaveValue(productName);
+  await expect(page.getByLabel("Category")).toHaveValue("Design");
   await page
     .getByLabel("Upload logo")
     .setInputFiles({ name: "logo.png", mimeType: "image/png", buffer: png });
@@ -585,11 +592,14 @@ test("registration, email confirmation, profile and SaaS editing, storage, priva
   await page.goto(`/dashboard/saas/${productId}`);
   await page.getByRole("button", { name: "Refresh now" }).click();
   await expect(
-    page.getByRole("alert").filter({ hasText: "verified in the last few minutes" }),
+    page.getByRole("alert").filter({ hasText: "checked in the last few minutes" }),
   ).toBeVisible();
   await admin
     .from("stripe_connections")
-    .update({ last_synced_at: new Date(Date.now() - 10 * 60_000).toISOString() })
+    .update({
+      last_synced_at: new Date(Date.now() - 10 * 60_000).toISOString(),
+      last_checked_at: new Date(Date.now() - 10 * 60_000).toISOString(),
+    })
     .eq("saas_id", productId);
   await page.reload();
   await page.getByRole("button", { name: "Refresh now" }).click();
@@ -771,6 +781,13 @@ test("password recovery confirms a local email link and accepts the new password
   await expect(elsewhere).toHaveURL(/\/dashboard$/);
   await elsewhere.context().close();
   await login(page, email, replacement);
+  // A session from a password sign-in cannot set a new password; that takes a fresh reset link.
+  await page.goto("/auth?mode=update");
+  await page.getByLabel("New password").fill(randomBytes(24).toString("hex"));
+  await page.getByRole("button", { name: "Update password" }).click();
+  await expect(
+    page.getByRole("alert").filter({ hasText: "This reset link has expired" }),
+  ).toBeVisible();
 });
 
 test("a maker deletes products, then their account and everything in it", async ({ page }) => {

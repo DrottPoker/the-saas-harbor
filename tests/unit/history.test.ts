@@ -127,12 +127,20 @@ describe("invoice lines", () => {
     expect(net?.monthly).toBe(2500);
   });
 
-  it("spreads prorations over their own days", () => {
-    const days = 365.25 / 12 / 2;
-    const half = serviceLine(prorationLine(1450, JAN_1, JAN_1 + days * DAY), prices);
+  it("counts a proration at its share of the billing period it falls in", () => {
+    // Half of February's 28 days, and 15 of January's 31, each at the monthly plan's full rate.
+    const half = serviceLine(prorationLine(1450, FEB_1 + 14 * DAY, MAR_1), prices);
     expect(half?.monthly).toBeCloseTo(2900, 6);
-    const credit = serviceLine(prorationLine(-1450, JAN_1, JAN_1 + days * DAY), prices);
+    const credit = serviceLine(prorationLine(-1450, FEB_1 + 14 * DAY, MAR_1), prices);
     expect(credit?.monthly).toBeCloseTo(-2900, 6);
+    const january = serviceLine(prorationLine(1500, JAN_1 + 16 * DAY, FEB_1), prices);
+    expect(january?.monthly).toBeCloseTo(3100, 6);
+  });
+  it("finds the billing period of a subscription begun on the 31st", () => {
+    // A period ending on 31 March began on 28 February, 31 days earlier.
+    const MAR_31 = MAR_1 + 30 * DAY;
+    const line31 = serviceLine(prorationLine(1000, MAR_1 + 20 * DAY, MAR_31), prices);
+    expect(line31?.monthly).toBeCloseTo((1000 / 10) * 31, 6);
   });
 
   it("skips one-off charges, metered usage and empty periods", () => {

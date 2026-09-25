@@ -22,6 +22,8 @@ export const STRIPE_CONNECTION_COLUMNS =
   "saas_id, owner_id, key_hint, livemode, status, last_error, connected_at, last_synced_at";
 export type RevenueStatus = "unverified" | "stale" | "private" | "verified";
 export const PAGE_SIZE = 12;
+/** PostgREST's answer to a page that starts past the last row. It means an empty page. */
+export const PAST_LAST_PAGE = "PGRST103";
 export type Sort = "rank" | "name" | "newest";
 export async function listings({
   sort = "newest",
@@ -53,6 +55,7 @@ export async function listings({
         : query.order("created_at", { ascending: false }).order("id");
   const start = (page - 1) * PAGE_SIZE;
   const { data, error, count } = await query.range(start, start + PAGE_SIZE - 1);
+  if (error?.code === PAST_LAST_PAGE) return { rows: [] as Listing[], count: 0, error: null };
   return {
     rows: (data ?? []) as Listing[],
     count: count ?? 0,

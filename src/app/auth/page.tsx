@@ -5,9 +5,10 @@ import { Notice } from "@/components/shell";
 import { safeNext } from "@/lib/domain";
 import { supabaseConfig } from "@/lib/supabase/config";
 import { requireUser } from "@/lib/supabase/server";
+import { firstValues, type SearchParams } from "@/lib/params";
 
 type Mode = "login" | "signup" | "reset" | "update";
-type Props = { searchParams: Promise<Record<string, string | undefined>> };
+type Props = { searchParams: Promise<SearchParams> };
 
 const copy: Record<Mode, { title: string; description: string }> = {
   login: { title: "Sign in", description: "Welcome back. Sign in to manage your products." },
@@ -37,11 +38,11 @@ function modeOf(value: string | undefined): Mode {
 }
 
 export async function generateMetadata({ searchParams }: Props): Promise<Metadata> {
-  return { title: copy[modeOf((await searchParams).mode)].title };
+  return { title: copy[modeOf(firstValues(await searchParams).mode)].title };
 }
 
 export default async function Auth({ searchParams }: Props) {
-  const params = await searchParams;
+  const params = firstValues(await searchParams);
   const mode = modeOf(params.mode);
   if (mode === "update") await requireUser();
   const { title, description } = copy[mode];

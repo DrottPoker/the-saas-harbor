@@ -14,6 +14,7 @@ type Listener = (event: MessageEvent) => void;
 
 const listeners = new Set<Listener>();
 const unreadListeners = new Set<() => void>();
+const reconnectListeners = new Set<() => void>();
 let open: { userId: string; channel: RealtimeChannel } | null = null;
 
 function close() {
@@ -32,9 +33,17 @@ function join(userId: string) {
       for (const listener of listeners) listener(payload as MessageEvent);
     });
   open = { userId, channel };
+  // Joining again after the connection dropped means events sent meanwhile were missed, so the
+  // open conversation catches up and the header counts again.
+  let joined = false;
+  const subscribed = (status: string) => {
+    if (status !== "SUBSCRIBED") return;
+    if (joined) for (const listener of [...reconnectListeners, ...unreadListeners]) listener();
+    joined = true;
+  };
   // A private channel needs the session token before it joins.
   void client.realtime.setAuth().then(() => {
-    if (open?.channel === channel) channel.subscribe();
+    if (open?.channel === channel) channel.subscribe(subscribed);
   });
 }
 
@@ -53,6 +62,14 @@ export function onUnreadChange(listener: () => void) {
   unreadListeners.add(listener);
   return () => {
     unreadListeners.delete(listener);
+  };
+}
+
+/** Runs when the channel joins again after the connection dropped. */
+export function onReconnect(listener: () => void) {
+  reconnectListeners.add(listener);
+  return () => {
+    reconnectListeners.delete(listener);
   };
 }
 

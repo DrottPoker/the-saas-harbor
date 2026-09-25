@@ -128,8 +128,10 @@ export default function Privacy() {
             </li>
             <li>
               To keep the service secure and fair, through the sign-in records, the subscription
-              hashes described above, and limits on how many messages and products an account can
-              add (our legitimate interests, Article 6(1)(f)).
+              hashes described above, and limits on how many messages, reports and products an
+              account can add and how often it checks Stripe. The limits keep the times you added a
+              product for a day and the times you checked Stripe for an hour (our legitimate
+              interests, Article 6(1)(f)).
             </li>
             <li>
               To handle reports and moderate the site. The EU Digital Services Act requires us to
@@ -202,7 +204,9 @@ export default function Privacy() {
           </p>
           <p>
             An email waits in a queue until it is sent, and a record of it is kept for a week
-            afterwards, then deleted.
+            afterwards, then deleted. The notices that update an open conversation live hold only
+            ids and are deleted within a few days; deleting your account deletes the ones about you
+            at once, as well as emails queued to others about your messages.
           </p>
           <p>
             A report is deleted when either the maker who sent it or the maker it is about deletes

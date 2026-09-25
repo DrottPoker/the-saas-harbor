@@ -3,7 +3,8 @@ import { AccountList } from "@/components/admin/rows";
 import { ResultsFooter } from "@/components/listings";
 import { EmptyState, PageHeader } from "@/components/shell";
 import { ADMIN_PAGE_SIZE, requireAdmin } from "@/lib/admin";
-import { safePage } from "@/lib/data";
+import { PAST_LAST_PAGE, safePage } from "@/lib/data";
+import { firstValues, type SearchParams } from "@/lib/params";
 
 export const metadata = { title: "Accounts" };
 
@@ -20,10 +21,10 @@ const isFilter = (value: string | undefined): value is Filter =>
 export default async function AdminAccounts({
   searchParams,
 }: {
-  searchParams: Promise<Record<string, string | undefined>>;
+  searchParams: Promise<SearchParams>;
 }) {
   const { client } = await requireAdmin();
-  const params = await searchParams;
+  const params = firstValues(await searchParams);
   const filter: Filter = isFilter(params.filter) ? params.filter : "all";
   const search = (params.q ?? "").trim().slice(0, 80);
   const page = safePage(params.page);
@@ -36,13 +37,14 @@ export default async function AdminAccounts({
   };
   const start = (page - 1) * ADMIN_PAGE_SIZE;
   const {
-    data: accounts,
+    data: accountRows,
     count,
     error,
   } = await client
     .rpc("admin_accounts", { p_search: search, p_filter: filter }, { count: "exact" })
     .range(start, start + ADMIN_PAGE_SIZE - 1);
-  if (error) throw new Error("Accounts could not be loaded.");
+  if (error && error.code !== PAST_LAST_PAGE) throw new Error("Accounts could not be loaded.");
+  const accounts = accountRows ?? [];
 
   return (
     <>

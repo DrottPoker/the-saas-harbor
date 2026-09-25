@@ -1,9 +1,6 @@
 import { Explore } from "@/components/explore";
-export const metadata = { title: "Discover", alternates: { canonical: "/discover" } };
-export default async function Discover({
-  searchParams,
-}: {
-  searchParams: Promise<Record<string, string | undefined>>;
-}) {
-  return <Explore mode="discover" params={await searchParams} />;
+import { firstValues, type SearchParams } from "@/lib/params";
+export const metadata = { title: "Browse SaaS", alternates: { canonical: "/discover" } };
+export default async function Discover({ searchParams }: { searchParams: Promise<SearchParams> }) {
+  return <Explore mode="discover" params={firstValues(await searchParams)} />;
 }

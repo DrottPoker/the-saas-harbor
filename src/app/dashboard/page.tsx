@@ -8,6 +8,7 @@ import { Badge } from "@/components/badge";
 import { ModerationNotice } from "@/components/moderation-notice";
 import { EmptyState, Notice, PageHeader, Shell } from "@/components/shell";
 import { Button } from "@/components/ui/button";
+import { firstValues, type SearchParams } from "@/lib/params";
 
 export const metadata = { title: "Dashboard" };
 
@@ -25,13 +26,9 @@ function StripeBadge({ status }: { status: string | undefined }) {
   );
 }
 
-export default async function Dashboard({
-  searchParams,
-}: {
-  searchParams: Promise<Record<string, string | undefined>>;
-}) {
+export default async function Dashboard({ searchParams }: { searchParams: Promise<SearchParams> }) {
   const { user, client } = await requireUser();
-  const params = await searchParams;
+  const params = firstValues(await searchParams);
   const [
     { data: profile, error: profileError },
     { data: products, error },
