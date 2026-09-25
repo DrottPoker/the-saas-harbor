@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { AuthForm } from "@/components/forms";
 import { LogoMark } from "@/components/logo";
 import { Notice } from "@/components/shell";
-import { safeNext } from "@/lib/domain";
+import { PASSWORD_MIN_LENGTH, safeNext } from "@/lib/domain";
 import { supabaseConfig } from "@/lib/supabase/config";
 import { requireUser } from "@/lib/supabase/server";
 import { firstValues, type SearchParams } from "@/lib/params";
@@ -20,7 +20,10 @@ const copy: Record<Mode, { title: string; description: string }> = {
     title: "Reset your password",
     description: "We will email you a link to choose a new password.",
   },
-  update: { title: "Choose a new password", description: "Use at least 12 characters." },
+  update: {
+    title: "Choose a new password",
+    description: `Use at least ${PASSWORD_MIN_LENGTH} characters.`,
+  },
 };
 
 // Set by scripts/local-env.mjs during local development only. Never shown for a remote address.

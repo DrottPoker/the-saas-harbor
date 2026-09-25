@@ -168,6 +168,10 @@ export const saasSchema = z.object({
 });
 export type ActionState = { error?: string; success?: string };
 
+/** Password length for new passwords, also set in Supabase Auth (supabase/config.toml). */
+export const PASSWORD_MIN_LENGTH = 6;
+export const PASSWORD_MAX_LENGTH = 128;
+
 export const MESSAGE_MAX_LENGTH = 4000;
 
 const reason = z.enum(REASONS, { message: "Choose a reason." });

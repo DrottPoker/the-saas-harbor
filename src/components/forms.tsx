@@ -9,7 +9,12 @@ import {
   saveEmailSettingsAction,
   saveSaas,
 } from "@/app/actions";
-import { categories, type ActionState } from "@/lib/domain";
+import {
+  categories,
+  PASSWORD_MAX_LENGTH,
+  PASSWORD_MIN_LENGTH,
+  type ActionState,
+} from "@/lib/domain";
 import type { Saas, SaasSettings } from "@/lib/data";
 import { cn } from "@/lib/utils";
 import { PersonAvatar, ProductLogo } from "./avatars";
@@ -183,7 +188,11 @@ export function AuthForm({
         <Field
           name="password"
           label={mode === "update" ? "New password" : "Password"}
-          hint={mode === "signup" || mode === "update" ? "At least 12 characters." : undefined}
+          hint={
+            mode === "signup" || mode === "update"
+              ? `At least ${PASSWORD_MIN_LENGTH} characters.`
+              : undefined
+          }
           aside={
             mode === "login" && (
               <Link
@@ -200,8 +209,8 @@ export function AuthForm({
             name="password"
             type="password"
             autoComplete={mode === "login" ? "current-password" : "new-password"}
-            minLength={mode === "login" ? 1 : 12}
-            maxLength={128}
+            minLength={mode === "login" ? 1 : PASSWORD_MIN_LENGTH}
+            maxLength={PASSWORD_MAX_LENGTH}
             required
           />
         </Field>

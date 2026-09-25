@@ -5,7 +5,16 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { deleteAccount } from "@/lib/account";
 import { parseSkills } from "@/lib/profile";
-import { emailLink, profileSchema, safeNext, saasSchema, type ActionState } from "@/lib/domain";
+import {
+  emailLink,
+  PASSWORD_MAX_LENGTH,
+  PASSWORD_MIN_LENGTH,
+  profileSchema,
+  safeNext,
+  saasSchema,
+  type ActionState,
+} from "@/lib/domain";
+import { addressAcceptsMail } from "@/lib/email-domain";
 import { termsUpdated } from "@/lib/legal";
 import { requireUser, serverClient } from "@/lib/supabase/server";
 import { uploadImage } from "@/lib/upload";
@@ -35,10 +44,15 @@ export async function authenticate(
   const password = value(form, "password");
   if (mode !== "update" && !z.email().safeParse(email).success)
     return { error: "Enter a valid email address." };
-  if (mode !== "reset" && (password.length < (mode === "login" ? 1 : 12) || password.length > 128))
-    return { error: "Use a password between 12 and 128 characters." };
+  const minimum = mode === "login" ? 1 : PASSWORD_MIN_LENGTH;
+  if (mode !== "reset" && (password.length < minimum || password.length > PASSWORD_MAX_LENGTH))
+    return {
+      error: `Use a password between ${PASSWORD_MIN_LENGTH} and ${PASSWORD_MAX_LENGTH} characters.`,
+    };
   if (mode === "signup" && form.get("terms") !== "on")
     return { error: "Tick the box to accept the Terms of Service." };
+  if (mode === "signup" && !(await addressAcceptsMail(email)))
+    return { error: "This email address cannot receive email. Check it for typos." };
   const client = await serverClient();
   const origin = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3001";
   // Both emails link to the confirm page, which verifies the token in whichever browser opens it.
