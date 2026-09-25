@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { FeedbackList } from "@/components/admin/feedback-list";
 import { LogList, ReportList } from "@/components/admin/rows";
 import { Metric } from "@/components/metric";
 import { EmptyState, PageHeader } from "@/components/shell";
@@ -23,7 +24,7 @@ function SectionHeading({ id, title, href }: { id: string; title: string; href: 
 export default async function AdminOverview() {
   const { client } = await requireAdmin();
   const count = { count: "exact", head: true } as const;
-  const [open, hidden, suspended, accounts, queue, log] = await Promise.all([
+  const [open, hidden, suspended, accounts, queue, log, feedback] = await Promise.all([
     client.from("reports").select("id", count).eq("status", "open"),
     client.from("saas").select("id", count).not("hidden_at", "is", null),
     client.from("profiles").select("id", count).not("suspended_at", "is", null),
@@ -35,12 +36,19 @@ export default async function AdminOverview() {
       .order("created_at")
       .limit(5),
     client.from("moderation_log").select("*").order("created_at", { ascending: false }).limit(5),
+    client
+      .from("feedback")
+      .select("id, kind, message, page, created_at, handled_at, user_id", { count: "exact" })
+      .is("handled_at", null)
+      .order("created_at", { ascending: false })
+      .limit(3),
   ]);
-  for (const result of [open, hidden, suspended, accounts, queue, log])
+  for (const result of [open, hidden, suspended, accounts, queue, log, feedback])
     if (result.error) throw new Error("The admin overview could not be loaded.");
-  const [makers, admins] = await Promise.all([
+  const [makers, admins, senders] = await Promise.all([
     profileNames(client, queue.data?.map((report) => report.subject_id) ?? []),
     profileNames(client, log.data?.map((entry) => entry.admin_id) ?? []),
+    profileNames(client, feedback.data?.map((item) => item.user_id) ?? []),
   ]);
 
   return (
@@ -62,6 +70,21 @@ export default async function AdminOverview() {
           <ReportList reports={queue.data} names={makers} label="Oldest open reports" />
         ) : (
           <EmptyState title="No open reports">New reports from users appear here.</EmptyState>
+        )}
+      </section>
+
+      <section aria-labelledby="feedback" className="mt-12">
+        <SectionHeading
+          id="feedback"
+          title={`New feedback${feedback.count ? ` (${feedback.count})` : ""}`}
+          href="/admin/feedback"
+        />
+        {feedback.data?.length ? (
+          <FeedbackList items={feedback.data} names={senders} label="New feedback" />
+        ) : (
+          <EmptyState title="No new feedback">
+            Bugs and suggestions from users appear here.
+          </EmptyState>
         )}
       </section>
 

@@ -248,7 +248,10 @@ export function emailLink(tokenHash: string | null | undefined, type: string | n
 // send people to another site.
 export function safeNext(value: string | null | undefined) {
   return value &&
-    /^\/(messages(\/[0-9a-f-]{36})?|report\/(saas|profile|message)\/[0-9a-f-]{36})$/.test(value)
+    // The feedback page's from is an encoded path on this site (feedbackHref in feedback.ts).
+    /^\/(messages(\/[0-9a-f-]{36})?|report\/(saas|profile|message)\/[0-9a-f-]{36}|feedback(\?from=%2F[A-Za-z0-9%._~-]*)?)$/.test(
+      value,
+    )
     ? value
     : null;
 }

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { headers } from "next/headers";
+import { FeedbackButton } from "@/components/feedback-button";
 import { SiteFooter, SiteHeader } from "@/components/site-chrome";
 import { SITE_DESCRIPTION, SITE_NAME, siteUrl } from "@/lib/seo";
 import { currentUser, unreadMessageCount } from "@/lib/supabase/server";
@@ -57,6 +58,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           {children}
         </main>
         <SiteFooter />
+        <FeedbackButton />
       </body>
     </html>
   );

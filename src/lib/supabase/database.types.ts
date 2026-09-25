@@ -159,6 +159,39 @@ export type Database = {
           },
         ]
       }
+      feedback: {
+        Row: {
+          created_at: string
+          handled_at: string | null
+          handled_by: string | null
+          id: string
+          kind: string
+          message: string
+          page: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          handled_at?: string | null
+          handled_by?: string | null
+          id?: string
+          kind: string
+          message: string
+          page?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          handled_at?: string | null
+          handled_by?: string | null
+          id?: string
+          kind?: string
+          message?: string
+          page?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       messages: {
         Row: {
           body: string
@@ -1006,6 +1039,10 @@ export type Database = {
         Args: { p_note: string; p_saas: string }
         Returns: undefined
       }
+      admin_set_feedback_handled: {
+        Args: { p_feedback: string; p_handled: boolean }
+        Returns: undefined
+      }
       admin_suspend_account: {
         Args: {
           p_note: string
@@ -1130,6 +1167,10 @@ export type Database = {
         Returns: string
       }
       set_username: { Args: { p_username: string }; Returns: undefined }
+      submit_feedback: {
+        Args: { p_kind: string; p_message: string; p_page: string }
+        Returns: string
+      }
       submit_report: {
         Args: {
           p_details: string

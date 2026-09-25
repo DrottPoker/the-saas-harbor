@@ -46,7 +46,8 @@ select results_eq(
   $$ select relation, privileges from pgtap_table_privileges where role = 'authenticated' order by 1 $$,
   $$ values ('blocks'::text, 'DELETE,INSERT,SELECT'::text), ('category_counts', 'SELECT'),
     ('conversation_reads', 'INSERT,SELECT'),
-    ('conversations', 'SELECT'), ('inbox', 'SELECT'), ('leaderboard', 'SELECT'),
+    ('conversations', 'SELECT'), ('feedback', 'SELECT'), ('inbox', 'SELECT'),
+    ('leaderboard', 'SELECT'),
     ('messages', 'SELECT'), ('moderation_log', 'SELECT'), ('notification_settings', 'SELECT'),
     ('profile_experience', 'DELETE,INSERT,SELECT'), ('profiles', 'SELECT'),
     ('public_metrics', 'SELECT'), ('public_saas', 'SELECT'), ('reports', 'SELECT'),
@@ -71,7 +72,7 @@ select results_eq(
   'visitors run only the functions public pages need');
 select results_eq(
   $$ select functions from pgtap_function_privileges where role = 'authenticated' $$,
-  $$ values ('admin_account,admin_accounts,admin_dismiss_report,admin_hide_saas,admin_restore_account,admin_restore_saas,admin_suspend_account,begin_revenue_check,check_username,delete_account,directory_stats,is_admin,mark_conversation_read,saas_slug_redirect,save_notification_settings,save_profile,save_saas,send_message,set_username,submit_report,unread_message_count,username_change_available_at'::text) $$,
+  $$ values ('admin_account,admin_accounts,admin_dismiss_report,admin_hide_saas,admin_restore_account,admin_restore_saas,admin_set_feedback_handled,admin_suspend_account,begin_revenue_check,check_username,delete_account,directory_stats,is_admin,mark_conversation_read,saas_slug_redirect,save_notification_settings,save_profile,save_saas,send_message,set_username,submit_feedback,submit_report,unread_message_count,username_change_available_at'::text) $$,
   'makers run only the functions the app calls');
 
 select * from finish();

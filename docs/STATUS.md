@@ -8,6 +8,10 @@ The first release includes accounts, email confirmation and recovery, public mak
 
 Makers can message each other privately (see Messages below), and report products, profiles and messages to the admins, who decide in an admin panel (see Reports and moderation below). They get emails about unread messages and about decisions (see Email notifications below). Other forms of connection, such as following or contact lists, are not implemented.
 
+## Feedback 2026-09-26
+
+At the project owner's request, users can send feedback: bugs and errors, suggestions, or other feedback. A Feedback button sits in the bottom right corner of every page on screens 640 px and wider, and the footer has a Send feedback link on every screen; both open `/feedback` with the page the user was on. Visitors sign in first and come back to the form. After sending, the form gives way to a thank-you. Feedback lands in the admin panel under Feedback (New, Handled, All) and on the overview, with the sender's name linked to their account and the page it came from, and admins mark it handled or new again. It is limited to 5 an hour and 20 a day per user, suspended accounts cannot send it, and it is deleted with the sender's account; the privacy policy says so. Admins get no email about new feedback yet; the overview shows how much is new.
+
 ## Confirmation panel and username limit 2026-09-26
 
 At the project owner's request, a finished sign-up replaces the form with a Check your inbox panel: the address the confirmation link went to, that the account must be confirmed before signing in, what to do when nothing arrives, and a link to sign in. And a username can now change once every 30 days, with the first change free (migration `20260926040000_username_changes.sql`, applied to production before the code). The time of the last change is kept in a private table rather than on the public profile, and account deletion removes it; the privacy policy says so. The profile form shows a locked username read-only, with the days left.

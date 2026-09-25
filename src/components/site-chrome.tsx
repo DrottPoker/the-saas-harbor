@@ -91,6 +91,9 @@ export function SiteFooter() {
           <a className={quietLink} href="/llms.txt">
             For AI assistants
           </a>
+          <Link className={quietLink} href="/feedback">
+            Send feedback
+          </Link>
         </nav>
         <p className="text-[13px] text-faint-foreground sm:col-span-2">
           Revenue is verified through read-only connections to Stripe, Paddle, Polar and Dodo

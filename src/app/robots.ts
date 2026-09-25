@@ -12,6 +12,7 @@ export default function robots(): MetadataRoute.Robots {
         "/admin",
         "/messages",
         "/report",
+        "/feedback",
         "/auth",
         "/account-deleted",
         "/api",

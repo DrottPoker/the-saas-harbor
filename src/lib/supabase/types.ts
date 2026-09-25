@@ -19,6 +19,7 @@ export type Database = Omit<GeneratedDatabase, "public"> & {
       | "admin_account"
       | "saas_slug_redirect"
       | "check_username"
+      | "submit_feedback"
       | "username_change_available_at"
       | "claim_emails"
       | "complete_email"
@@ -38,6 +39,10 @@ export type Database = Omit<GeneratedDatabase, "public"> & {
       check_username: {
         Args: Functions["check_username"]["Args"];
         Returns: "format" | "reserved" | "taken" | null;
+      };
+      submit_feedback: {
+        Args: Nullable<Functions["submit_feedback"]["Args"], "p_page">;
+        Returns: string;
       };
       username_change_available_at: {
         Args: never;

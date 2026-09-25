@@ -81,6 +81,11 @@ export default function Privacy() {
               admin.
             </li>
             <li>
+              <strong className="font-medium text-foreground">Feedback.</strong> What you send with
+              Send feedback: whether it is a bug, a suggestion or other feedback, your text, the
+              page you sent it from, and whether an admin has handled it.
+            </li>
+            <li>
               <strong className="font-medium text-foreground">Email notifications.</strong> Which
               emails you want, emails waiting to be sent to you, and a record of sent ones. A
               message email names the sender but never contains the message.
@@ -140,6 +145,10 @@ export default function Privacy() {
               Article 6(1)(c)). Other reports and decisions keep the site safe for its users (our
               legitimate interests, Article 6(1)(f)).
             </li>
+            <li>
+              To fix bugs and improve the site from the feedback you send (our legitimate interests,
+              Article 6(1)(f)).
+            </li>
           </List>
           <p>We do not sell data, show ads, or use analytics or tracking of any kind.</p>
         </Section>
@@ -170,9 +179,10 @@ export default function Privacy() {
             <li>
               <strong className="font-medium text-foreground">Admins:</strong> the people the
               operator appoints to review reports. They see your email address, when you joined and
-              last signed in, reports about you or by you, and the decisions about your account. An
-              admin sees a private message only when one of the two users reports it, and then only
-              a copy of that message. A user who is reported never learns who reported them.
+              last signed in, reports about you or by you, the decisions about your account, and the
+              feedback you send, with your name. An admin sees a private message only when one of
+              the two users reports it, and then only a copy of that message. A user who is reported
+              never learns who reported them.
             </li>
             <li>
               <strong className="font-medium text-foreground">Service providers:</strong> our
@@ -224,6 +234,7 @@ export default function Privacy() {
             A report is deleted when either the user who sent it or the user it is about deletes
             their account. Deleting a reported product or message keeps the report and its copy, so
             admins can still review it. Admin decisions are deleted with the account they concern.
+            Feedback is kept until you delete your account.
           </p>
           <p>
             Information that was public may already have been copied by others, such as search

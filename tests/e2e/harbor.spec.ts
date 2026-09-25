@@ -128,9 +128,11 @@ test.beforeAll(async ({ playwright }, info) => {
     ...["/messages", `/messages/${id}`, `/report/saas/${id}`, "/api/revenue/sync"],
     ...["/sitemap.xml", "/robots.txt", "/opengraph-image", "/llms.txt"],
     ...["/categories", "/categories/design", "/saas/any.md", "/users/any.md"],
-    ...["/stats", "/stats/opengraph-image"],
+    ...["/stats", "/stats/opengraph-image", "/feedback"],
     ...["/saas/any/opengraph-image", "/users/any/opengraph-image", "/saas/any/badge.svg"],
-    ...["", "/reports", "/products", "/accounts", "/log"].map((section) => `/admin${section}`),
+    ...["", "/reports", "/feedback", "/products", "/accounts", "/log"].map(
+      (section) => `/admin${section}`,
+    ),
     ...["reports", "products", "accounts"].map((section) => `/admin/${section}/${id}`),
   ])
     await client.get(path, { maxRedirects: 0 });
@@ -1552,6 +1554,94 @@ test("reports reach the admin panel, where admins hide products and suspend acco
     await expectNoHorizontalScroll(reporterPage);
   }
   expect(violations).toEqual([]);
+});
+
+test("users send feedback from any page, and admins read it and mark it handled", async ({
+  browser,
+}) => {
+  test.setTimeout(180000);
+  const people = {} as Record<"sender" | "reader", { id: string; email: string; password: string }>;
+  for (const role of ["sender", "reader"] as const) {
+    const address = `harbor-feedback-${role}-${run}@example.test`;
+    const secret = randomBytes(24).toString("hex");
+    const { data, error } = await admin.auth.admin.createUser({
+      email: address,
+      password: secret,
+      email_confirm: true,
+    });
+    if (error || !data.user) throw new Error("Unable to create a feedback fixture.");
+    userIds.push(data.user.id);
+    const { error: profileError } = await admin
+      .from("profiles")
+      .insert({ id: data.user.id, name: `Feedback ${role} ${run}` });
+    if (profileError) throw new Error("Unable to create a feedback profile.");
+    people[role] = { id: data.user.id, email: address, password: secret };
+  }
+  const { sender, reader } = people;
+  const { error: grantError } = await admin.rpc("set_admin", {
+    p_email: reader.email,
+    p_admin: true,
+  });
+  if (grantError) throw new Error("Unable to grant admin rights.");
+
+  // A visitor who opens the form signs in first, and comes back to it with the page remembered.
+  const page = await (await browser.newContext()).newPage();
+  await page.goto("/stats");
+  await page.getByRole("link", { name: "Feedback", exact: true }).click();
+  await expect(page).toHaveURL(/\/auth\?next=%2Ffeedback%3Ffrom%3D%252Fstats$/);
+  await page.getByLabel("Email address").fill(sender.email);
+  await page.getByLabel("Password", { exact: true }).fill(sender.password);
+  await page.getByRole("button", { name: "Sign in", exact: true }).click();
+  await expect(page).toHaveURL(/\/feedback\?from=%2Fstats$/);
+  await expectAccessible(page);
+
+  // The kind is required, and so is some text.
+  const message = `The statistics page shows no chart on my phone ${run}.`;
+  await page.getByLabel("Bug or error").check();
+  await page.getByLabel("Your feedback").fill(message);
+  await page.getByRole("button", { name: "Send feedback" }).click();
+  const thanks = page.getByRole("heading", { name: "Thank you for your feedback" });
+  await expect(thanks).toBeFocused();
+  await expect(page.getByRole("link", { name: "Back to where you were" })).toHaveAttribute(
+    "href",
+    "/stats",
+  );
+  // Users cannot read feedback back, and the feedback admin page is a 404 for them.
+  await page.goto("/admin/feedback");
+  await expect(page.getByRole("heading", { name: "Page not found" })).toBeVisible();
+  await page.context().close();
+
+  // The admin sees it on the overview and in the feedback list, with who sent it and from where.
+  const adminPage = await (await browser.newContext()).newPage();
+  await login(adminPage, reader.email, reader.password);
+  await adminPage.goto("/admin");
+  const overview = adminPage.getByRole("list", { name: "New feedback" });
+  await expect(overview.getByText(message)).toBeVisible();
+  await adminPage
+    .getByRole("navigation", { name: "Admin" })
+    .getByRole("link", { name: "Feedback" })
+    .click();
+  await expect(adminPage).toHaveURL("/admin/feedback");
+  await expectAccessible(adminPage);
+  const item = adminPage.getByRole("article").filter({ hasText: message });
+  await expect(item.getByText("Bug or error")).toBeVisible();
+  await expect(item.getByRole("link", { name: `Feedback sender ${run}` })).toHaveAttribute(
+    "href",
+    `/admin/accounts/${sender.id}`,
+  );
+  await expect(item.getByRole("link", { name: "/stats" })).toHaveAttribute("href", "/stats");
+
+  // Marking it handled moves it from New to Handled, and it can be marked new again.
+  await item.getByRole("button", { name: "Mark as handled" }).click();
+  await expect(adminPage.getByText(message)).toHaveCount(0);
+  await adminPage.getByRole("link", { name: "Handled" }).click();
+  const handled = adminPage.getByRole("article").filter({ hasText: message });
+  await expect(handled.getByText("Handled", { exact: true })).toBeVisible();
+  await handled.getByRole("button", { name: "Mark as new" }).click();
+  await expect(adminPage.getByText(message)).toHaveCount(0);
+  await adminPage.goto("/admin/feedback");
+  await expect(adminPage.getByText(message)).toBeVisible();
+  await adminPage.context().close();
 });
 
 test("users get one email per unread conversation, and can turn it off", async ({
