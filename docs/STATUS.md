@@ -10,7 +10,7 @@ Makers can message each other privately (see Messages below), and report product
 
 ## Confirmation panel and username limit 2026-09-26
 
-At the project owner's request, a finished sign-up replaces the form with a Check your inbox panel: the address the confirmation link went to, that the account must be confirmed before signing in, what to do when nothing arrives, and a link to sign in. And a username can now change once every 30 days, with the first change free (migration `20260926040000_username_changes.sql`). The time of the last change is kept in a private table rather than on the public profile, and account deletion removes it; the privacy policy says so. The profile form shows a locked username read-only, with the days left.
+At the project owner's request, a finished sign-up replaces the form with a Check your inbox panel: the address the confirmation link went to, that the account must be confirmed before signing in, what to do when nothing arrives, and a link to sign in. And a username can now change once every 30 days, with the first change free (migration `20260926040000_username_changes.sql`, applied to production before the code). The time of the last change is kept in a private table rather than on the public profile, and account deletion removes it; the privacy policy says so. The profile form shows a locked username read-only, with the days left.
 
 ## Usernames and even auth forms 2026-09-26
 
