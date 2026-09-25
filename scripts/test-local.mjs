@@ -19,8 +19,12 @@ delete testEnv.NO_COLOR;
 delete testEnv.FORCE_COLOR;
 const fakeStripe = "http://127.0.0.1:3011";
 const cronSecret = randomBytes(32).toString("base64");
-// Extra arguments go to Playwright, such as `npm run test:e2e -- -g "registration"`.
-const result = spawnSync(npx, ["playwright", "test", ...process.argv.slice(2)], {
+// Extra arguments go to Playwright, such as `npm run test:e2e -- -g "message each other"`. A shell
+// joins arguments with spaces, so those with spaces or quotes are quoted.
+const extra = process.argv
+  .slice(2)
+  .map((arg) => (shell && /[\s"]/.test(arg) ? `"${arg.replaceAll('"', '\\"')}"` : arg));
+const result = spawnSync(npx, ["playwright", "test", ...extra], {
   shell,
   stdio: "inherit",
   env: {

@@ -111,7 +111,7 @@ npm run check         # Prettier, ESLint, TypeScript and unit tests
 npm run build
 ```
 
-Format code with `npm run format`. CI (`.github/workflows/ci.yml`) runs the same checks, the build, the database tests and the browser tests on pushes to `main` and `development` and on pull requests.
+Format code with `npm run format`. CI (`.github/workflows/ci.yml`) runs the same checks, the build, the database tests and the browser tests on pushes to `main` and `development` and on pull requests, on Ubuntu 24.04 with every Supabase service the tests use, Realtime included.
 
 ### Browser and database tests
 
