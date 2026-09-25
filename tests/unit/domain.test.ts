@@ -1,5 +1,31 @@
 import { describe, expect, it } from "vitest";
-import { containsPattern, formatUsd, profileSchema, saasSchema } from "../../src/lib/domain";
+import {
+  containsPattern,
+  emailLink,
+  formatUsd,
+  profileSchema,
+  saasSchema,
+} from "../../src/lib/domain";
+
+describe("email links", () => {
+  const hash = "0f".repeat(28);
+  it("accepts the token hashes of confirmation and recovery links", () => {
+    expect(emailLink(hash, "email")).toEqual({ tokenHash: hash, type: "email" });
+    expect(emailLink(`pkce_${hash}`, "recovery")).toEqual({
+      tokenHash: `pkce_${hash}`,
+      type: "recovery",
+    });
+  });
+  it.each([
+    [hash, "magiclink"],
+    [hash, "signup"],
+    [hash, undefined],
+    [undefined, "email"],
+    ["short", "email"],
+    [`${hash}&type=recovery`, "email"],
+    ["x".repeat(201), "email"],
+  ])("refuses %s with type %s", (tokenHash, type) => expect(emailLink(tokenHash, type)).toBeNull());
+});
 
 describe("name search pattern", () => {
   it("wraps a trimmed term in wildcards", () =>

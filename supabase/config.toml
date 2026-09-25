@@ -159,7 +159,9 @@ site_url = "http://127.0.0.1:3002"
 # The public URL that Auth serves on. Defaults to the API external URL with `/auth/v1` appended.
 # external_url = ""
 # A list of *exact* URLs that auth providers are permitted to redirect to post authentication.
-additional_redirect_urls = ["http://127.0.0.1:3002/auth/callback", "http://127.0.0.1:3002/auth/callback?next=update", "http://localhost:3001/auth/callback", "http://localhost:3001/auth/callback?next=update"]
+# Email links open /auth/confirm on the address the app passes (see supabase/templates), so every
+# app origin needs its confirm page here: the browser tests on 3002 and the dev server on 3001.
+additional_redirect_urls = ["http://127.0.0.1:3002/auth/confirm", "http://localhost:3001/auth/confirm"]
 # How long tokens are valid for, in seconds. Defaults to 3600 (1 hour), maximum 604,800 (1 week).
 jwt_expiry = 3600
 # JWT issuer URL. If not set, defaults to auth.external_url.
@@ -244,10 +246,15 @@ pass = "env(HARBOR_SMTP_PASS)"
 admin_email = "env(HARBOR_SMTP_ADMIN_EMAIL)"
 sender_name = "env(HARBOR_SMTP_SENDER_NAME)"
 
-# Uncomment to customize email template
-# [auth.email.template.invite]
-# subject = "You have been invited"
-# content_path = "./supabase/templates/invite.html"
+# Email links carry a token hash that the app verifies on its confirm page, so they work in any
+# browser. Production Auth needs the same templates, subjects and redirect URLs.
+[auth.email.template.confirmation]
+subject = "Confirm your email for The SaaS Harbor"
+content_path = "./supabase/templates/confirmation.html"
+
+[auth.email.template.recovery]
+subject = "Reset your password for The SaaS Harbor"
+content_path = "./supabase/templates/recovery.html"
 
 # Uncomment to customize notification email template
 # [auth.email.notification.password_changed]

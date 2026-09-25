@@ -61,6 +61,13 @@ async function setThemeCookie(page: Page, theme: "light" | "dark") {
 async function pageBackground(page: Page) {
   return page.evaluate(() => getComputedStyle(document.body).backgroundColor);
 }
+// Auth emails link to the app's confirm page with a one-time token.
+function confirmLink(html: string) {
+  const link = html.match(/href="([^"]*\/auth\/confirm\?[^"]*)"/)?.[1]?.replaceAll("&amp;", "&");
+  if (!link?.startsWith(`${test.info().project.use.baseURL}/auth/confirm?token_hash=`))
+    throw new Error("A local confirm link is required.");
+  return link;
+}
 async function expectAccessible(page: Page) {
   const accessibility = await new AxeBuilder({ page })
     .withTags(["wcag2a", "wcag2aa", "wcag21aa"])
@@ -86,7 +93,7 @@ test.beforeAll(async ({ playwright }, info) => {
   const id = randomUUID();
   for (const path of [
     ...["/", "/discover", "/newest", "/about", "/privacy", "/terms", "/account-deleted"],
-    ...["/auth", "/auth/callback", `/saas/${id}`, `/makers/${id}`, "/missing"],
+    ...["/auth", "/auth/confirm", `/saas/${id}`, `/makers/${id}`, "/missing"],
     ...["/dashboard", "/dashboard/profile", "/dashboard/reports", `/dashboard/saas/${id}`],
     ...["/messages", `/messages/${id}`, `/report/saas/${id}`, "/api/stripe/sync"],
     ...["", "/reports", "/products", "/accounts", "/log"].map((section) => `/admin${section}`),
@@ -153,6 +160,8 @@ test("anonymous navigation, private route protection and responsive empty state"
     "/account-deleted",
     "/auth",
     "/auth?mode=signup",
+    `/auth/confirm?token_hash=${"a".repeat(56)}&type=email`,
+    "/auth/confirm",
     "/missing",
   ];
   for (const path of publicPages) {
@@ -200,6 +209,7 @@ test("theme menu persists light and dark, and system follows the OS", async ({ p
 });
 
 test("registration, email confirmation, profile and SaaS editing, storage, privacy and logout", async ({
+  browser,
   page,
   request,
 }) => {
@@ -208,7 +218,9 @@ test("registration, email confirmation, profile and SaaS editing, storage, priva
   await page.getByLabel("Email address").fill(email);
   await page.getByLabel("Password", { exact: true }).fill(password);
   await page.getByRole("button", { name: "Create account" }).click();
-  await expect(page.getByText(/Check your email to confirm/)).toBeVisible();
+  await expect(
+    page.getByText("Check your email and open the link to confirm your account."),
+  ).toBeVisible();
   let messageId = "";
   await expect
     .poll(async () => {
@@ -222,14 +234,21 @@ test("registration, email confirmation, profile and SaaS editing, storage, priva
     })
     .toBe(true);
   const message = await (await request.get(`${mailpit}/api/v1/message/${messageId}`)).json();
-  const confirmation = message.HTML.match(/href="([^"]*\/auth\/v1\/verify[^"]*)"/)?.[1]?.replaceAll(
-    "&amp;",
-    "&",
-  );
-  if (!confirmation || !confirmation.startsWith(`${url}/`))
-    throw new Error("A local confirmation link is required.");
-  await page.goto(confirmation);
-  await expect(page).toHaveURL(/\/dashboard$/);
+  expect(message.Subject).toBe("Confirm your email for The SaaS Harbor");
+  const confirmation = confirmLink(message.HTML);
+  // The link works in another browser than the one used to sign up, and only once.
+  const elsewhere = await (await browser.newContext()).newPage();
+  await elsewhere.goto(confirmation);
+  await expect(elsewhere.getByRole("heading", { name: "Confirm your email" })).toBeVisible();
+  await elsewhere.getByRole("button", { name: "Confirm email" }).click();
+  await expect(elsewhere).toHaveURL(/\/dashboard$/);
+  await elsewhere.goto(confirmation);
+  await elsewhere.getByRole("button", { name: "Confirm email" }).click();
+  await expect(
+    elsewhere.getByRole("alert").filter({ hasText: "has already been used" }),
+  ).toBeVisible();
+  await elsewhere.context().close();
+  await login(page, email, password);
   const users = await admin.auth.admin.listUsers();
   firstUserId = users.data.users.find((user) => user.email === email)!.id;
   userIds.push(firstUserId);
@@ -553,6 +572,7 @@ test("another owner cannot read private history, edit SaaS, or overwrite images"
 });
 
 test("password recovery confirms a local email link and accepts the new password", async ({
+  browser,
   page,
   request,
 }) => {
@@ -576,18 +596,18 @@ test("password recovery confirms a local email link and accepts the new password
     })
     .toBe(true);
   const message = await (await request.get(`${mailpit}/api/v1/message/${resetId}`)).json();
-  const link = message.HTML.match(/href="([^"]*\/auth\/v1\/verify[^"]*)"/)?.[1]?.replaceAll(
-    "&amp;",
-    "&",
-  );
-  if (!link || !link.startsWith(`${url}/`)) throw new Error("A local reset link is required.");
-  await page.goto(link);
-  await expect(page).toHaveURL(/mode=update/);
+  expect(message.Subject).toBe("Reset your password for The SaaS Harbor");
+  // The link also works in another browser than the one that asked for it.
+  const elsewhere = await (await browser.newContext()).newPage();
+  await elsewhere.goto(confirmLink(message.HTML));
+  await expect(elsewhere.getByRole("heading", { name: "Reset your password" })).toBeVisible();
+  await elsewhere.getByRole("button", { name: "Choose a new password" }).click();
+  await expect(elsewhere).toHaveURL(/mode=update/);
   const replacement = randomBytes(24).toString("hex");
-  await page.getByLabel("New password").fill(replacement);
-  await page.getByRole("button", { name: "Update password" }).click();
-  await expect(page).toHaveURL(/\/dashboard$/);
-  await page.getByRole("button", { name: "Sign out", exact: true }).click();
+  await elsewhere.getByLabel("New password").fill(replacement);
+  await elsewhere.getByRole("button", { name: "Update password" }).click();
+  await expect(elsewhere).toHaveURL(/\/dashboard$/);
+  await elsewhere.context().close();
   await login(page, email, replacement);
 });
 

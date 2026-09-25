@@ -3,7 +3,7 @@
 import { useEditorAction } from "./use-editor-action";
 import { useFormStatus } from "react-dom";
 import Link from "next/link";
-import { authenticate, saveSaas } from "@/app/actions";
+import { authenticate, confirmEmailLinkAction, saveSaas } from "@/app/actions";
 import { categories, type ActionState } from "@/lib/domain";
 import type { Saas, SaasSettings } from "@/lib/data";
 import { cn } from "@/lib/utils";
@@ -218,6 +218,37 @@ export function AuthForm({
             Back to sign in
           </Link>
         )}
+      </p>
+    </form>
+  );
+}
+
+/** The button on the confirm page that verifies an email link. */
+export function ConfirmLinkForm({
+  tokenHash,
+  type,
+  submit,
+}: {
+  tokenHash: string;
+  type: "email" | "recovery";
+  submit: string;
+}) {
+  const [state, action] = useEditorAction(confirmEmailLinkAction);
+  return (
+    <form action={action} className="grid gap-5">
+      <input type="hidden" name="token_hash" value={tokenHash} />
+      <input type="hidden" name="type" value={type} />
+      <Feedback state={state} />
+      <Submit className="h-10 w-full" pendingLabel="Checking the link...">
+        {submit}
+      </Submit>
+      <p className="text-center text-sm text-muted-foreground">
+        <Link
+          className="font-medium text-foreground hover:underline"
+          href={type === "recovery" ? "/auth?mode=reset" : "/auth"}
+        >
+          {type === "recovery" ? "Request a new reset link" : "Back to sign in"}
+        </Link>
       </p>
     </form>
   );

@@ -40,7 +40,7 @@ Before the dev server starts, `npm run dev` runs `scripts/local-env.mjs`. It sta
 | Supabase Studio (tables, users, SQL) | http://127.0.0.1:55323 |
 | Mailpit (every email the app sends)  | http://127.0.0.1:55324 |
 
-Auth is Supabase Auth. Locally, confirmation and password reset emails never reach a real inbox: Mailpit catches them all, and the sign-in pages link to it. Open the link in the same browser you signed up in, since PKCE links only work there. Use `http://localhost:3001` consistently rather than `127.0.0.1:3001`, because the session cookies are tied to the hostname.
+Auth is Supabase Auth. Locally, confirmation and password reset emails never reach a real inbox: Mailpit catches them all, and the sign-in pages link to it. The links open a confirm page in any browser, not only the one you signed up in, and work once. Use `http://localhost:3001` consistently rather than `127.0.0.1:3001`, because the session cookies are tied to the hostname.
 
 ### When Docker Desktop does not start
 
@@ -54,7 +54,7 @@ Local Auth can deliver email to real inboxes through any SMTP provider. The sett
 2. In `supabase/.env.local`, set `HARBOR_SMTP_ENABLED=true`, `HARBOR_SMTP_HOST=smtp.gmail.com`, `HARBOR_SMTP_PORT=587`, your address as `HARBOR_SMTP_USER` and `HARBOR_SMTP_ADMIN_EMAIL`, and the app password as `HARBOR_SMTP_PASS`.
 3. Run `npm run db:restart`. It prints where Auth email goes.
 
-Without a password the stack falls back to Mailpit. The links in the emails point at this computer (`127.0.0.1`), so open them on the same computer and in the same browser you signed up in. The browser tests need Mailpit and refuse to run while real email is on; `npm run db:restart -- --mailpit` switches back until the next plain restart.
+Without a password the stack falls back to Mailpit. The links in the emails point at the dev server on this computer (`http://localhost:3001`), so open them on this computer; any browser works. The browser tests need Mailpit and refuse to run while real email is on; `npm run db:restart -- --mailpit` switches back until the next plain restart.
 
 ### Stripe verification
 

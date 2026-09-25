@@ -52,12 +52,6 @@ export default async function Auth({ searchParams }: Props) {
       <h1 className="mt-6 text-2xl font-semibold tracking-tight">{title}</h1>
       <p className="mt-1.5 text-muted-foreground">{description}</p>
       <div className="mt-8 grid gap-5">
-        {params.callback_error && (
-          <Notice tone="error">
-            This link has expired or was opened in another browser. Sign in, or request a new reset
-            link.
-          </Notice>
-        )}
         {supabaseConfig() ? (
           <AuthForm mode={mode} next={safeNext(params.next)} />
         ) : (

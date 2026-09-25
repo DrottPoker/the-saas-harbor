@@ -5,7 +5,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { deleteAccount } from "@/lib/account";
 import { parseSkills } from "@/lib/profile";
-import { profileSchema, safeNext, saasSchema, type ActionState } from "@/lib/domain";
+import { emailLink, profileSchema, safeNext, saasSchema, type ActionState } from "@/lib/domain";
 import { requireUser, serverClient } from "@/lib/supabase/server";
 import { uploadImage } from "@/lib/upload";
 
@@ -28,11 +28,13 @@ export async function authenticate(
     return { error: "Use a password between 12 and 128 characters." };
   const client = await serverClient();
   const origin = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3001";
+  // Both emails link to the confirm page, which verifies the token in whichever browser opens it.
+  const confirm = `${origin}/auth/confirm`;
   if (mode === "signup") {
     const { data, error } = await client.auth.signUp({
       email,
       password,
-      options: { emailRedirectTo: `${origin}/auth/callback` },
+      options: { emailRedirectTo: confirm },
     });
     if (error)
       return {
@@ -43,12 +45,10 @@ export async function authenticate(
       };
     if (!data.session)
       return {
-        success: "Check your email to confirm your account, then sign in.",
+        success: "Check your email and open the link to confirm your account.",
       };
   } else if (mode === "reset") {
-    const { error } = await client.auth.resetPasswordForEmail(email, {
-      redirectTo: `${origin}/auth/callback?next=update`,
-    });
+    const { error } = await client.auth.resetPasswordForEmail(email, { redirectTo: confirm });
     if (error) return { error: "The reset email could not be sent. Try again later." };
     return { success: "If an account exists, you will receive a password reset link." };
   } else if (mode === "update") {
@@ -64,6 +64,27 @@ export async function authenticate(
   }
   revalidatePath("/", "layout");
   redirect((mode === "login" && safeNext(value(form, "next"))) || "/dashboard");
+}
+
+// The confirm page submits the token from an email link. Verifying it here, on a button press
+// rather than when the page loads, keeps email link scanners from using the link up.
+export async function confirmEmailLinkAction(
+  _state: ActionState,
+  form: FormData,
+): Promise<ActionState> {
+  const link = emailLink(value(form, "token_hash"), value(form, "type"));
+  if (!link) return { error: "This link is incomplete. Open it again from the email." };
+  const client = await serverClient();
+  const { error } = await client.auth.verifyOtp({ token_hash: link.tokenHash, type: link.type });
+  if (error)
+    return {
+      error:
+        link.type === "recovery"
+          ? "This link has expired or has already been used. Request a new reset link."
+          : "This link has expired or has already been used. Sign in if you confirmed your email before, or sign up again to get a new link.",
+    };
+  revalidatePath("/", "layout");
+  redirect(link.type === "recovery" ? "/auth?mode=update" : "/dashboard");
 }
 
 export async function signOut() {

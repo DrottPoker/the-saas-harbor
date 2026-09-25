@@ -1,0 +1,37 @@
+{{/* Password reset. Like the confirmation email, the link opens the app's confirm page, which
+verifies the token only when the reader presses the button. */}}
+<div
+  style="
+    font-family:
+      -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, Helvetica, Arial, sans-serif;
+    font-size: 15px;
+    line-height: 1.6;
+    color: #1a1b1e;
+    max-width: 480px;
+  "
+>
+  <h1 style="font-size: 20px; margin: 0 0 16px">Reset your password</h1>
+  <p style="margin: 0 0 16px">
+    Someone asked to reset the password for your account on The SaaS Harbor. Choose a new password
+    with the link below.
+  </p>
+  <p style="margin: 0 0 24px">
+    <a
+      href="{{ .RedirectTo }}?token_hash={{ .TokenHash }}&type=recovery"
+      style="
+        display: inline-block;
+        background: #1a1b1e;
+        color: #fbfaf8;
+        text-decoration: none;
+        padding: 10px 16px;
+        border-radius: 8px;
+        font-weight: 600;
+      "
+      >Choose a new password</a
+    >
+  </p>
+  <p style="margin: 0; color: #585c61; font-size: 13px">
+    The link works once and expires after an hour, and you can open it on any device. If you did not
+    ask for this, ignore this email and your password stays the same.
+  </p>
+</div>

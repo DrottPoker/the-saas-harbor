@@ -179,6 +179,13 @@ export const noteSchema = z
   .trim()
   .max(NOTE_MAX_LENGTH, "Keep the note under 1,000 characters.");
 
+// An email link from Auth: a token hash and what it confirms. Only the two kinds the app sends.
+export function emailLink(tokenHash: string | null | undefined, type: string | null | undefined) {
+  if (!tokenHash || !/^[A-Za-z0-9_-]{16,200}$/.test(tokenHash)) return null;
+  if (type !== "email" && type !== "recovery") return null;
+  return { tokenHash, type } as const;
+}
+
 // Where sign-in may continue to. Only known internal paths, so the parameter cannot be used to
 // send people to another site.
 export function safeNext(value: string | null | undefined) {
