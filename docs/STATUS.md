@@ -8,6 +8,10 @@ The first release includes accounts, email confirmation and recovery, public mak
 
 Makers can message each other privately (see Messages below), and report products, profiles and messages to the admins, who decide in an admin panel (see Reports and moderation below). They get emails about unread messages and about decisions (see Email notifications below). Other forms of connection, such as following or contact lists, are not implemented.
 
+## Confirmation panel and username limit 2026-09-26
+
+At the project owner's request, a finished sign-up replaces the form with a Check your inbox panel: the address the confirmation link went to, that the account must be confirmed before signing in, what to do when nothing arrives, and a link to sign in. And a username can now change once every 30 days, with the first change free (migration `20260926040000_username_changes.sql`). The time of the last change is kept in a private table rather than on the public profile, and account deletion removes it; the privacy policy says so. The profile form shows a locked username read-only, with the days left.
+
 ## Usernames and even auth forms 2026-09-26
 
 At the project owner's request, sign-up now asks for a username in a second step: after Create account checks the email address, password and terms, one field asks for the username, and Continue creates the account and sends the confirmation email. The username becomes the profile's name and its address, `/users/<username>`, and the profile shows it as @username under the name in smaller, grey text. Users change both on their profile; the name no longer changes the address. Existing profiles keep their slug as username. The migration `20260926030000_usernames.sql` was applied to production on 2026-09-26, a few minutes after the code went live; no one signed up in between. The owner's production profile is still named Harbor maker, with the username harbor-maker; both can be changed on the profile.

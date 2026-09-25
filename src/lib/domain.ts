@@ -178,7 +178,7 @@ const USERNAME_RULES = "Use 3 to 30 letters, numbers and single hyphens, like ja
 export const usernameSchema = z
   .string()
   .trim()
-  .transform((value) => value.replace(/^@/, "").toLowerCase())
+  .transform(normalizeUsername)
   .pipe(
     z
       .string()
@@ -192,6 +192,20 @@ export const USERNAME_PROBLEMS = {
   taken: "That username is taken. Choose another one.",
 } as const;
 export type UsernameProblem = keyof typeof USERNAME_PROBLEMS;
+
+/** Days between username changes, as in public.set_username. The first change is free. */
+export const USERNAME_CHANGE_DAYS = 30;
+
+/** A username as the user typed it, in the form it is stored in, before the rules are checked. */
+export function normalizeUsername(input: string) {
+  return input.trim().replace(/^@/, "").toLowerCase();
+}
+
+/** When the username can be changed again, in days from now, such as "in 12 days". */
+export function usernameLockedMessage(availableAt: string, now = Date.now()) {
+  const days = Math.max(1, Math.ceil((new Date(availableAt).getTime() - now) / 86_400_000));
+  return `You can change your username again in ${days} ${days === 1 ? "day" : "days"}.`;
+}
 
 /** Password length for new passwords, also set in Supabase Auth (supabase/config.toml). */
 export const PASSWORD_MIN_LENGTH = 6;

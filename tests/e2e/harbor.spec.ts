@@ -405,9 +405,11 @@ test("registration, email confirmation, profile and SaaS editing, storage, priva
   ).toBeVisible();
   await username.fill(`@Tester-${run}`);
   await page.getByRole("button", { name: "Continue" }).click();
-  await expect(
-    page.getByText("Check your email and open the link to confirm your account."),
-  ).toBeVisible();
+  // The form gives way to what to do next, naming the address the link went to.
+  const sent = page.getByRole("heading", { name: "Check your inbox" });
+  await expect(sent).toBeFocused();
+  await expect(page.getByText(email, { exact: true })).toBeVisible();
+  await expect(page.getByLabel("Username")).toHaveCount(0);
   let messageId = "";
   await expect
     .poll(async () => {
@@ -499,6 +501,17 @@ test("registration, email confirmation, profile and SaaS editing, storage, priva
   const current = page.url();
   await page.goto(`/users/tester-${run}`);
   await expect(page.getByRole("heading", { name: "Page not found" })).toBeVisible();
+  // After a change, the username is locked for 30 days; the form says so and the server refuses.
+  await page.goto("/dashboard/profile");
+  const locked = page.getByLabel("Username");
+  await expect(locked).toHaveAttribute("readonly", "");
+  await expect(page.getByText(/You can change your username again in 30 days\./)).toBeVisible();
+  await locked.evaluate((input) => input.removeAttribute("readonly"));
+  await locked.fill(`another-${run}`);
+  await page.getByRole("button", { name: "Save profile" }).click();
+  await expect(
+    page.getByRole("alert").filter({ hasText: "You can change your username again in 30 days." }),
+  ).toBeVisible();
   await page.goto(current);
   await expect(page).toHaveTitle("Local Test Maker | The SaaS Harbor");
   await expect(page.locator('link[rel="canonical"]')).toHaveAttribute(

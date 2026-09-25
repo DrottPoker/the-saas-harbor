@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   USERNAME_PROBLEMS,
+  usernameLockedMessage,
   usernameSchema,
   containsPattern,
   emailLink,
@@ -108,5 +109,20 @@ describe("usernames", () => {
       expect(usernameSchema.safeParse(bad).error?.issues[0]?.message).toBe(
         USERNAME_PROBLEMS.format,
       );
+  });
+});
+
+describe("username changes", () => {
+  it("say in whole days when the username can change again, rounding up", () => {
+    const now = Date.parse("2026-09-26T12:00:00Z");
+    expect(usernameLockedMessage("2026-10-26T12:00:00Z", now)).toBe(
+      "You can change your username again in 30 days.",
+    );
+    expect(usernameLockedMessage("2026-09-27T01:00:00Z", now)).toBe(
+      "You can change your username again in 1 day.",
+    );
+    expect(usernameLockedMessage("2026-09-26T12:00:01Z", now)).toBe(
+      "You can change your username again in 1 day.",
+    );
   });
 });

@@ -4,6 +4,7 @@ import { startTransition, useEffect, useRef, useState, useTransition } from "rea
 import { useEditorAction } from "./use-editor-action";
 import { useFormStatus } from "react-dom";
 import Link from "next/link";
+import { MailCheck } from "lucide-react";
 import {
   authenticate,
   checkSignupDetails,
@@ -177,7 +178,11 @@ export function UsernameInput(props: Omit<React.ComponentProps<typeof Input>, "t
         // One more for an @ typed in front, which the server removes.
         maxLength={USERNAME_MAX_LENGTH + 1}
         {...props}
-        className={cn("pl-7", props.className)}
+        // Read-only while a recent change locks it, and it looks it.
+        className={cn(
+          "pl-7 read-only:cursor-not-allowed read-only:bg-subtle read-only:text-muted-foreground",
+          props.className,
+        )}
       />
     </div>
   );
@@ -216,6 +221,12 @@ export function AuthForm({
     if (choosing) username.current?.focus();
   }, [choosing]);
 
+  const sent = signup && !!state.success;
+  const sentHeading = useRef<HTMLHeadingElement>(null);
+  useEffect(() => {
+    if (sent) sentHeading.current?.focus();
+  }, [sent]);
+
   const submit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const data = new FormData(event.currentTarget);
@@ -227,6 +238,36 @@ export function AuthForm({
       });
     else startTransition(() => action(data));
   };
+
+  // Once the account is created, the form gives way to what to do next.
+  if (sent)
+    return (
+      <section aria-labelledby="sent-title" className="grid gap-4 rounded-xl border bg-surface p-6">
+        <MailCheck aria-hidden="true" className="size-8 text-brand" />
+        <h2
+          id="sent-title"
+          ref={sentHeading}
+          tabIndex={-1}
+          className="text-xl font-semibold tracking-tight focus:outline-none"
+        >
+          Check your inbox
+        </h2>
+        <p className="leading-7 text-muted-foreground">
+          We sent a confirmation link to{" "}
+          <strong className="font-medium text-foreground [overflow-wrap:anywhere]">
+            {state.values?.email}
+          </strong>
+          . Open it to confirm your account. You can sign in once it is confirmed.
+        </p>
+        <p className="text-[13px] leading-5 text-muted-foreground">
+          Nothing after a few minutes? Look in your spam folder, or sign up again if the address was
+          wrong.
+        </p>
+        <Button asChild variant="outline" className="h-10 w-full">
+          <Link href="/auth">Go to sign in</Link>
+        </Button>
+      </section>
+    );
 
   return (
     <form

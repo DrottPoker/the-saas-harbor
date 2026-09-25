@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Plus, Trash2 } from "lucide-react";
 import { saveProfile } from "@/app/actions";
 import type { Profile } from "@/lib/data";
+import { USERNAME_CHANGE_DAYS, usernameLockedMessage } from "@/lib/domain";
 import { MONTH_NAMES, type ProfileExperience } from "@/lib/profile";
 import { cn } from "@/lib/utils";
 import { Actions, Feedback, Field, ImageField, Section, Submit, UsernameInput } from "../forms";
@@ -197,10 +198,13 @@ function RoleEditor({
 export function ProfileForm({
   profile,
   experience,
+  usernameAvailableAt,
   thisYear,
 }: {
   profile: Profile | null;
   experience: ProfileExperience[];
+  /** When the username can be changed again, or null when it can now. */
+  usernameAvailableAt: string | null;
   /** From the server, so the year lists match between the server and the browser. */
   thisYear: number;
 }) {
@@ -265,9 +269,21 @@ export function ProfileForm({
         <Field
           name="username"
           label="Username"
-          hint="Shown as @username under your name, and used as your profile address."
+          hint={
+            usernameAvailableAt
+              ? `Shown as @username under your name, and used as your profile address. ${usernameLockedMessage(usernameAvailableAt)}`
+              : `Shown as @username under your name, and used as your profile address. After a change, you can change it again in ${USERNAME_CHANGE_DAYS} days.`
+          }
         >
-          <UsernameInput defaultValue={state.values?.username ?? profile?.slug ?? ""} />
+          {/* Read-only rather than disabled, so the current username is still sent. */}
+          <UsernameInput
+            readOnly={!!usernameAvailableAt}
+            defaultValue={
+              usernameAvailableAt
+                ? (profile?.slug ?? "")
+                : (state.values?.username ?? profile?.slug ?? "")
+            }
+          />
         </Field>
         <Field
           name="headline"

@@ -1140,6 +1140,7 @@ export type Database = {
         Returns: string
       }
       unread_message_count: { Args: never; Returns: number }
+      username_change_available_at: { Args: never; Returns: string }
     }
     Enums: {
       [_ in never]: never

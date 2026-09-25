@@ -71,7 +71,7 @@ select results_eq(
   'visitors run only the functions public pages need');
 select results_eq(
   $$ select functions from pgtap_function_privileges where role = 'authenticated' $$,
-  $$ values ('admin_account,admin_accounts,admin_dismiss_report,admin_hide_saas,admin_restore_account,admin_restore_saas,admin_suspend_account,begin_revenue_check,check_username,delete_account,directory_stats,is_admin,mark_conversation_read,saas_slug_redirect,save_notification_settings,save_profile,save_saas,send_message,set_username,submit_report,unread_message_count'::text) $$,
+  $$ values ('admin_account,admin_accounts,admin_dismiss_report,admin_hide_saas,admin_restore_account,admin_restore_saas,admin_suspend_account,begin_revenue_check,check_username,delete_account,directory_stats,is_admin,mark_conversation_read,saas_slug_redirect,save_notification_settings,save_profile,save_saas,send_message,set_username,submit_report,unread_message_count,username_change_available_at'::text) $$,
   'makers run only the functions the app calls');
 
 select * from finish();

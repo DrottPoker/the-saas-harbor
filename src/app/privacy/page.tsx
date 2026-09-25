@@ -53,7 +53,8 @@ export default function Privacy() {
               <strong className="font-medium text-foreground">Profile.</strong> Your username, which
               is also your page address, and your name, headline, location, About text, experience,
               skills, links and photo. You choose the username when you sign up; everything else is
-              up to you to fill in.
+              up to you to fill in. We also keep when you last changed your username, privately,
+              since it can change once every 30 days.
             </li>
             <li>
               <strong className="font-medium text-foreground">Products.</strong> Name, tagline,

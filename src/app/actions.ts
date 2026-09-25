@@ -12,7 +12,9 @@ import {
   profileSchema,
   safeNext,
   saasSchema,
+  normalizeUsername,
   USERNAME_PROBLEMS,
+  usernameLockedMessage,
   usernameSchema,
   type ActionState,
 } from "@/lib/domain";
@@ -301,8 +303,18 @@ export async function saveProfile(_state: ActionState, form: FormData): Promise<
       .eq("id", user.id)
       .maybeSingle();
     if (readError) return { error: "Your profile could not be loaded. Please try again." };
-    const { username, problem } = await usernameProblem(client, value(form, "username"));
-    if (problem) return { error: problem };
+    // Only a changed username is checked, so an older, longer address can stay as it is.
+    let username = normalizeUsername(value(form, "username"));
+    if (username !== existing?.slug) {
+      const { data: availableAt, error: lockError } = await client.rpc(
+        "username_change_available_at",
+      );
+      if (lockError) return { error: "Your profile could not be loaded. Please try again." };
+      if (availableAt) return { error: usernameLockedMessage(availableAt) };
+      const checked = await usernameProblem(client, username);
+      if (checked.problem) return { error: checked.problem };
+      username = checked.username;
+    }
     const avatar = await uploadImage(client, user.id, form.get("image"));
     if (avatar) uploaded.push(avatar);
     const { error } = await client.rpc("save_profile", {
@@ -332,7 +344,9 @@ export async function saveProfile(_state: ActionState, form: FormData): Promise<
       if (usernameError)
         unsaved = usernameError.message.includes("taken")
           ? "Your profile was saved, but that username was just taken. Choose another one."
-          : "Your profile was saved, but the username could not be changed. Please try again.";
+          : usernameError.message.includes("locked")
+            ? "Your profile was saved, but your username was changed a moment ago."
+            : "Your profile was saved, but the username could not be changed. Please try again.";
     }
   } catch (error) {
     if (uploaded.length) await client.storage.from("profile-images").remove(uploaded);

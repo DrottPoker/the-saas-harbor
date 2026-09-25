@@ -11,11 +11,13 @@ export const metadata = { title: "Edit profile" };
 
 export default async function EditProfile() {
   const { user, client } = await requireUser();
-  const [profile, experience] = await Promise.all([
+  const [profile, experience, usernameLock] = await Promise.all([
     client.from("profiles").select("*").eq("id", user.id).maybeSingle(),
     client.from("profile_experience").select("*").eq("profile_id", user.id),
+    client.rpc("username_change_available_at"),
   ]);
-  if (profile.error || experience.error) throw new Error("Your profile could not be loaded.");
+  if (profile.error || experience.error || usernameLock.error)
+    throw new Error("Your profile could not be loaded.");
   return (
     <Shell size="medium">
       <BackLink href="/dashboard">Dashboard</BackLink>
@@ -45,6 +47,7 @@ export default async function EditProfile() {
         <ProfileForm
           profile={profile.data}
           experience={experience.data}
+          usernameAvailableAt={usernameLock.data}
           thisYear={new Date().getUTCFullYear()}
         />
       </div>
