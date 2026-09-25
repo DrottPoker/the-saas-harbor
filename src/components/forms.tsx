@@ -48,23 +48,34 @@ export function Feedback({ state }: { state: ActionState }) {
   if (state.success) return <Notice tone="success">{state.success}</Notice>;
   return null;
 }
+/** The red star is for sighted users; the field's own `required` tells screen readers. */
 export function Field({
   name,
   label,
   hint,
   aside,
+  required = false,
   children,
 }: {
   name: string;
   label: string;
   hint?: string;
   aside?: React.ReactNode;
+  required?: boolean;
   children: React.ReactNode;
 }) {
   return (
     <div className="grid gap-2">
       <div className="flex items-center justify-between gap-3">
-        <Label htmlFor={name}>{label}</Label>
+        {/* The star stays outside the label, so the field's name is exactly the label. */}
+        <span className="flex items-baseline gap-0.5">
+          <Label htmlFor={name}>{label}</Label>
+          {required && (
+            <span aria-hidden="true" className="text-sm font-medium text-destructive">
+              *
+            </span>
+          )}
+        </span>
         {aside}
       </div>
       {children}
@@ -365,9 +376,12 @@ export function SaasForm({
   return (
     <form action={action}>
       <input type="hidden" name="id" value={id} />
-      <Section title="Product" description="Shown on the public product page and in listings.">
+      <Section
+        title="Product"
+        description="Shown on the public product page and in listings. Fields marked * are required."
+      >
         <div className="grid gap-5 sm:grid-cols-2">
-          <Field name="name" label="Product name">
+          <Field name="name" label="Product name" required>
             <Input
               id="name"
               name="name"
@@ -393,7 +407,7 @@ export function SaasForm({
             </select>
           </Field>
         </div>
-        <Field name="tagline" label="Tagline" hint="One sentence, up to 140 characters.">
+        <Field name="tagline" label="Tagline" hint="One sentence, up to 140 characters." required>
           <Input
             id="tagline"
             name="tagline"
@@ -404,7 +418,7 @@ export function SaasForm({
             placeholder="What does it help people do?"
           />
         </Field>
-        <Field name="description" label="Description">
+        <Field name="description" label="Description" required>
           <Textarea
             id="description"
             name="description"
@@ -416,7 +430,7 @@ export function SaasForm({
             placeholder="Who it is for, what it does, and what makes it different."
           />
         </Field>
-        <Field name="website" label="Website">
+        <Field name="website" label="Website" required>
           <Input
             id="website"
             name="website"
