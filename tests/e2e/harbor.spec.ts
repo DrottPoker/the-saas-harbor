@@ -120,7 +120,7 @@ test.beforeAll(async ({ playwright }, info) => {
   const id = randomUUID();
   for (const path of [
     ...["/", "/discover", "/newest", "/about", "/privacy", "/terms", "/account-deleted"],
-    ...["/auth", "/auth/confirm", `/saas/${id}`, `/makers/${id}`, "/missing"],
+    ...["/auth", "/auth/confirm", `/saas/${id}`, `/makers/${id}`, "/demo/metricfold", "/missing"],
     ...["/dashboard", "/dashboard/profile", "/dashboard/reports", `/dashboard/saas/${id}`],
     ...["/dashboard/settings", "/api/email/send"],
     ...["/messages", `/messages/${id}`, `/report/saas/${id}`, "/api/stripe/sync"],
@@ -176,6 +176,7 @@ test("anonymous navigation, private route protection and responsive empty state"
   const sitemap = await page.request.get("/sitemap.xml");
   expect(sitemap.headers()["content-type"]).toContain("xml");
   expect(await sitemap.text()).toContain(`<loc>${origin}/discover</loc>`);
+  expect(await sitemap.text()).not.toContain("/demo/");
   await page.goto("/dashboard");
   await expect(page).toHaveURL(/\/auth$/);
   await page.goto(`/discover?category=Design&q=missing-${run}`);
@@ -214,6 +215,85 @@ test("anonymous navigation, private route protection and responsive empty state"
   for (const path of publicPages) {
     await page.goto(path);
     await expectAccessible(page);
+  }
+  expect(violations).toEqual([]);
+});
+
+// Demo products fill the lists until a full page of real products shares verified MRR. The local
+// database may already hold that many, so the test checks whichever state it finds.
+test("demo products fill the lists, marked as demos, until real products take their place", async ({
+  page,
+}) => {
+  const { count, error } = await admin
+    .from("leaderboard")
+    .select("id", { count: "exact", head: true });
+  if (error || count == null) throw new Error("Unable to count ranked products.");
+  await page.goto("/");
+  const heading = page.getByRole("heading", { name: "Demo products" });
+  if (count >= 12) {
+    await expect(heading).toHaveCount(0);
+    await page.goto("/demo/metricfold");
+    await expect(page.getByRole("heading", { name: "Page not found" })).toBeVisible();
+    return;
+  }
+  const violations: string[] = [];
+  watchPolicy(page, violations);
+  // The leaderboard's first page is filled after the real products, and demo rows have no rank.
+  await expect(heading).toBeVisible();
+  const rows = page.getByRole("list", { name: "Demo products" }).getByRole("listitem");
+  await expect(rows).toHaveCount(Math.min(13, 12 - count));
+  for (const row of await rows.all()) {
+    await expect(row.getByText("Demo", { exact: true })).toBeVisible();
+    await expect(row.getByText("Rank", { exact: true })).toHaveCount(0);
+  }
+  await expect(rows.first().getByRole("link")).toHaveAttribute("href", "/demo/metricfold");
+  // The search and the categories apply to them as to real products.
+  await page.goto("/?q=CRONHAWK");
+  await expect(rows).toHaveCount(1);
+  await page.goto("/discover?category=Finance");
+  await expect(page.getByRole("link", { name: /Retrywell/ })).toHaveAttribute(
+    "href",
+    "/demo/retrywell",
+  );
+  await page.goto("/newest");
+  await expect(heading).toBeVisible();
+
+  // A demo page says what it is, stays out of search engines and offers no way to contact anyone.
+  await page.goto("/demo/metricfold");
+  await expect(page).toHaveTitle(/^Metricfold \(demo\)/);
+  await expect(page.getByRole("heading", { name: "Metricfold", level: 1 })).toBeVisible();
+  await expect(page.getByText("This is a demo product.")).toBeVisible();
+  await expect(page.getByText("Demo figures, made up for this example")).toBeVisible();
+  await expect(page.locator('meta[name="robots"]')).toHaveAttribute("content", "noindex, nofollow");
+  await expect(page.getByRole("group", { name: /MRR at month end/ })).toBeVisible();
+  for (const text of [
+    "Send message",
+    "Visit website",
+    "Report this product",
+    "Verified with Stripe through",
+  ])
+    await expect(page.getByText(text)).toHaveCount(0);
+  await page.goto("/demo/missing");
+  await expect(page.getByRole("heading", { name: "Page not found" })).toBeVisible();
+
+  for (const theme of ["dark", "light"] as const) {
+    await setThemeCookie(page, theme);
+    for (const path of [
+      "/",
+      "/discover",
+      "/newest",
+      "/about",
+      "/demo/metricfold",
+      "/demo/hourbridge",
+    ]) {
+      await page.goto(path);
+      await expectAccessible(page);
+    }
+  }
+  await page.setViewportSize({ width: 390, height: 844 });
+  for (const path of ["/", "/discover", "/demo/metricfold"]) {
+    await page.goto(path);
+    await expectNoHorizontalScroll(page);
   }
   expect(violations).toEqual([]);
 });

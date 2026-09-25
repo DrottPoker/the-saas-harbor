@@ -1,12 +1,23 @@
 # Implementation status
 
-Updated 2026-09-25 with email notifications, readable addresses and sharing cards, a Content Security Policy, email links that work on any device, and reports with an admin panel. The project was reviewed and handed over 2026-09-24; the first release was built 2026-09-12 and committed on the `development` branch.
+Updated 2026-09-25 with demo products, email notifications, readable addresses and sharing cards, a Content Security Policy, email links that work on any device, and reports with an admin panel. The project was reviewed and handed over 2026-09-24; the first release was built 2026-09-12 and committed on the `development` branch.
 
 ## Implemented
 
 The first release includes accounts, email confirmation and recovery, public maker profiles, multiple editable SaaS per owner, profile/logo uploads, SaaS and maker pages, category/name filtering, newest arrivals, and a USD MRR leaderboard. Each optional metric has a sharing control. Private verification history and the current public projection are separate and protected by RLS. No demo data is displayed as real activity.
 
 Makers can message each other privately (see Messages below), and report products, profiles and messages to the admins, who decide in an admin panel (see Reports and moderation below). They get emails about unread messages and about decisions (see Email notifications below). Other forms of connection, such as following or contact lists, are not implemented.
+
+## Demo products 2026-09-25
+
+The project owner asked for realistic demo products, clearly marked, so that the first visitors do not find an empty directory, and for them to go as real products arrive.
+
+- Fifteen made-up products with makers, logos, descriptions, figures and a 12-month history fill the first page of the leaderboard, Browse and New arrivals after the real products, in their own Demo products section. Each real product takes one demo place, and all of them disappear once 12 real products share verified MRR. `DEMO_PRODUCTS=off` hides them at once.
+- They are marked Demo in every row, card and page, are never ranked or called verified, and have no website, maker page or contact. Their pages under `/demo` are kept out of search engines and the sitemap. They live only in code, so the database and everything that reads it hold real products only.
+- The names were checked against existing products when they were chosen, and candidates that already belonged to a product were replaced.
+- At the owner's request, the earlier local demo data from `npm run db:seed` (9 accounts with 16 products, their images and reports) was removed from the local database with the new `npm run db:seed -- --remove`. The seed still exists for testing; its products count as real listings.
+
+Choices the owner should confirm: 12 real products as the point where demo products are gone (one full page), demo products in Browse and New arrivals as well as on the leaderboard, and the made-up figures, from $1,940 to $38,400 MRR.
 
 ## Email notifications 2026-09-25
 
@@ -83,10 +94,10 @@ The browser tests no longer assume an empty database, check for horizontal scrol
 
 ## Verified 2026-09-25
 
-- `npm run check`: Prettier, ESLint with zero warnings, TypeScript, 122 unit tests: Stripe MRR, invoice history, keys and encryption, chart models, message threads, profile dates and input, sign-in continuation, report and decision input, the Content Security Policy, the notification emails, and the full Stripe read path against the fake Stripe server.
+- `npm run check`: Prettier, ESLint with zero warnings, TypeScript, 133 unit tests: Stripe MRR, invoice history, keys and encryption, chart models, message threads, profile dates and input, sign-in continuation, report and decision input, the Content Security Policy, the notification emails, the demo products and how they fill a list, and the full Stripe read path against the fake Stripe server.
 - `npm run build`: Next.js 16.3.5 production build.
 - `npm run test:db`: 261 pgTAP assertions in four suites (`access` 113, `moderation` 92, `slugs` 25, `notifications` 31). Two deliberately weakened policies (product visibility and report visibility) were each caught by the moderation suite before being restored, and the notifications suite failed on a version that counted one unread message in two emails. `supabase db diff` reports no drift between the local database and the migrations, and `supabase db lint` reports no errors.
-- `npm run test:e2e`: 9 Chromium integration tests with Axe scans in both themes (including the revenue charts, the privacy policy and the terms, the delete sections, messaging, personal profiles, the report pages, every admin page, the notices makers see and the email settings), against local Supabase, local Realtime, Mailpit and a fake Stripe API, passing twice in a row.
+- `npm run test:e2e`: 10 Chromium integration tests with Axe scans in both themes (including the revenue charts, the privacy policy and the terms, the delete sections, messaging, personal profiles, the report pages, every admin page, the notices makers see, the email settings and the demo products and their pages), against local Supabase, local Realtime, Mailpit and a fake Stripe API, passing three times in a row. One run before that failed once in the registration test, where the test server answered Page not found for the new product form; it passed in the four runs after, once alone and three times in the full suite. Failed tests now keep a Playwright trace (see known issue 17).
 - The admin and report pages were checked at 390 px and 1440 px in both themes, and with touch emulation for the message Report link.
 - The CI workflow has not run on GitHub yet. Its commands were run locally with the same Supabase service exclusions.
 
@@ -164,3 +175,5 @@ Product and quality:
 13. Image signature validation in `src/lib/upload.ts` has no unit tests. Vitest can now import server-only modules, so this is straightforward.
 14. Realtime keeps its message event rows, which hold ids only, for a few days.
 15. Notification emails have no one-click unsubscribe (`List-Unsubscribe`, RFC 8058): turning them off takes a sign-in. Large senders to Gmail and Yahoo need it, so add it before volumes grow. The emails are in English only.
+16. Demo products retire themselves at 12 ranked products, but their code stays. Remove it once the directory has grown; ARCHITECTURE lists the parts.
+17. The browser tests run against `next dev`, which compiles routes on demand. Once, it answered Page not found for the product form in the registration test, and the failure did not repeat. Failed tests now keep a trace; if it happens again, the trace shows the address and the requests. Running the browser tests against a production build (`next build` and `next start`) would remove the dev server's compile timing from the tests.

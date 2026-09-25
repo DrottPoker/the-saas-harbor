@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Search } from "lucide-react";
-import { listings, safePage, type Sort } from "@/lib/data";
+import { demoRows, listings, safePage, type Sort } from "@/lib/data";
 import { categories } from "@/lib/domain";
 import { cn } from "@/lib/utils";
 import { Leaderboard, ListingGrid, ResultsFooter } from "./listings";
@@ -47,6 +47,8 @@ export async function Explore({
   const search = (params.q ?? "").slice(0, 80);
   const { title, description, path, sort } = intro[mode];
   const { rows, count, error } = await listings({ sort, category, page, search });
+  const demo = error ? [] : await demoRows({ sort, category, search, page, count });
+  const meta = mode === "newest" ? "joined" : "maker";
   const filtered = !!category || !!search || page > 1;
   function url(nextCategory: string, nextPage = 1) {
     const query = new URLSearchParams();
@@ -98,7 +100,7 @@ export async function Explore({
 
       {error ? (
         <Notice tone="error">{error}</Notice>
-      ) : !rows.length ? (
+      ) : !rows.length && !demo.length ? (
         filtered ? (
           <EmptyState
             title="No matching products"
@@ -126,12 +128,36 @@ export async function Explore({
         )
       ) : (
         <>
-          {ranked ? (
-            <Leaderboard items={rows} />
-          ) : (
-            <ListingGrid items={rows} meta={mode === "newest" ? "joined" : "maker"} />
+          {!!rows.length && (
+            <>
+              {ranked ? <Leaderboard items={rows} /> : <ListingGrid items={rows} meta={meta} />}
+              <ResultsFooter page={page} count={count} href={(next) => url(category, next)} />
+            </>
           )}
-          <ResultsFooter page={page} count={count} href={(next) => url(category, next)} />
+          {!!demo.length && (
+            <section aria-labelledby="demo-products" className={cn(!!rows.length && "mt-10")}>
+              <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+                <div className="max-w-2xl">
+                  <h2 id="demo-products" className="text-lg font-semibold">
+                    Demo products
+                  </h2>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    Examples of how products appear here while the directory is new. The products,
+                    their makers and their figures are made up, and they disappear as real products
+                    join.
+                  </p>
+                </div>
+                <Button asChild size="sm" variant="outline" className="self-start sm:self-auto">
+                  <Link href="/dashboard/saas/new">Submit your SaaS</Link>
+                </Button>
+              </div>
+              {ranked ? (
+                <Leaderboard items={demo} demo labelledBy="demo-products" />
+              ) : (
+                <ListingGrid items={demo} meta={meta} />
+              )}
+            </section>
+          )}
         </>
       )}
 

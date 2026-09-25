@@ -11,6 +11,8 @@ const sizes = {
 
 type Props = {
   path?: string | null;
+  /** Artwork drawn instead of an uploaded image, such as a demo product's logo. */
+  mark?: React.ReactNode;
   name: string;
   size?: keyof typeof sizes;
   // Decorative images sit next to the visible name, so they stay silent for screen readers.
@@ -20,6 +22,7 @@ type Props = {
 
 function Picture({
   path,
+  mark,
   name,
   size = "md",
   decorative = true,
@@ -38,7 +41,9 @@ function Picture({
         className,
       )}
     >
-      {url ? (
+      {mark ? (
+        mark
+      ) : url ? (
         <Image
           src={url}
           alt={decorative ? "" : name}

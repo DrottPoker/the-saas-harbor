@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { demoActive } from "@/lib/data";
 import { PageHeader, Shell } from "@/components/shell";
 import { Button } from "@/components/ui/button";
 
@@ -18,6 +19,13 @@ const sections = [
     body: [
       "Products are ranked by verified MRR that their makers choose to share. Equal amounts are ordered by the date the product was listed. Category filters keep the overall rank, and a verified MRR of $0 is ranked too.",
       "Products without Stripe, or that keep their revenue private, are still listed in Browse and New arrivals.",
+    ],
+  },
+  {
+    title: "Demo products",
+    demo: true,
+    body: [
+      "While the directory is new, the leaderboard, Browse and New arrivals show demo products after the real ones, so you can see what a listing looks like. They are marked Demo, and the products, their makers and their figures are made up. They are never ranked or verified, cannot be contacted, and disappear as real products join.",
     ],
   },
   {
@@ -55,7 +63,9 @@ const sections = [
   },
 ];
 
-export default function About() {
+export default async function About() {
+  // The demo section is shown only while demo products are.
+  const demo = await demoActive();
   return (
     <Shell size="narrow">
       <PageHeader
@@ -63,16 +73,18 @@ export default function About() {
         description="A public directory of independent SaaS, with a leaderboard of revenue verified through Stripe."
       />
       <div className="grid gap-10 border-t pt-10">
-        {sections.map((section) => (
-          <section key={section.title}>
-            <h2 className="text-lg font-semibold">{section.title}</h2>
-            {section.body.map((paragraph, index) => (
-              <p key={index} className="mt-3 leading-7 text-foreground/85">
-                {paragraph}
-              </p>
-            ))}
-          </section>
-        ))}
+        {sections
+          .filter((section) => demo || !("demo" in section))
+          .map((section) => (
+            <section key={section.title}>
+              <h2 className="text-lg font-semibold">{section.title}</h2>
+              {section.body.map((paragraph, index) => (
+                <p key={index} className="mt-3 leading-7 text-foreground/85">
+                  {paragraph}
+                </p>
+              ))}
+            </section>
+          ))}
         <div>
           <Button asChild>
             <Link href="/dashboard/saas/new">Submit your SaaS</Link>

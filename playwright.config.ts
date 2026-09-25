@@ -8,7 +8,12 @@ export default defineConfig({
   retries: 0,
   timeout: 90000,
   expect: { timeout: 15000 },
-  use: { baseURL: "http://127.0.0.1:3002", trace: "off", screenshot: "only-on-failure" },
+  use: {
+    baseURL: "http://127.0.0.1:3002",
+    // A failed test keeps a trace (addresses, requests, page states) to find out why.
+    trace: { mode: "retain-on-failure", screenshots: false },
+    screenshot: "only-on-failure",
+  },
   projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
   webServer: [
     {

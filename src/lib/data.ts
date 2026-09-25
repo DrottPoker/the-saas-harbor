@@ -1,9 +1,14 @@
 import "server-only";
 import { cache } from "react";
 import { publicClient } from "./supabase/server";
+import { demoFill, demoListings, type DemoDetails } from "./demo";
 import { categories, containsPattern } from "./domain";
 import type { Database } from "./supabase/database.types";
-export type Listing = Database["public"]["Views"]["public_saas"]["Row"] & { rank?: number | null };
+export type Listing = Database["public"]["Views"]["public_saas"]["Row"] & {
+  rank?: number | null;
+  /** Only on the made-up products from src/lib/demo.ts, which are never stored or ranked. */
+  demo?: DemoDetails;
+};
 export type Profile = Database["public"]["Tables"]["profiles"]["Row"];
 export type Saas = Database["public"]["Tables"]["saas"]["Row"];
 export type SaasSettings = Database["public"]["Tables"]["saas_settings"]["Row"];
@@ -53,6 +58,41 @@ export async function listings({
     count: count ?? 0,
     error: error ? "Products could not be loaded. Please try again shortly." : null,
   };
+}
+/**
+ * Whether the made-up demo products show (src/lib/demo.ts): until a full page of real products
+ * shares verified MRR, and never with DEMO_PRODUCTS=off. When the count cannot be read, they stay
+ * hidden.
+ */
+export const demoActive = cache(async () => {
+  if (process.env.DEMO_PRODUCTS === "off") return false;
+  const client = publicClient();
+  if (!client) return false;
+  const { count, error } = await client
+    .from("leaderboard")
+    .select("id", { count: "exact", head: true });
+  return !error && count != null && count < PAGE_SIZE;
+});
+/** The demo products a list shows after the `count` real products that match its filters. */
+export async function demoRows({
+  count,
+  ...options
+}: {
+  sort: Sort;
+  category: string;
+  search: string;
+  page: number;
+  count: number;
+}) {
+  const room = PAGE_SIZE - count;
+  // A full or later page has no room, so it needs no count of the leaderboard either.
+  if (options.page !== 1 || room <= 0 || !(await demoActive())) return [];
+  return demoFill(demoListings(), { ...options, room });
+}
+/** A demo product for its page, while demo products show. */
+export async function demoProduct(slug: string) {
+  if (!(await demoActive())) return null;
+  return demoListings().find((item) => item.slug === slug) ?? null;
 }
 // Cached per request so metadata and page rendering share one query.
 export const publicSaas = cache(async (id: string) => {

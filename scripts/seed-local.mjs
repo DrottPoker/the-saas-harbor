@@ -5,7 +5,9 @@ import { deflateSync } from "node:zlib";
 import { createClient } from "@supabase/supabase-js";
 import { ensureLocalSupabase } from "./local-supabase.mjs";
 
-// Fictional demo content for the local stack only. Re-running replaces earlier demo accounts.
+// Fictional demo content for the local stack only. Re-running replaces earlier demo accounts, and
+// `--remove` only removes them.
+const removeOnly = process.argv.includes("--remove");
 const DOMAIN = "demo.harbor.test";
 const PASSWORD = "harbor-demo-password";
 
@@ -409,11 +411,14 @@ const admin = createClient(local.url, local.secretKey, options);
 // Demo products get a verified snapshot through the same trusted RPC the app uses. Their test-mode
 // keys are placeholders: a later refresh fails with "Stripe rejected the key", as a revoked key
 // would. The encryption matches src/lib/stripe/crypto.ts.
-const encryptionKey = Buffer.from(
-  parseEnv(readFileSync(".env.local", "utf8")).STRIPE_KEY_ENCRYPTION_KEY ?? "",
-  "base64",
-);
-if (encryptionKey.length !== 32) throw new Error("Run `npm run env:local` before seeding.");
+const encryptionKey = removeOnly
+  ? null
+  : Buffer.from(
+      parseEnv(readFileSync(".env.local", "utf8")).STRIPE_KEY_ENCRYPTION_KEY ?? "",
+      "base64",
+    );
+if (encryptionKey && encryptionKey.length !== 32)
+  throw new Error("Run `npm run env:local` before seeding.");
 function encrypt(plaintext, saasId) {
   const iv = randomBytes(12);
   const cipher = createCipheriv("aes-256-gcm", encryptionKey, iv);
@@ -464,11 +469,17 @@ async function verifyDemo(saasId, product) {
 
 const { data: existing, error: listError } = await admin.auth.admin.listUsers({ perPage: 1000 });
 if (listError) throw new Error("Could not list local users.");
-for (const user of existing.users.filter((user) => user.email?.endsWith(`@${DOMAIN}`))) {
+const demoUsers = existing.users.filter((user) => user.email?.endsWith(`@${DOMAIN}`));
+for (const user of demoUsers) {
   const { data: files } = await admin.storage.from("profile-images").list(user.id);
   if (files?.length)
     await admin.storage.from("profile-images").remove(files.map((f) => `${user.id}/${f.name}`));
-  await admin.auth.admin.deleteUser(user.id);
+  const { error } = await admin.auth.admin.deleteUser(user.id);
+  if (error) throw new Error(`Could not remove ${user.email}.`);
+}
+if (removeOnly) {
+  console.log(`Removed ${demoUsers.length} demo accounts with their products, images and reports.`);
+  process.exit(0);
 }
 
 const day = 24 * 60 * 60 * 1000;

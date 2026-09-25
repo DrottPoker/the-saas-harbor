@@ -2,7 +2,14 @@ import { mrrChartModel, type MrrPoint } from "@/lib/charts";
 import { MrrChart } from "./mrr-chart";
 
 /** The product page's MRR chart with a table view of the same values. */
-export function RevenueHistory({ history }: { history: MrrPoint[] }) {
+export function RevenueHistory({
+  history,
+  description,
+}: {
+  history: MrrPoint[];
+  /** Replaces the note on where the figures come from. */
+  description?: string;
+}) {
   const model = mrrChartModel(history);
   const months = history.length;
   return (
@@ -11,8 +18,12 @@ export function RevenueHistory({ history }: { history: MrrPoint[] }) {
         MRR at month end
       </h2>
       <p className="mt-0.5 text-sm text-muted-foreground">
-        The last {months === 1 ? "month" : `${months} months`}, reconstructed from paid Stripe
-        invoices and converted to USD at today&apos;s rates.
+        {description ?? (
+          <>
+            The last {months === 1 ? "month" : `${months} months`}, reconstructed from paid Stripe
+            invoices and converted to USD at today&apos;s rates.
+          </>
+        )}
       </p>
       <div className="mt-5">
         <MrrChart model={model} />

@@ -19,7 +19,8 @@ delete testEnv.NO_COLOR;
 delete testEnv.FORCE_COLOR;
 const fakeStripe = "http://127.0.0.1:3011";
 const cronSecret = randomBytes(32).toString("base64");
-const result = spawnSync(npx, ["playwright", "test"], {
+// Extra arguments go to Playwright, such as `npm run test:e2e -- -g "registration"`.
+const result = spawnSync(npx, ["playwright", "test", ...process.argv.slice(2)], {
   shell,
   stdio: "inherit",
   env: {

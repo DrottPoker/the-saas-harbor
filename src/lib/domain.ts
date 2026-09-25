@@ -13,11 +13,14 @@ export const categories = [
   "Other",
 ] as const;
 // PostgREST treats * like %, so every wildcard character is removed from user input.
-export function containsPattern(search: string) {
-  const term = search
+export function searchTerm(search: string) {
+  return search
     .trim()
     .slice(0, 80)
     .replace(/[%_*\\]/g, "");
+}
+export function containsPattern(search: string) {
+  const term = searchTerm(search);
   return term ? `%${term}%` : null;
 }
 export function formatUsd(cents: number) {

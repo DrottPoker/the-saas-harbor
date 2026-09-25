@@ -5,15 +5,44 @@ import { PAGE_SIZE, type Listing, type RevenueStatus } from "@/lib/data";
 import { formatDate, formatUsd } from "@/lib/domain";
 import { cn } from "@/lib/utils";
 import { ProductLogo } from "./avatars";
+import { Badge } from "./badge";
 import { Growth } from "./charts/growth";
 import { Sparkline } from "./charts/sparkline";
+import { DemoLogo } from "./demo-logo";
 import { Button } from "./ui/button";
 
 // The trend column appears from lg; below that its cell is hidden and takes no track.
 const columns =
   "md:grid-cols-[2.5rem_minmax(0,1fr)_10rem_8rem_7.5rem] md:gap-6 md:px-5 lg:grid-cols-[2.5rem_minmax(0,1fr)_9rem_6rem_8rem_7.5rem]";
 
-export function Leaderboard({ items }: { items: Listing[] }) {
+// Where a listing leads, and its logo. Demo products have their own pages and drawn logos.
+function href(item: Listing) {
+  return item.demo ? `/demo/${item.slug}` : `/saas/${item.slug}`;
+}
+function Logo({ item }: { item: Listing }) {
+  return (
+    <ProductLogo
+      path={item.logo_path}
+      name={item.name ?? "SaaS"}
+      mark={item.demo && <DemoLogo logo={item.demo.logo} />}
+    />
+  );
+}
+
+/**
+ * The ranking. With `demo`, the same table lists demo products instead: unranked, marked Demo, and
+ * with their launch date where real products show when they were verified.
+ */
+export function Leaderboard({
+  items,
+  demo = false,
+  labelledBy,
+}: {
+  items: Listing[];
+  demo?: boolean;
+  labelledBy?: string;
+}) {
+  const List = demo ? "ul" : "ol";
   return (
     <div className="overflow-hidden rounded-xl border bg-surface">
       <div
@@ -23,40 +52,56 @@ export function Leaderboard({ items }: { items: Listing[] }) {
           columns,
         )}
       >
-        <span>#</span>
+        <span>{demo ? "" : "#"}</span>
         <span>Product</span>
         <span>Category</span>
         <span className="hidden lg:block">12 months</span>
-        <span className="text-right">Verified MRR</span>
-        <span className="text-right">Verified</span>
+        <span className="text-right">{demo ? "Demo MRR" : "Verified MRR"}</span>
+        <span className="text-right">{demo ? "Launched" : "Verified"}</span>
       </div>
-      <ol className="divide-y">
+      <List className="divide-y" aria-labelledby={labelledBy}>
         {items.map((item) => {
           const history = parseHistory(item.mrr_history);
           return (
             <li key={item.id}>
               <Link
-                href={`/saas/${item.slug}`}
+                href={href(item)}
                 className={cn(
-                  "grid grid-cols-[1.75rem_minmax(0,1fr)_auto] items-center gap-3 px-4 py-3.5 transition-colors hover:bg-subtle",
+                  "grid items-center gap-3 px-4 py-3.5 transition-colors hover:bg-subtle",
+                  // Demo rows have no rank, so phones give their column to the name.
+                  item.demo
+                    ? "grid-cols-[minmax(0,1fr)_auto]"
+                    : "grid-cols-[1.75rem_minmax(0,1fr)_auto]",
                   columns,
                 )}
               >
                 <span
                   className={cn(
                     "text-sm tabular-nums",
+                    item.demo && "hidden md:block",
                     item.rank && item.rank <= 3
                       ? "font-medium text-foreground"
                       : "text-faint-foreground",
                   )}
                 >
-                  <span className="sr-only">Rank </span>
-                  {item.rank}
+                  {!item.demo && (
+                    <>
+                      <span className="sr-only">Rank </span>
+                      {item.rank}
+                    </>
+                  )}
                 </span>
                 <span className="flex min-w-0 items-center gap-3">
-                  <ProductLogo path={item.logo_path} name={item.name ?? "SaaS"} />
+                  <Logo item={item} />
                   <span className="min-w-0">
-                    <span className="block truncate font-medium">{item.name}</span>
+                    {item.demo ? (
+                      <span className="flex min-w-0 items-center gap-2">
+                        <span className="truncate font-medium">{item.name}</span>
+                        <Badge>Demo</Badge>
+                      </span>
+                    ) : (
+                      <span className="block truncate font-medium">{item.name}</span>
+                    )}
                     <span className="block truncate text-sm text-muted-foreground">
                       {item.tagline}
                     </span>
@@ -76,14 +121,14 @@ export function Leaderboard({ items }: { items: Listing[] }) {
                   {item.mrr_growth_pct != null && <Growth pct={item.mrr_growth_pct} />}
                 </span>
                 <span className="hidden text-right text-sm text-muted-foreground tabular-nums md:block">
-                  <span className="sr-only">Verified </span>
-                  {formatDate(item.verified_at)}
+                  <span className="sr-only">{item.demo ? "Launched " : "Verified "}</span>
+                  {formatDate(item.demo ? item.launched_on : item.verified_at)}
                 </span>
               </Link>
             </li>
           );
         })}
-      </ol>
+      </List>
     </div>
   );
 }
@@ -96,6 +141,13 @@ const revenueCopy: Record<RevenueStatus, string> = {
 };
 
 function RevenueLabel({ item }: { item: Listing }) {
+  // A demo figure is shown plainly, never with the verified mark.
+  if (item.demo && item.mrr_cents != null)
+    return (
+      <span className="shrink-0 font-medium tabular-nums">
+        {formatUsd(item.mrr_cents)} <span className="font-normal text-muted-foreground">MRR</span>
+      </span>
+    );
   const status = (item.revenue_status ?? "unverified") as RevenueStatus;
   if (status === "verified" && item.mrr_cents != null)
     return (
@@ -107,24 +159,30 @@ function RevenueLabel({ item }: { item: Listing }) {
   return <span className="shrink-0 text-muted-foreground">{revenueCopy[status]}</span>;
 }
 
+// A demo product never joined, so New arrivals shows when it launched instead.
+function cardMeta(item: Listing, meta: "maker" | "joined") {
+  if (meta === "maker") return `by ${item.owner_name}`;
+  if (!item.demo) return `Joined ${formatDate(item.created_at)}`;
+  return item.launched_on ? `Launched ${formatDate(item.launched_on)}` : `by ${item.owner_name}`;
+}
+
 export function ListingCard({ item, meta }: { item: Listing; meta: "maker" | "joined" }) {
   return (
     <Link
-      href={`/saas/${item.slug}`}
+      href={href(item)}
       className="flex flex-col rounded-xl border bg-surface p-5 transition-colors hover:border-border-strong"
     >
       <div className="flex items-center gap-3">
-        <ProductLogo path={item.logo_path} name={item.name ?? "SaaS"} />
-        <div className="min-w-0">
+        <Logo item={item} />
+        <div className="min-w-0 flex-1">
           <h3 className="truncate font-semibold">{item.name}</h3>
           <p className="truncate text-[13px] text-muted-foreground">{item.category}</p>
         </div>
+        {item.demo && <Badge className="self-start">Demo</Badge>}
       </div>
       <p className="mt-3 line-clamp-2 flex-1 text-sm text-muted-foreground">{item.tagline}</p>
       <div className="mt-4 flex items-center justify-between gap-3 border-t pt-3 text-[13px]">
-        <span className="truncate text-muted-foreground">
-          {meta === "joined" ? `Joined ${formatDate(item.created_at)}` : `by ${item.owner_name}`}
-        </span>
+        <span className="truncate text-muted-foreground">{cardMeta(item, meta)}</span>
         <RevenueLabel item={item} />
       </div>
     </Link>
