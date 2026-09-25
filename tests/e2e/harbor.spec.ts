@@ -61,6 +61,13 @@ async function setThemeCookie(page: Page, theme: "light" | "dark") {
 async function pageBackground(page: Page) {
   return page.evaluate(() => getComputedStyle(document.body).backgroundColor);
 }
+// A page logs a console error for everything the Content Security Policy blocks.
+function watchPolicy(page: Page, violations: string[]) {
+  page.on("console", (message) => {
+    if (message.type() === "error" && /Content Security Policy/i.test(message.text()))
+      violations.push(`${new URL(page.url()).pathname}: ${message.text()}`);
+  });
+}
 // Auth emails link to the app's confirm page with a one-time token.
 function confirmLink(html: string) {
   const link = html.match(/href="([^"]*\/auth\/confirm\?[^"]*)"/)?.[1]?.replaceAll("&amp;", "&");
@@ -125,7 +132,16 @@ test.afterAll(async () => {
 test("anonymous navigation, private route protection and responsive empty state", async ({
   page,
 }) => {
-  await page.goto("/");
+  const violations: string[] = [];
+  watchPolicy(page, violations);
+  // Every response carries a Content Security Policy with a fresh nonce for its scripts.
+  const nonceOf = (policy: string | undefined) =>
+    policy?.match(/script-src 'self' 'nonce-([A-Za-z0-9+/=]+)' 'strict-dynamic'/)?.[1];
+  const first = nonceOf((await page.goto("/"))?.headers()["content-security-policy"]);
+  expect(first).toBeTruthy();
+  const second = nonceOf((await page.reload())?.headers()["content-security-policy"]);
+  expect(second).toBeTruthy();
+  expect(second).not.toBe(first);
   await expect(
     page.getByRole("heading", { name: "Independent SaaS, ranked by revenue" }),
   ).toBeVisible();
@@ -168,6 +184,7 @@ test("anonymous navigation, private route protection and responsive empty state"
     await page.goto(path);
     await expectAccessible(page);
   }
+  expect(violations).toEqual([]);
 });
 
 test("theme menu persists light and dark, and system follows the OS", async ({ page }) => {
@@ -793,12 +810,15 @@ test("makers message each other live, with unread counts and blocking", async ({
   }
   const [writer, reader] = makers;
   const hydrationErrors: string[] = [];
+  const violations: string[] = [];
   const open = async () => {
     const page = await (await browser.newContext({ baseURL })).newPage();
     page.on("console", (message) => {
       if (message.type() === "error" && /hydrat/i.test(message.text()))
         hydrationErrors.push(message.text());
     });
+    // Live messages use the Realtime websocket, which the policy must allow.
+    watchPolicy(page, violations);
     return page;
   };
 
@@ -883,6 +903,7 @@ test("makers message each other live, with unread counts and blocking", async ({
     await expectNoHorizontalScroll(readerPage);
   }
   expect(hydrationErrors).toEqual([]);
+  expect(violations).toEqual([]);
 });
 
 test("reports reach the admin panel, where admins hide products and suspend accounts", async ({
@@ -944,7 +965,12 @@ test("reports reach the admin panel, where admins hide products and suspend acco
   });
   if (sendError) throw new Error("Unable to send the reported message.");
   await makerClient.auth.signOut();
-  const open = async () => (await browser.newContext({ baseURL })).newPage();
+  const violations: string[] = [];
+  const open = async () => {
+    const page = await (await browser.newContext({ baseURL })).newPage();
+    watchPolicy(page, violations);
+    return page;
+  };
   const [reporterPage, adminPage, makerPage, visitor] = await Promise.all([
     open(),
     open(),
@@ -1142,4 +1168,5 @@ test("reports reach the admin panel, where admins hide products and suspend acco
     await reporterPage.goto(path);
     await expectNoHorizontalScroll(reporterPage);
   }
+  expect(violations).toEqual([]);
 });

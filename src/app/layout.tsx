@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { headers } from "next/headers";
 import { SiteFooter, SiteHeader } from "@/components/site-chrome";
 import { currentUser, unreadMessageCount } from "@/lib/supabase/server";
 import { themeScript } from "@/lib/theme";
@@ -18,12 +19,21 @@ export const metadata: Metadata = {
 };
 export const dynamic = "force-dynamic";
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
-  const user = await currentUser();
+  const [user, nonce] = await Promise.all([
+    currentUser(),
+    // Set by the proxy together with the Content Security Policy.
+    headers().then((list) => list.get("x-nonce") ?? undefined),
+  ]);
   const unread = user ? await unreadMessageCount() : 0;
   return (
     <html lang="en" className={`${sans.variable} ${mono.variable}`} suppressHydrationWarning>
       <head>
-        <script dangerouslySetInnerHTML={{ __html: themeScript }} />
+        {/* Browsers hide nonce values from the DOM, so hydration would see a mismatch. */}
+        <script
+          nonce={nonce}
+          suppressHydrationWarning
+          dangerouslySetInnerHTML={{ __html: themeScript }}
+        />
       </head>
       <body className="flex min-h-dvh flex-col">
         <a

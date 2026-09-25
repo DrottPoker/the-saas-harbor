@@ -14,7 +14,7 @@ A focused, responsive home for independent SaaS: public maker profiles, product 
 - Reports and moderation: signed-in makers report a product, a profile or a message they received, and follow the outcome under Dashboard → Your reports. An admin panel at `/admin` lists reports, products, accounts and every decision. Admins hide products and suspend accounts with a reason and an explanation the maker sees in their dashboard. An account lists at most 20 products and adds at most 5 a day.
 - Deletion by the maker: a single product, confirmed by typing its name, or the whole account, confirmed with the password. Everything that belongs to it goes, including images, Stripe keys and verification history, and for the account also the sign-in records.
 - A privacy policy at `/privacy` and terms at `/terms` (drafts until the operator's name and contact address are filled in `src/lib/legal.ts`).
-- Supabase RLS, owner checks in Server Actions, and owner-scoped image uploads.
+- Supabase RLS, owner checks in Server Actions, owner-scoped image uploads, and a Content Security Policy with a fresh nonce per request.
 - Light and dark themes.
 
 Sales, escrow, company profiles, email notifications and revenue sources other than Stripe are outside this release.

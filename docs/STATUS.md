@@ -8,6 +8,10 @@ The first release includes accounts, email confirmation and recovery, public mak
 
 Makers can message each other privately (see Messages below), and report products, profiles and messages to the admins, who decide in an admin panel (see Reports and moderation below). Other forms of connection, such as following or contact lists, are not implemented.
 
+## Content Security Policy 2026-09-25
+
+Every response now carries a Content Security Policy with a fresh nonce per request: scripts run only with the nonce, `eval` only in development, and images and connections are limited to the site and Supabase (including the Realtime websocket). Framing, plugins, foreign form targets and `<base>` changes are refused. Production responses also send `Strict-Transport-Security`. The browser tests fail on any blocked resource and check that the nonce changes between requests; a probe confirmed that Chromium reports blocked scripts and images to the console, where the tests look.
+
 ## Email links on any device 2026-09-25
 
 Confirmation and password reset links used PKCE, so they only worked in the browser that signed up or asked for the reset: a confirmation opened on a phone showed an error, and a reset link did not work at all. The emails now come from custom templates in `supabase/templates` and open `/auth/confirm`, which verifies a token hash on the server when the reader presses the button. The links work in any browser, once, and email link scanners cannot use them up by opening them. `/auth/callback` is gone. The browser tests open both links in a second browser and check that a used link is refused.
@@ -129,7 +133,7 @@ Before a public launch:
 2. Legal pages. The privacy policy and the terms are drafts: set the operator's name and contact address in `src/lib/legal.ts`, name the hosting, database and email providers once they are chosen (and any transfers outside the EU/EEA), and have both reviewed, including the age limit, liability and governing law, which the terms leave out. The contact address is also where reports from people without an account and appeals go.
 3. Moderation follow-ups. Reports, decisions and product limits exist (see above). Still missing: an email to admins about new reports and to makers about decisions (needs the email provider), a retention period for closed reports, and a way for admins to remove a single message.
 4. Production Auth settings: the email templates in `supabase/templates` with their subjects, the site URL, and `https://<domain>/auth/confirm` as an allowed redirect URL. Without the redirect URL, links fall back to the site URL and stop working.
-5. Security headers. No Content Security Policy yet. HSTS depends on the hosting platform. A future CSP must allow the inline theme script in the root layout, by hash or nonce.
+5. Security headers are in place (see below and ARCHITECTURE). Check them once on the production domain, for example with securityheaders.com, since a proxy or CDN in front of the app can change or drop headers.
 6. Production hosting: where Supabase runs (self-hosted or Cloud), SMTP, Auth URLs, a deployment target for the app, a secrets store for `SUPABASE_SECRET_KEY`, `STRIPE_KEY_ENCRYPTION_KEY` and `CRON_SECRET`, and a daily scheduler for `POST /api/stripe/sync`.
 
 Product and quality:
@@ -139,6 +143,6 @@ Product and quality:
 9. Encryption key rotation: stored keys carry a version prefix, but there is no re-encryption job yet.
 10. SEO: no `sitemap.ts`, `robots.ts`, Open Graph images or canonical URLs. Public URLs use UUIDs rather than slugs.
 11. Old images stay in storage after replacement or removal, until the account is deleted.
-12. All routes are dynamic with `no-store`. Public pages could be cached once traffic grows, with private data kept separate.
+12. All routes are dynamic with `no-store`. Public pages could be cached once traffic grows, with private data kept separate. The nonce-based Content Security Policy needs a fresh render per request, so caching pages would mean moving to hashes or the experimental SRI support first.
 13. Image signature validation in `src/lib/upload.ts` has no unit tests. Vitest can now import server-only modules, so this is straightforward.
 14. Messages: no email notifications (they need an email provider). Realtime keeps its event rows, which hold ids only, for a few days.
