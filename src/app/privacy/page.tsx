@@ -149,7 +149,9 @@ export default function Privacy() {
               <strong className="font-medium text-foreground">Everyone:</strong> your maker profile,
               your products and their logos, and the verified figures you choose to share. Sharing
               MRR also shows its month-end history and 30-day growth. Paying customers and the
-              launch date each have their own setting.
+              launch date each have their own setting. A badge you embed on your own site shows the
+              shared MRR there, and browsers and caches may keep it for up to ten minutes after you
+              stop sharing.
             </li>
             <li>
               <strong className="font-medium text-foreground">Only you:</strong> your Stripe

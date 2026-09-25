@@ -79,4 +79,7 @@ export async function proxy(request: NextRequest) {
   await client.auth.getClaims();
   return response;
 }
-export const config = { matcher: ["/((?!_next/static|_next/image|favicon.ico|icon.svg).*)"] };
+// Embedded badges carry their own headers and need no session.
+export const config = {
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|icon.svg|saas/[^/]+/badge\\.svg$).*)"],
+};

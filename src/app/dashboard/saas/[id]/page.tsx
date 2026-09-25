@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { z } from "zod";
 import { SaasForm } from "@/components/forms";
 import { BackLink } from "@/components/back-link";
+import { BadgeEmbed } from "@/components/badge-embed";
 import { DeleteProduct } from "@/components/delete-forms";
 import { ModerationNotice } from "@/components/moderation-notice";
 import { Notice, PageHeader, Shell } from "@/components/shell";
@@ -10,6 +11,7 @@ import { STRIPE_CONNECTION_COLUMNS, type StripeConnection } from "@/lib/data";
 import { PRODUCT_LIMIT } from "@/lib/moderation";
 import { requireUser } from "@/lib/supabase/server";
 import { firstValues, type SearchParams } from "@/lib/params";
+import { siteUrl } from "@/lib/seo";
 
 type Props = {
   params: Promise<{ id: string }>;
@@ -98,6 +100,14 @@ export default async function EditSaas({ params, searchParams }: Props) {
           snapshot={connection.data ? snapshot.data : null}
           created={firstValues(await searchParams).created === "1"}
         />
+        {/* A hidden product has no public page, so it has no badge either. */}
+        {!saas.data.hidden_at && (
+          <BadgeEmbed
+            path={`/saas/${saas.data.slug}`}
+            pageUrl={`${siteUrl()}/saas/${saas.data.slug}`}
+            name={saas.data.name}
+          />
+        )}
       </div>
       <DeleteProduct saasId={id} name={saas.data.name} connected={!!connection.data} />
     </Shell>

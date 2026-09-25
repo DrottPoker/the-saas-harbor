@@ -125,7 +125,7 @@ test.beforeAll(async ({ playwright }, info) => {
     ...["/dashboard/settings", "/api/email/send"],
     ...["/messages", `/messages/${id}`, `/report/saas/${id}`, "/api/stripe/sync"],
     ...["/sitemap.xml", "/robots.txt", "/opengraph-image"],
-    ...["/saas/any/opengraph-image", "/makers/any/opengraph-image"],
+    ...["/saas/any/opengraph-image", "/makers/any/opengraph-image", "/saas/any/badge.svg"],
     ...["", "/reports", "/products", "/accounts", "/log"].map((section) => `/admin${section}`),
     ...["reports", "products", "accounts"].map((section) => `/admin/${section}/${id}`),
   ])
@@ -537,6 +537,23 @@ test("registration, email confirmation, profile and SaaS editing, storage, priva
   expect(await (await page.request.get("/sitemap.xml")).text()).toContain(
     `<loc>${origin}${productPath}</loc>`,
   );
+  // The embeddable badge shows only public figures and follows the product's address.
+  const badge = async (path: string) => {
+    const response = await page.request.get(path, { maxRedirects: 0 });
+    return { status: response.status(), headers: response.headers(), body: await response.text() };
+  };
+  const privateBadge = await badge(`${productPath}/badge.svg`);
+  expect(privateBadge.status).toBe(200);
+  expect(privateBadge.headers["content-type"]).toBe("image/svg+xml; charset=utf-8");
+  expect(privateBadge.headers["cache-control"]).toBe("public, max-age=600");
+  expect(privateBadge.headers["content-security-policy"]).toBe("default-src 'none'");
+  expect(privateBadge.headers["cross-origin-resource-policy"]).toBe("cross-origin");
+  expect(privateBadge.body).toContain(">Listed on</text>");
+  expect(privateBadge.body).not.toContain("$104");
+  const movedBadge = await badge(`/saas/${productId}/badge.svg?theme=dark`);
+  expect(movedBadge.status).toBe(308);
+  expect(movedBadge.headers.location).toBe(`${productPath}/badge.svg?theme=dark`);
+  expect((await badge("/saas/no-such-product-anywhere/badge.svg")).status).toBe(404);
   await expect(page.getByText(/Verified with Stripe through a read-only key/)).toBeVisible();
   await expect(page.getByText("Not shared", { exact: true })).toHaveCount(3);
   // Visible text only: the page source also carries framework references like "$104".
@@ -556,6 +573,22 @@ test("registration, email confirmation, profile and SaaS editing, storage, priva
   await page.getByLabel("Show verified MRR publicly", { exact: true }).check();
   await page.getByRole("button", { name: "Save changes" }).click();
   await expect(page).toHaveURL(/saved=/);
+  // Shared MRR reaches the badge, and the editor gives the code to embed it in either theme.
+  expect((await badge(`${productPath}/badge.svg`)).body).toContain(">$104</text>");
+  expect((await badge(`${productPath}/badge.svg?theme=dark`)).body).toContain('fill="#22272d"');
+  await page.goto(`/dashboard/saas/${productId}`);
+  const embed = page.locator("#badge");
+  await expect(embed.getByLabel("HTML", { exact: true })).toHaveValue(
+    `<a href="${origin}${productPath}"><img src="${origin}${productPath}/badge.svg" alt="${productName} on The SaaS Harbor" height="52"></a>`,
+  );
+  await embed.getByRole("button", { name: "Dark" }).click();
+  await expect(embed.getByLabel("Markdown", { exact: true })).toHaveValue(
+    `[![${productName} on The SaaS Harbor](${origin}${productPath}/badge.svg?theme=dark)](${origin}${productPath})`,
+  );
+  await expect(embed.getByRole("img", { name: /^Badge preview/ })).toHaveJSProperty(
+    "naturalHeight",
+    52,
+  );
   await page.goto(`/?q=${encodeURIComponent(productName)}`);
   const row = page.getByRole("link").filter({ hasText: productName });
   await expect(row.getByText("$104", { exact: true })).toBeVisible();
@@ -1239,6 +1272,7 @@ test("reports reach the admin panel, where admins hide products and suspend acco
     await expect(visitor.getByRole("heading", { name: "Page not found" })).toBeVisible();
   }
   expect(await (await visitor.request.get("/sitemap.xml")).text()).not.toContain(productSlug);
+  expect((await visitor.request.get(`/saas/${productSlug}/badge.svg`)).status()).toBe(404);
   // The maker gets the decision by email, with the reason and the explanation, and the reporter
   // learns that action was taken.
   const subjects = async (address: string) =>
