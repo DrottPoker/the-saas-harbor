@@ -72,7 +72,7 @@ export default async function ConversationPage({ params }: Props) {
         <div className="min-w-0 flex-1">
           <h1 className="truncate text-2xl font-semibold tracking-tight">{other.name}</h1>
           <Link
-            href={`/makers/${other.slug}`}
+            href={`/users/${other.slug}`}
             className="text-sm text-muted-foreground hover:text-foreground hover:underline"
           >
             View profile
@@ -93,9 +93,9 @@ export default async function ConversationPage({ params }: Props) {
               <Notice>
                 Set up your{" "}
                 <Link href="/dashboard/profile" className="font-medium underline">
-                  maker profile
+                  profile
                 </Link>{" "}
-                before sending messages. Other makers see your name and photo.
+                before sending messages. Other users see your name and photo.
               </Notice>
             ) : suspended ? (
               <Notice>

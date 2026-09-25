@@ -37,10 +37,9 @@ export function DeleteAccount() {
       <form action={action} className="grid gap-5">
         <div className="grid gap-2 text-sm text-muted-foreground">
           <p>
-            Your maker profile, your products and their logos, your payment provider connections
-            with the stored keys, all verification history, the reports you sent and your
-            conversations are deleted, also for the makers you wrote with. Your products leave the
-            leaderboard at once.
+            Your profile, your products and their logos, your payment provider connections with the
+            stored keys, all verification history, the reports you sent and your conversations are
+            deleted, also for the users you wrote with. Your products leave the leaderboard at once.
           </p>
           <p>
             Keys you created stay with your payment provider until you delete them there. See the{" "}
@@ -92,7 +91,7 @@ export function DeleteProduct({
           <p>
             The product page, its logo, its payment provider connection with the stored key, and all
             verification history are deleted, and the product leaves the leaderboard at once. Your
-            maker profile and other products are not affected.
+            profile and other products are not affected.
           </p>
           {connected && (
             <p>

@@ -20,7 +20,7 @@ export default async function Image({ params }: { params: Promise<{ slug: string
   if (item.customers != null)
     figures.push(["Paying customers", item.customers.toLocaleString("en-US")]);
   figures.push(["Category", item.category ?? "Other"]);
-  if (figures.length < 3) figures.push(["Maker", excerpt(item.owner_name ?? "", 28)]);
+  if (figures.length < 3) figures.push(["Founder", excerpt(item.owner_name ?? "", 28)]);
   return new ImageResponse(
     <OgCard
       title={excerpt(name, 48)}

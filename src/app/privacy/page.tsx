@@ -56,9 +56,9 @@ export default function Privacy() {
               events, such as sign-ins, with their time and IP address, to keep accounts secure.
             </li>
             <li>
-              <strong className="font-medium text-foreground">Maker profile.</strong> Your name,
-              headline, location, About text, experience, skills, links and photo, and the page
-              address made from your name. You decide what to fill in.
+              <strong className="font-medium text-foreground">Profile.</strong> Your name, headline,
+              location, About text, experience, skills, links and photo, and the page address made
+              from your name. You decide what to fill in.
             </li>
             <li>
               <strong className="font-medium text-foreground">Products.</strong> Name, tagline,
@@ -75,7 +75,7 @@ export default function Privacy() {
             </li>
             <li>
               <strong className="font-medium text-foreground">Messages.</strong> The messages you
-              send and receive, how far you have read each conversation, and the makers you block.
+              send and receive, how far you have read each conversation, and the users you block.
             </li>
             <li>
               <strong className="font-medium text-foreground">Reports and moderation.</strong> When
@@ -120,7 +120,7 @@ export default function Privacy() {
         <Section id="purposes" title="Why we use it">
           <List>
             <li>
-              To run your account and publish the maker profile and products you create. This is the
+              To run your account and publish the profile and products you create. This is the
               service you sign up for (performance of a contract, GDPR Article 6(1)(b)).
             </li>
             <li>
@@ -128,7 +128,7 @@ export default function Privacy() {
               choose to share. This is part of the same service (Article 6(1)(b)).
             </li>
             <li>
-              To deliver the messages you send to other makers, and to email you about unread
+              To deliver the messages you send to other users, and to email you about unread
               messages, also part of the service (Article 6(1)(b)). You can turn message emails off.
             </li>
             <li>
@@ -151,12 +151,12 @@ export default function Privacy() {
         <Section id="visibility" title="Who can see it">
           <List>
             <li>
-              <strong className="font-medium text-foreground">Everyone:</strong> your maker profile,
-              your products and their logos, and the verified figures you choose to share. Sharing
-              MRR also shows its month-end history and 30-day growth. Paying customers and the
-              launch date each have their own setting. A badge you embed on your own site shows the
-              shared MRR there, and browsers and caches may keep it for up to ten minutes after you
-              stop sharing.
+              <strong className="font-medium text-foreground">Everyone:</strong> your profile, your
+              products and their logos, and the verified figures you choose to share. Sharing MRR
+              also shows its month-end history and 30-day growth. Paying customers and the launch
+              date each have their own setting. A badge you embed on your own site shows the shared
+              MRR there, and browsers and caches may keep it for up to ten minutes after you stop
+              sharing.
             </li>
             <li>
               <strong className="font-medium text-foreground">Only you:</strong> your connection
@@ -166,17 +166,17 @@ export default function Privacy() {
             </li>
             <li>
               <strong className="font-medium text-foreground">The two of you:</strong> a
-              conversation and its messages are visible only to the two makers in it. A block is
-              visible only to the maker who made it. Messages are not end-to-end encrypted, so
-              people who run the site&apos;s systems could technically access them; we only do so
-              when the law requires it.
+              conversation and its messages are visible only to the two users in it. A block is
+              visible only to the user who made it. Messages are not end-to-end encrypted, so people
+              who run the site&apos;s systems could technically access them; we only do so when the
+              law requires it.
             </li>
             <li>
               <strong className="font-medium text-foreground">Admins:</strong> the people the
               operator appoints to review reports. They see your email address, when you joined and
               last signed in, reports about you or by you, and the decisions about your account. An
-              admin sees a private message only when one of the two makers reports it, and then only
-              a copy of that message. A maker who is reported never learns who reported them.
+              admin sees a private message only when one of the two users reports it, and then only
+              a copy of that message. A user who is reported never learns who reported them.
             </li>
             <li>
               <strong className="font-medium text-foreground">Service providers:</strong> our
@@ -204,7 +204,7 @@ export default function Privacy() {
           <p>
             We keep your data for as long as you have an account. When you delete your account, your
             profile, products, images, provider keys, verification history, conversations and
-            sign-in records are deleted right away. A conversation is deleted for both makers when
+            sign-in records are deleted right away. A conversation is deleted for both users when
             either of them deletes their account. Deleting a single product removes its details, its
             logo, its provider key and its verification history in the same way. Logos and photos
             you replaced earlier are kept until you delete your account. Copies in backups disappear
@@ -217,7 +217,7 @@ export default function Privacy() {
             at once, as well as emails queued to others about your messages.
           </p>
           <p>
-            A report is deleted when either the maker who sent it or the maker it is about deletes
+            A report is deleted when either the user who sent it or the user it is about deletes
             their account. Deleting a reported product or message keeps the report and its copy, so
             admins can still review it. Admin decisions are deleted with the account they concern.
           </p>
@@ -240,7 +240,7 @@ export default function Privacy() {
             </Link>
             , delete a product at the bottom of its editor, and delete your account yourself under{" "}
             <Link className={link} href="/dashboard/profile#delete-account">
-              Maker profile → Delete account
+              Profile → Delete account
             </Link>
             .
           </p>
@@ -254,7 +254,7 @@ export default function Privacy() {
 
         <Section id="changes" title="Changes to this policy">
           <p>
-            When this policy changes, we update the date at the top. We will email registered makers
+            When this policy changes, we update the date at the top. We will email registered users
             about changes that affect how we use data they have already given us.
           </p>
         </Section>

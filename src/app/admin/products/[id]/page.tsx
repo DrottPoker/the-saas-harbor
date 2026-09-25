@@ -78,13 +78,13 @@ export default async function AdminProduct({ params, searchParams }: Props) {
           <p className="mt-2 text-sm text-muted-foreground">
             by{" "}
             <Link className={link} href={`/admin/accounts/${item.owner_id}`}>
-              {item.owner?.name ?? "Unknown maker"}
+              {item.owner?.name ?? "Unknown founder"}
             </Link>
           </p>
         </div>
         <div className="flex flex-wrap gap-1.5">
           {item.hidden_at && <Badge tone="error">Hidden</Badge>}
-          {ownerSuspended && <Badge tone="error">Maker suspended</Badge>}
+          {ownerSuspended && <Badge tone="error">Founder suspended</Badge>}
         </div>
       </div>
 
@@ -175,7 +175,7 @@ export default async function AdminProduct({ params, searchParams }: Props) {
           )}
           {ownerSuspended && (
             <Notice>
-              The maker&apos;s account is suspended, so none of their products are shown.{" "}
+              The founder&apos;s account is suspended, so none of their products are shown.{" "}
               <Link className={link} href={`/admin/accounts/${item.owner_id}`}>
                 Account
               </Link>

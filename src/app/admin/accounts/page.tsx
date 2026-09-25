@@ -50,7 +50,7 @@ export default async function AdminAccounts({
     <>
       <PageHeader
         title="Accounts"
-        description="Every account, newest first, including those without a maker profile."
+        description="Every account, newest first, including those without a profile."
         actions={
           <SearchForm
             action="/admin/accounts"

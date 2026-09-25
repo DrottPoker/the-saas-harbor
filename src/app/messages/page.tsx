@@ -24,7 +24,7 @@ export default async function Inbox() {
   return (
     <Shell size="medium">
       <RefreshOnMessage userId={user.id} />
-      <PageHeader title="Messages" description="Private conversations with other makers." />
+      <PageHeader title="Messages" description="Private conversations with other users." />
       {!conversations.length ? (
         <EmptyState
           title="No messages yet"
@@ -34,7 +34,7 @@ export default async function Inbox() {
             </Button>
           }
         >
-          Open a maker&apos;s profile and choose Send message to start a conversation.
+          Open a user&apos;s profile and choose Send message to start a conversation.
         </EmptyState>
       ) : (
         <ul aria-label="Conversations" className="divide-y rounded-xl border bg-surface">
@@ -48,7 +48,7 @@ export default async function Inbox() {
                 >
                   <PersonAvatar
                     path={conversation.other_avatar_path}
-                    name={conversation.other_name ?? "Maker"}
+                    name={conversation.other_name ?? "User"}
                   />
                   <div className="min-w-0 flex-1">
                     <div className="flex items-baseline justify-between gap-3">

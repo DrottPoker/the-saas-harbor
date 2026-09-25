@@ -6,7 +6,7 @@ import { OG_SIZE, OgCard, OgPicture, siteImage } from "@/components/og-card";
 
 export const size = OG_SIZE;
 export const contentType = "image/png";
-export const alt = "The maker's name, headline and verified figures on The SaaS Harbor";
+export const alt = "The user's name, headline and verified figures on The SaaS Harbor";
 
 // The key figures the maker page shows: products, and verified figures that are shared.
 export default async function Image({ params }: { params: Promise<{ slug: string }> }) {

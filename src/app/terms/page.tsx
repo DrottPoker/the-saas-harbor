@@ -45,8 +45,8 @@ export default function Terms() {
           <LegalList>
             <li>You need to be at least 18 years old to create an account.</li>
             <li>
-              Use your own name, or the name you are known by as a maker, and keep your email
-              address up to date.
+              Use your own name, or the name you are known by, and keep your email address up to
+              date.
             </li>
             <li>
               Keep your password to yourself. You are responsible for what is done with your
@@ -55,7 +55,7 @@ export default function Terms() {
             <li>
               You can delete your account at any time under{" "}
               <Link className={legalLink} href="/dashboard/profile#delete-account">
-                Maker profile → Delete account
+                Profile → Delete account
               </Link>
               .
             </li>
@@ -90,7 +90,7 @@ export default function Terms() {
               subscriptions or a payment provider account that belongs to another business.
             </li>
             <li>
-              Trying to reach other makers&apos; accounts or data, collecting it for spam, or
+              Trying to reach other users&apos; accounts or data, collecting it for spam, or
               disrupting the site.
             </li>
           </LegalList>
@@ -110,15 +110,15 @@ export default function Terms() {
 
         <LegalSection id="messages" title="Messages">
           <p>
-            Messages are private between two makers. You can block a maker, and limits stop an
-            account from sending too many messages. Do not use messages for advertising people did
-            not ask for.
+            Messages are private between two users. You can block a user, and limits stop an account
+            from sending too many messages. Do not use messages for advertising people did not ask
+            for.
           </p>
         </LegalSection>
 
         <LegalSection id="moderation" title="Reports and moderation">
           <p>
-            Signed-in makers can report a product, a profile or a message they received with the
+            Signed-in users can report a product, a profile or a message they received with the
             Report link next to it. Anyone else can write to <Contact />.
           </p>
           <p>
@@ -133,13 +133,13 @@ export default function Terms() {
             <li>
               <strong className="font-medium text-foreground">Suspend an account.</strong> The
               profile and products are hidden, and the account cannot send messages or reports. The
-              maker can still sign in, edit their products and delete the account.
+              user can still sign in, edit their products and delete the account.
             </li>
           </LegalList>
           <p>
-            The maker sees the decision, the reason and an explanation in their dashboard, but not
-            who reported. Reporters see the outcome of their reports under Dashboard → Your reports.
-            Admins may also act on problems they find without a report.
+            The user concerned sees the decision, the reason and an explanation in their dashboard,
+            but not who reported. Reporters see the outcome of their reports under Dashboard → Your
+            reports. Admins may also act on problems they find without a report.
           </p>
           <p>
             If you disagree with a decision, write to <Contact /> and say why. We will look at the
@@ -151,7 +151,7 @@ export default function Terms() {
           <p>
             We run the site with care, but cannot promise that it is always available or free of
             errors, and we may change or stop features. When these terms change, we update the date
-            at the top and tell registered makers about changes that affect them before they apply.
+            at the top and tell registered users about changes that affect them before they apply.
           </p>
         </LegalSection>
 

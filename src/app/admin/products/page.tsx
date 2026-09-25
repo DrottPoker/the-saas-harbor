@@ -80,7 +80,7 @@ export default async function AdminProducts({
     <>
       <PageHeader
         title="Products"
-        description="Every listed product, including hidden ones and those of suspended makers."
+        description="Every listed product, including hidden ones and those of suspended founders."
         actions={
           <SearchForm
             action="/admin/products"

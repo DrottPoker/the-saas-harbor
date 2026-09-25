@@ -81,8 +81,8 @@ export default async function YourReports({
         </ul>
       )}
       <p className="mt-6 max-w-2xl text-[13px] text-muted-foreground">
-        An admin reviews every report. The maker is not told who reported. If you disagree with a
-        decision, write to <Contact className="font-medium text-foreground underline" />. The{" "}
+        An admin reviews every report. The reported user is not told who reported. If you disagree
+        with a decision, write to <Contact className="font-medium text-foreground underline" />. The{" "}
         <Link href="/terms#moderation" className="font-medium text-foreground underline">
           terms
         </Link>{" "}

@@ -41,7 +41,7 @@ async function subject(target: ReportTarget, id: string, viewer: string) {
     if (!profile) return null;
     return {
       title: `Report ${profile.name}`,
-      back: { href: `/makers/${profile.slug}`, label: profile.name },
+      back: { href: `/users/${profile.slug}`, label: profile.name },
       own: id === viewer,
       ownCopy: "This is your profile, so you cannot report it.",
       preview: (

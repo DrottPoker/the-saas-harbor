@@ -392,7 +392,7 @@ set local role authenticated;
 select set_config('request.jwt.claim.sub', 'b0000000-0000-4000-8000-000000000001', true);
 select throws_ok(
   $$ select public.send_message('b0000000-0000-4000-8000-000000000001', 'Hello me') $$,
-  'P0001', 'Choose another maker to message', 'makers cannot message themselves'
+  'P0001', 'Choose another user to message', 'makers cannot message themselves'
 );
 select throws_ok(
   $$ select public.send_message('b0000000-0000-4000-8000-000000000002', '   ') $$,
@@ -404,7 +404,7 @@ select throws_ok(
 );
 select throws_ok(
   $$ select public.send_message('b0000000-0000-4000-8000-000000000009', 'Hello') $$,
-  'P0001', 'This maker cannot receive messages', 'messages need an existing recipient'
+  'P0001', 'This user cannot receive messages', 'messages need an existing recipient'
 );
 select lives_ok(
   $$ select public.send_message('b0000000-0000-4000-8000-000000000002', '  Hello from one  ') $$,
@@ -484,7 +484,7 @@ select lives_ok(
 );
 select throws_ok(
   $$ select public.send_message('b0000000-0000-4000-8000-000000000001', 'Still there?') $$,
-  'P0001', 'Messages between you and this maker are blocked',
+  'P0001', 'Messages between you and this user are blocked',
   'the maker who blocked cannot send either'
 );
 set local role authenticated;
@@ -492,7 +492,7 @@ select set_config('request.jwt.claim.sub', 'b0000000-0000-4000-8000-000000000001
 select is_empty('select 1 from public.blocks', 'a blocked maker cannot see the block');
 select throws_ok(
   $$ select public.send_message('b0000000-0000-4000-8000-000000000002', 'Hello?') $$,
-  'P0001', 'Messages between you and this maker are blocked', 'a blocked maker cannot send'
+  'P0001', 'Messages between you and this user are blocked', 'a blocked maker cannot send'
 );
 set local role authenticated;
 select set_config('request.jwt.claim.sub', 'b0000000-0000-4000-8000-000000000002', true);

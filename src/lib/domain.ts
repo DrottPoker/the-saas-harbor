@@ -186,7 +186,7 @@ export const decisionSchema = z.object({
   note: z
     .string()
     .trim()
-    .min(1, "Explain the decision. The maker sees this explanation.")
+    .min(1, "Explain the decision. The user sees this explanation.")
     .max(NOTE_MAX_LENGTH, "Keep the explanation under 1,000 characters."),
 });
 export const noteSchema = z

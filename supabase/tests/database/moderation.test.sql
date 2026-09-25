@@ -202,12 +202,12 @@ select is((select count(*)::int from public.reports where reporter_id = 'd000000
   5, 'admins see every report');
 select throws_ok(
   $$ select public.admin_hide_saas('e0000000-0000-4000-8000-000000000002', 'spam', '   ', null) $$,
-  'P0001', 'Explain the decision. The maker sees this explanation',
+  'P0001', 'Explain the decision. The user sees this explanation',
   'hiding a product needs an explanation for the maker');
 select throws_ok(
   $$ select public.admin_hide_saas('e0000000-0000-4000-8000-000000000002', 'spam', 'Spam.',
     (select id from public.reports where subject_id = 'd0000000-0000-4000-8000-000000000003' and status = 'open')) $$,
-  'P0001', 'This report is about another maker', 'a decision answers a report about the same maker');
+  'P0001', 'This report is about another user', 'a decision answers a report about the same maker');
 select lives_ok(
   $$ select public.admin_hide_saas('e0000000-0000-4000-8000-000000000001', 'misleading',
     '  The revenue claims in the description are false.  ',
@@ -317,7 +317,7 @@ select is_empty($$ select 1 from public.inbox where other_id = 'd0000000-0000-40
 select is(public.unread_message_count(), 0, 'their messages no longer count as unread');
 select throws_ok(
   $$ select public.send_message('d0000000-0000-4000-8000-000000000001', 'Are you there?') $$,
-  'P0001', 'This maker cannot receive messages', 'suspended makers receive no messages, and are not told apart from deleted ones');
+  'P0001', 'This user cannot receive messages', 'suspended makers receive no messages, and are not told apart from deleted ones');
 
 set local role authenticated;
 select set_config('request.jwt.claim.sub', 'd0000000-0000-4000-8000-000000000001', true);

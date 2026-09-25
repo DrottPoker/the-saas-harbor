@@ -125,7 +125,7 @@ export async function Explore({
             }
           >
             {ranked
-              ? "Products appear here once their maker connects a payment provider and shares verified MRR."
+              ? "Products appear here once their founder connects a payment provider and shares verified MRR."
               : "Be the first to list a product."}
           </EmptyState>
         )
@@ -146,8 +146,8 @@ export async function Explore({
                   </h2>
                   <p className="mt-1 text-sm text-muted-foreground">
                     Examples of how products appear here while the directory is new. The products,
-                    their makers and their figures are made up, and they disappear as real products
-                    join.
+                    their founders and their figures are made up, and they disappear as real
+                    products join.
                   </p>
                 </div>
                 <Button asChild size="sm" variant="outline" className="self-start sm:self-auto">

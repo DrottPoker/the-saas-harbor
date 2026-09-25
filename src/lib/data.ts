@@ -97,7 +97,7 @@ export async function makerListings(ownerId: string) {
     .order("created_at", { ascending: false })
     .order("id")
     .limit(100);
-  if (error) throw new Error("This maker's products could not be loaded.");
+  if (error) throw new Error("This user's products could not be loaded.");
   return data as Listing[];
 }
 
@@ -174,7 +174,7 @@ export const publicProfile = cache(async (id: string) => {
   const client = publicClient();
   if (!client) throw new Error("Supabase is not configured.");
   const { data, error } = await client.from("profiles").select("*").eq("id", id).maybeSingle();
-  if (error) throw new Error("This maker could not be loaded.");
+  if (error) throw new Error("This profile could not be loaded.");
   return data;
 });
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -221,19 +221,19 @@ export const findProfile = cache(async (address: string): Promise<Found<Profile>
       .select("*")
       .eq("slug", slug)
       .maybeSingle();
-    if (error) throw new Error("This maker could not be loaded.");
-    if (data) return slug === address ? { item: data } : { redirect: `/makers/${data.slug}` };
+    if (error) throw new Error("This profile could not be loaded.");
+    if (data) return slug === address ? { item: data } : { redirect: `/users/${data.slug}` };
   }
   if (!UUID.test(address)) return null;
   const profile = await publicProfile(address.toLowerCase());
-  return profile ? { redirect: `/makers/${profile.slug}` } : null;
+  return profile ? { redirect: `/users/${profile.slug}` } : null;
 });
 
 export const publicProfileExperience = cache(async (id: string) => {
   const client = publicClient();
   if (!client) throw new Error("Supabase is not configured.");
   const { data, error } = await client.from("profile_experience").select("*").eq("profile_id", id);
-  if (error) throw new Error("This maker could not be loaded.");
+  if (error) throw new Error("This profile could not be loaded.");
   return data;
 });
 // A maker's key figures: every listed product, and verified MRR and paying customers summed over
@@ -245,7 +245,7 @@ export const makerTotals = cache(async (id: string) => {
     .from("public_saas")
     .select("mrr_cents, customers")
     .eq("owner_id", id);
-  if (error) throw new Error("This maker could not be loaded.");
+  if (error) throw new Error("This profile could not be loaded.");
   const sum = (values: (number | null)[]) => {
     const shared = values.filter((value): value is number => value !== null);
     return {

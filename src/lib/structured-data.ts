@@ -63,14 +63,14 @@ export function productJsonLd(item: Listing): JsonLd {
       creator: {
         "@type": "Person",
         name: item.owner_name,
-        url: `${siteUrl()}/makers/${item.owner_slug}`,
+        url: `${siteUrl()}/users/${item.owner_slug}`,
       },
     },
   };
 }
 
 export function makerJsonLd(profile: Profile): JsonLd {
-  const url = `${siteUrl()}/makers/${profile.slug}`;
+  const url = `${siteUrl()}/users/${profile.slug}`;
   const links = [
     profile.website,
     profile.linkedin_url,

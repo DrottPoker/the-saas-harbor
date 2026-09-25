@@ -55,7 +55,7 @@ export function ReportForm({ target, id }: { target: ReportTarget; id: string })
       <Feedback state={state} />
       <div className="flex flex-col-reverse gap-4 sm:flex-row sm:items-center sm:justify-between">
         <p className="text-[13px] text-muted-foreground">
-          The maker is not told who reported. The{" "}
+          The reported user is not told who reported. The{" "}
           <Link href="/terms#rules" className="font-medium text-foreground underline">
             terms
           </Link>{" "}

@@ -55,7 +55,7 @@ export default async function AdminReports({
     <>
       <PageHeader
         title="Reports"
-        description="Reports from makers about products, profiles and messages they received."
+        description="Reports from users about products, profiles and messages they received."
       />
       <div className="mb-4">
         <FilterTabs
@@ -68,7 +68,7 @@ export default async function AdminReports({
         <EmptyState title={status === "open" ? "No open reports" : "No reports"}>
           {status === "open"
             ? "Every report has been handled."
-            : "Reports from makers are listed here."}
+            : "Reports from users are listed here."}
         </EmptyState>
       ) : (
         <>

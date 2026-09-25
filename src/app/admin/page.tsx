@@ -47,7 +47,7 @@ export default async function AdminOverview() {
     <>
       <PageHeader
         title="Admin"
-        description="Review reports from makers, hide products and suspend accounts. Every decision is logged."
+        description="Review reports from users, hide products and suspend accounts. Every decision is logged."
       />
       <dl className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <Metric className={card} label="Open reports" value={String(open.count ?? 0)} />
@@ -61,7 +61,7 @@ export default async function AdminOverview() {
         {queue.data?.length ? (
           <ReportList reports={queue.data} names={makers} label="Oldest open reports" />
         ) : (
-          <EmptyState title="No open reports">New reports from makers appear here.</EmptyState>
+          <EmptyState title="No open reports">New reports from users appear here.</EmptyState>
         )}
       </section>
 

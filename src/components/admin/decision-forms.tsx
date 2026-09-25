@@ -60,8 +60,8 @@ export function DecisionForm({
       </Field>
       <Field
         name={`${kind}-note`}
-        label="Explanation for the maker"
-        hint="The maker sees this with the reason. Say what breaks the terms or the law."
+        label="Explanation for the user"
+        hint="The user sees this with the reason. Say what breaks the terms or the law."
       >
         <Textarea
           id={`${kind}-note`}

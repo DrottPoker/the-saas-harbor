@@ -59,7 +59,7 @@ export function ProductProfile({
   );
   const maker = (
     <>
-      <PersonAvatar path={item.owner_avatar_path} name={item.owner_name ?? "Maker"} />
+      <PersonAvatar path={item.owner_avatar_path} name={item.owner_name ?? "Founder"} />
       <span className="min-w-0">
         <span className="block font-medium group-hover:underline">{item.owner_name}</span>
         {headline && <span className="line-clamp-2 text-sm text-muted-foreground">{headline}</span>}
@@ -71,7 +71,7 @@ export function ProductProfile({
     <Shell size="medium">
       {demo && (
         <Notice className="mb-8">
-          This is a demo product. {name}, its maker and its figures are made up to show how a
+          This is a demo product. {name}, its founder and its figures are made up to show how a
           listing looks, and demo products disappear as real products join.{" "}
           <Link
             href="/dashboard/saas/new"
@@ -131,7 +131,7 @@ export function ProductProfile({
             {demo ? (
               <span className="text-foreground">{item.owner_name}</span>
             ) : (
-              <Link href={`/makers/${item.owner_slug}`} className="text-foreground hover:underline">
+              <Link href={`/users/${item.owner_slug}`} className="text-foreground hover:underline">
                 {item.owner_name}
               </Link>
             )}
@@ -164,12 +164,12 @@ export function ProductProfile({
       <p className="mt-3 flex items-center gap-1.5 text-[13px] text-muted-foreground">
         {demo ? (
           status === "unverified" ? (
-            "A demo of a product whose maker has not connected a payment provider, so it shows no revenue."
+            "A demo of a product whose founder has not connected a payment provider, so it shows no revenue."
           ) : (
             "Demo figures, made up for this example and not verified."
           )
         ) : status === "unverified" ? (
-          "Revenue has not been verified. The maker has not connected a payment provider."
+          "Revenue has not been verified. The founder has not connected a payment provider."
         ) : (
           <>
             <BadgeCheck aria-hidden="true" className="size-4 shrink-0 text-brand" />
@@ -195,12 +195,12 @@ export function ProductProfile({
         </section>
         <aside className="grid content-start gap-4">
           <div className="rounded-xl border bg-surface p-5">
-            <h2 className="text-sm text-muted-foreground">Maker</h2>
+            <h2 className="text-sm text-muted-foreground">Founder</h2>
             {demo ? (
               <div className="mt-3 flex items-center gap-3">{maker}</div>
             ) : (
               <Link
-                href={`/makers/${item.owner_slug}`}
+                href={`/users/${item.owner_slug}`}
                 className="group mt-3 flex items-center gap-3"
               >
                 {maker}

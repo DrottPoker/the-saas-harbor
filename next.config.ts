@@ -4,6 +4,10 @@ const config: NextConfig = {
   poweredByHeader: false,
   distDir: process.env.NEXT_DIST_DIR || ".next",
   experimental: { serverActions: { bodySizeLimit: "4mb" } },
+  // Profiles moved from /makers to /users: everyone is a user, and the founder of the products they own.
+  async redirects() {
+    return [{ source: "/makers/:path*", destination: "/users/:path*", permanent: true }];
+  },
   async headers() {
     return [
       {

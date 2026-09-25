@@ -21,13 +21,13 @@ export default async function EditProfile() {
       <BackLink href="/dashboard">Dashboard</BackLink>
       <PageHeader
         className="mt-4 border-b"
-        title="Maker profile"
-        description="Everything on your maker profile is public."
+        title="Profile"
+        description="Everything on your profile is public."
         actions={
           profile.data &&
           !profile.data.suspended_at && (
             <Button asChild variant="outline">
-              <Link href={`/makers/${profile.data.slug}`}>View profile</Link>
+              <Link href={`/users/${profile.data.slug}`}>View profile</Link>
             </Button>
           )
         }

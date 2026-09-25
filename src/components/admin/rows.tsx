@@ -55,7 +55,7 @@ export function ReportList({
                 </p>
                 <p className="truncate text-sm text-muted-foreground">
                   {isReason(report.reason) ? reasonLabels[report.reason] : report.reason} ·{" "}
-                  {maker && `${names.get(report.subject_id) ?? "Unknown maker"} · `}
+                  {maker && `${names.get(report.subject_id) ?? "Unknown user"} · `}
                   {formatDate(report.created_at)}
                 </p>
               </div>
@@ -102,7 +102,7 @@ export function ProductList({
                 <div className="min-w-0">
                   <p className="truncate font-medium">{product.name}</p>
                   <p className="truncate text-sm text-muted-foreground">
-                    {showMaker && `${product.owner?.name ?? "Unknown maker"} · `}Listed{" "}
+                    {showMaker && `${product.owner?.name ?? "Unknown founder"} · `}Listed{" "}
                     {formatDate(product.created_at)}
                   </p>
                 </div>
@@ -114,7 +114,7 @@ export function ProductList({
                   </Badge>
                 )}
                 {product.hidden_at && <Badge tone="error">Hidden</Badge>}
-                {product.owner?.suspended_at && <Badge tone="error">Maker suspended</Badge>}
+                {product.owner?.suspended_at && <Badge tone="error">Founder suspended</Badge>}
               </div>
             </Link>
           </li>
@@ -145,7 +145,7 @@ export function AccountList({ accounts }: { accounts: AdminAccount[] }) {
             <div className="flex min-w-0 flex-1 items-center gap-3">
               <PersonAvatar path={account.avatar_path} name={account.name ?? account.email} />
               <div className="min-w-0">
-                <p className="truncate font-medium">{account.name ?? "No maker profile"}</p>
+                <p className="truncate font-medium">{account.name ?? "No profile"}</p>
                 <p className="truncate text-sm text-muted-foreground">
                   {account.email} · Joined {formatDate(account.created_at)}
                 </p>

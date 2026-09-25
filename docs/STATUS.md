@@ -8,6 +8,10 @@ The first release includes accounts, email confirmation and recovery, public mak
 
 Makers can message each other privately (see Messages below), and report products, profiles and messages to the admins, who decide in an admin panel (see Reports and moderation below). They get emails about unread messages and about decisions (see Email notifications below). Other forms of connection, such as following or contact lists, are not implemented.
 
+## Users and founders 2026-09-25
+
+At the project owner's request, the site calls people users, and a user who owns a product its founder. Product pages, cards, sharing cards, the Markdown versions and the admin views of products say founder; profiles, messages, reports, settings, the privacy policy and the terms say user or profile. Profiles moved from `/makers/<slug>` to `/users/<slug>`, and the old addresses redirect permanently. Messages from the database that named a maker say user or profile (migration `20260926000000_user_wording.sql`). Code, the database and the docs keep the word maker. On the way, a flaw in the hourly sync was found and fixed: `claim_due_connections` could claim more connections than asked, since PostgreSQL may run an `IN` subquery with `LIMIT` and `FOR UPDATE SKIP LOCKED` more than once; a materialized CTE picks them once (migration `20260926000100_claim_due_once.sql`).
+
 ## Features from the competitor review 2026-09-25
 
 The project owner compared the site with TrustMRR and chose six things it does well to build here: a link that creates the Stripe key, an embeddable badge, pages for search engines and AI assistants, a statistics page, more payment providers (Paddle, Polar and Dodo Payments, one per product), and hourly verification. All six are built. What TrustMRR does less well waits for later updates.

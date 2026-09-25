@@ -274,7 +274,7 @@ export function EmailSettingsForm({
         <legend className="sr-only">Emails you get</legend>
         <Setting
           name="messages"
-          label="New messages from other makers"
+          label="New messages from other users"
           hint="One email per conversation, only when a message is still unread after a few minutes. It never contains the message."
           checked={checked("messages", messages)}
         />

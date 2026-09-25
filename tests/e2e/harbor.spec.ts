@@ -121,14 +121,14 @@ test.beforeAll(async ({ playwright }, info) => {
   const id = randomUUID();
   for (const path of [
     ...["/", "/discover", "/newest", "/about", "/privacy", "/terms", "/account-deleted"],
-    ...["/auth", "/auth/confirm", `/saas/${id}`, `/makers/${id}`, "/demo/metricfold", "/missing"],
+    ...["/auth", "/auth/confirm", `/saas/${id}`, `/users/${id}`, "/demo/metricfold", "/missing"],
     ...["/dashboard", "/dashboard/profile", "/dashboard/reports", `/dashboard/saas/${id}`],
     ...["/dashboard/settings", "/api/email/send"],
     ...["/messages", `/messages/${id}`, `/report/saas/${id}`, "/api/revenue/sync"],
     ...["/sitemap.xml", "/robots.txt", "/opengraph-image", "/llms.txt"],
-    ...["/categories", "/categories/design", "/saas/any.md", "/makers/any.md"],
+    ...["/categories", "/categories/design", "/saas/any.md", "/users/any.md"],
     ...["/stats", "/stats/opengraph-image"],
-    ...["/saas/any/opengraph-image", "/makers/any/opengraph-image", "/saas/any/badge.svg"],
+    ...["/saas/any/opengraph-image", "/users/any/opengraph-image", "/saas/any/badge.svg"],
     ...["", "/reports", "/products", "/accounts", "/log"].map((section) => `/admin${section}`),
     ...["reports", "products", "accounts"].map((section) => `/admin/${section}/${id}`),
   ])
@@ -458,8 +458,12 @@ test("registration, email confirmation, profile and SaaS editing, storage, priva
   await save.click();
   await expect(page.getByText("Profile saved.")).toBeVisible();
   // The maker's id leads to a readable address made from the name.
-  await page.goto(`/makers/${firstUserId}`);
-  await expect(page).toHaveURL(/\/makers\/local-test-maker(-\d+)?$/);
+  // Profiles moved from /makers to /users, and the old addresses lead on.
+  const oldAddress = await page.request.get(`/makers/${firstUserId}`, { maxRedirects: 0 });
+  expect(oldAddress.status()).toBe(308);
+  expect(oldAddress.headers().location).toBe(`/users/${firstUserId}`);
+  await page.goto(`/users/${firstUserId}`);
+  await expect(page).toHaveURL(/\/users\/local-test-maker(-\d+)?$/);
   await expect(page.getByRole("heading", { name: "Local Test Maker", exact: true })).toBeVisible();
   await expect(page).toHaveTitle("Local Test Maker | The SaaS Harbor");
   await expect(page.locator('link[rel="canonical"]')).toHaveAttribute(
@@ -640,7 +644,7 @@ test("registration, email confirmation, profile and SaaS editing, storage, priva
     "- Monthly recurring revenue: $104",
   );
   const { data: maker } = await anon.from("profiles").select("slug").eq("id", firstUserId).single();
-  expect(await (await page.request.get(`/makers/${maker!.slug}.md`)).text()).toContain(
+  expect(await (await page.request.get(`/users/${maker!.slug}.md`)).text()).toContain(
     `- [${productName}](${origin}${productPath}.md): A product created only by the local integration test. $104 verified MRR.`,
   );
   const { data: ranking } = await anon.from("leaderboard").select("id").order("rank");
@@ -701,7 +705,7 @@ test("registration, email confirmation, profile and SaaS editing, storage, priva
   const dataPages = [
     `/?q=${encodeURIComponent(productName)}`,
     `/saas/${productId}`,
-    `/makers/${firstUserId}`,
+    `/users/${firstUserId}`,
     "/discover",
     "/categories/design",
     "/dashboard",
@@ -810,7 +814,7 @@ test("registration, email confirmation, profile and SaaS editing, storage, priva
     "/dashboard/profile",
     `/dashboard/saas/${productId}`,
     `/saas/${productId}`,
-    `/makers/${firstUserId}`,
+    `/users/${firstUserId}`,
   ]) {
     await page.goto(path);
     await expectNoHorizontalScroll(page);
@@ -918,7 +922,7 @@ test("password recovery confirms a local email link and accepts the new password
   ).toBeVisible();
 });
 
-test("a maker deletes products, then their account and everything in it", async ({ page }) => {
+test("a user deletes products, then their account and everything in it", async ({ page }) => {
   const { data: created, error } = await admin.auth.admin.createUser({
     email: leavingEmail,
     password: leavingPassword,
@@ -1081,7 +1085,7 @@ test("a maker deletes products, then their account and everything in it", async 
   await expect(page.getByRole("alert").filter({ hasText: "Unable to sign in" })).toBeVisible();
 });
 
-test("makers message each other live, with unread counts and blocking", async ({ browser }) => {
+test("users message each other live, with unread counts and blocking", async ({ browser }) => {
   const baseURL = test.info().project.use.baseURL;
   const makers: { id: string; email: string; password: string; name: string }[] = [];
   for (const label of ["writer", "reader"]) {
@@ -1119,7 +1123,7 @@ test("makers message each other live, with unread counts and blocking", async ({
 
   // A visitor who chooses Send message signs in and continues in the conversation.
   const writerPage = await open();
-  await writerPage.goto(`/makers/${reader.id}`);
+  await writerPage.goto(`/users/${reader.id}`);
   await writerPage.getByRole("link", { name: "Send message" }).click();
   await expect(writerPage).toHaveURL(`/auth?next=${encodeURIComponent(`/messages/${reader.id}`)}`);
   await writerPage.getByLabel("Email address").fill(writer.email);
@@ -1169,7 +1173,7 @@ test("makers message each other live, with unread counts and blocking", async ({
   await expect(
     writerPage
       .getByRole("alert")
-      .filter({ hasText: "Messages between you and this maker are blocked." }),
+      .filter({ hasText: "Messages between you and this user are blocked." }),
   ).toBeVisible();
   await expect(writerField).toHaveValue("Are you there?");
   await readerPage.getByRole("button", { name: `Unblock ${writer.name}` }).click();
@@ -1178,7 +1182,7 @@ test("makers message each other live, with unread counts and blocking", async ({
   await expect(readerPage.getByRole("log").getByText("Are you there?")).toBeVisible();
 
   // Makers cannot message themselves.
-  await writerPage.goto(`/makers/${writer.id}`);
+  await writerPage.goto(`/users/${writer.id}`);
   await expect(writerPage.getByRole("heading", { name: writer.name })).toBeVisible();
   await expect(writerPage.getByRole("link", { name: "Send message" })).toHaveCount(0);
   await writerPage.goto(`/messages/${writer.id}`);
@@ -1345,10 +1349,10 @@ test("reports reach the admin panel, where admins hide products and suspend acco
   const hide = adminPage.getByRole("region", { name: "Hide the product" });
   await expect(hide.getByLabel("Reason")).toHaveValue("misleading");
   await hide
-    .getByLabel("Explanation for the maker")
+    .getByLabel("Explanation for the user")
     .fill("The customer numbers in the description are not true.");
   await hide.getByRole("button", { name: "Hide product" }).click();
-  await expect(adminPage.getByText("Product hidden. The maker sees")).toBeVisible();
+  await expect(adminPage.getByText("Product hidden. The founder sees")).toBeVisible();
   await expect(adminPage.getByRole("region", { name: "Outcome" })).toBeVisible();
 
   // The product is gone for everyone else, including through the API.
@@ -1399,17 +1403,17 @@ test("reports reach the admin panel, where admins hide products and suspend acco
   const suspend = adminPage.getByRole("region", { name: "Suspend the account" });
   await suspend.getByLabel("Reason").selectOption("spam");
   await suspend
-    .getByLabel("Explanation for the maker")
+    .getByLabel("Explanation for the user")
     .fill("Sent the same advertisement to many makers.");
   await suspend.getByRole("button", { name: "Suspend account" }).click();
-  await expect(adminPage.getByText("Account suspended. The maker sees")).toBeVisible();
+  await expect(adminPage.getByText("Account suspended. The user sees")).toBeVisible();
   await expect
     .poll(() => subjects(maker.email))
     .toContain("Your account on The SaaS Harbor is suspended");
 
   // The profile disappears, the conversation leaves the reporter's inbox, and the maker is told
   // why and can no longer send messages.
-  await visitor.goto(`/makers/${maker.id}`);
+  await visitor.goto(`/users/${maker.id}`);
   await expect(visitor.getByRole("heading", { name: "Page not found" })).toBeVisible();
   await reporterPage.goto("/messages");
   await expect(reporterPage.getByRole("heading", { name: "Messages", level: 1 })).toBeVisible();
@@ -1446,7 +1450,7 @@ test("reports reach the admin panel, where admins hide products and suspend acco
   await visitor.goto(`/saas/${productId}`);
   await expect(visitor).toHaveURL(`/saas/${productSlug}`);
   await expect(visitor.getByRole("heading", { name: product, exact: true })).toBeVisible();
-  await visitor.goto(`/makers/${maker.id}`);
+  await visitor.goto(`/users/${maker.id}`);
   await expect(visitor.getByRole("heading", { name: maker.name, exact: true })).toBeVisible();
   expect(await (await visitor.request.get("/sitemap.xml")).text()).toContain(productSlug);
 
@@ -1502,7 +1506,7 @@ test("reports reach the admin panel, where admins hide products and suspend acco
   expect(violations).toEqual([]);
 });
 
-test("makers get one email per unread conversation, and can turn it off", async ({
+test("users get one email per unread conversation, and can turn it off", async ({
   page,
   request,
 }) => {
@@ -1566,7 +1570,7 @@ test("makers get one email per unread conversation, and can turn it off", async 
   await login(page, recipient.email, recipient.password);
   await page.getByRole("link", { name: "Settings" }).click();
   await expect(page).toHaveURL("/dashboard/settings");
-  const setting = page.getByRole("checkbox", { name: /New messages from other makers/ });
+  const setting = page.getByRole("checkbox", { name: /New messages from other users/ });
   // Waits for the save itself: the confirmation text stays on screen between saves.
   const save = async () => {
     await Promise.all([
@@ -1707,7 +1711,7 @@ test("statistics add up the leaderboard's figures once five products share them"
 
 // Paddle, Polar and Dodo Payments verify revenue like Stripe. A product connects one provider at a
 // time, and a new key may switch it to another.
-test("makers verify revenue through Paddle, Polar and Dodo Payments", async ({ page }) => {
+test("founders verify revenue through Paddle, Polar and Dodo Payments", async ({ page }) => {
   const violations: string[] = [];
   watchPolicy(page, violations);
   const address = `harbor-providers-${run}@example.test`;

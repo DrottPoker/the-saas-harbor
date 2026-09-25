@@ -65,7 +65,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         priority: 0.7,
       })),
     ...[...makers].map(([slug, updated]) => ({
-      url: `${base}/makers/${slug}`,
+      url: `${base}/users/${slug}`,
       lastModified: updated,
       changeFrequency: "weekly" as const,
       priority: 0.5,

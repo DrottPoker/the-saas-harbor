@@ -71,7 +71,7 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
     <Shell>
       <PageHeader
         title="Dashboard"
-        description="Manage your maker profile and products."
+        description="Manage your profile and products."
         actions={addButton}
       />
       {params.saved && (
@@ -120,14 +120,14 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
           <h2 className="font-semibold">{profile?.name ?? "Set up your profile"}</h2>
           <p className="truncate text-sm text-muted-foreground">
             {profile
-              ? profile.headline || "No headline yet. Add one so makers know what you do."
-              : "Add your name and a headline. Your maker profile is public."}
+              ? profile.headline || "No headline yet. Add one so others know what you do."
+              : "Add your name and a headline. Your profile is public."}
           </p>
         </div>
         <div className="flex gap-2">
           {profile && !suspended && (
             <Button asChild variant="ghost" size="sm">
-              <Link href={`/makers/${profile.slug}`}>View public profile</Link>
+              <Link href={`/users/${profile.slug}`}>View public profile</Link>
             </Button>
           )}
           <Button asChild variant="outline" size="sm">

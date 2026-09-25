@@ -5,9 +5,9 @@ import { contentSecurityPolicy, createNonce } from "@/lib/csp";
 import { cookieOptions, supabaseConfig } from "@/lib/supabase/config";
 import type { Database } from "@/lib/supabase/types";
 
-const PUBLIC_PAGE = /^\/(saas|makers)\/([^/]+)$/;
+const PUBLIC_PAGE = /^\/(saas|users)\/([^/]+)$/;
 // A public page's address with .md added serves its Markdown version (llmstxt.org).
-const MARKDOWN_PAGE = /^\/(saas|makers)\/([^/]+)\.md$/;
+const MARKDOWN_PAGE = /^\/(saas|users)\/([^/]+)\.md$/;
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 // Product and maker pages moved from ids to readable addresses. Links with an id or capital

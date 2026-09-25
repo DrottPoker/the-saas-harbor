@@ -22,6 +22,8 @@ Next.js 16 App Router and Supabase platform where independent SaaS products get 
 
 ## Rules
 
+- Wording: on the site, people are users, and a user is the founder of the products they own. Say founder only for that relation, and user or profile otherwise. Code, the database and these docs still say maker for the same person.
+
 - Schema changes go in a new file in `supabase/migrations`. Never edit a migration that is committed or applied outside this machine. Apply locally with `npx supabase migration up --local` (keeps local accounts; `npm run db:reset` deletes them), confirm `npx supabase db diff --local` reports no changes, run `npm run db:types`, and extend `supabase/tests/database`.
 - Supabase runs only locally in Docker. Do not connect the app to a hosted Supabase project, or write to one, without explicit approval. The old hosted project `qvvqkskyukqoleuivdfw` is unused.
 - `supabase/.env.local` holds per-machine SMTP credentials. Never read out, print or commit its password. Use `npm run db:restart -- --mailpit` before browser tests when real email is on.
@@ -33,7 +35,7 @@ Next.js 16 App Router and Supabase platform where independent SaaS products get 
 - Revenue never comes from user input. Verified figures are written only through `record_revenue_verification`. Never log or print provider keys, encrypted or not, and never change `STRIPE_KEY_ENCRYPTION_KEY` without a re-encryption plan.
 - Personal data: anything new that stores data about a person must be described in the privacy policy (`src/app/privacy/page.tsx`, with a new `privacyUpdated` date in `src/lib/legal.ts`) and removed by account deletion (`public.delete_account()` and `src/lib/account.ts`), with a test. Product-scoped tables need an `on delete cascade` foreign key to `saas`, so product deletion removes them too.
 - Demo products live only in `src/lib/demo.ts`, never in the database. Wherever they appear they are marked Demo and are never ranked, called verified, contactable, reportable, indexed or in the sitemap. A new place that lists products must handle `item.demo` or leave demo products out.
-- Public links to products and makers use their slugs (`/saas/<slug>`, `/makers/<slug>`); ids keep working through the proxy's redirect. Private areas keep using ids.
+- Public links to products and makers use their slugs (`/saas/<slug>`, `/users/<slug>`); ids keep working through the proxy's redirect. Private areas keep using ids.
 - Stored money is integer USD cents. MRR normalization may use fractions, but rounds once at the end (`src/lib/revenue/money.ts`).
 - Mutations are Server Actions that call `requireUser()`, with RLS as the second layer. Public reads use `publicClient()` so they never carry a session.
 - Validate input on the server with the zod schemas in `src/lib/domain.ts`.

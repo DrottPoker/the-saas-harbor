@@ -197,7 +197,7 @@ export function renderEmail(row: ClaimedEmail, { origin, contact }: EmailSetting
       body: [`An admin reviewed your report about ${about}.`, outcome],
       action: { label: "See your reports", url: `${origin}/dashboard/reports` },
       footer: [
-        "The maker is not told who reported. This email is sent for every report you make.",
+        "The reported user is not told who reported. This email is sent for every report you make.",
         { label: "Terms", url: `${origin}/terms#moderation` },
       ],
     });

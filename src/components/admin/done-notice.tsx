@@ -1,10 +1,9 @@
 import { Notice } from "../shell";
 
 const messages: Record<string, string> = {
-  hidden: "Product hidden. The maker sees the reason and your explanation in their dashboard.",
+  hidden: "Product hidden. The founder sees the reason and your explanation in their dashboard.",
   shown: "The product is shown again.",
-  suspended:
-    "Account suspended. The maker sees the reason and your explanation in their dashboard.",
+  suspended: "Account suspended. The user sees the reason and your explanation in their dashboard.",
   lifted: "The suspension is lifted.",
   dismissed: "Report dismissed. The reporter sees that no action was taken.",
 };

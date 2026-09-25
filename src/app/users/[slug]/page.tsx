@@ -38,7 +38,7 @@ export async function generateMetadata({ params }: Pick<Props, "params">): Promi
       profile.headline ||
       (profile.bio && excerpt(profile.bio, 160)) ||
       `${profile.name} on ${SITE_NAME}`,
-    path: `/makers/${profile.slug}`,
+    path: `/users/${profile.slug}`,
     type: "profile",
     markdown: true,
   });
@@ -122,7 +122,7 @@ export default async function Maker({ params, searchParams }: Props) {
 
       {own && missing.length > 0 && (
         <Notice className="mt-6">
-          Add {missing.join(", ").replace(/, ([^,]*)$/, " and $1")} so other makers get to know you.{" "}
+          Add {missing.join(", ").replace(/, ([^,]*)$/, " and $1")} so others get to know you.{" "}
           <Link href="/dashboard/profile" className="font-medium underline">
             Edit profile
           </Link>

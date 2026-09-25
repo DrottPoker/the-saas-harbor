@@ -77,7 +77,7 @@ export default async function AdminAccount({ params, searchParams }: Props) {
         />
         <div className="min-w-0 flex-1">
           <h1 className="text-2xl font-semibold tracking-tight [overflow-wrap:anywhere] sm:text-3xl">
-            {maker?.name ?? "No maker profile"}
+            {maker?.name ?? "No profile"}
           </h1>
           {maker?.headline && <p className="mt-1 text-muted-foreground">{maker.headline}</p>}
           <p className="mt-2 text-sm text-muted-foreground [overflow-wrap:anywhere]">
@@ -104,7 +104,7 @@ export default async function AdminAccount({ params, searchParams }: Props) {
                 [
                   "Public profile",
                   maker && !maker.suspended_at ? (
-                    <Link className={link} href={`/makers/${maker.slug}`}>
+                    <Link className={link} href={`/users/${maker.slug}`}>
                       Open
                     </Link>
                   ) : (
@@ -132,13 +132,13 @@ export default async function AdminAccount({ params, searchParams }: Props) {
 
           <section aria-labelledby="reports">
             <h2 id="reports" className="mb-4 font-semibold">
-              Reports about this maker
+              Reports about this user
             </h2>
             {reports.data?.length ? (
               <ReportList
                 reports={reports.data}
                 names={admins}
-                label="Reports about this maker"
+                label="Reports about this user"
                 showMaker={false}
               />
             ) : (
@@ -163,7 +163,7 @@ export default async function AdminAccount({ params, searchParams }: Props) {
             <Panel
               id="suspended"
               title="Suspended"
-              description="The maker sees this reason and explanation in their dashboard."
+              description="The user sees this reason and explanation in their dashboard."
             >
               <Facts
                 rows={[
@@ -185,7 +185,7 @@ export default async function AdminAccount({ params, searchParams }: Props) {
               </div>
             </Panel>
           ) : !maker ? (
-            <Notice>This account has no maker profile, so nothing of it is public.</Notice>
+            <Notice>This account has no profile, so nothing of it is public.</Notice>
           ) : own ? (
             <Notice>This is your own account.</Notice>
           ) : account.data.is_admin ? (
@@ -196,7 +196,7 @@ export default async function AdminAccount({ params, searchParams }: Props) {
             <Panel
               id="suspend"
               title="Suspend the account"
-              description="The profile and products disappear, and the maker cannot send messages or reports. This closes every open report about them."
+              description="The profile and products disappear, and the user cannot send messages or reports. This closes every open report about them."
             >
               <DecisionForm kind="suspend" targetId={id} returnTo={returnTo} />
             </Panel>

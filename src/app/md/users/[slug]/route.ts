@@ -4,7 +4,7 @@ import { siteUrl } from "@/lib/seo";
 import { textNotFound, textRedirect, textResponse } from "@/lib/text-response";
 
 // /makers/<slug>.md, which the proxy rewrites here: the maker page as Markdown.
-export async function GET(_request: Request, ctx: RouteContext<"/md/makers/[slug]">) {
+export async function GET(_request: Request, ctx: RouteContext<"/md/users/[slug]">) {
   const found = await findProfile((await ctx.params).slug);
   if (!found) return textNotFound();
   if ("redirect" in found) return textRedirect(found.redirect);
@@ -19,6 +19,6 @@ export async function GET(_request: Request, ctx: RouteContext<"/md/makers/[slug
       mrr: totals.mrr.total,
       customers: totals.customers.total,
     }),
-    { type: "text/markdown", canonical: `${siteUrl()}/makers/${profile.slug}` },
+    { type: "text/markdown", canonical: `${siteUrl()}/users/${profile.slug}` },
   );
 }

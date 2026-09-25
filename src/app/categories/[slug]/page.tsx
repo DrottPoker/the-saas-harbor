@@ -80,7 +80,7 @@ export default async function Category({ params }: Props) {
             </Button>
           }
         >
-          Products appear here when their makers list them in this category.
+          Products appear here when their founders list them in this category.
         </EmptyState>
       ) : (
         <div className="grid gap-12">

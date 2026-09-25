@@ -89,7 +89,7 @@ export default async function AdminReport({ params, searchParams }: Props) {
   const target = report.target as ReportTarget;
   const status = isReportStatus(report.status) ? report.status : "open";
   const maker = subject.data;
-  const makerName = maker?.name ?? "the maker";
+  const makerName = maker?.name ?? "the user";
   const returnTo = `/admin/reports/${id}`;
   const heading =
     target === "message"
@@ -178,7 +178,7 @@ export default async function AdminReport({ params, searchParams }: Props) {
             />
           </Panel>
 
-          <Panel id="maker" title="Maker">
+          <Panel id="maker" title="User">
             <div className="flex items-center gap-3">
               <PersonAvatar path={maker?.avatar_path} name={makerName} />
               <div className="min-w-0 flex-1">
@@ -227,7 +227,7 @@ export default async function AdminReport({ params, searchParams }: Props) {
                 <Panel
                   id="suspend"
                   title="Suspend the account"
-                  description="The profile and products disappear, and the maker cannot send messages or reports. This closes every open report about them."
+                  description="The profile and products disappear, and the user cannot send messages or reports. This closes every open report about them."
                 >
                   <DecisionForm
                     kind="suspend"

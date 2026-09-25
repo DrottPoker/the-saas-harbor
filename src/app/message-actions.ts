@@ -15,7 +15,7 @@ export async function sendMessageAction(
   form: FormData,
 ): Promise<SendState> {
   const { client } = await requireUser();
-  if (!id.safeParse(recipientId).success) return { error: "This maker could not be found." };
+  if (!id.safeParse(recipientId).success) return { error: "This user could not be found." };
   const body = String(form.get("body") ?? "").trim();
   if (!body) return { error: "Write a message first." };
   // Characters as the database counts them, not UTF-16 units.
@@ -51,7 +51,7 @@ export async function markConversationReadAction(conversationId: string, readAt:
 export async function setBlockedAction(makerId: string, blocked: boolean): Promise<ActionState> {
   const { user, client } = await requireUser();
   if (!id.safeParse(makerId).success || makerId === user.id)
-    return { error: "This maker could not be found." };
+    return { error: "This user could not be found." };
   const { error } = blocked
     ? await client.from("blocks").insert({ blocker_id: user.id, blocked_id: makerId })
     : await client.from("blocks").delete().eq("blocker_id", user.id).eq("blocked_id", makerId);
@@ -59,8 +59,8 @@ export async function setBlockedAction(makerId: string, blocked: boolean): Promi
   if (error && error.code !== "23505")
     return {
       error: blocked
-        ? "The maker could not be blocked. Please try again."
-        : "The maker could not be unblocked. Please try again.",
+        ? "The user could not be blocked. Please try again."
+        : "The user could not be unblocked. Please try again.",
     };
   revalidatePath("/messages", "layout");
   return {};

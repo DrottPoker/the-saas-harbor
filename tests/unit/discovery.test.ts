@@ -93,7 +93,7 @@ describe("structured data", () => {
         applicationSubCategory: "Developer Tools",
         url: "https://querybird.example",
         datePublished: "2025-11-01",
-        creator: { name: "Tomas Rivera", url: "https://harbor.example/makers/tomas-rivera" },
+        creator: { name: "Tomas Rivera", url: "https://harbor.example/users/tomas-rivera" },
       },
       breadcrumb: {
         itemListElement: [
@@ -146,13 +146,13 @@ describe("markdown", () => {
     expect(text).toContain("# QueryBird\n\n> SQL reports for small teams");
     expect(text).toContain("- Page: https://harbor.example/saas/querybird");
     expect(text).toContain(
-      "- Maker: [Tomas Rivera](https://harbor.example/makers/tomas-rivera.md)",
+      "- Founder: [Tomas Rivera](https://harbor.example/users/tomas-rivera.md)",
     );
     expect(text).toContain("- Monthly recurring revenue: $4,200");
     expect(text).toContain("- Change over 30 days: +4.5%");
     expect(text).toContain("- Paying customers: 37");
     expect(text).toContain("| August 2026 | $4,100 |");
-    expect(text).toContain("written by the makers");
+    expect(text).toContain("written by the users who list them");
   });
 
   it("says why a figure is missing and shows no history for it", () => {
