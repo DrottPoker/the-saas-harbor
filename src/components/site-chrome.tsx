@@ -76,6 +76,9 @@ export function SiteFooter() {
           <Link className={quietLink} href="/categories">
             Categories
           </Link>
+          <Link className={quietLink} href="/stats">
+            Statistics
+          </Link>
           <Link className={quietLink} href="/about">
             How it works
           </Link>

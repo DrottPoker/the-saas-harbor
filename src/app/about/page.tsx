@@ -19,6 +19,7 @@ const sections = [
     body: [
       "Products are ranked by verified MRR that their makers choose to share. Equal amounts are ordered by the date the product was listed. Category filters keep the overall rank, and a verified MRR of $0 is ranked too.",
       "Products without Stripe, or that keep their revenue private, are still listed in Browse and New arrivals.",
+      "The statistics page adds up the same figures: combined and median MRR, how MRR is spread, the change over 30 days, and the figures by category and by time since launch. It shows them once five products share verified MRR.",
     ],
   },
   {

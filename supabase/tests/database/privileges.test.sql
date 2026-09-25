@@ -67,11 +67,11 @@ select results_eq(
   'makers write only the columns they edit, and never read a stored key');
 select results_eq(
   $$ select functions from pgtap_function_privileges where role = 'anon' $$,
-  $$ values ('is_admin,saas_slug_redirect'::text) $$,
+  $$ values ('directory_stats,is_admin,saas_slug_redirect'::text) $$,
   'visitors run only the functions public pages need');
 select results_eq(
   $$ select functions from pgtap_function_privileges where role = 'authenticated' $$,
-  $$ values ('admin_account,admin_accounts,admin_dismiss_report,admin_hide_saas,admin_restore_account,admin_restore_saas,admin_suspend_account,begin_stripe_check,delete_account,is_admin,mark_conversation_read,saas_slug_redirect,save_notification_settings,save_profile,save_saas,send_message,submit_report,unread_message_count'::text) $$,
+  $$ values ('admin_account,admin_accounts,admin_dismiss_report,admin_hide_saas,admin_restore_account,admin_restore_saas,admin_suspend_account,begin_stripe_check,delete_account,directory_stats,is_admin,mark_conversation_read,saas_slug_redirect,save_notification_settings,save_profile,save_saas,send_message,submit_report,unread_message_count'::text) $$,
   'makers run only the functions the app calls');
 
 select * from finish();

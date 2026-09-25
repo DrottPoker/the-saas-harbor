@@ -192,6 +192,7 @@ export function llmsText(
     `- [Browse](${base}/discover): every listed product, A to Z`,
     `- [New arrivals](${base}/newest): the latest products to join`,
     `- [Categories](${base}/categories): products by category`,
+    `- [Statistics](${base}/stats): combined, median and distributed verified MRR`,
     `- [How it works](${base}/about): verification, ranking and what is public`,
     "",
     "## Categories",

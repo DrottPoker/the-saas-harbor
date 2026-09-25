@@ -3,6 +3,7 @@ import { cache } from "react";
 import { publicClient } from "./supabase/server";
 import { demoFill, demoListings, type DemoDetails } from "./demo";
 import { categories, containsPattern } from "./domain";
+import { parseStats } from "./stats";
 import type { Database } from "./supabase/database.types";
 export type Listing = Database["public"]["Views"]["public_saas"]["Row"] & {
   rank?: number | null;
@@ -99,6 +100,15 @@ export async function makerListings(ownerId: string) {
   if (error) throw new Error("This maker's products could not be loaded.");
   return data as Listing[];
 }
+
+/** The statistics page's figures, computed in the database from the leaderboard. */
+export const directoryStats = cache(async () => {
+  const client = publicClient();
+  if (!client) throw new Error("Supabase is not configured.");
+  const { data, error } = await client.rpc("directory_stats");
+  if (error) throw new Error("The statistics could not be loaded.");
+  return parseStats(data);
+});
 
 export type CategoryCount = { products: number; ranked: number };
 

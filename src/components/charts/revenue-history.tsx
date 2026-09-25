@@ -4,9 +4,11 @@ import { MrrChart } from "./mrr-chart";
 /** The product page's MRR chart with a table view of the same values. */
 export function RevenueHistory({
   history,
+  title = "MRR at month end",
   description,
 }: {
   history: MrrPoint[];
+  title?: string;
   /** Replaces the note on where the figures come from. */
   description?: string;
 }) {
@@ -15,7 +17,7 @@ export function RevenueHistory({
   return (
     <section aria-labelledby="revenue-history" className="mt-10 rounded-xl border bg-surface p-5">
       <h2 id="revenue-history" className="font-semibold">
-        MRR at month end
+        {title}
       </h2>
       <p className="mt-0.5 text-sm text-muted-foreground">
         {description ?? (
@@ -33,7 +35,7 @@ export function RevenueHistory({
           Show as table
         </summary>
         <table className="mt-3 w-full max-w-sm tabular-nums">
-          <caption className="sr-only">MRR at month end</caption>
+          <caption className="sr-only">{title}</caption>
           <thead>
             <tr className="border-b text-left text-muted-foreground">
               <th scope="col" className="py-1.5 font-medium">

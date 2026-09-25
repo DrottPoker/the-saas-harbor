@@ -1020,6 +1020,7 @@ export type Database = {
         Returns: undefined
       }
       delete_account: { Args: never; Returns: undefined }
+      directory_stats: { Args: never; Returns: Json }
       is_admin: { Args: never; Returns: boolean }
       list_admins: {
         Args: never

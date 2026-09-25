@@ -126,6 +126,7 @@ test.beforeAll(async ({ playwright }, info) => {
     ...["/messages", `/messages/${id}`, `/report/saas/${id}`, "/api/stripe/sync"],
     ...["/sitemap.xml", "/robots.txt", "/opengraph-image", "/llms.txt"],
     ...["/categories", "/categories/design", "/saas/any.md", "/makers/any.md"],
+    ...["/stats", "/stats/opengraph-image"],
     ...["/saas/any/opengraph-image", "/makers/any/opengraph-image", "/saas/any/badge.svg"],
     ...["", "/reports", "/products", "/accounts", "/log"].map((section) => `/admin${section}`),
     ...["reports", "products", "accounts"].map((section) => `/admin/${section}/${id}`),
@@ -1599,4 +1600,104 @@ test("makers get one email per unread conversation, and can turn it off", async 
   }
   await page.setViewportSize({ width: 390, height: 844 });
   await expectNoHorizontalScroll(page);
+});
+
+// Statistics show once five products share verified MRR, and add up exactly the leaderboard's
+// figures. The local database may rank other products too, so expectations read the leaderboard.
+test("statistics add up the leaderboard's figures once five products share them", async ({
+  page,
+}) => {
+  const violations: string[] = [];
+  watchPolicy(page, violations);
+  const { data: before } = await anon.from("leaderboard").select("id");
+  if (before!.length < 5) {
+    await page.goto("/stats");
+    await expect(page.getByRole("heading", { name: "Not enough products yet" })).toBeVisible();
+  }
+
+  const { data: created, error } = await admin.auth.admin.createUser({
+    email: `harbor-stats-${run}@example.test`,
+    password: randomBytes(24).toString("hex"),
+    email_confirm: true,
+  });
+  if (error || !created.user) throw new Error("Unable to create the statistics maker.");
+  const maker = created.user.id;
+  userIds.push(maker);
+  await admin.from("profiles").upsert({ id: maker, name: `Stats Maker ${run}` });
+  // Twelve month-ends before this month, like a real verification's history.
+  const now = new Date();
+  const months = Array.from({ length: 12 }, (_, i) => {
+    const date = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - 12 + i, 1));
+    return date.toISOString().slice(0, 7);
+  });
+  for (const [index, mrr] of [0, 5_000, 150_000, 2_000_000, 120_000].entries()) {
+    const id = randomUUID();
+    const { error: saasError } = await admin.from("saas").insert({
+      id,
+      owner_id: maker,
+      name: `Stats ${run} ${index}`,
+      tagline: "A statistics fixture.",
+      description: "A local statistics fixture, removed after the test.",
+      category: "Analytics",
+      website: "https://example.com",
+    });
+    expect(saasError).toBeNull();
+    await admin
+      .from("saas_settings")
+      .insert({ saas_id: id, owner_id: maker, share_mrr: true, share_customers: true });
+    const { error: verifyError } = await admin.rpc("record_stripe_verification", {
+      p_saas_id: id,
+      p_encrypted_key: "v1:stats",
+      p_key_hint: "rk_test_…stat",
+      p_livemode: false,
+      p_mrr_cents: mrr,
+      p_customers: index,
+      p_currencies: {},
+      p_fx_date: null,
+      p_subscription_hashes: [createHash("sha256").update(id).digest("hex")],
+      p_history: months.map((month, i) => ({ month, mrr_cents: Math.round((mrr * (i + 1)) / 12) })),
+      p_mrr_invoice_cents: mrr,
+      p_mrr_30d_ago_cents: mrr ? mrr / 2 : null,
+    });
+    expect(verifyError).toBeNull();
+  }
+
+  const { data: ranked } = await anon.from("leaderboard").select("mrr_cents");
+  const total = ranked!.reduce((sum, row) => sum + (row.mrr_cents ?? 0), 0);
+  const usd = new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+    minimumFractionDigits: total % 100 ? 2 : 0,
+    maximumFractionDigits: 2,
+  }).format(total / 100);
+  await page.goto("/stats");
+  await expect(page.getByRole("heading", { name: "Statistics", level: 1 })).toBeVisible();
+  const figure = (label: string) =>
+    page.locator("dt", { hasText: label }).locator("xpath=following-sibling::dd[1]");
+  await expect(figure("Verified MRR, combined")).toHaveText(usd);
+  await expect(figure("Products ranked")).toHaveText(String(ranked!.length));
+  await expect(
+    page.getByRole("list", { name: "Products by MRR" }).getByRole("listitem"),
+  ).toHaveCount(5);
+  await expect(
+    page.getByRole("table", { name: "Ranked products by category" }).getByRole("link", {
+      name: "Analytics",
+    }),
+  ).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Fastest growing" })).toBeVisible();
+  if (!before!.length)
+    await expect(page.getByRole("heading", { name: "Combined MRR at month end" })).toBeVisible();
+  const card = await page.request.get("/stats/opengraph-image");
+  expect(card.status()).toBe(200);
+  expect(card.headers()["content-type"]).toBe("image/png");
+  expect(await (await page.request.get("/sitemap.xml")).text()).toContain("/stats</loc>");
+
+  for (const theme of ["dark", "light"] as const) {
+    await setThemeCookie(page, theme);
+    await page.goto("/stats");
+    await expectAccessible(page);
+  }
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expectNoHorizontalScroll(page);
+  expect(violations).toEqual([]);
 });
