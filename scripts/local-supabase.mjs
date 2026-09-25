@@ -1,5 +1,5 @@
 import { execFileSync } from "node:child_process";
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync, rmSync } from "node:fs";
 import { parseEnv } from "node:util";
 
 export const npx = process.platform === "win32" ? "npx.cmd" : "npx";
@@ -66,6 +66,16 @@ export function emailDelivery() {
   return host.startsWith("supabase_inbucket_") ? "mailpit" : host;
 }
 
+// `supabase link` pins production's service versions in supabase/.temp, and `supabase start` then
+// uses them. The local stack keeps the CLI's own versions, as CI does: another Storage version
+// does not fit the storage schema the local one migrated, and image uploads fail.
+function unpinServiceVersions() {
+  const temp = "supabase/.temp";
+  if (!existsSync(temp)) return;
+  for (const file of readdirSync(temp))
+    if (/-version$|^storage-migration$/.test(file)) rmSync(`${temp}/${file}`);
+}
+
 // Starts the stack. Real email is used only when supabase/.env.local enables it with a password;
 // `mailpit: true` forces the local inbox, which the browser tests need.
 export function startLocalSupabase({ mailpit = false } = {}) {
@@ -76,6 +86,7 @@ export function startLocalSupabase({ mailpit = false } = {}) {
   if (local.HARBOR_SMTP_ENABLED === "true" && !local.HARBOR_SMTP_PASS && !mailpit)
     console.warn("Real email is enabled in supabase/.env.local but HARBOR_SMTP_PASS is empty.");
   if (mailpit || !local.HARBOR_SMTP_PASS) env.HARBOR_SMTP_ENABLED = "false";
+  unpinServiceVersions();
   console.log("Starting local Supabase. The first start downloads Docker images...");
   // The CLI stops the stack when a start fails, for example when a container misses its health
   // check right after a restart, so one retry begins from a clean state.

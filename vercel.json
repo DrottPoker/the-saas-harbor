@@ -1,0 +1,9 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "regions": ["fra1"],
+  "git": { "deploymentEnabled": { "development": false } },
+  "crons": [
+    { "path": "/api/email/send", "schedule": "* * * * *" },
+    { "path": "/api/revenue/sync", "schedule": "*/10 * * * *" }
+  ]
+}

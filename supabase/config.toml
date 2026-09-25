@@ -426,9 +426,9 @@ enabled = true
 
 # Production on Supabase Cloud (project "The SaaS Harbor", eu-central-1). `supabase config push`
 # applies the settings above with these overrides, without asking. Production reads its own SMTP
-# variables, so the per-machine settings in supabase/.env.local never reach it; they are off in
-# supabase/.env until an SMTP provider is chosen, and Supabase refuses the custom email templates
-# on the free plan until then.
+# variables, so the per-machine settings in supabase/.env.local never reach it. They are off in
+# supabase/.env, and Supabase refuses the custom email templates on the free plan without SMTP,
+# so push with `npm run auth:production`, which sets them for Resend.
 [remotes.production]
 project_id = "vgwgeennghaqpvfsqewq"
 

@@ -88,7 +88,7 @@ In a product's editor, the maker chooses the payment provider and creates a key 
 
 For Stripe, a link opens Stripe's form for a new restricted key with the name and permissions filled in. The link uses live mode; for a test account, create the key under Developers → API keys → Create restricted key in test mode with the same permissions. The key is verified first, then stored encrypted. Paid charges give the product page its chart of MRR at each of the last twelve month-ends and the leaderboard its trend line and 30-day growth; a Stripe key without Invoices access still verifies MRR, just without history, and Dodo Payments products have no history, since Dodo's payments do not say which period they cover. Locally test keys and sandboxes are accepted (`REVENUE_ALLOW_TEST_KEYS=true`: `rk_test_`, `pdl_sdbx_apikey_`, and Polar and Dodo Payments test accounts), so test accounts work end to end. `npm run revenue:sync` re-verifies the connections that are due through the running dev server, as the production scheduler does: each connection about every hour, with the history and 30-day growth read once a day and carried over in between. How each provider's figures are read is in ARCHITECTURE.
 
-`npm run dev` generates the server-only secrets in `.env.local`: `SUPABASE_SECRET_KEY` (the local service-role key), `STRIPE_KEY_ENCRYPTION_KEY` and `CRON_SECRET`. The encryption key is kept once created; replacing it makes stored provider keys unreadable, and makers would have to reconnect. Production needs the same three secrets, `REVENUE_ALLOW_TEST_KEYS` unset, and a scheduler that calls `POST /api/revenue/sync` every ten minutes with `Authorization: Bearer $CRON_SECRET`. It also needs the SMTP variables for its email provider, with SPF, DKIM and DMARC set up for the sender's domain, and a scheduler that calls `POST /api/email/send` every minute with the same header.
+`npm run dev` generates the server-only secrets in `.env.local`: `SUPABASE_SECRET_KEY` (the local service-role key), `STRIPE_KEY_ENCRYPTION_KEY` and `CRON_SECRET`. The encryption key is kept once created; replacing it makes stored provider keys unreadable, and makers would have to reconnect. Production needs the same three secrets with new values, `REVENUE_ALLOW_TEST_KEYS` unset, the SMTP variables for Resend, and the two scheduled jobs in `vercel.json`, which call `/api/revenue/sync` every ten minutes and `/api/email/send` every minute with `Authorization: Bearer $CRON_SECRET` (see Production).
 
 Demo accounts from `npm run db:seed` are `<name>@demo.harbor.test` (for example `lena@demo.harbor.test`) with the password `harbor-demo-password`; `admin@demo.harbor.test` opens the admin panel, where a spam message, a product and a profile wait for review. Their products carry verified test-mode snapshots, with a generated 12-month history, and placeholder keys, so "Refresh now" on a demo product fails the way a revoked key would. Re-running the seed replaces earlier demo accounts, `npm run db:seed -- --remove` removes them with everything in them, and `npm run db:reset` rebuilds the database from the migrations without any data. Seeded products are ordinary listings in the local database, so they count as real products and take the places of the built-in demo products, which live only in code (see ARCHITECTURE). The ports 55320-55329 keep this stack clear of other local Supabase projects on the default 543xx ports. `npm run db:stop` stops the stack and keeps the data.
 
@@ -157,16 +157,34 @@ This serves a production build on http://localhost:3001 against the local stack 
 
 ### Production
 
-Production Supabase is the Supabase Cloud project `vgwgeennghaqpvfsqewq` ("The SaaS Harbor", Frankfurt, eu-central-1) in the Auxron organization, at `https://vgwgeennghaqpvfsqewq.supabase.co`. The domain is `thesaasharbor.com`. Where the app runs and which SMTP provider sends email are still open; see [status](docs/STATUS.md).
+Production runs on three services, all in the EU where they allow it:
 
-Link a machine once with `npx supabase link --project-ref vgwgeennghaqpvfsqewq` (the CLI must be logged in; it uses a temporary login role, so no database password is needed). Then, only with the owner's approval and after the local checks pass:
+- **App:** Vercel, functions in Frankfurt (`fra1`), deployed from `main`. `vercel.json` sets the region, turns off deployments of `development`, and schedules the two jobs: `/api/email/send` every minute and `/api/revenue/sync` every ten minutes. Vercel Cron calls them with GET and `Authorization: Bearer $CRON_SECRET`, which it sends by itself once `CRON_SECRET` is set. Per-minute jobs need the Pro plan, which commercial use needs anyway.
+- **Database, Auth and Storage:** the Supabase Cloud project `vgwgeennghaqpvfsqewq` ("The SaaS Harbor", Frankfurt, eu-central-1) in the Auxron organization, at `https://vgwgeennghaqpvfsqewq.supabase.co`. Upgrade it to Pro before launch: free projects pause after a week without activity and have no daily backups.
+- **Email:** Resend, through SMTP (`smtp.resend.com`, port 465, user `resend`, an API key as password), for both Supabase Auth and the notification emails, from the domain `thesaasharbor.com` in Resend's EU region. Use one API key per sender (Supabase, Vercel) with sending access only, so either can be revoked alone.
+
+**Vercel environment variables** (Production only; previews must not reach the production database):
+
+| Variable                               | Value                                                                           |
+| -------------------------------------- | ------------------------------------------------------------------------------- |
+| `NEXT_PUBLIC_SUPABASE_URL`             | `https://vgwgeennghaqpvfsqewq.supabase.co`                                      |
+| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | The publishable key, Supabase dashboard → Project Settings → API Keys           |
+| `SUPABASE_SECRET_KEY`                  | A secret key from the same page, created for Vercel (mark as Sensitive)         |
+| `NEXT_PUBLIC_SITE_URL`                 | `https://thesaasharbor.com`                                                     |
+| `STRIPE_KEY_ENCRYPTION_KEY`            | New for production: 32 random bytes, base64 (see below); keep a copy in a vault |
+| `CRON_SECRET`                          | New for production: at least 32 random characters (see below)                   |
+| `SMTP_HOST`, `SMTP_PORT`               | `smtp.resend.com`, `465`                                                        |
+| `SMTP_USER`, `SMTP_PASS`               | `resend`, the Resend API key for Vercel                                         |
+| `EMAIL_FROM`                           | `The SaaS Harbor <notifications@thesaasharbor.com>`                             |
+
+Leave `REVENUE_ALLOW_TEST_KEYS`, `LOCAL_MAILPIT_URL` and the `*_API_BASE` overrides unset. Generate each secret in your own terminal with `node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"` and paste it straight into Vercel. Losing `STRIPE_KEY_ENCRYPTION_KEY` makes every stored provider key unreadable.
+
+**Supabase.** Link a machine once with `npx supabase link --project-ref vgwgeennghaqpvfsqewq` (the CLI must be logged in; it uses a temporary login role, so no database password is needed). Linking also pins production's service versions in `supabase/.temp`, which `supabase start` would then use locally; `npm run db:start` and `db:restart` remove those pins, so the local stack keeps the CLI's versions, as CI does. Start the local stack only through them. Then, only with the owner's approval and after the local checks pass:
 
 - `npx supabase db push --linked --dry-run` lists the migrations production lacks, and `npx supabase db push --linked` applies them. `npx supabase db diff --linked` should then report no changes.
-- `npx supabase config push` applies `supabase/config.toml` with the `[remotes.production]` overrides (site URL, redirect URL, email frequency, SMTP). It pushes without asking. Production reads its own `HARBOR_PRODUCTION_SMTP_*` variables, which are off in `supabase/.env`; set the real ones in the shell that runs the push, never in a file. On the free plan Supabase refuses the custom email templates until SMTP is on, and the push fails as a whole.
+- `npm run auth:production` applies the Auth settings in `supabase/config.toml` with the `[remotes.production]` overrides: site URL and redirect URL on `thesaasharbor.com`, the email templates, 60 seconds between emails to one address, and Resend as SMTP. It asks for the Resend API key hidden, passes it only to the CLI, and asks before pushing, since `supabase config push` itself does not. Production reads its own `HARBOR_PRODUCTION_SMTP_*` variables, so the per-machine SMTP settings in `supabase/.env.local` never reach it. Run it again after changing the Auth settings or templates.
 
-Never run `npm run db:*`, the database tests or the browser tests against production. The pgTAP suites cannot run there anyway: the CLI's temporary login role does not find the pgTAP functions.
-
-The app needs `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` (Project Settings → API Keys in the dashboard) and `SUPABASE_SECRET_KEY` (a secret key from the same page) in the host's secret store, together with the other variables in the table above. Generate new `STRIPE_KEY_ENCRYPTION_KEY` and `CRON_SECRET` values for production; never reuse the local ones.
+Never run `npm run db:*`, the database tests or the browser tests against production. The pgTAP suites cannot run there anyway: the CLI's temporary login role does not find the pgTAP functions. Grant admin rights in production with `select public.set_admin('you@example.com', true);` in the SQL editor, after that account has signed up.
 
 ## Project notes
 

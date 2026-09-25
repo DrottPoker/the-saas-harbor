@@ -27,6 +27,7 @@
     "revenue:sync": "node scripts/revenue-sync.mjs",
     "email:send": "node scripts/email-send.mjs",
     "admin": "node scripts/admin.mjs",
+    "auth:production": "node scripts/production-auth.mjs",
     "db:types": "supabase gen types typescript --local --schema public > src/lib/supabase/database.types.ts"
   },
   "dependencies": {

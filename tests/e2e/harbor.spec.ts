@@ -791,8 +791,10 @@ test("registration, email confirmation, profile and SaaS editing, storage, priva
   // This key cannot read invoices, so MRR is verified without history and the maker is told why.
   await expect(page.getByText(/No revenue history yet/)).toBeVisible();
 
-  // The scheduled sync endpoint refuses callers without the secret.
+  // The scheduled endpoints refuse callers without the secret, also on GET, which Vercel Cron uses.
   expect((await request.post("/api/revenue/sync")).status()).toBe(401);
+  expect((await request.get("/api/revenue/sync")).status()).toBe(401);
+  expect((await request.get("/api/email/send")).status()).toBe(401);
   expect(
     (
       await request.post("/api/revenue/sync", { headers: { Authorization: "Bearer wrong" } })

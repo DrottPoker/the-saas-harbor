@@ -8,3 +8,6 @@ export async function POST(request: Request) {
   if (!authorizedCron(request)) return new Response("Unauthorized", { status: 401 });
   return Response.json(await deliverEmails(100));
 }
+
+// Vercel Cron (vercel.json) calls with GET and the same header.
+export const GET = POST;

@@ -181,11 +181,12 @@ export default function Privacy() {
             <li>
               <strong className="font-medium text-foreground">Service providers:</strong> our
               hosting, database and email providers process data on our behalf to run the site. The
-              database, sign-in and image storage run on Supabase, in its Frankfurt, Germany region.
-              Account emails, such as confirmation and password reset messages, and notification
-              emails are sent through our email provider. If a provider handles data outside the EU
-              or EEA, we use the safeguards the GDPR requires, such as the EU standard contractual
-              clauses.
+              site runs on Vercel, with its servers in Frankfurt, Germany. The database, sign-in and
+              image storage run on Supabase, in its Frankfurt, Germany region. Account emails, such
+              as confirmation and password reset messages, and notification emails are sent through
+              Resend. Vercel and Resend are based in the United States. If a provider handles data
+              outside the EU or EEA, we use the safeguards the GDPR requires, such as the EU
+              standard contractual clauses.
             </li>
           </List>
           <p>
