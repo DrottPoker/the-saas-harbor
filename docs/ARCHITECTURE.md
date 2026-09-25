@@ -83,7 +83,7 @@ Makers delete a single product at the bottom of its editor by typing its name. `
 
 The pgTAP suite covers the recent-password requirement, who may delete a product, the complete removal and that other makers are untouched. The browser test covers both flows, including a logo that is also the profile photo and images in a subfolder.
 
-The privacy policy is `src/app/privacy/page.tsx`. The operator's name and contact address come from `src/lib/legal.ts`; while they are unset, the page says it is a draft. Anything new that stores personal data must be described there and removed by account deletion, and product-scoped tables need an `on delete cascade` foreign key to `saas`.
+The privacy policy is `src/app/privacy/page.tsx`. The operator's name and contact address come from `src/lib/legal.ts`; while the address is unset, the privacy policy and the terms say one will be published, and every place that points to it says so too. Anything new that stores personal data must be described there and removed by account deletion, and product-scoped tables need an `on delete cascade` foreign key to `saas`.
 
 ## Maker profiles
 
@@ -118,7 +118,7 @@ Migration `20260925120000_moderation.sql` adds reports, admin decisions and prod
 - **Product limits.** The `saas_limit` trigger allows 20 products per account and 5 new ones a day, however they are written. Additions are counted in `private.saas_additions`, kept a day, which deleting a product does not shorten, so deleting and adding again does not reset the day. An advisory lock per owner makes concurrent inserts wait for each other, so the limits hold exactly. `submit_report` counts a reporter's reports under the same kind of lock. The editor shows the limit before a maker fills in the form.
 - **Deletion.** A report is deleted when either the reporter's or the reported maker's account is deleted. Deleting the reported product or message keeps the report and its copy (`on delete set null`), so a maker cannot make a report disappear by deleting the product. `moderation_log` entries are deleted with the account they concern and keep no name once the admin who decided deletes their account. `private.admins` rows go with the account.
 
-The privacy policy describes all of this, and the terms at `/terms` list what is not allowed and how decisions and appeals work. Both are drafts until the operator is named in `src/lib/legal.ts`.
+The privacy policy describes all of this, and the terms at `/terms` list what is not allowed and how decisions and appeals work. Both name the operator from `src/lib/legal.ts`.
 
 ## Notification emails
 

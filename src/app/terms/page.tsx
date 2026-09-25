@@ -21,19 +21,18 @@ export default function Terms() {
       <div className="grid gap-10 border-t pt-10">
         <div className="grid gap-4">
           <p className="text-sm text-muted-foreground">Last updated {termsUpdated}.</p>
-          {!operator && (
+          {!operator.email && (
             <Notice>
-              These terms are a draft. The name of the operator and a contact address are added, and
-              the terms are reviewed, before the site opens to the public.
+              A contact address for questions, reports from people without an account, and appeals
+              will be published here soon.
             </Notice>
           )}
         </div>
 
         <LegalSection id="about" title="About these terms">
           <p>
-            These terms apply when you use The SaaS Harbor
-            {operator ? <>, which is run by {operator.name}</> : null}. By creating an account you
-            agree to them. The{" "}
+            These terms apply when you use The SaaS Harbor, which is run by {operator.name}. By
+            creating an account you agree to them. The{" "}
             <Link className={legalLink} href="/privacy">
               privacy policy
             </Link>{" "}

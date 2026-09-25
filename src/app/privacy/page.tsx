@@ -26,26 +26,18 @@ export default function Privacy() {
       <div className="grid gap-10 border-t pt-10">
         <div className="grid gap-4">
           <p className="text-sm text-muted-foreground">Last updated {privacyUpdated}.</p>
-          {!operator && (
+          {!operator.email && (
             <Notice>
-              This policy is a draft. The name of the operator and a contact address for privacy
-              requests are added before the site opens to the public.
+              A contact address for privacy questions and requests will be published here soon.
             </Notice>
           )}
         </div>
 
         <Section id="responsible" title="Who is responsible">
-          {operator ? (
-            <p>
-              The SaaS Harbor is run by {operator.name}, which is responsible for the personal data
-              described here. For privacy questions and requests, email {contact}.
-            </p>
-          ) : (
-            <p>
-              The name of the operator, who is responsible for the personal data described here, and
-              a contact address for privacy questions will be listed here.
-            </p>
-          )}
+          <p>
+            The SaaS Harbor is run by {operator.name}, which is responsible for the personal data
+            described here. For privacy questions and requests, write to {contact}.
+          </p>
         </Section>
 
         <Section id="data" title="What we store">

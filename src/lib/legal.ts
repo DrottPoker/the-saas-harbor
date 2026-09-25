@@ -1,7 +1,10 @@
 // The operator named in the privacy policy and the terms: the party responsible for personal data
-// and for the service. Fill in the legal name and a contact address for privacy requests, reports
-// and appeals before the site opens to the public; until then both pages say they are drafts.
-export const operator = null as { name: string; email: string } | null;
+// and for the service. `email` is the contact address for privacy requests, reports from people
+// without an account, and appeals; while it is null, the pages say one will be published.
+export const operator: { name: string; email: string | null } = {
+  name: "The SaaS Harbor Team",
+  email: null,
+};
 
 export const privacyUpdated = "September 25, 2026";
 export const termsUpdated = "September 25, 2026";

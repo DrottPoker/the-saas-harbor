@@ -68,7 +68,7 @@ export async function deliverEmails(limit = 25) {
       if (error) throw new Error("Queued emails could not be read.");
       const row = data[0];
       if (!row) break;
-      const email = renderEmail(row, { origin: siteUrl(), contact: operator?.email ?? null });
+      const email = renderEmail(row, { origin: siteUrl(), contact: operator.email });
       let status: "sent" | "skipped" | "failed" = "skipped";
       let problem: string | null = "Nothing to send any more";
       if (email) {
