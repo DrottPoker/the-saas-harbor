@@ -9,7 +9,11 @@ import {
   type StripePrice,
   type StripeSubscription,
 } from "../../src/lib/stripe/mrr";
-import { parseRestrictedKey } from "../../src/lib/stripe/key";
+import {
+  parseRestrictedKey,
+  STRIPE_KEY_PERMISSIONS,
+  stripeKeyCreationUrl,
+} from "../../src/lib/stripe/key";
 import { decryptStripeKey, encryptStripeKey } from "../../src/lib/stripe/crypto";
 
 const NOW = 1_800_000_000;
@@ -265,6 +269,22 @@ describe("restricted keys", () => {
   });
   it("rejects malformed input", () =>
     expect(() => parseRestrictedKey("rk_live_short", { allowTest: true })).toThrow());
+});
+
+describe("restricted key creation link", () => {
+  it("opens Stripe's form with the name and exactly the four read permissions", () => {
+    const url = new URL(stripeKeyCreationUrl("The SaaS Harbor"));
+    expect(url.origin + url.pathname).toBe("https://dashboard.stripe.com/apikeys/create");
+    expect(url.searchParams.get("name")).toBe("The SaaS Harbor");
+    expect(url.searchParams.getAll("permissions[]")).toEqual([
+      "rak_subscription_read",
+      "rak_invoice_read",
+      "rak_coupon_read",
+      "rak_plan_read",
+    ]);
+  });
+  it("asks for read access only", () =>
+    expect(STRIPE_KEY_PERMISSIONS.every(({ id }) => id.endsWith("_read"))).toBe(true));
 });
 
 describe("stored key encryption", () => {

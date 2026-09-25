@@ -52,7 +52,7 @@ The leaderboard is ordered in PostgreSQL by public MRR descending, then creation
 
 ## Stripe verification
 
-Makers connect a Stripe restricted key (`rk_live_`; `rk_test_` only when `STRIPE_ALLOW_TEST_KEYS=true`) with read access to Subscriptions, Invoices, Coupons and Prices. Secret and publishable keys are rejected. The flow lives in `src/lib/stripe`:
+Makers connect a Stripe restricted key (`rk_live_`; `rk_test_` only when `STRIPE_ALLOW_TEST_KEYS=true`) with read access to Subscriptions, Invoices, Coupons and Prices. Secret and publishable keys are rejected. The editor links to Stripe's form for a new restricted key with the name and those four permissions filled in (`stripeKeyCreationUrl` in `key.ts`, with the ids `rak_subscription_read`, `rak_invoice_read`, `rak_coupon_read` and `rak_plan_read`, which Prices still use). Stripe does not document these parameters, so the editor also names the permissions to check. The flow lives in `src/lib/stripe`:
 
 - `client.ts` reads active and past-due subscriptions with expanded discounts, then the coupons and tiered prices they reference, and paid invoices from the last 25 months with all their lines and the prices those lines use. Every request pins `Stripe-Version: 2026-08-26.dahlia`, because responses otherwise follow each account's own default version.
 - `mrr.ts` is pure and unit-tested: licensed items normalized to a month (day, week, month, year and interval counts), per-unit and volume/graduated tiers, quantity transforms, forever and repeating discounts (percent and amount), no tax. Trials, paused collection, metered items and one-time discounts are excluded. Paying customers have a subscription worth more than zero.

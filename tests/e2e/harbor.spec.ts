@@ -477,6 +477,14 @@ test("registration, email confirmation, profile and SaaS editing, storage, priva
     page.getByText("Product added. Connect Stripe to verify its revenue."),
   ).toBeVisible();
 
+  // Stripe's key form opens with the read permissions filled in.
+  await expect(
+    page.getByRole("link", { name: "Create a read-only key in Stripe" }),
+  ).toHaveAttribute(
+    "href",
+    "https://dashboard.stripe.com/apikeys/create?name=The+SaaS+Harbor&permissions%5B%5D=rak_subscription_read&permissions%5B%5D=rak_invoice_read&permissions%5B%5D=rak_coupon_read&permissions%5B%5D=rak_plan_read",
+  );
+
   // Revenue can only come from a read-only Stripe key, and the key is never echoed back.
   const stripeKey = page.getByLabel("Restricted key", { exact: true });
   const connect = page.getByRole("button", { name: "Connect and verify" });

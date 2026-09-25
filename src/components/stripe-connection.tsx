@@ -10,11 +10,16 @@ import {
 } from "@/app/stripe-actions";
 import { formatDate, formatUsd, type ActionState } from "@/lib/domain";
 import type { RevenueSnapshot, StripeConnection } from "@/lib/data";
+import { SITE_NAME } from "@/lib/seo";
+import { STRIPE_KEY_PERMISSIONS, stripeKeyCreationUrl } from "@/lib/stripe/key";
 import { Actions, Feedback, Field, Section, Submit } from "./forms";
 import { Notice } from "./shell";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { useEditorAction } from "./use-editor-action";
+
+const resources = STRIPE_KEY_PERMISSIONS.map(({ resource }) => resource);
+const permissionList = `${resources.slice(0, -1).join(", ")} and ${resources.at(-1)}`;
 
 function ConnectForm({ saasId, replace }: { saasId: string; replace: boolean }) {
   const [state, action] = useEditorAction(connectStripeAction.bind(null, saasId));
@@ -22,20 +27,20 @@ function ConnectForm({ saasId, replace }: { saasId: string; replace: boolean }) 
     <form action={action} className="grid gap-4">
       <ol className="grid list-decimal gap-1.5 pl-5 text-sm text-muted-foreground">
         <li>
-          In Stripe, open{" "}
           <a
-            href="https://dashboard.stripe.com/apikeys"
+            href={stripeKeyCreationUrl(SITE_NAME)}
             target="_blank"
             rel="noopener noreferrer"
             className="font-medium text-foreground underline underline-offset-2"
           >
-            Developers → API keys
-          </a>{" "}
-          and choose <strong className="font-medium text-foreground">Create restricted key</strong>.
+            Create a read-only key in Stripe
+          </a>
+          . Stripe opens with the key&apos;s name and permissions filled in.
         </li>
         <li>
-          Set <strong className="font-medium text-foreground">Read</strong> for Subscriptions,
-          Invoices, Coupons and Prices. Leave every other permission at None.
+          Check that <strong className="font-medium text-foreground">Read</strong> is set for{" "}
+          {permissionList} and None for everything else, then choose{" "}
+          <strong className="font-medium text-foreground">Create key</strong>.
         </li>
         <li>Copy the key, which starts with rk_live_, and paste it below.</li>
       </ol>

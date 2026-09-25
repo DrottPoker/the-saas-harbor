@@ -1,12 +1,18 @@
 # Implementation status
 
-Updated 2026-09-25 with a review before release, demo products, email notifications, readable addresses and sharing cards, a Content Security Policy, email links that work on any device, and reports with an admin panel. The project was reviewed and handed over 2026-09-24; the first release was built 2026-09-12 and committed on the `development` branch.
+Updated 2026-09-25 with features from a competitor review, a review before release, demo products, email notifications, readable addresses and sharing cards, a Content Security Policy, email links that work on any device, and reports with an admin panel. The project was reviewed and handed over 2026-09-24; the first release was built 2026-09-12 and committed on the `development` branch.
 
 ## Implemented
 
 The first release includes accounts, email confirmation and recovery, public maker profiles, multiple editable SaaS per owner, profile/logo uploads, SaaS and maker pages, category/name filtering, newest arrivals, and a USD MRR leaderboard. Each optional metric has a sharing control. Private verification history and the current public projection are separate and protected by RLS. No demo data is displayed as real activity.
 
 Makers can message each other privately (see Messages below), and report products, profiles and messages to the admins, who decide in an admin panel (see Reports and moderation below). They get emails about unread messages and about decisions (see Email notifications below). Other forms of connection, such as following or contact lists, are not implemented.
+
+## Features from the competitor review 2026-09-25
+
+The project owner compared the site with TrustMRR and chose six things it does well to build here: a link that creates the Stripe key, an embeddable badge, pages for search engines and AI assistants, a statistics page, more payment providers (Paddle, Polar and Dodo Payments, one per product), and hourly verification. What TrustMRR does less well waits for later updates.
+
+- **Stripe key link.** The product editor links to Stripe's form for a new restricted key with the name and Read for Subscriptions, Invoices, Coupons and Prices filled in, so makers no longer pick the permissions themselves. Stripe does not document these parameters, so the editor still names the permissions to check. The ids were checked against Stripe's permission reference (Prices use `plan_read`); whether the form fills them in is part of the first test against the real Stripe API (known issue 1).
 
 ## Release review 2026-09-25
 
@@ -208,7 +214,7 @@ The website is not deployed. Production needs a decision on where Supabase runs:
 
 Before a public launch:
 
-1. Verify Stripe verification once against the real Stripe API with a test-mode restricted key (see above).
+1. Verify Stripe verification once against the real Stripe API with a test-mode restricted key (see above), and check that the editor's key link opens Stripe's form with the four permissions filled in.
 2. Legal pages. The privacy policy and the terms are drafts: set the operator's name and contact address in `src/lib/legal.ts`, name the hosting, database and email providers once they are chosen (and any transfers outside the EU/EEA), and have both reviewed, including the age limit, liability and governing law, which the terms leave out. The contact address is also where reports from people without an account and appeals go.
 3. Moderation follow-ups. Reports, decisions, their emails and product limits exist (see above). Still missing: a retention period for closed reports, and a way for admins to remove a single message.
 4. Production Auth settings: the email templates in `supabase/templates` with their subjects, the site URL, and `https://<domain>/auth/confirm` as an allowed redirect URL. Without the redirect URL, links fall back to the site URL and stop working. Also at least 60 seconds between emails to one address, `secure_password_change` on, email rate limits for the SMTP provider, and the CAPTCHA decision (see Release review).
