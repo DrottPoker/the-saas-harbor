@@ -5,12 +5,9 @@ import { syncDueConnections } from "@/lib/revenue/sync";
 export const maxDuration = 300;
 
 // Scheduled re-verification of the payment provider connections that are due: each about every
-// hour. Call every ten minutes with `Authorization: Bearer $CRON_SECRET` (see
-// `npm run revenue:sync`).
+// hour. The database calls it every ten minutes with `Authorization: Bearer $CRON_SECRET`
+// (migration 20260926010000, `npm run revenue:sync` locally).
 export async function POST(request: Request) {
   if (!authorizedCron(request)) return new Response("Unauthorized", { status: 401 });
   return Response.json(await syncDueConnections());
 }
-
-// Vercel Cron (vercel.json) calls with GET and the same header.
-export const GET = POST;
