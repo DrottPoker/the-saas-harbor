@@ -6,6 +6,7 @@ import { z } from "zod";
 import { deleteAccount } from "@/lib/account";
 import { parseSkills } from "@/lib/profile";
 import { emailLink, profileSchema, safeNext, saasSchema, type ActionState } from "@/lib/domain";
+import { termsUpdated } from "@/lib/legal";
 import { requireUser, serverClient } from "@/lib/supabase/server";
 import { uploadImage } from "@/lib/upload";
 
@@ -36,6 +37,8 @@ export async function authenticate(
     return { error: "Enter a valid email address." };
   if (mode !== "reset" && (password.length < (mode === "login" ? 1 : 12) || password.length > 128))
     return { error: "Use a password between 12 and 128 characters." };
+  if (mode === "signup" && form.get("terms") !== "on")
+    return { error: "Tick the box to accept the Terms of Service." };
   const client = await serverClient();
   const origin = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3001";
   // Both emails link to the confirm page, which verifies the token in whichever browser opens it.
@@ -44,7 +47,8 @@ export async function authenticate(
     const { data, error } = await client.auth.signUp({
       email,
       password,
-      options: { emailRedirectTo: confirm },
+      // A trigger copies the accepted version into private.terms_acceptances.
+      options: { emailRedirectTo: confirm, data: { terms_version: termsUpdated } },
     });
     if (error)
       return {

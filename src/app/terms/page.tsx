@@ -2,11 +2,11 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Contact, LegalList, LegalSection, legalLink } from "@/components/legal";
 import { Notice, PageHeader, Shell } from "@/components/shell";
-import { operator, termsUpdated } from "@/lib/legal";
+import { legalDate, operator, termsUpdated } from "@/lib/legal";
 import { DAILY_PRODUCT_LIMIT, PRODUCT_LIMIT } from "@/lib/moderation";
 
 export const metadata: Metadata = {
-  title: "Terms",
+  title: "Terms of Service",
   description: "The rules for using The SaaS Harbor, and how reports and moderation work.",
   alternates: { canonical: "/terms" },
 };
@@ -15,12 +15,12 @@ export default function Terms() {
   return (
     <Shell size="narrow">
       <PageHeader
-        title="Terms"
+        title="Terms of Service"
         description="The rules for using The SaaS Harbor, and how reports and moderation work."
       />
       <div className="grid gap-10 border-t pt-10">
         <div className="grid gap-4">
-          <p className="text-sm text-muted-foreground">Last updated {termsUpdated}.</p>
+          <p className="text-sm text-muted-foreground">Last updated {legalDate(termsUpdated)}.</p>
           {!operator.email && (
             <Notice>
               A contact address for questions, reports from people without an account, and appeals
@@ -31,8 +31,8 @@ export default function Terms() {
 
         <LegalSection id="about" title="About these terms">
           <p>
-            These terms apply when you use The SaaS Harbor, which is run by {operator.name}. By
-            creating an account you agree to them. The{" "}
+            These terms apply when you use The SaaS Harbor, which is run by {operator.name}. You
+            accept them when you create an account, by ticking the box on the sign-up form. The{" "}
             <Link className={legalLink} href="/privacy">
               privacy policy
             </Link>{" "}
@@ -42,7 +42,7 @@ export default function Terms() {
 
         <LegalSection id="account" title="Your account">
           <LegalList>
-            <li>You need to be at least 18 years old to create an account.</li>
+            <li>You need to be at least 16 years old to create an account.</li>
             <li>
               Use your own name, or the name you are known by, and keep your email address up to
               date.
@@ -151,6 +151,23 @@ export default function Terms() {
             We run the site with care, but cannot promise that it is always available or free of
             errors, and we may change or stop features. When these terms change, we update the date
             at the top and tell registered users about changes that affect them before they apply.
+          </p>
+        </LegalSection>
+
+        <LegalSection id="liability" title="Liability">
+          <p>
+            The SaaS Harbor is free to use and is provided as it is. As far as the law allows, we
+            are not liable for indirect losses, such as lost profits, business or data, or for what
+            users publish on the site or write to each other. Nothing in these terms limits
+            liability that cannot be limited by law, or the rights you have as a consumer.
+          </p>
+        </LegalSection>
+
+        <LegalSection id="law" title="Governing law">
+          <p>
+            These terms are governed by Swedish law, and disputes are decided by the Swedish general
+            courts. If you are a consumer in the EU, you keep the protection of the mandatory rules
+            of the country where you live, and you may also take a dispute to the courts there.
           </p>
         </LegalSection>
 

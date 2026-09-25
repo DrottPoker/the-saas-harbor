@@ -83,6 +83,8 @@ Makers delete a single product at the bottom of its editor by typing its name. `
 
 The pgTAP suite covers the recent-password requirement, who may delete a product, the complete removal and that other makers are untouched. The browser test covers both flows, including a logo that is also the profile photo and images in a subfolder.
 
+Sign-up requires ticking the Terms of Service box, and `authenticate` checks it again on the server. It sends the date of the current terms (`termsUpdated` in `src/lib/legal.ts`, which is also their version) as user metadata, and the trigger `private.record_terms_acceptance` copies it into `private.terms_acceptances` with the time when Auth creates the user, so a user cannot change the record later through their own metadata. Only valid dates are recorded, and a missing or impossible one never blocks sign-up. Accounts made through the admin API have no record. The table has a cascading foreign key to `auth.users`, so account deletion removes it (`terms.test.sql`). A future change to the terms can ask existing users to accept the new version and add a row for it.
+
 The privacy policy is `src/app/privacy/page.tsx`. The operator's name and contact address come from `src/lib/legal.ts`; while the address is unset, the privacy policy and the terms say one will be published, and every place that points to it says so too. Anything new that stores personal data must be described there and removed by account deletion, and product-scoped tables need an `on delete cascade` foreign key to `saas`.
 
 ## Maker profiles

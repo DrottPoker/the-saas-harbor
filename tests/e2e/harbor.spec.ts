@@ -3,6 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 import { createHash, randomBytes, randomUUID } from "node:crypto";
 import AxeBuilder from "@axe-core/playwright";
 import { DODO_KEYS, PADDLE_KEYS, POLAR_TOKENS } from "./fake-billing.mjs";
+import { termsUpdated } from "../../src/lib/legal";
 
 const url = process.env.TEST_SUPABASE_URL!;
 const mailpit = process.env.TEST_MAILPIT_URL!;
@@ -383,6 +384,16 @@ test("registration, email confirmation, profile and SaaS editing, storage, priva
   await page.goto("/auth?mode=signup");
   await page.getByLabel("Email address").fill(email);
   await page.getByLabel("Password", { exact: true }).fill(password);
+  // The Terms of Service box is required, and the server refuses a sign-up without it too.
+  const terms = page.getByLabel(/agree to the Terms of Service/);
+  await expect(terms).toHaveAttribute("required", "");
+  await terms.evaluate((box) => box.removeAttribute("required"));
+  await page.getByRole("button", { name: "Create account" }).click();
+  await expect(
+    page.getByRole("alert").filter({ hasText: "Tick the box to accept the Terms of Service." }),
+  ).toBeVisible();
+  await page.getByLabel("Password", { exact: true }).fill(password);
+  await terms.check();
   await page.getByRole("button", { name: "Create account" }).click();
   await expect(
     page.getByText("Check your email and open the link to confirm your account."),
@@ -416,8 +427,11 @@ test("registration, email confirmation, profile and SaaS editing, storage, priva
   await elsewhere.context().close();
   await login(page, email, password);
   const users = await admin.auth.admin.listUsers();
-  firstUserId = users.data.users.find((user) => user.email === email)!.id;
+  const signedUp = users.data.users.find((user) => user.email === email)!;
+  firstUserId = signedUp.id;
   userIds.push(firstUserId);
+  // Sign-up sends the accepted version, which the database records (terms.test.sql).
+  expect(signedUp.user_metadata.terms_version).toBe(termsUpdated);
   await page.goto("/dashboard/profile");
   await page.getByLabel("Name", { exact: true }).fill("Local Test Maker");
   await page.getByLabel("Headline").fill("Builds test fixtures for a living");

@@ -195,21 +195,42 @@ export function AuthForm({
           />
         </Field>
       )}
+      {mode === "signup" && (
+        // Required here and checked again by the server, which records the accepted version.
+        <div className="flex items-start gap-3">
+          <input
+            id="terms"
+            name="terms"
+            type="checkbox"
+            required
+            defaultChecked={state.values?.terms === "on"}
+            className="mt-0.5 size-4 shrink-0 accent-brand"
+          />
+          <label htmlFor="terms" className="text-[13px] leading-5 text-muted-foreground">
+            I am at least 16 and agree to the{" "}
+            <Link
+              className="font-medium text-foreground underline"
+              href="/terms"
+              target="_blank"
+              rel="noopener"
+            >
+              Terms of Service
+            </Link>
+            . I have read the{" "}
+            <Link
+              className="font-medium text-foreground underline"
+              href="/privacy"
+              target="_blank"
+              rel="noopener"
+            >
+              Privacy Policy
+            </Link>
+            .
+          </label>
+        </div>
+      )}
       <Feedback state={state} />
       <Submit className="h-10 w-full">{authCopy[mode]}</Submit>
-      {mode === "signup" && (
-        <p className="text-center text-[13px] text-muted-foreground">
-          By creating an account you agree to the{" "}
-          <Link className="font-medium text-foreground underline" href="/terms">
-            terms
-          </Link>
-          . Read how we handle your data in the{" "}
-          <Link className="font-medium text-foreground underline" href="/privacy">
-            privacy policy
-          </Link>
-          .
-        </p>
-      )}
       <p className="text-center text-sm text-muted-foreground">
         {mode === "login" ? (
           <>

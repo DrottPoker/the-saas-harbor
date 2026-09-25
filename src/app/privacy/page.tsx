@@ -7,7 +7,7 @@ import {
   legalLink as link,
 } from "@/components/legal";
 import { Notice, PageHeader, Shell } from "@/components/shell";
-import { operator, privacyUpdated } from "@/lib/legal";
+import { legalDate, operator, privacyUpdated } from "@/lib/legal";
 
 export const metadata: Metadata = {
   title: "Privacy policy",
@@ -25,7 +25,7 @@ export default function Privacy() {
       />
       <div className="grid gap-10 border-t pt-10">
         <div className="grid gap-4">
-          <p className="text-sm text-muted-foreground">Last updated {privacyUpdated}.</p>
+          <p className="text-sm text-muted-foreground">Last updated {legalDate(privacyUpdated)}.</p>
           {!operator.email && (
             <Notice>
               A contact address for privacy questions and requests will be published here soon.
@@ -44,8 +44,10 @@ export default function Privacy() {
           <List>
             <li>
               <strong className="font-medium text-foreground">Account.</strong> Your email address
-              and your password, which is stored only as a salted hash. We also record account
-              events, such as sign-ins, with their time and IP address, to keep accounts secure.
+              and your password, which is stored only as a salted hash, and which version of the
+              Terms of Service you accepted when you created the account, and when. We also record
+              account events, such as sign-ins, with their time and IP address, to keep accounts
+              secure.
             </li>
             <li>
               <strong className="font-medium text-foreground">Profile.</strong> Your name, headline,
@@ -243,6 +245,17 @@ export default function Privacy() {
             moved to another service, restrict how it is used, and object to use based on our
             legitimate interests. To use these rights, write to {contact}. You can also complain to
             a data protection authority, for example in the country where you live or work.
+          </p>
+        </Section>
+
+        <Section id="age" title="Age">
+          <p>
+            Accounts are for people aged 16 and over, as the{" "}
+            <Link className={link} href="/terms">
+              Terms of Service
+            </Link>{" "}
+            say. We do not knowingly store data about anyone younger. If you believe a younger
+            person has an account, report their profile, and we will delete the account.
           </p>
         </Section>
 
