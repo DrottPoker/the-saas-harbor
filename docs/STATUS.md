@@ -242,7 +242,7 @@ The earlier hosted project (`qvvqkskyukqoleuivdfw`, eu-central-1) is no longer u
 
 ## Remaining setup
 
-The website is not deployed. Production Supabase exists, and the app is prepared for Vercel and Resend (see above). Still to do, in README, Production: the Resend domain and API keys, the Vercel project with its variables and domain, `npm run auth:production`, merging `development` into `main`, the two Vault secrets for the scheduled jobs, and Supabase Pro before launch (Vercel Pro once the site earns money).
+The site is live at https://thesaasharbor.com since 2026-09-25: Vercel (Hobby, Frankfurt) builds `main`, `www` redirects to the domain without www, and Supabase Cloud and Resend are connected. The first two builds failed because the Vercel project had the framework preset Other; `vercel.json` now sets Next.js. Both scheduled jobs answer 200 from the database (the email job every minute, the revenue sync every ten minutes). `STRIPE_KEY_ENCRYPTION_KEY` was replaced before any provider key was stored, so the owner holds a verified copy. Still to do: `npm run auth:production` (the email templates and Resend for Auth), the first admin account in production, and Supabase Pro before launch (Vercel Pro once the site earns money).
 
 ## Known issues and next steps
 
