@@ -6,6 +6,7 @@ import { z } from "zod";
 import type { PostgrestError } from "@supabase/supabase-js";
 import { adminSession, safeAdminPath } from "@/lib/admin";
 import { decisionSchema, noteSchema, type ActionState } from "@/lib/domain";
+import { sendQueuedEmails } from "@/lib/email/outbox";
 
 const id = z.uuid();
 const denied: ActionState = { error: "Only admins can do this." };
@@ -18,8 +19,10 @@ function failure(error: PostgrestError): ActionState {
   };
 }
 
-// Every decision returns to the page it was made on, with a confirmation.
+// Every decision returns to the page it was made on, with a confirmation. The maker's and the
+// reporters' emails go out right after the response.
 function done(returnTo: string, result: string): never {
+  sendQueuedEmails();
   revalidatePath("/", "layout");
   redirect(`${returnTo}?done=${result}`);
 }

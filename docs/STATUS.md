@@ -1,12 +1,25 @@
 # Implementation status
 
-Updated 2026-09-25 with reports, moderation and the admin panel. The project was reviewed and handed over 2026-09-24; the first release was built 2026-09-12 and committed on the `development` branch.
+Updated 2026-09-25 with email notifications, readable addresses and sharing cards, a Content Security Policy, email links that work on any device, and reports with an admin panel. The project was reviewed and handed over 2026-09-24; the first release was built 2026-09-12 and committed on the `development` branch.
 
 ## Implemented
 
 The first release includes accounts, email confirmation and recovery, public maker profiles, multiple editable SaaS per owner, profile/logo uploads, SaaS and maker pages, category/name filtering, newest arrivals, and a USD MRR leaderboard. Each optional metric has a sharing control. Private verification history and the current public projection are separate and protected by RLS. No demo data is displayed as real activity.
 
-Makers can message each other privately (see Messages below), and report products, profiles and messages to the admins, who decide in an admin panel (see Reports and moderation below). Other forms of connection, such as following or contact lists, are not implemented.
+Makers can message each other privately (see Messages below), and report products, profiles and messages to the admins, who decide in an admin panel (see Reports and moderation below). They get emails about unread messages and about decisions (see Email notifications below). Other forms of connection, such as following or contact lists, are not implemented.
+
+## Email notifications 2026-09-25
+
+Makers now hear about what happens while they are away:
+
+- One email per unread conversation, five minutes after the first unread message if it is still unread, with the sender's name and a link to the conversation. It never contains the message. The next one comes only after the maker has read the conversation.
+- Admins get an email when reports come in, at most one an hour, with the number of open reports.
+- Makers get an email when an admin hides or restores a product, or suspends or restores their account, with the reason and the explanation. Reporters get an email when their report has been reviewed, saying whether action was taken.
+- Dashboard → Email settings turns message emails off, and report emails for admins. Decision and outcome emails are always sent, like sign-in emails.
+
+The database queues each email with the event that causes it, and the app sends them through any SMTP provider: right after the action, and from `POST /api/email/send`, which production must call every minute (see ARCHITECTURE). Locally they arrive in Mailpit, and `npm run email:send` sends the delayed message emails. The privacy policy describes the settings, the queue and the record kept for a week. pgTAP covers what queues an email and what does not, including an unread message that must count in one email only; the browser tests read the emails in Mailpit.
+
+Choices the owner should confirm: the five-minute wait before a message email; one email per conversation until it is read; report emails at most hourly; decision and outcome emails cannot be turned off; the emails are in English only.
 
 ## Addresses and sharing 2026-09-25
 
@@ -32,7 +45,7 @@ The project owner asked for reporting and moderation, the step recommended befor
 - Found and fixed on the way: makers had table-wide insert and update grants on `profiles` and `saas`, so a direct API insert could set `created_at` in the future and keep a product first in New arrivals indefinitely. Column grants now limit makers to the fields they edit.
 - Two sources of flaky checks, also fixed: the browser tests could time out while the test server compiled a route for the first time on a busy machine (seen twice, once in the existing registration test), so every route is now requested once before the tests; and the typecheck read the test server's generated route types, which a stopped test run can leave half-written, so `tsconfig.json` now excludes `.next-e2e`.
 
-Choices made here that the owner should confirm: the terms require makers to be at least 18; the product limits of 20 and 5 a day; admins see account email addresses, and join and sign-in dates, in the panel; suspended makers can still sign in; a reported message is stored as a copy with the report; and there are no emails about reports or decisions until an email provider is chosen.
+Choices made here that the owner should confirm: the terms require makers to be at least 18; the product limits of 20 and 5 a day; admins see account email addresses, and join and sign-in dates, in the panel; suspended makers can still sign in; and a reported message is stored as a copy with the report.
 
 ## Handover review 2026-09-24
 
@@ -70,10 +83,10 @@ The browser tests no longer assume an empty database, check for horizontal scrol
 
 ## Verified 2026-09-25
 
-- `npm run check`: Prettier, ESLint with zero warnings, TypeScript, 92 unit tests: Stripe MRR, invoice history, keys and encryption, chart models, message threads, profile dates and input, sign-in continuation, report and decision input, and the full Stripe read path against the fake Stripe server.
+- `npm run check`: Prettier, ESLint with zero warnings, TypeScript, 122 unit tests: Stripe MRR, invoice history, keys and encryption, chart models, message threads, profile dates and input, sign-in continuation, report and decision input, the Content Security Policy, the notification emails, and the full Stripe read path against the fake Stripe server.
 - `npm run build`: Next.js 16.3.5 production build.
-- `npm run test:db`: 205 pgTAP assertions in two suites (`access` 113, `moderation` 92). Two deliberately weakened policies (product visibility and report visibility) were each caught by the moderation suite before being restored. `supabase db diff` reports no drift between the local database and the migrations, and `supabase db lint` reports no errors.
-- `npm run test:e2e`: 8 Chromium integration tests with Axe scans in both themes (including the revenue charts, the privacy policy and the terms, the delete sections, messaging, personal profiles, the report pages, every admin page and the notices makers see), against local Supabase, local Realtime and a fake Stripe API, passing twice in a row.
+- `npm run test:db`: 261 pgTAP assertions in four suites (`access` 113, `moderation` 92, `slugs` 25, `notifications` 31). Two deliberately weakened policies (product visibility and report visibility) were each caught by the moderation suite before being restored, and the notifications suite failed on a version that counted one unread message in two emails. `supabase db diff` reports no drift between the local database and the migrations, and `supabase db lint` reports no errors.
+- `npm run test:e2e`: 9 Chromium integration tests with Axe scans in both themes (including the revenue charts, the privacy policy and the terms, the delete sections, messaging, personal profiles, the report pages, every admin page, the notices makers see and the email settings), against local Supabase, local Realtime, Mailpit and a fake Stripe API, passing twice in a row.
 - The admin and report pages were checked at 390 px and 1440 px in both themes, and with touch emulation for the message Report link.
 - The CI workflow has not run on GitHub yet. Its commands were run locally with the same Supabase service exclusions.
 
@@ -127,7 +140,7 @@ The earlier hosted project (`qvvqkskyukqoleuivdfw`, eu-central-1) is no longer u
 
 ## Remaining setup
 
-The website is not deployed. Production needs a decision on where Supabase runs: self-hosted (Docker on a server the team operates, with backups, upgrades and monitoring) or Supabase Cloud. It also needs an SMTP provider for real email and matching Auth redirect URLs.
+The website is not deployed. Production needs a decision on where Supabase runs: self-hosted (Docker on a server the team operates, with backups, upgrades and monitoring) or Supabase Cloud. It also needs an SMTP provider for the Auth and notification emails, and matching Auth redirect URLs.
 
 ## Known issues and next steps
 
@@ -135,10 +148,10 @@ Before a public launch:
 
 1. Verify Stripe verification once against the real Stripe API with a test-mode restricted key (see above).
 2. Legal pages. The privacy policy and the terms are drafts: set the operator's name and contact address in `src/lib/legal.ts`, name the hosting, database and email providers once they are chosen (and any transfers outside the EU/EEA), and have both reviewed, including the age limit, liability and governing law, which the terms leave out. The contact address is also where reports from people without an account and appeals go.
-3. Moderation follow-ups. Reports, decisions and product limits exist (see above). Still missing: an email to admins about new reports and to makers about decisions (needs the email provider), a retention period for closed reports, and a way for admins to remove a single message.
+3. Moderation follow-ups. Reports, decisions, their emails and product limits exist (see above). Still missing: a retention period for closed reports, and a way for admins to remove a single message.
 4. Production Auth settings: the email templates in `supabase/templates` with their subjects, the site URL, and `https://<domain>/auth/confirm` as an allowed redirect URL. Without the redirect URL, links fall back to the site URL and stop working.
 5. Security headers are in place (see below and ARCHITECTURE). Check them once on the production domain, for example with securityheaders.com, since a proxy or CDN in front of the app can change or drop headers.
-6. Production hosting: where Supabase runs (self-hosted or Cloud), SMTP, Auth URLs, a deployment target for the app, a secrets store for `SUPABASE_SECRET_KEY`, `STRIPE_KEY_ENCRYPTION_KEY` and `CRON_SECRET`, and a daily scheduler for `POST /api/stripe/sync`.
+6. Production hosting: where Supabase runs (self-hosted or Cloud), SMTP for Auth and for notification emails (`SMTP_*` and `EMAIL_FROM`, with SPF, DKIM and DMARC for the sender's domain), Auth URLs, a deployment target for the app, a secrets store for `SUPABASE_SECRET_KEY`, `STRIPE_KEY_ENCRYPTION_KEY`, `CRON_SECRET` and `SMTP_PASS`, a daily scheduler for `POST /api/stripe/sync`, and one that calls `POST /api/email/send` every minute.
 
 Product and quality:
 
@@ -149,4 +162,5 @@ Product and quality:
 11. Old images stay in storage after replacement or removal, until the account is deleted.
 12. All routes are dynamic with `no-store`. Public pages could be cached once traffic grows, with private data kept separate. The nonce-based Content Security Policy needs a fresh render per request, so caching pages would mean moving to hashes or the experimental SRI support first.
 13. Image signature validation in `src/lib/upload.ts` has no unit tests. Vitest can now import server-only modules, so this is straightforward.
-14. Messages: no email notifications (they need an email provider). Realtime keeps its event rows, which hold ids only, for a few days.
+14. Realtime keeps its message event rows, which hold ids only, for a few days.
+15. Notification emails have no one-click unsubscribe (`List-Unsubscribe`, RFC 8058): turning them off takes a sign-in. Large senders to Gmail and Yahoo need it, so add it before volumes grow. The emails are in English only.

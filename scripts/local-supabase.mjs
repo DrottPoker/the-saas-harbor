@@ -5,9 +5,12 @@ import { parseEnv } from "node:util";
 export const npx = process.platform === "win32" ? "npx.cmd" : "npx";
 export const shell = process.platform === "win32";
 
-const projectId = readFileSync("supabase/config.toml", "utf8").match(
-  /^project_id\s*=\s*"([^"]+)"/m,
-)?.[1];
+const config = readFileSync("supabase/config.toml", "utf8");
+const projectId = config.match(/^project_id\s*=\s*"([^"]+)"/m)?.[1];
+// Mailpit's SMTP port, where the app's notification emails go locally.
+export const mailpitSmtpPort = Number(
+  config.match(/^\[local_smtp\][^[]*?^smtp_port\s*=\s*(\d+)/ms)?.[1] ?? 0,
+);
 
 function status() {
   try {

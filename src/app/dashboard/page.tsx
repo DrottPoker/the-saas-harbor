@@ -180,24 +180,42 @@ export default async function Dashboard({
         )}
       </section>
 
-      {!!sentReports && (
+      <div className="mt-10 grid gap-3">
+        {!!sentReports && (
+          <section
+            aria-labelledby="sent-reports"
+            className="flex items-center justify-between gap-4 rounded-xl border bg-surface p-4"
+          >
+            <div className="min-w-0">
+              <h2 id="sent-reports" className="font-medium">
+                Your reports
+              </h2>
+              <p className="text-sm text-muted-foreground">
+                {sentReports} sent. See what happened to them.
+              </p>
+            </div>
+            <Button asChild variant="outline" size="sm">
+              <Link href="/dashboard/reports">View</Link>
+            </Button>
+          </section>
+        )}
         <section
-          aria-labelledby="sent-reports"
-          className="mt-10 flex items-center justify-between gap-4 rounded-xl border bg-surface p-4"
+          aria-labelledby="email-settings"
+          className="flex items-center justify-between gap-4 rounded-xl border bg-surface p-4"
         >
           <div className="min-w-0">
-            <h2 id="sent-reports" className="font-medium">
-              Your reports
+            <h2 id="email-settings" className="font-medium">
+              Email notifications
             </h2>
             <p className="text-sm text-muted-foreground">
-              {sentReports} sent. See what happened to them.
+              Choose which emails you get about messages{admin && " and reports"}.
             </p>
           </div>
           <Button asChild variant="outline" size="sm">
-            <Link href="/dashboard/reports">View</Link>
+            <Link href="/dashboard/settings">Settings</Link>
           </Button>
         </section>
-      )}
+      </div>
 
       {/* The header hides sign-out on small screens. */}
       <form action={signOut} className="mt-10 md:hidden">

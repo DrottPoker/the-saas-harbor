@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { MESSAGE_MAX_LENGTH, type ActionState } from "@/lib/domain";
+import { sendQueuedEmails } from "@/lib/email/outbox";
 import type { SendState } from "@/lib/messages";
 import { requireUser } from "@/lib/supabase/server";
 
@@ -32,6 +33,8 @@ export async function sendMessageAction(
           ? `${error.message}.`
           : "Your message could not be sent. Please try again.",
     };
+  // A message email waits a few minutes, so this sends what became due in the meantime.
+  sendQueuedEmails();
   const { conversation_id, sender_id, created_at } = data;
   return { message: { id: data.id, conversation_id, sender_id, body: data.body, created_at } };
 }

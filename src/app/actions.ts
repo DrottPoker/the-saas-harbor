@@ -66,6 +66,20 @@ export async function authenticate(
   redirect((mode === "login" && safeNext(value(form, "next"))) || "/dashboard");
 }
 
+export async function saveEmailSettingsAction(
+  _state: ActionState,
+  form: FormData,
+): Promise<ActionState> {
+  const { client } = await requireUser();
+  const { error } = await client.rpc("save_notification_settings", {
+    p_messages: form.has("messages"),
+    // Only admins see the report setting; everyone else keeps the default.
+    p_reports: form.has("reports_shown") ? form.has("reports") : true,
+  });
+  if (error) return { error: "Your settings could not be saved. Please try again." };
+  return { success: "Settings saved." };
+}
+
 // The confirm page submits the token from an email link. Verifying it here, on a button press
 // rather than when the page loads, keeps email link scanners from using the link up.
 export async function confirmEmailLinkAction(

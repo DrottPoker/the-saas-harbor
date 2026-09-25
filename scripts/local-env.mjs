@@ -1,7 +1,7 @@
 import { randomBytes } from "node:crypto";
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { parseEnv } from "node:util";
-import { emailDelivery, ensureLocalSupabase } from "./local-supabase.mjs";
+import { emailDelivery, ensureLocalSupabase, mailpitSmtpPort } from "./local-supabase.mjs";
 
 // Runs before `npm run dev`: starts local Supabase if needed and points .env.local at it.
 // Only the keys below are managed; any other lines in .env.local are kept.
@@ -25,6 +25,10 @@ const managed = {
   STRIPE_KEY_ENCRYPTION_KEY: generated("STRIPE_KEY_ENCRYPTION_KEY"),
   CRON_SECRET: generated("CRON_SECRET"),
   STRIPE_ALLOW_TEST_KEYS: "true",
+  // Notification emails go to Mailpit unless .env.local already names another SMTP server.
+  SMTP_HOST: current.SMTP_HOST || "127.0.0.1",
+  SMTP_PORT: current.SMTP_PORT || String(mailpitSmtpPort),
+  EMAIL_FROM: current.EMAIL_FROM || "The SaaS Harbor <notifications@harbor.localhost>",
 };
 const header = "# Managed by scripts/local-env.mjs from the local Supabase stack.";
 const kept = previous

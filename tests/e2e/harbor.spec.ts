@@ -1,4 +1,4 @@
-import { test, expect, type Page } from "@playwright/test";
+import { test, expect, type APIRequestContext, type Page } from "@playwright/test";
 import { createClient } from "@supabase/supabase-js";
 import { createHash, randomBytes, randomUUID } from "node:crypto";
 import AxeBuilder from "@axe-core/playwright";
@@ -61,6 +61,26 @@ async function setThemeCookie(page: Page, theme: "light" | "dark") {
 async function pageBackground(page: Page) {
   return page.evaluate(() => getComputedStyle(document.body).backgroundColor);
 }
+// Notification emails in Mailpit for one address, newest first.
+async function inbox(request: APIRequestContext, address: string) {
+  const query = encodeURIComponent(`to:"${address}"`);
+  const response = await request.get(`${mailpit}/api/v1/search?query=${query}`);
+  return (await response.json()).messages as { ID: string; Subject: string }[];
+}
+async function emailText(request: APIRequestContext, id: string) {
+  return (await (await request.get(`${mailpit}/api/v1/message/${id}`)).json()) as {
+    Text: string;
+    HTML: string;
+  };
+}
+// Runs the scheduled email job, which sends what is due.
+async function sendDueEmails(request: APIRequestContext) {
+  const response = await request.post("/api/email/send", {
+    headers: { Authorization: `Bearer ${process.env.TEST_CRON_SECRET}` },
+  });
+  expect(response.status()).toBe(200);
+  expect((await response.json()).configured).toBe(true);
+}
 // A page logs a console error for everything the Content Security Policy blocks.
 function watchPolicy(page: Page, violations: string[]) {
   page.on("console", (message) => {
@@ -102,6 +122,7 @@ test.beforeAll(async ({ playwright }, info) => {
     ...["/", "/discover", "/newest", "/about", "/privacy", "/terms", "/account-deleted"],
     ...["/auth", "/auth/confirm", `/saas/${id}`, `/makers/${id}`, "/missing"],
     ...["/dashboard", "/dashboard/profile", "/dashboard/reports", `/dashboard/saas/${id}`],
+    ...["/dashboard/settings", "/api/email/send"],
     ...["/messages", `/messages/${id}`, `/report/saas/${id}`, "/api/stripe/sync"],
     ...["/sitemap.xml", "/robots.txt", "/opengraph-image"],
     ...["/saas/any/opengraph-image", "/makers/any/opengraph-image"],
@@ -902,13 +923,17 @@ test("makers message each other live, with unread counts and blocking", async ({
   await expect(
     readerPage.getByRole("log").getByText("Hello! Are you open to partners?"),
   ).toBeVisible();
-  await expect(readerPage.getByRole("link", { name: "Messages", exact: true })).toBeVisible();
+  await expect(
+    readerPage.getByRole("banner").getByRole("link", { name: "Messages", exact: true }),
+  ).toBeVisible();
 
   // Replies arrive in the open conversation without a reload, and are read there at once.
   await readerPage.getByLabel(`Message to ${writer.name}`).fill("Yes, happy to talk.");
   await readerPage.getByRole("button", { name: "Send", exact: true }).click();
   await expect(writerLog.getByText("Yes, happy to talk.")).toBeVisible();
-  await expect(writerPage.getByRole("link", { name: "Messages", exact: true })).toBeVisible();
+  await expect(
+    writerPage.getByRole("banner").getByRole("link", { name: "Messages", exact: true }),
+  ).toBeVisible();
 
   // A block stops messages in both directions until it is lifted. A refused message stays.
   await readerPage.getByRole("button", { name: `Block ${writer.name}` }).click();
@@ -952,6 +977,7 @@ test("makers message each other live, with unread counts and blocking", async ({
 
 test("reports reach the admin panel, where admins hide products and suspend accounts", async ({
   browser,
+  request,
 }) => {
   test.setTimeout(240000);
   const baseURL = test.info().project.use.baseURL;
@@ -1062,6 +1088,15 @@ test("reports reach the admin panel, where admins hide products and suspend acco
   await expect(reporterPage).toHaveURL("/dashboard/reports?sent=1");
   await expect(sent).toHaveCount(2);
 
+  // The admins get an email about waiting reports.
+  await expect
+    .poll(async () =>
+      (await inbox(request, moderator.email)).some((m) =>
+        /^\d+ open reports? on The SaaS Harbor$/.test(m.Subject),
+      ),
+    )
+    .toBe(true);
+
   // Everyone but an admin gets a 404 from the admin panel.
   await reporterPage.goto("/admin");
   await expect(reporterPage.getByRole("heading", { name: "Page not found" })).toBeVisible();
@@ -1099,6 +1134,18 @@ test("reports reach the admin panel, where admins hide products and suspend acco
     await expect(visitor.getByRole("heading", { name: "Page not found" })).toBeVisible();
   }
   expect(await (await visitor.request.get("/sitemap.xml")).text()).not.toContain(productSlug);
+  // The maker gets the decision by email, with the reason and the explanation, and the reporter
+  // learns that action was taken.
+  const subjects = async (address: string) =>
+    (await inbox(request, address)).map((message) => message.Subject);
+  await expect.poll(() => subjects(maker.email)).toContain(`An admin hid your product ${product}`);
+  const decision = (await inbox(request, maker.email)).find((message) =>
+    message.Subject.startsWith("An admin hid"),
+  )!;
+  const decisionEmail = await emailText(request, decision.ID);
+  expect(decisionEmail.Text).toContain("Reason: Misleading or false information");
+  expect(decisionEmail.Text).toContain("The customer numbers in the description are not true.");
+  await expect.poll(() => subjects(reporter.email)).toContain("Your report has been reviewed");
 
   // The maker sees the product as hidden, with the reason and the explanation.
   await login(makerPage, maker.email, maker.password);
@@ -1128,6 +1175,9 @@ test("reports reach the admin panel, where admins hide products and suspend acco
     .fill("Sent the same advertisement to many makers.");
   await suspend.getByRole("button", { name: "Suspend account" }).click();
   await expect(adminPage.getByText("Account suspended. The maker sees")).toBeVisible();
+  await expect
+    .poll(() => subjects(maker.email))
+    .toContain("Your account on The SaaS Harbor is suspended");
 
   // The profile disappears, the conversation leaves the reporter's inbox, and the maker is told
   // why and can no longer send messages.
@@ -1162,6 +1212,9 @@ test("reports reach the admin panel, where admins hide products and suspend acco
   await adminPage.goto(`/admin/products/${productId}`);
   await adminPage.getByRole("button", { name: "Show product again" }).click();
   await expect(adminPage.getByText("The product is shown again.")).toBeVisible();
+  await expect
+    .poll(() => subjects(maker.email))
+    .toContain(`Your product ${product} is shown again`);
   await visitor.goto(`/saas/${productId}`);
   await expect(visitor).toHaveURL(`/saas/${productSlug}`);
   await expect(visitor.getByRole("heading", { name: product, exact: true })).toBeVisible();
@@ -1219,4 +1272,106 @@ test("reports reach the admin panel, where admins hide products and suspend acco
     await expectNoHorizontalScroll(reporterPage);
   }
   expect(violations).toEqual([]);
+});
+
+test("makers get one email per unread conversation, and can turn it off", async ({
+  page,
+  request,
+}) => {
+  const makers = [];
+  for (const label of ["sender", "recipient"]) {
+    const address = `harbor-mail-${label}-${run}@example.test`;
+    const secret = randomBytes(24).toString("hex");
+    const { data, error } = await admin.auth.admin.createUser({
+      email: address,
+      password: secret,
+      email_confirm: true,
+    });
+    if (error || !data.user) throw new Error("Unable to create a notification fixture.");
+    userIds.push(data.user.id);
+    const name = `Mail ${label} ${run}`;
+    const { error: profileError } = await admin.from("profiles").insert({ id: data.user.id, name });
+    if (profileError) throw new Error("Unable to create a notification profile.");
+    const client = createClient(url, publicKey, {
+      auth: { persistSession: false, autoRefreshToken: false },
+    });
+    await client.auth.signInWithPassword({ email: address, password: secret });
+    makers.push({ id: data.user.id, email: address, password: secret, name, client });
+  }
+  const [sender, recipient] = makers;
+  const write = async (body: string) => {
+    const { error } = await sender.client.rpc("send_message", {
+      p_recipient: recipient.id,
+      p_body: body,
+    });
+    if (error) throw new Error("Unable to send a fixture message.");
+  };
+  const read = async () => {
+    const { data } = await recipient.client.from("conversations").select("id").single();
+    await recipient.client.rpc("mark_conversation_read", {
+      p_conversation: data!.id,
+      p_read_at: new Date().toISOString(),
+    });
+  };
+  const count = async () => (await inbox(request, recipient.email)).length;
+
+  // The first unread message brings an email with the sender and a link, never the message.
+  await write(`Secret plan ${run}`);
+  await sendDueEmails(request);
+  await expect.poll(count).toBe(1);
+  const [first] = await inbox(request, recipient.email);
+  expect(first.Subject).toBe(`New message from ${sender.name}`);
+  const email = await emailText(request, first.ID);
+  expect(email.Text).toContain(`/messages/${sender.id}`);
+  expect(email.Text).not.toContain("Secret plan");
+  expect(email.HTML).not.toContain("Secret plan");
+
+  // More messages before the recipient reads bring nothing, a message after reading does.
+  await write("Another one");
+  await sendDueEmails(request);
+  await read();
+  await write("After reading");
+  await sendDueEmails(request);
+  await expect.poll(count).toBe(2);
+
+  // The recipient turns message emails off, and on again, in their settings.
+  await login(page, recipient.email, recipient.password);
+  await page.getByRole("link", { name: "Settings" }).click();
+  await expect(page).toHaveURL("/dashboard/settings");
+  const setting = page.getByRole("checkbox", { name: /New messages from other makers/ });
+  // Waits for the save itself: the confirmation text stays on screen between saves.
+  const save = async () => {
+    await Promise.all([
+      page.waitForResponse(
+        (response) =>
+          response.request().method() === "POST" &&
+          new URL(response.url()).pathname === "/dashboard/settings",
+      ),
+      page.getByRole("button", { name: "Save settings" }).click(),
+    ]);
+    await expect(page.getByText("Settings saved.")).toBeVisible();
+  };
+  await expect(setting).toBeChecked();
+  await expect(page.getByRole("checkbox", { name: /New reports/ })).toHaveCount(0);
+  await setting.uncheck();
+  await save();
+  await expect(setting).not.toBeChecked();
+  await read();
+  await write("While emails are off");
+  await sendDueEmails(request);
+  await setting.check();
+  await save();
+  await read();
+  await write("Emails are on again");
+  await sendDueEmails(request);
+  // Three emails in all: the message written while emails were off brought none.
+  await expect.poll(count).toBe(3);
+
+  for (const theme of ["dark", "light"] as const) {
+    await setThemeCookie(page, theme);
+    await page.goto("/dashboard/settings");
+    await expectAccessible(page);
+  }
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expectNoHorizontalScroll(page);
 });

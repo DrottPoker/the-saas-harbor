@@ -18,7 +18,17 @@ export type Database = Omit<GeneratedDatabase, "public"> & {
       | "admin_accounts"
       | "admin_account"
       | "saas_slug_redirect"
+      | "claim_emails"
+      | "complete_email"
     > & {
+      claim_emails: {
+        Args: Functions["claim_emails"]["Args"];
+        Returns: Nullable<Row<"claim_emails">, "name" | "context">[];
+      };
+      complete_email: {
+        Args: Nullable<Functions["complete_email"]["Args"], "p_error">;
+        Returns: undefined;
+      };
       saas_slug_redirect: {
         Args: Functions["saas_slug_redirect"]["Args"];
         Returns: string | null;

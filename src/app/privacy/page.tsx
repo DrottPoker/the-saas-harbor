@@ -83,6 +83,11 @@ export default function Privacy() {
               admin.
             </li>
             <li>
+              <strong className="font-medium text-foreground">Email notifications.</strong> Which
+              emails you want, emails waiting to be sent to you, and a record of sent ones. A
+              message email names the sender but never contains the message.
+            </li>
+            <li>
               <strong className="font-medium text-foreground">Preferences.</strong> Whether you
               chose the light or dark theme, in a cookie on your device.
             </li>
@@ -118,8 +123,8 @@ export default function Privacy() {
               to share. This is part of the same service (Article 6(1)(b)).
             </li>
             <li>
-              To deliver the messages you send to other makers, also part of the service (Article
-              6(1)(b)).
+              To deliver the messages you send to other makers, and to email you about unread
+              messages, also part of the service (Article 6(1)(b)). You can turn message emails off.
             </li>
             <li>
               To keep the service secure and fair, through the sign-in records, the subscription
@@ -166,9 +171,10 @@ export default function Privacy() {
             <li>
               <strong className="font-medium text-foreground">Service providers:</strong> our
               hosting, database and email providers process data on our behalf to run the site.
-              Account emails, such as confirmation and password reset messages, are sent through our
-              email provider. If a provider handles data outside the EU or EEA, we use the
-              safeguards the GDPR requires, such as the EU standard contractual clauses.
+              Account emails, such as confirmation and password reset messages, and notification
+              emails are sent through our email provider. If a provider handles data outside the EU
+              or EEA, we use the safeguards the GDPR requires, such as the EU standard contractual
+              clauses.
             </li>
           </List>
           <p>
@@ -195,6 +201,10 @@ export default function Privacy() {
             backups expire.
           </p>
           <p>
+            An email waits in a queue until it is sent, and a record of it is kept for a week
+            afterwards, then deleted.
+          </p>
+          <p>
             A report is deleted when either the maker who sent it or the maker it is about deletes
             their account. Deleting a reported product or message keeps the report and its copy, so
             admins can still review it. Admin decisions are deleted with the account they concern.
@@ -211,6 +221,10 @@ export default function Privacy() {
             the reports you sent under{" "}
             <Link className={link} href="/dashboard/reports">
               Your reports
+            </Link>
+            , choose which emails you get under{" "}
+            <Link className={link} href="/dashboard/settings">
+              Email settings
             </Link>
             , delete a product at the bottom of its editor, and delete your account yourself under{" "}
             <Link className={link} href="/dashboard/profile#delete-account">

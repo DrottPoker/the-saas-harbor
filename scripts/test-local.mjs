@@ -1,6 +1,12 @@
 import { spawnSync } from "node:child_process";
 import { randomBytes } from "node:crypto";
-import { emailDelivery, ensureLocalSupabase, npx, shell } from "./local-supabase.mjs";
+import {
+  emailDelivery,
+  ensureLocalSupabase,
+  mailpitSmtpPort,
+  npx,
+  shell,
+} from "./local-supabase.mjs";
 
 const local = ensureLocalSupabase();
 // The tests read confirmation links from Mailpit and must never email real addresses.
@@ -34,6 +40,13 @@ const result = spawnSync(npx, ["playwright", "test"], {
     STRIPE_ALLOW_TEST_KEYS: "true",
     STRIPE_API_BASE: fakeStripe,
     FX_API_BASE: fakeStripe,
+    // Notification emails go to Mailpit, and message emails are due at once.
+    SMTP_HOST: "127.0.0.1",
+    SMTP_PORT: String(mailpitSmtpPort),
+    SMTP_USER: "",
+    SMTP_PASS: "",
+    EMAIL_FROM: "The SaaS Harbor <notifications@harbor.localhost>",
+    MESSAGE_EMAIL_DELAY_SECONDS: "0",
   },
 });
 process.exit(result.status ?? 1);

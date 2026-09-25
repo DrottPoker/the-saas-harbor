@@ -294,6 +294,27 @@ export type Database = {
           },
         ]
       }
+      notification_settings: {
+        Row: {
+          messages: boolean
+          reports: boolean
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          messages?: boolean
+          reports?: boolean
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          messages?: boolean
+          reports?: boolean
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profile_experience: {
         Row: {
           created_at: string
@@ -969,6 +990,20 @@ export type Database = {
         }
         Returns: undefined
       }
+      claim_emails: {
+        Args: { p_limit: number; p_message_delay: number }
+        Returns: {
+          context: Json
+          email: string
+          id: number
+          kind: string
+          name: string
+        }[]
+      }
+      complete_email: {
+        Args: { p_error: string; p_id: number; p_status: string }
+        Returns: undefined
+      }
       delete_account: { Args: never; Returns: undefined }
       is_admin: { Args: never; Returns: boolean }
       list_admins: {
@@ -1000,6 +1035,10 @@ export type Database = {
         Returns: undefined
       }
       saas_slug_redirect: { Args: { p_slug: string }; Returns: string }
+      save_notification_settings: {
+        Args: { p_messages: boolean; p_reports: boolean }
+        Returns: undefined
+      }
       save_profile: {
         Args: {
           p_avatar_path: string

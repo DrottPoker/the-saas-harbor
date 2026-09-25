@@ -3,7 +3,12 @@
 import { useEditorAction } from "./use-editor-action";
 import { useFormStatus } from "react-dom";
 import Link from "next/link";
-import { authenticate, confirmEmailLinkAction, saveSaas } from "@/app/actions";
+import {
+  authenticate,
+  confirmEmailLinkAction,
+  saveEmailSettingsAction,
+  saveSaas,
+} from "@/app/actions";
 import { categories, type ActionState } from "@/lib/domain";
 import type { Saas, SaasSettings } from "@/lib/data";
 import { cn } from "@/lib/utils";
@@ -219,6 +224,76 @@ export function AuthForm({
           </Link>
         )}
       </p>
+    </form>
+  );
+}
+
+function Setting({
+  name,
+  label,
+  hint,
+  checked,
+}: {
+  name: string;
+  label: string;
+  hint: string;
+  checked: boolean;
+}) {
+  return (
+    <label className="flex items-start gap-3">
+      <input
+        type="checkbox"
+        name={name}
+        defaultChecked={checked}
+        className="mt-1 size-4 shrink-0 accent-brand"
+      />
+      <span>
+        <span className="block text-sm font-medium">{label}</span>
+        <span className="block text-[13px] text-muted-foreground">{hint}</span>
+      </span>
+    </label>
+  );
+}
+
+/** Which notification emails a maker gets. The report setting is for admins only. */
+export function EmailSettingsForm({
+  messages,
+  reports,
+  admin,
+}: {
+  messages: boolean;
+  reports: boolean;
+  admin: boolean;
+}) {
+  const [state, action] = useEditorAction(saveEmailSettingsAction);
+  const checked = (key: string, saved: boolean) =>
+    state.values ? state.values[key] === "on" : saved;
+  return (
+    <form action={action} className="grid gap-5">
+      <fieldset className="grid gap-4">
+        <legend className="sr-only">Emails you get</legend>
+        <Setting
+          name="messages"
+          label="New messages from other makers"
+          hint="One email per conversation, only when a message is still unread after a few minutes. It never contains the message."
+          checked={checked("messages", messages)}
+        />
+        {admin && (
+          <>
+            <input type="hidden" name="reports_shown" value="1" />
+            <Setting
+              name="reports"
+              label="New reports waiting for review"
+              hint="For admins. At most one email an hour."
+              checked={checked("reports", reports)}
+            />
+          </>
+        )}
+      </fieldset>
+      <Feedback state={state} />
+      <div>
+        <Submit>Save settings</Submit>
+      </div>
     </form>
   );
 }

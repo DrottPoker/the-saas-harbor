@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { reportSchema, type ActionState } from "@/lib/domain";
+import { sendQueuedEmails } from "@/lib/email/outbox";
 import { isReportTarget } from "@/lib/moderation";
 import { requireUser } from "@/lib/supabase/server";
 
@@ -35,6 +36,8 @@ export async function submitReportAction(
           ? `${error.message}.`
           : "Your report could not be sent. Please try again.",
     };
+  // The admins' email about waiting reports.
+  sendQueuedEmails();
   revalidatePath("/dashboard/reports");
   redirect("/dashboard/reports?sent=1");
 }
