@@ -8,6 +8,10 @@ The first release includes accounts, email confirmation and recovery, public mak
 
 Makers can message each other privately (see Messages below), and report products, profiles and messages to the admins, who decide in an admin panel (see Reports and moderation below). They get emails about unread messages and about decisions (see Email notifications below). Other forms of connection, such as following or contact lists, are not implemented.
 
+## Sharing card 2026-09-26
+
+At the project owner's request, the site's sharing card, which X and others show for thesaasharbor.com, no longer shows how many products are listed and ranked. It now reads Free exposure for small SaaS, with a public page, a place on the leaderboard and other founders to meet, and Cost: Free, Made for: Indie SaaS and the four providers along the bottom. The terms already say the site is free to use. Product, profile and statistics cards fall back to it as before. X keeps a card it has fetched for a while, so links shared earlier may show the old one until X fetches it again.
+
 ## Detailed analytics 2026-09-26
 
 At the project owner's request, the Analytics page shows far more, and every card has its own period: 24 hours, 7 days, 30 days, 12 months or all time. A row above the cards sets them all at once, and the choices are remembered in the admin's browser. Changing a period, a tab or the rows shown loads only that card, without reloading or scrolling the page. Times are in the admin's time zone.

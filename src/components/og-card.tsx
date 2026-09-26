@@ -4,7 +4,6 @@
 import { ImageResponse } from "next/og";
 import { imageUrl } from "@/lib/images";
 import { logoSvg } from "@/lib/logo";
-import { publicClient } from "@/lib/supabase/server";
 
 export const OG_SIZE = { width: 1200, height: 630 };
 
@@ -126,28 +125,19 @@ export function OgCard({
   );
 }
 
-// The site's sharing image, also used when a product or maker image has nothing to show.
-export async function siteImage() {
-  const client = publicClient();
-  const head = { count: "exact", head: true } as const;
-  const [listed, ranked] = client
-    ? await Promise.all([
-        client.from("public_saas").select("id", head),
-        client.from("leaderboard").select("id", head),
-      ])
-    : [];
-  const figures: [string, string][] = [];
-  if (listed?.count != null && !listed.error)
-    figures.push(["Products listed", listed.count.toLocaleString("en-US")]);
-  if (ranked?.count != null && !ranked.error)
-    figures.push(["Ranked by verified MRR", ranked.count.toLocaleString("en-US")]);
-  figures.push(["Verified with", "Stripe, Paddle, Polar, Dodo"]);
+// The site's sharing image, also used when a product or maker image has nothing to show. It
+// invites founders of small SaaS: listing is free (see the terms), and it holds no live figures.
+export function siteImage() {
   return new ImageResponse(
     <OgCard
-      title="Independent SaaS, ranked by revenue"
-      subtitle="Monthly recurring revenue verified through each product's payment provider and shared by its founder."
+      title="Free exposure for small SaaS"
+      subtitle="A public page for your product, a place on the leaderboard and other founders to meet."
       picture={<OgMark size={160} />}
-      figures={figures}
+      figures={[
+        ["Cost", "Free"],
+        ["Made for", "Indie SaaS"],
+        ["Verify revenue with", "Stripe, Paddle, Polar, Dodo"],
+      ]}
     />,
     OG_SIZE,
   );
