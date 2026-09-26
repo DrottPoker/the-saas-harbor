@@ -126,6 +126,7 @@ test.beforeAll(async ({ playwright }, info) => {
     ...["/dashboard", "/dashboard/profile", "/dashboard/reports", `/dashboard/saas/${id}`],
     ...["/dashboard/settings", "/api/email/send", "/api/analytics", "/admin/analytics/data"],
     ...["/messages", `/messages/${id}`, `/report/saas/${id}`, "/api/revenue/sync"],
+    ...["/api/domains/check"],
     ...["/sitemap.xml", "/robots.txt", "/opengraph-image", "/llms.txt"],
     ...[
       "/categories",
@@ -2337,5 +2338,109 @@ test("founders verify revenue through Paddle, Polar and Dodo Payments", async ({
     .eq("saas_id", id)
     .order("seq");
   expect(snapshots!.map((row) => row.provider)).toEqual(["paddle", "polar", "dodo"]);
+  expect(violations).toEqual([]);
+});
+
+// A founder proves that the website's domain is theirs with a DNS record, which the tests' DNS
+// server answers.
+test("founders verify their website's domain with a DNS record", async ({ page }) => {
+  const violations: string[] = [];
+  watchPolicy(page, violations);
+  const address = `harbor-domain-${run}@example.test`;
+  const secret = randomBytes(24).toString("hex");
+  const { data: created, error } = await admin.auth.admin.createUser({
+    email: address,
+    password: secret,
+    email_confirm: true,
+  });
+  if (error || !created.user) throw new Error("Unable to create the domain maker.");
+  userIds.push(created.user.id);
+  const domain = `verify-${run}.example`;
+  const record = `_thesaasharbor.${domain}`;
+  const fakeDns = `http://127.0.0.1:3011/dns/${record}`;
+  await login(page, address, secret);
+  await page.goto("/dashboard/saas/new");
+  await fillProduct(page, `Domain ${run}`);
+  await page.getByLabel("Website", { exact: true }).fill(`https://www.${domain}/`);
+  await page.getByRole("button", { name: "Add SaaS", exact: true }).click();
+  await expect(page).toHaveURL(/created=1/);
+  const id = new URL(page.url()).pathname.split("/").at(-1)!;
+  const productPath = `/saas/domain-${run}`;
+  const section = page.locator("#domain");
+  await expect(section.getByText(`${domain} is not verified yet.`)).toBeVisible();
+  await expect(section.getByLabel("Name", { exact: true })).toHaveValue(record);
+  const value = await section.getByLabel("Value", { exact: true }).inputValue();
+  expect(value).toMatch(/^thesaasharbor-verification=[0-9a-f]{32}$/);
+
+  // Without the record the check fails, and checks are spaced out.
+  await section.getByRole("button", { name: "Check DNS" }).click();
+  await expect(
+    section.getByRole("alert").filter({ hasText: `The record was not found at ${record}.` }),
+  ).toBeVisible();
+  await section.getByRole("button", { name: "Check DNS" }).click();
+  await expect(section.getByRole("alert").filter({ hasText: "a moment ago" })).toBeVisible();
+
+  // Another product's token does not verify this one; its own does.
+  await page.request.put(fakeDns, {
+    data: ["v=spf1 -all", `thesaasharbor-verification=${"f".repeat(32)}`, value],
+  });
+  await page.waitForTimeout(10_500);
+  await section.getByRole("button", { name: "Check DNS" }).click();
+  await expect(
+    section.getByRole("status").filter({ hasText: `${domain} is verified.` }),
+  ).toBeVisible();
+  await page.reload();
+  await expect(
+    section.getByText(new RegExp(`^${domain} is verified\\. Last checked`)),
+  ).toBeVisible();
+  for (const theme of ["dark", "light"] as const) {
+    await setThemeCookie(page, theme);
+    await page.reload();
+    await expectAccessible(page);
+  }
+  await page.goto(productPath);
+  const mark = page.getByText(/The founder proved control of .+ with a DNS record\./);
+  await expect(mark).toContainText(domain);
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expectNoHorizontalScroll(page);
+  await page.setViewportSize({ width: 1280, height: 720 });
+  expect(await (await page.request.get(`${productPath}.md`)).text()).toContain(
+    `- Domain: ${domain}, verified with a DNS record, last checked`,
+  );
+  const { data: shown } = await anon
+    .from("public_saas")
+    .select("verified_domain")
+    .eq("id", id)
+    .single();
+  expect(shown!.verified_domain).toBe(domain);
+  // Makers cannot mark a domain themselves.
+  const makerClient = createClient(url, publicKey, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+  await makerClient.auth.signInWithPassword({ email: address, password: secret });
+  const { error: forged } = await makerClient
+    .from("saas")
+    .update({ verified_domain: "evil.example" })
+    .eq("id", id);
+  expect(forged?.code).toBe("42501");
+  // Only this client's session; the browser stays signed in.
+  await makerClient.auth.signOut({ scope: "local" });
+
+  // The daily check answers only with the secret, and finds nothing due yet.
+  expect((await page.request.post("/api/domains/check")).status()).toBe(401);
+  const recheck = await page.request.post("/api/domains/check", {
+    headers: { Authorization: `Bearer ${process.env.TEST_CRON_SECRET}` },
+  });
+  expect(recheck.status()).toBe(200);
+  expect(await recheck.json()).toMatchObject({ removed: 0 });
+
+  // A website on another domain loses the mark at once.
+  await page.goto(`/dashboard/saas/${id}`);
+  await page.getByLabel("Website", { exact: true }).fill(`https://elsewhere-${run}.example/`);
+  await page.getByRole("button", { name: "Save changes" }).click();
+  await expect(page).toHaveURL(/saved=/);
+  await page.goto(productPath);
+  await expect(page.getByText(/The founder proved control of/)).toHaveCount(0);
+  await page.request.delete(fakeDns);
   expect(violations).toEqual([]);
 });

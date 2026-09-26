@@ -197,6 +197,15 @@ export function ProductProfile({
           </>
         )}
       </p>
+      {!demo && item.verified_domain && (
+        <p className="mt-1.5 flex items-center gap-1.5 text-[13px] text-muted-foreground">
+          <BadgeCheck aria-hidden="true" className="size-4 shrink-0 text-brand" />
+          <span className="[overflow-wrap:anywhere]">
+            The founder proved control of {item.verified_domain} with a DNS record. Last checked{" "}
+            {formatDate(item.domain_verified_at)}.
+          </span>
+        </p>
+      )}
 
       {history && (
         <RevenueHistory

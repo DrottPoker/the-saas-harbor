@@ -750,6 +750,7 @@ export type Database = {
           category: string
           created_at: string
           description: string
+          domain_verified_at: string | null
           hidden_at: string | null
           hidden_note: string
           hidden_reason: string | null
@@ -761,12 +762,14 @@ export type Database = {
           tagline: string
           tech_stack: string[]
           updated_at: string
+          verified_domain: string | null
           website: string
         }
         Insert: {
           category: string
           created_at?: string
           description: string
+          domain_verified_at?: string | null
           hidden_at?: string | null
           hidden_note?: string
           hidden_reason?: string | null
@@ -778,12 +781,14 @@ export type Database = {
           tagline: string
           tech_stack?: string[]
           updated_at?: string
+          verified_domain?: string | null
           website: string
         }
         Update: {
           category?: string
           created_at?: string
           description?: string
+          domain_verified_at?: string | null
           hidden_at?: string | null
           hidden_note?: string
           hidden_reason?: string | null
@@ -795,6 +800,7 @@ export type Database = {
           tagline?: string
           tech_stack?: string[]
           updated_at?: string
+          verified_domain?: string | null
           website?: string
         }
         Relationships: [
@@ -911,6 +917,7 @@ export type Database = {
           created_at: string | null
           customers: number | null
           description: string | null
+          domain_verified_at: string | null
           id: string | null
           launched_on: string | null
           livemode: boolean | null
@@ -931,6 +938,7 @@ export type Database = {
           tech_stack: string[] | null
           updated_at: string | null
           verified_at: string | null
+          verified_domain: string | null
           website: string | null
         }
         Relationships: [
@@ -956,6 +964,7 @@ export type Database = {
           created_at: string | null
           customers: number | null
           description: string | null
+          domain_verified_at: string | null
           id: string | null
           launched_on: string | null
           livemode: boolean | null
@@ -975,6 +984,7 @@ export type Database = {
           tech_stack: string[] | null
           updated_at: string | null
           verified_at: string | null
+          verified_domain: string | null
           website: string | null
         }
         Relationships: [
@@ -1095,6 +1105,7 @@ export type Database = {
         }
         Returns: undefined
       }
+      begin_domain_check: { Args: { p_saas: string }; Returns: string }
       begin_revenue_check: {
         Args: { p_refresh: boolean; p_saas: string }
         Returns: undefined
@@ -1103,6 +1114,14 @@ export type Database = {
       claim_due_connections: {
         Args: { p_interval: string; p_limit: number }
         Returns: string[]
+      }
+      claim_due_domain_checks: {
+        Args: { p_limit: number }
+        Returns: {
+          saas_id: string
+          token: string
+          website: string
+        }[]
       }
       claim_emails: {
         Args: { p_limit: number; p_message_delay: number }
@@ -1131,6 +1150,15 @@ export type Database = {
       mark_conversation_read: {
         Args: { p_conversation: string; p_read_at: string }
         Returns: undefined
+      }
+      record_domain_check: {
+        Args: {
+          p_domain: string
+          p_result: string
+          p_saas: string
+          p_website: string
+        }
+        Returns: string
       }
       record_page_view: {
         Args: {
@@ -1166,6 +1194,14 @@ export type Database = {
           p_subscription_hashes: string[]
         }
         Returns: undefined
+      }
+      saas_domain_verification: {
+        Args: { p_saas: string }
+        Returns: {
+          checked_at: string
+          missing_since: string
+          token: string
+        }[]
       }
       saas_page_view_counts: {
         Args: { p_saas: string }

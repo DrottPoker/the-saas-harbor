@@ -8,12 +8,14 @@ select plan(8);
 select results_eq(
   $$ select jobname::text, schedule::text from cron.job where jobname like 'harbor-%' order by 1 $$,
   $$ values ('harbor-analytics-retention'::text, '41 3 * * *'::text),
+    ('harbor-domain-checks', '23 * * * *'),
     ('harbor-email-send', '* * * * *'), ('harbor-job-history', '17 3 * * *'),
     ('harbor-revenue-sync', '*/10 * * * *') $$,
-  'emails every minute, revenue every ten minutes, history and statistics cleanup daily');
+  'emails every minute, revenue every ten minutes, domains hourly, cleanup daily');
 select ok(
   (select command like '%/api/email/send%' from cron.job where jobname = 'harbor-email-send')
-  and (select command like '%/api/revenue/sync%' from cron.job where jobname = 'harbor-revenue-sync'),
+  and (select command like '%/api/revenue/sync%' from cron.job where jobname = 'harbor-revenue-sync')
+  and (select command like '%/api/domains/check%' from cron.job where jobname = 'harbor-domain-checks'),
   'each job calls its route');
 
 delete from vault.secrets where name in ('harbor_site_url', 'harbor_cron_secret');

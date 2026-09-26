@@ -58,7 +58,9 @@ export default function Privacy() {
             </li>
             <li>
               <strong className="font-medium text-foreground">Products.</strong> Name, tagline,
-              description, category, website, logo and launch date.
+              description, category, website, logo, tech stack and launch date. If you verify a
+              product&apos;s domain: the domain, the code for its DNS record, and when the record
+              was last looked up.
             </li>
             <li>
               <strong className="font-medium text-foreground">Revenue verification.</strong> If you
@@ -123,6 +125,15 @@ export default function Privacy() {
           </p>
         </Section>
 
+        <Section id="website" title="What we look up about your website">
+          <p>
+            When you check your product&apos;s domain, and every day while it is verified, our
+            server looks up one DNS record under that domain: the TXT record you add for the
+            product. The lookup goes through ordinary DNS servers and carries only the record&apos;s
+            name.
+          </p>
+        </Section>
+
         <Section id="purposes" title="Why we use it">
           <List>
             <li>
@@ -131,7 +142,8 @@ export default function Privacy() {
             </li>
             <li>
               To verify revenue through the payment provider you connect, and show the figures you
-              choose to share. This is part of the same service (Article 6(1)(b)).
+              choose to share, and to show that a product&apos;s domain is its founder&apos;s
+              through the DNS record you add. This is part of the same service (Article 6(1)(b)).
             </li>
             <li>
               To deliver the messages you send to other users, and to email you about unread
@@ -140,9 +152,9 @@ export default function Privacy() {
             <li>
               To keep the service secure and fair, through the sign-in records, the subscription
               hashes described above, and limits on how many messages, reports and products an
-              account can add and how often it checks revenue. The limits keep the times you added a
-              product for a day and the times you checked revenue for an hour (our legitimate
-              interests, Article 6(1)(f)).
+              account can add and how often it checks revenue and domains. The limits keep the times
+              you added a product for a day and the times you checked revenue or a domain for an
+              hour (our legitimate interests, Article 6(1)(f)).
             </li>
             <li>
               To handle reports and moderate the site. The EU Digital Services Act requires us to
@@ -214,11 +226,11 @@ export default function Privacy() {
           <List>
             <li>
               <strong className="font-medium text-foreground">Everyone:</strong> your profile, your
-              products and their logos, and the verified figures you choose to share. Sharing MRR
-              also shows its month-end history and 30-day growth. Paying customers and the launch
-              date each have their own setting. A badge you embed on your own site shows the shared
-              MRR there, and browsers and caches may keep it for up to ten minutes after you stop
-              sharing.
+              products and their logos, whether a product&apos;s domain is verified, and the
+              verified figures you choose to share. Sharing MRR also shows its month-end history and
+              30-day growth. Paying customers and the launch date each have their own setting. A
+              badge you embed on your own site shows the shared MRR there, and browsers and caches
+              may keep it for up to ten minutes after you stop sharing.
             </li>
             <li>
               <strong className="font-medium text-foreground">Only you:</strong> your connection
@@ -282,9 +294,9 @@ export default function Privacy() {
             profile, products, images, provider keys, verification history, conversations and
             sign-in records are deleted right away. A conversation is deleted for both users when
             either of them deletes their account. Deleting a single product removes its details, its
-            logo, its provider key and its verification history in the same way. Logos and photos
-            you replaced earlier are kept until you delete your account. Copies in backups disappear
-            when those backups expire.
+            logo, its provider key, its verification history and its domain check in the same way.
+            Logos and photos you replaced earlier are kept until you delete your account. Copies in
+            backups disappear when those backups expire.
           </p>
           <p>
             An email waits in a queue until it is sent, and a record of it is kept for a week

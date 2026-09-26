@@ -45,6 +45,8 @@ function listing(overrides: Partial<Listing> = {}): Listing {
     ],
     mrr_growth_pct: 4.5,
     tech_stack: ["postgresql", "go", "gone-now"],
+    verified_domain: null,
+    domain_verified_at: null,
     rank: 1,
     ...overrides,
   };
@@ -172,6 +174,20 @@ describe("markdown", () => {
     expect(text).toContain("- Paying customers: 37");
     expect(text).toContain("| August 2026 | $4,100 |");
     expect(text).toContain("written by the users who list them");
+  });
+
+  it("says when the founder verified the website's domain", () => {
+    expect(
+      productMarkdown(
+        listing({
+          verified_domain: "querybird.example",
+          domain_verified_at: "2026-09-26T06:00:00Z",
+        }),
+      ),
+    ).toContain(
+      "- Domain: querybird.example, verified with a DNS record, last checked Sep 26, 2026",
+    );
+    expect(productMarkdown(listing())).not.toContain("- Domain:");
   });
 
   it("lists the tech stack by group, linking each technology", () => {

@@ -85,6 +85,11 @@ export function productMarkdown(item: Listing) {
     `- Category: [${category}](${base}/categories/${categorySlug(category)})`,
     `- Founder: [${inline(item.owner_name)}](${base}/users/${item.owner_slug}.md)`,
     ...(item.website ? [`- Website: ${autolink(item.website)}`] : []),
+    ...(item.verified_domain
+      ? [
+          `- Domain: ${inline(item.verified_domain)}, verified with a DNS record, last checked ${formatDate(item.domain_verified_at)}`,
+        ]
+      : []),
     ...(item.launched_on ? [`- Launched: ${formatDate(item.launched_on)}`] : []),
     ...(item.created_at ? [`- Listed: ${formatDate(item.created_at)}`] : []),
     "",

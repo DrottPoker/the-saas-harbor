@@ -1,47 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { Check, Copy } from "lucide-react";
 import { badgeEmbedCode, BADGE_HEIGHT, type BadgeTheme } from "@/lib/badge";
 import { SITE_NAME } from "@/lib/seo";
-import { Field, Section } from "./forms";
+import { CopyField } from "./copy-field";
+import { Section } from "./forms";
 import { Button } from "./ui/button";
-import { Textarea } from "./ui/textarea";
-
-function CopyField({ id, label, value }: { id: string; label: string; value: string }) {
-  const [copied, setCopied] = useState(false);
-  const copy = async () => {
-    try {
-      await navigator.clipboard.writeText(value);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch {
-      // Without clipboard access the code can still be selected in the field.
-      setCopied(false);
-    }
-  };
-  return (
-    <Field
-      name={id}
-      label={label}
-      aside={
-        <Button type="button" variant="ghost" size="sm" onClick={copy}>
-          {copied ? <Check /> : <Copy />}
-          <span aria-live="polite">{copied ? "Copied" : `Copy ${label}`}</span>
-        </Button>
-      }
-    >
-      <Textarea
-        id={id}
-        readOnly
-        value={value}
-        spellCheck={false}
-        onFocus={(event) => event.currentTarget.select()}
-        className="min-h-0 font-mono text-[13px]"
-      />
-    </Field>
-  );
-}
 
 /** The product editor's badge section: a preview in either theme and the code to paste. */
 export function BadgeEmbed({
@@ -90,8 +54,8 @@ export function BadgeEmbed({
             className="h-13 w-auto"
           />
         </div>
-        <CopyField id="badge_html" label="HTML" value={code.html} />
-        <CopyField id="badge_markdown" label="Markdown" value={code.markdown} />
+        <CopyField id="badge_html" label="HTML" value={code.html} multiline />
+        <CopyField id="badge_markdown" label="Markdown" value={code.markdown} multiline />
       </Section>
     </div>
   );

@@ -25,6 +25,7 @@
     "db:seed": "node scripts/seed-local.mjs",
     "env:local": "node scripts/local-env.mjs",
     "revenue:sync": "node scripts/revenue-sync.mjs",
+    "domains:check": "node scripts/domains-check.mjs",
     "email:send": "node scripts/email-send.mjs",
     "admin": "node scripts/admin.mjs",
     "auth:production": "node scripts/production-auth.mjs",
