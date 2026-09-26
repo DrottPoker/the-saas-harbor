@@ -1,6 +1,6 @@
-// Site statistics: what a page view sends and keeps, for Vercel Web Analytics and for our own
-// statistics in the admin panel (/api/analytics, migration 20260926060000). Pure, so it is
-// unit-tested.
+// Site statistics: what the browser sends and the server keeps, for Vercel Web Analytics and for
+// our own statistics in the admin panel (/api/analytics, migrations 20260926060000 and
+// 20260926070000). The reports are in analytics-reports.ts. Pure, so it is unit-tested.
 import { z } from "zod";
 
 // Only campaign tags stay in an address; other query values can carry tokens or search terms.
@@ -26,11 +26,35 @@ export function vercelEvent<T extends { url: string }>(event: T): T | null {
 
 // Our own statistics.
 
-/** What the browser sends for each page it shows: its address, and on a page load the referrer. */
-export const beaconSchema = z.object({
-  path: z.string().max(2000),
-  referrer: z.string().max(2000).nullish(),
-});
+/**
+ * What the browser sends: each page it shows, with the referrer on a page load; how long a page
+ * was visible, by the id its page view got; and clicks on links to other sites. A beacon without a
+ * type is a page view, as the first version of the script sent them.
+ */
+export const beaconSchema = z.preprocess(
+  (value) =>
+    value && typeof value === "object" && !("type" in value)
+      ? { ...value, type: "pageview" }
+      : value,
+  z.discriminatedUnion("type", [
+    z.object({
+      type: z.literal("pageview"),
+      path: z.string().max(2000),
+      referrer: z.string().max(2000).nullish(),
+    }),
+    z.object({
+      type: z.literal("engagement"),
+      id: z.number().int().positive(),
+      ms: z.number().int().min(0).max(86_400_000),
+    }),
+    z.object({
+      type: z.literal("outbound"),
+      path: z.string().max(2000),
+      url: z.string().max(2000),
+    }),
+  ]),
+);
+export type Beacon = z.infer<typeof beaconSchema>;
 export const BEACON_MAX_BYTES = 4096;
 
 // Crawlers, link previews, monitors, scripts and headless browsers, on top of Next.js's own list.
@@ -72,6 +96,8 @@ export function pageView(value: string) {
     utmSource: tag(url.searchParams.get("utm_source")),
     utmMedium: tag(url.searchParams.get("utm_medium")),
     utmCampaign: tag(url.searchParams.get("utm_campaign")),
+    utmTerm: tag(url.searchParams.get("utm_term")),
+    utmContent: tag(url.searchParams.get("utm_content")),
   };
 }
 
@@ -90,6 +116,48 @@ export function referrerHost(referrer: string | null | undefined, siteHost: stri
   const host = bareHost(url.hostname);
   if (!host || host === bareHost(siteHost.replace(/:\d+$/, ""))) return null;
   return host.slice(0, 253);
+}
+
+/**
+ * A link to another site that was clicked: its address without query or fragment (the site alone
+ * when that is too long), and its host without www. Null for this site and anything not http(s).
+ */
+export function outboundTarget(value: string, siteHost: string) {
+  let url: URL;
+  try {
+    url = new URL(value);
+  } catch {
+    return null;
+  }
+  if (url.protocol !== "https:" && url.protocol !== "http:") return null;
+  const host = bareHost(url.hostname);
+  if (!host || host === bareHost(siteHost.replace(/:\d+$/, ""))) return null;
+  let target = `${url.protocol}//${url.host}${url.pathname}`;
+  if (target.length > MAX_PATH) target = `${url.protocol}//${url.host}/`;
+  if (target.length > MAX_PATH) return null;
+  return { target, host: host.slice(0, 253) };
+}
+
+/** The visitor's language from Accept-Language: the first one, as a two- or three-letter code. */
+export function languageCode(value: string | null) {
+  const code = value?.split(",")[0]?.split(";")[0]?.split("-")[0]?.trim().toLowerCase();
+  return code && /^[a-z]{2,3}$/.test(code) ? code : null;
+}
+
+/** The city from the host's geolocation header, which is URL-encoded. */
+export function cityName(value: string | null) {
+  if (!value) return null;
+  try {
+    const city = decodeURIComponent(value).trim();
+    return city && city.length <= 100 ? city : null;
+  } catch {
+    return null;
+  }
+}
+
+/** The major version of a browser or system, such as 140 for Chrome 140.0.7339.80. */
+export function majorVersion(value: string | undefined) {
+  return value?.match(/^(\d{1,4})(?:\D|$)/)?.[1] ?? null;
 }
 
 /** A two-letter country code from the host's geolocation header, or null. */
@@ -137,111 +205,3 @@ function named(value: string | undefined, names: [RegExp, string][]) {
 }
 export const browserName = (value: string | undefined) => named(value, BROWSERS);
 export const systemName = (value: string | undefined) => named(value, SYSTEMS);
-
-// The admin panel's periods, in UTC.
-
-export const ANALYTICS_RANGES = {
-  "24h": { label: "24 hours", bucket: "hour", count: 24 },
-  "7d": { label: "7 days", bucket: "day", count: 7 },
-  "30d": { label: "30 days", bucket: "day", count: 30 },
-  "90d": { label: "90 days", bucket: "day", count: 90 },
-  "12m": { label: "12 months", bucket: "month", count: 12 },
-} as const;
-export type AnalyticsRange = keyof typeof ANALYTICS_RANGES;
-export type Bucket = (typeof ANALYTICS_RANGES)[AnalyticsRange]["bucket"];
-export const DEFAULT_RANGE: AnalyticsRange = "30d";
-
-export function analyticsRange(value: string | undefined): AnalyticsRange {
-  return value && Object.hasOwn(ANALYTICS_RANGES, value)
-    ? (value as AnalyticsRange)
-    : DEFAULT_RANGE;
-}
-
-/** The period up to now: the last `count` whole buckets, the current one included. */
-export function analyticsPeriod(range: AnalyticsRange, now = new Date()) {
-  const { bucket, count } = ANALYTICS_RANGES[range];
-  const from = new Date(now);
-  from.setUTCMinutes(0, 0, 0);
-  if (bucket === "hour") from.setUTCHours(from.getUTCHours() - (count - 1));
-  else {
-    from.setUTCHours(0);
-    if (bucket === "day") from.setUTCDate(from.getUTCDate() - (count - 1));
-    else from.setUTCFullYear(from.getUTCFullYear(), from.getUTCMonth() - (count - 1), 1);
-  }
-  return { from: from.toISOString(), to: now.toISOString(), bucket };
-}
-
-const whole = z.number().int().nonnegative();
-const totals = { visitors: whole, visits: whole, page_views: whole };
-
-const analyticsSchema = z.object({
-  ...totals,
-  previous: z.object(totals),
-  live: whole,
-  series: z.array(
-    z.object({ start: z.iso.datetime({ offset: true }), visitors: whole, page_views: whole }),
-  ),
-  pages: z.array(z.object({ path: z.string(), visitors: whole, page_views: whole })),
-  sources: z.array(z.object({ source: z.string().nullable(), visits: whole })),
-  campaigns: z.array(z.object({ campaign: z.string(), visits: whole })),
-  countries: z.array(z.object({ country: z.string().nullable(), visitors: whole })),
-  devices: z.array(z.object({ device: z.enum(DEVICES), visitors: whole })),
-  browsers: z.array(z.object({ browser: z.string(), visitors: whole })),
-  systems: z.array(z.object({ os: z.string(), visitors: whole })),
-});
-export type Analytics = z.infer<typeof analyticsSchema>;
-
-/** Reads public.admin_analytics(); anything malformed is an error, never a wrong figure. */
-export function parseAnalytics(value: unknown): Analytics {
-  return analyticsSchema.parse(value);
-}
-
-const formats = {
-  hour: { hour: "2-digit", minute: "2-digit", hourCycle: "h23" },
-  day: { month: "short", day: "numeric" },
-  month: { month: "short", year: "numeric" },
-} as const satisfies Record<Bucket, Intl.DateTimeFormatOptions>;
-
-/** "14:00", "Sep 26" or "Sep 2026", in UTC. */
-export function bucketLabel(start: string, bucket: Bucket) {
-  return new Intl.DateTimeFormat("en-US", { ...formats[bucket], timeZone: "UTC" }).format(
-    new Date(start),
-  );
-}
-
-const titles = {
-  hour: { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit", hourCycle: "h23" },
-  day: { weekday: "short", month: "short", day: "numeric", year: "numeric" },
-  month: { month: "long", year: "numeric" },
-} as const satisfies Record<Bucket, Intl.DateTimeFormatOptions>;
-
-/** "Sep 26, 14:00 UTC", "Sat, Sep 26, 2026" or "September 2026". */
-export function bucketTitle(start: string, bucket: Bucket) {
-  const text = new Intl.DateTimeFormat("en-US", { ...titles[bucket], timeZone: "UTC" }).format(
-    new Date(start),
-  );
-  return bucket === "hour" ? `${text} UTC` : text;
-}
-
-/** The change from the previous period in percent, or null when there is nothing to compare. */
-export function percentChange(current: number, previous: number) {
-  return previous > 0 ? ((current - previous) / previous) * 100 : null;
-}
-
-const regions = new Intl.DisplayNames(["en"], { type: "region" });
-
-export function countryName(code: string | null) {
-  if (!code) return "Unknown";
-  try {
-    return regions.of(code) ?? code;
-  } catch {
-    return code;
-  }
-}
-
-export const deviceLabels: Record<Device, string> = {
-  desktop: "Desktop",
-  mobile: "Mobile",
-  tablet: "Tablet",
-  other: "Other",
-};

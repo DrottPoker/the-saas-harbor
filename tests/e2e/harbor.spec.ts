@@ -124,7 +124,7 @@ test.beforeAll(async ({ playwright }, info) => {
     ...["/", "/discover", "/newest", "/about", "/privacy", "/terms", "/account-deleted"],
     ...["/auth", "/auth/confirm", `/saas/${id}`, `/users/${id}`, "/demo/metricfold", "/missing"],
     ...["/dashboard", "/dashboard/profile", "/dashboard/reports", `/dashboard/saas/${id}`],
-    ...["/dashboard/settings", "/api/email/send", "/api/analytics"],
+    ...["/dashboard/settings", "/api/email/send", "/api/analytics", "/admin/analytics/data"],
     ...["/messages", `/messages/${id}`, `/report/saas/${id}`, "/api/revenue/sync"],
     ...["/sitemap.xml", "/robots.txt", "/opengraph-image", "/llms.txt"],
     ...["/categories", "/categories/design", "/saas/any.md", "/users/any.md"],
@@ -1653,9 +1653,8 @@ test("visits are counted without cookies, and admins see them under Analytics", 
   browser,
   request,
 }) => {
-  test.setTimeout(180000);
+  test.setTimeout(240000);
   const baseURL = test.info().project.use.baseURL!;
-  const since = new Date(Date.now() - 1000).toISOString();
   const address = `harbor-analytics-${run}@example.test`;
   const secret = randomBytes(24).toString("hex");
   const { data, error } = await admin.auth.admin.createUser({
@@ -1675,30 +1674,56 @@ test("visits are counted without cookies, and admins see them under Analytics", 
   const violations: string[] = [];
   const visit = async (agent: string) => {
     const context = await browser.newContext({ baseURL, userAgent: agent });
+    // Automated browsers are not counted, so these present themselves as ordinary ones.
+    await context.addInitScript(() =>
+      Object.defineProperty(Navigator.prototype, "webdriver", { get: () => false }),
+    );
     const page = await context.newPage();
     watchPolicy(page, violations);
-    const beacon = () =>
-      page.waitForResponse((response) => new URL(response.url()).pathname === "/api/analytics");
+    const beacon = (type: string) =>
+      page.waitForResponse(
+        (response) =>
+          new URL(response.url()).pathname === "/api/analytics" &&
+          response.request().postDataJSON()?.type === type,
+      );
     return { context, page, beacon };
   };
 
-  // A visit from a campaign link, then a second page through the site's own navigation.
+  // A visit from a campaign link: the page view gets an id, the time on the page is reported when
+  // the visitor moves on through the site's own navigation, and a link to another site is counted.
   const first = await visit(chrome);
-  let sent = first.beacon();
+  let sent = first.beacon("pageview");
   await first.page.goto(`/about?utm_source=e2e-${run}&utm_campaign=launch-${run}&token=secret`);
-  expect((await sent).status()).toBe(204);
-  sent = first.beacon();
+  const view = await sent;
+  expect(view.status()).toBe(200);
+  const viewId = (await view.json()).id;
+  expect(typeof viewId).toBe("number");
+  await first.page.waitForTimeout(1500);
+  const time = first.beacon("engagement");
+  sent = first.beacon("pageview");
   await first.page.getByRole("contentinfo").getByRole("link", { name: "Privacy" }).click();
   await expect(first.page).toHaveURL("/privacy");
-  expect((await sent).status()).toBe(204);
+  expect((await time).status()).toBe(204);
+  expect((await sent).status()).toBe(200);
+  const click = first.beacon("outbound");
+  await first.page.evaluate((target) => {
+    const link = document.createElement("a");
+    link.href = target;
+    link.textContent = "Elsewhere";
+    // Counted on the way out; the test stays on the site.
+    link.addEventListener("click", (event) => event.preventDefault());
+    document.body.append(link);
+    link.click();
+  }, `https://example-${run}.test/pricing?ref=harbor`);
+  expect((await click).status()).toBe(204);
   expect(await first.context.cookies()).toEqual([]);
   await first.context.close();
 
   // A visit linked from another site.
   const second = await visit(firefox);
-  sent = second.beacon();
+  sent = second.beacon("pageview");
   await second.page.goto("/stats", { referer: `https://www.news-${run}.example/thread` });
-  expect((await sent).status()).toBe(204);
+  expect((await sent).status()).toBe(200);
   await second.context.close();
 
   // Other sites, bots and malformed beacons are refused or left out.
@@ -1709,7 +1734,10 @@ test("visits are counted without cookies, and admins see them under Analytics", 
     });
   expect(
     (
-      await post({ Origin: "https://evil.example", "User-Agent": chrome }, { path: "/terms" })
+      await post(
+        { Origin: "https://evil.example", "User-Agent": chrome },
+        { path: `/users/evil-${run}` },
+      )
     ).status(),
   ).toBe(403);
   expect((await post({ Origin: baseURL, "User-Agent": chrome }, "not json")).status()).toBe(400);
@@ -1721,93 +1749,138 @@ test("visits are counted without cookies, and admins see them under Analytics", 
       )
     ).status(),
   ).toBe(204);
+  // Page time for a page view is only accepted from the visitor who made it.
+  expect(
+    (
+      await post(
+        { Origin: baseURL, "User-Agent": `${firefox} Other` },
+        { type: "engagement", id: viewId, ms: 3_000_000 },
+      )
+    ).status(),
+  ).toBe(204);
 
   // A signed-in admin is not counted, on the site or in the panel.
   const reader = await visit(chrome);
   const adminPage = reader.page;
   await login(adminPage, address, secret);
-  sent = reader.beacon();
+  sent = reader.beacon("pageview");
   await adminPage.goto(`/users/admin-${run}`);
   expect((await sent).status()).toBe(204);
 
-  // The totals since the test began hold the two visits and nothing that was left out.
+  // The reports hold the visits and nothing that was left out.
   const client = createClient(url, publicKey, {
     auth: { persistSession: false, autoRefreshToken: false },
   });
   await client.auth.signInWithPassword({ email: address, password: secret });
-  const { data: totals, error: readError } = await client.rpc("admin_analytics", {
-    p_from: since,
-    p_to: new Date(Date.now() + 60000).toISOString(),
-    p_bucket: "hour",
-  });
-  if (readError) throw new Error("Unable to read the statistics.");
-  const stats = totals as {
-    visitors: number;
-    pages: { path: string; page_views: number }[];
-    sources: { source: string | null; visits: number }[];
-    campaigns: { campaign: string; visits: number }[];
-    countries: { country: string | null }[];
-    browsers: { browser: string }[];
+  const breakdown = async (dimension: string) => {
+    const { data: report, error: readError } = await client.rpc("admin_analytics_breakdown", {
+      p_range: "24h",
+      p_tz: "UTC",
+      p_dimension: dimension,
+      p_limit: 100,
+    });
+    if (readError) throw new Error("Unable to read the statistics.");
+    return (report as { rows: { value: string | null; time_on_page?: number | null }[] }).rows;
   };
-  expect(stats.visitors).toBeGreaterThanOrEqual(2);
-  const paths = stats.pages.map((page) => page.path);
+  const pages = await breakdown("page");
+  const paths = pages.map((row) => row.value);
   expect(paths).toEqual(expect.arrayContaining(["/about", "/privacy", "/stats"]));
-  for (const left of [`/users/bot-${run}`, `/users/admin-${run}`, "/terms", "/admin/analytics"])
+  for (const left of [`/users/bot-${run}`, `/users/admin-${run}`, `/users/evil-${run}`])
     expect(paths).not.toContain(left);
-  expect(stats.sources).toEqual(
-    expect.arrayContaining([
-      { source: `e2e-${run}`, visits: 1 },
-      { source: `news-${run}.example`, visits: 1 },
-    ]),
+  // The visible time was reported, and the other visitor's report was refused.
+  const aboutTime = pages.find((row) => row.value === "/about")?.time_on_page ?? 0;
+  expect(aboutTime).toBeGreaterThan(0);
+  expect(aboutTime).toBeLessThan(60);
+  expect((await breakdown("source")).map((row) => row.value)).toEqual(
+    expect.arrayContaining([`e2e-${run}`, `news-${run}.example`]),
   );
-  expect(stats.campaigns).toEqual(
-    expect.arrayContaining([{ campaign: `launch-${run}`, visits: 1 }]),
-  );
-  expect(stats.browsers.map((row) => row.browser)).toEqual(
+  expect((await breakdown("utm_campaign")).map((row) => row.value)).toContain(`launch-${run}`);
+  expect((await breakdown("browser")).map((row) => row.value)).toEqual(
     expect.arrayContaining(["Chrome", "Firefox"]),
+  );
+  expect((await breakdown("outbound")).map((row) => row.value)).toContain(
+    `https://example-${run}.test/pricing`,
   );
   // Only this client's session; the browser stays signed in.
   await client.auth.signOut({ scope: "local" });
 
-  // The panel shows the same, for every period, in both themes and on a phone.
+  // The panel: every card has its own period, and changing it neither reloads nor moves the page.
   await adminPage.goto("/admin");
   await adminPage
     .getByRole("navigation", { name: "Admin" })
     .getByRole("link", { name: "Analytics" })
     .click();
   await expect(adminPage).toHaveURL("/admin/analytics");
-  await adminPage
-    .getByRole("navigation", { name: "Period" })
-    .getByRole("link", { name: "24 hours" })
-    .click();
-  await expect(adminPage).toHaveURL("/admin/analytics?range=24h");
-  await expect(
-    adminPage
-      .getByRole("table", { name: "The most viewed pages" })
-      .getByRole("link", { name: "/about" }),
-  ).toHaveAttribute("href", "/about");
-  await expect(
-    adminPage.getByRole("table", { name: "Visits by source" }).getByText(`e2e-${run}`),
-  ).toBeVisible();
-  await expect(
-    adminPage.getByRole("table", { name: "Visits by campaign" }).getByText(`launch-${run}`),
-  ).toBeVisible();
-  const analyticsPages = ["24h", "7d", "30d", "90d", "12m"].map(
-    (range) => `/admin/analytics?range=${range}`,
+  const periodNames: Record<string, string> = {
+    "24h": "24h, last 24 hours",
+    "7d": "7d, last 7 days",
+    "30d": "30d, last 30 days",
+    "12m": "12m, last 12 months",
+    All: "All, all time",
+  };
+  const card = (name: string) => adminPage.getByRole("region", { name, exact: true });
+  const period = (name: string, label: string) =>
+    card(name)
+      .getByRole("group", { name: `Period for ${name}` })
+      .getByRole("button", { name: periodNames[label], exact: true });
+  const everyCard = adminPage.getByRole("group", { name: "Period for every card" });
+  await everyCard.getByRole("button", { name: "24h, last 24 hours" }).click();
+  await expect(period("Overview", "24h")).toHaveAttribute("aria-pressed", "true");
+  await expect(card("Overview").getByRole("button", { name: /^Visitors/ })).toBeVisible();
+
+  const pagesTable = card("Pages").getByRole("table");
+  await expect(pagesTable.getByRole("link", { name: "/about" })).toHaveAttribute("href", "/about");
+  await card("Pages").scrollIntoViewIfNeeded();
+  const scrolled = await adminPage.evaluate(() => window.scrollY);
+  await period("Pages", "7d").click();
+  await expect(period("Pages", "7d")).toHaveAttribute("aria-pressed", "true");
+  await expect(period("Overview", "24h")).toHaveAttribute("aria-pressed", "true");
+  await expect(everyCard.getByRole("button", { name: "24h, last 24 hours" })).toHaveAttribute(
+    "aria-pressed",
+    "false",
   );
+  await expect(pagesTable.getByRole("link", { name: "/about" })).toBeVisible();
+  expect(await adminPage.evaluate(() => window.scrollY)).toBe(scrolled);
+  await expect(adminPage).toHaveURL("/admin/analytics");
+
+  // Tabs switch the breakdown within a card.
+  await card("Pages").getByRole("tab", { name: "Entry pages" }).click();
+  await expect(card("Pages").getByRole("columnheader", { name: "Entry page" })).toBeVisible();
+  await card("Sources").getByRole("tab", { name: "Sources" }).click();
+  await expect(card("Sources").getByText(`e2e-${run}`)).toBeVisible();
+  await card("Sources").getByRole("tab", { name: "Campaigns" }).click();
+  await expect(card("Sources").getByText(`launch-${run}`)).toBeVisible();
+  await expect(
+    card("Links to other sites").getByRole("link", { name: new RegExp(`example-${run}`) }),
+  ).toHaveAttribute("href", `https://example-${run}.test/pricing`);
+  await expect(card("Right now").getByText(/in the last 5 minutes/)).toBeVisible();
+
+  // The chart reads with the keyboard and as a table.
+  const chart = card("Overview").getByRole("group", { name: /^Visitors, last 24 hours/ });
+  await chart.focus();
+  await adminPage.keyboard.press("Home");
+  await card("Overview").getByRole("button", { name: "Show table" }).click();
+  await expect(card("Overview").getByRole("table")).toBeVisible();
+  // The periods are remembered in this browser.
+  await adminPage.reload();
+  await expect(period("Pages", "7d")).toHaveAttribute("aria-pressed", "true");
+
+  // Every period in both themes, and no sideways scrolling on a phone.
+  const loaded = () => expect(adminPage.locator(".animate-pulse")).toHaveCount(0);
   for (const theme of ["dark", "light"] as const) {
     await setThemeCookie(adminPage, theme);
-    for (const path of analyticsPages) {
-      await adminPage.goto(path);
-      await expect(adminPage.getByRole("heading", { name: "Analytics", level: 1 })).toBeVisible();
+    await adminPage.reload();
+    for (const label of ["24h", "7d", "30d", "12m", "All"]) {
+      await everyCard.getByRole("button", { name: periodNames[label], exact: true }).click();
+      await loaded();
+      await expect(adminPage.locator("[aria-busy=true]")).toHaveCount(0);
       await expectAccessible(adminPage);
     }
   }
   await adminPage.setViewportSize({ width: 390, height: 844 });
-  for (const path of analyticsPages) {
-    await adminPage.goto(path);
-    await expectNoHorizontalScroll(adminPage);
-  }
+  await adminPage.reload();
+  await loaded();
+  await expectNoHorizontalScroll(adminPage);
   await reader.context.close();
   expect(violations).toEqual([]);
 });

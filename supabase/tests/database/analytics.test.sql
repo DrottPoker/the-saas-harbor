@@ -76,9 +76,9 @@ select results_eq(
   'a page after 30 minutes starts a new visit');
 
 -- At most 300 page views an hour per visitor.
-insert into private.page_views(created_at, visitor, path, entry, device, browser, os)
-select now() - interval '10 minutes', v.visitor, '/', false, 'desktop', 'Chrome', 'Windows'
-from (select visitor from private.page_views where path = '/discover') v,
+insert into private.page_views(created_at, visitor, visit, path, entry, device, browser, os)
+select now() - interval '10 minutes', v.visitor, v.visit, '/', false, 'desktop', 'Chrome', 'Windows'
+from (select visitor, visit from private.page_views where path = '/discover') v,
   generate_series(1, 299);
 set local role service_role;
 select is(
@@ -91,21 +91,21 @@ select is_empty($$ select 1 from private.page_views where path = '/limit' $$,
 
 -- Totals for admins, from fixtures on fixed days.
 delete from private.page_views;
-insert into private.page_views(created_at, visitor, path, entry, referrer, utm_source,
+insert into private.page_views(created_at, visitor, visit, path, entry, referrer, utm_source,
   utm_campaign, country, device, browser, os) values
-  ('2026-01-01 10:00Z', decode(repeat('01', 16), 'hex'), '/', true, 'news.ycombinator.com', null,
+  ('2026-01-01 10:00Z', decode(repeat('01', 16), 'hex'), 1, '/', true, 'news.ycombinator.com', null,
     null, 'SE', 'desktop', 'Chrome', 'Windows'),
-  ('2026-01-01 10:05Z', decode(repeat('01', 16), 'hex'), '/saas/x', false, null, null, null, 'SE',
+  ('2026-01-01 10:05Z', decode(repeat('01', 16), 'hex'), 2, '/saas/x', false, null, null, null, 'SE',
     'desktop', 'Chrome', 'Windows'),
-  ('2026-01-01 12:00Z', decode(repeat('02', 16), 'hex'), '/', true, 'mail.google.com',
+  ('2026-01-01 12:00Z', decode(repeat('02', 16), 'hex'), 3, '/', true, 'mail.google.com',
     'weekly-mail', 'launch', 'US', 'mobile', 'Safari', 'iOS'),
-  ('2026-01-03 09:00Z', decode(repeat('03', 16), 'hex'), '/stats', true, null, null, null, null,
+  ('2026-01-03 09:00Z', decode(repeat('03', 16), 'hex'), 4, '/stats', true, null, null, null, null,
     'desktop', 'Firefox', 'Linux'),
-  ('2025-12-30 09:00Z', decode(repeat('04', 16), 'hex'), '/', true, null, null, null, 'DE',
+  ('2025-12-30 09:00Z', decode(repeat('04', 16), 'hex'), 5, '/', true, null, null, null, 'DE',
     'desktop', 'Chrome', 'macOS'),
-  ('2026-01-04 00:00Z', decode(repeat('05', 16), 'hex'), '/', true, null, null, null, 'DE',
+  ('2026-01-04 00:00Z', decode(repeat('05', 16), 'hex'), 6, '/', true, null, null, null, 'DE',
     'desktop', 'Chrome', 'macOS'),
-  (now() - interval '5 minutes', decode(repeat('06', 16), 'hex'), '/', true, null, null, null,
+  (now() - interval '5 minutes', decode(repeat('06', 16), 'hex'), 7, '/', true, null, null, null,
     null, 'desktop', 'Chrome', 'macOS');
 
 set local role authenticated;

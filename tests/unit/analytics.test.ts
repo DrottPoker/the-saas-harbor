@@ -1,20 +1,17 @@
 import { describe, expect, it } from "vitest";
 import {
-  analyticsPeriod,
-  analyticsRange,
   beaconSchema,
   browserName,
-  bucketLabel,
-  bucketTitle,
+  cityName,
   clientAddress,
   countryCode,
-  countryName,
   deviceType,
   isAdminPath,
   isAutomated,
+  languageCode,
+  majorVersion,
+  outboundTarget,
   pageView,
-  parseAnalytics,
-  percentChange,
   referrerHost,
   systemName,
   vercelEvent,
@@ -56,12 +53,16 @@ describe("analytics", () => {
 
   it("keeps the path of a page view, with ids replaced, and its campaign tags", () => {
     expect(
-      pageView("/saas/querybird?q=crm&utm_source=hn&utm_medium=%20social%20&utm_campaign="),
+      pageView(
+        "/saas/querybird?q=crm&utm_source=hn&utm_medium=%20social%20&utm_campaign=&utm_term=mrr&utm_content=hero",
+      ),
     ).toEqual({
       path: "/saas/querybird",
       utmSource: "hn",
       utmMedium: "social",
       utmCampaign: null,
+      utmTerm: "mrr",
+      utmContent: "hero",
     });
     expect(pageView("/messages/0b6f2c1e-8e0a-4d0e-9b8f-6a1d2c3e4f50")?.path).toBe("/messages/[id]");
     expect(pageView("/dashboard/saas/0B6F2C1E-8E0A-4D0E-9B8F-6A1D2C3E4F50/")?.path).toBe(
@@ -181,70 +182,65 @@ describe("analytics", () => {
     );
     expect(clientAddress(new Headers({ "x-real-ip": "198.51.100.2" }))).toBe("198.51.100.2");
     expect(clientAddress(new Headers())).toBe("");
-    expect(countryName("SE")).toBe("Sweden");
-    expect(countryName(null)).toBe("Unknown");
+    expect(cityName("S%C3%B6dert%C3%A4lje")).toBe("Södertälje");
+    for (const other of [null, "", "%E0%A4%A", "a".repeat(101)]) expect(cityName(other)).toBeNull();
+    expect(languageCode("sv-SE,sv;q=0.9,en;q=0.8")).toBe("sv");
+    expect(languageCode("EN")).toBe("en");
+    for (const other of [null, "", "*", "english"]) expect(languageCode(other)).toBeNull();
   });
 
-  it("accepts only small beacons with a path and referrer", () => {
-    expect(beaconSchema.safeParse({ path: "/", referrer: null }).success).toBe(true);
-    expect(beaconSchema.safeParse({ path: "/" }).success).toBe(true);
-    expect(beaconSchema.safeParse({ path: 1 }).success).toBe(false);
-    expect(beaconSchema.safeParse({ path: `/${"a".repeat(2000)}` }).success).toBe(false);
+  it("keeps the major version of a browser or system", () => {
+    expect(majorVersion("140.0.7339.80")).toBe("140");
+    expect(majorVersion("10")).toBe("10");
+    expect(majorVersion("17.5.1")).toBe("17");
+    for (const other of [undefined, "", "beta", "12345.1"]) expect(majorVersion(other)).toBeNull();
   });
 
-  it("builds each period from whole UTC buckets up to now", () => {
-    const now = new Date("2026-03-01T13:45:10Z");
-    expect(analyticsPeriod("24h", now)).toEqual({
-      from: "2026-02-28T14:00:00.000Z",
-      to: "2026-03-01T13:45:10.000Z",
-      bucket: "hour",
+  it("keeps a clicked link to another site without its query", () => {
+    const site = "thesaasharbor.com";
+    expect(outboundTarget("https://www.Example.com/pricing?ref=harbor#plans", site)).toEqual({
+      target: "https://www.example.com/pricing",
+      host: "example.com",
     });
-    expect(analyticsPeriod("7d", now).from).toBe("2026-02-23T00:00:00.000Z");
-    expect(analyticsPeriod("30d", now).from).toBe("2026-01-31T00:00:00.000Z");
-    expect(analyticsPeriod("90d", now).bucket).toBe("day");
-    expect(analyticsPeriod("12m", now)).toMatchObject({
-      from: "2025-04-01T00:00:00.000Z",
-      bucket: "month",
+    expect(outboundTarget(`https://example.com/${"a".repeat(400)}`, site)).toEqual({
+      target: "https://example.com/",
+      host: "example.com",
     });
-    expect(analyticsRange("7d")).toBe("7d");
-    for (const other of [undefined, "", "1y", "toString", "__proto__"])
-      expect(analyticsRange(other)).toBe("30d");
+    for (const other of [
+      "https://thesaasharbor.com/stats",
+      "https://www.thesaasharbor.com/",
+      "mailto:hello@example.com",
+      "javascript:alert(1)",
+      "not a url",
+    ])
+      expect(outboundTarget(other, site)).toBeNull();
   });
 
-  it("labels buckets and changes", () => {
-    const start = "2026-09-26T14:00:00+00:00";
-    expect(bucketLabel(start, "hour")).toBe("14:00");
-    expect(bucketLabel(start, "day")).toBe("Sep 26");
-    expect(bucketLabel(start, "month")).toBe("Sep 2026");
-    expect(bucketTitle(start, "hour")).toBe("Sep 26, 14:00 UTC");
-    expect(bucketTitle(start, "day")).toBe("Sat, Sep 26, 2026");
-    expect(bucketTitle(start, "month")).toBe("September 2026");
-    expect(percentChange(150, 100)).toBe(50);
-    expect(percentChange(50, 100)).toBe(-50);
-    expect(percentChange(5, 0)).toBeNull();
-  });
-
-  it("reads the admin totals and refuses anything malformed", () => {
-    const valid = {
-      visitors: 3,
-      visits: 3,
-      page_views: 4,
-      previous: { visitors: 1, visits: 1, page_views: 1 },
-      live: 0,
-      series: [{ start: "2026-01-01T00:00:00+00:00", visitors: 2, page_views: 3 }],
-      pages: [{ path: "/", visitors: 2, page_views: 2 }],
-      sources: [{ source: null, visits: 1 }],
-      campaigns: [],
-      countries: [{ country: null, visitors: 1 }],
-      devices: [{ device: "desktop", visitors: 2 }],
-      browsers: [{ browser: "Chrome", visitors: 1 }],
-      systems: [{ os: "Windows", visitors: 1 }],
-    };
-    expect(parseAnalytics(valid)).toEqual(valid);
-    expect(() => parseAnalytics({ ...valid, visitors: -1 })).toThrow();
-    expect(() =>
-      parseAnalytics({ ...valid, devices: [{ device: "watch", visitors: 1 }] }),
-    ).toThrow();
-    expect(() => parseAnalytics(null)).toThrow();
+  it("accepts only small beacons of the three kinds", () => {
+    expect(beaconSchema.parse({ type: "pageview", path: "/", referrer: null })).toEqual({
+      type: "pageview",
+      path: "/",
+      referrer: null,
+    });
+    // The first version of the script sent page views without a type.
+    expect(beaconSchema.parse({ path: "/" })).toEqual({ type: "pageview", path: "/" });
+    expect(beaconSchema.parse({ type: "engagement", id: 12, ms: 3400 })).toEqual({
+      type: "engagement",
+      id: 12,
+      ms: 3400,
+    });
+    expect(
+      beaconSchema.safeParse({ type: "outbound", path: "/", url: "https://example.com" }).success,
+    ).toBe(true);
+    for (const other of [
+      { path: 1 },
+      { path: `/${"a".repeat(2000)}` },
+      { type: "engagement", id: -1, ms: 10 },
+      { type: "engagement", id: 1, ms: 1.5 },
+      { type: "outbound", path: "/" },
+      { type: "click", path: "/" },
+      null,
+    ])
+      expect(beaconSchema.safeParse(other).success).toBe(false);
   });
 });

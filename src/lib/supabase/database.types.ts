@@ -1022,6 +1022,32 @@ export type Database = {
         Args: { p_bucket: string; p_from: string; p_to: string }
         Returns: Json
       }
+      admin_analytics_behavior: {
+        Args: { p_range: string; p_tz: string }
+        Returns: Json
+      }
+      admin_analytics_breakdown: {
+        Args: {
+          p_dimension: string
+          p_limit: number
+          p_range: string
+          p_tz: string
+        }
+        Returns: Json
+      }
+      admin_analytics_heatmap: {
+        Args: { p_range: string; p_tz: string }
+        Returns: Json
+      }
+      admin_analytics_live: { Args: never; Returns: Json }
+      admin_analytics_overview: {
+        Args: { p_range: string; p_tz: string }
+        Returns: Json
+      }
+      admin_analytics_platform: {
+        Args: { p_range: string; p_tz: string }
+        Returns: Json
+      }
       admin_dismiss_report: {
         Args: { p_note: string; p_report: string }
         Returns: undefined
@@ -1199,6 +1225,47 @@ export type Database = {
           p_target: string
         }
         Returns: string
+      }
+      track_engagement: {
+        Args: {
+          p_engaged_ms: number
+          p_id: number
+          p_ip: string
+          p_user_agent: string
+        }
+        Returns: boolean
+      }
+      track_outbound_click: {
+        Args: {
+          p_ip: string
+          p_path: string
+          p_target: string
+          p_target_host: string
+          p_user_agent: string
+        }
+        Returns: boolean
+      }
+      track_page_view: {
+        Args: {
+          p_browser: string
+          p_browser_version: string
+          p_city: string
+          p_country: string
+          p_device: string
+          p_ip: string
+          p_language: string
+          p_os: string
+          p_os_version: string
+          p_path: string
+          p_referrer: string
+          p_user_agent: string
+          p_utm_campaign: string
+          p_utm_content: string
+          p_utm_medium: string
+          p_utm_source: string
+          p_utm_term: string
+        }
+        Returns: number
       }
       unread_message_count: { Args: never; Returns: number }
       username_change_available_at: { Args: never; Returns: string }

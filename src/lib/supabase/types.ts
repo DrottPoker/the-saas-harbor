@@ -23,7 +23,7 @@ export type Database = Omit<GeneratedDatabase, "public"> & {
       | "username_change_available_at"
       | "claim_emails"
       | "complete_email"
-      | "record_page_view"
+      | "track_page_view"
     > & {
       claim_emails: {
         Args: Functions["claim_emails"]["Args"];
@@ -41,12 +41,23 @@ export type Database = Omit<GeneratedDatabase, "public"> & {
         Args: Functions["check_username"]["Args"];
         Returns: "format" | "reserved" | "taken" | null;
       };
-      record_page_view: {
+      track_page_view: {
         Args: Nullable<
-          Functions["record_page_view"]["Args"],
-          "p_referrer" | "p_utm_source" | "p_utm_medium" | "p_utm_campaign" | "p_country"
+          Functions["track_page_view"]["Args"],
+          | "p_referrer"
+          | "p_utm_source"
+          | "p_utm_medium"
+          | "p_utm_campaign"
+          | "p_utm_term"
+          | "p_utm_content"
+          | "p_country"
+          | "p_city"
+          | "p_language"
+          | "p_browser_version"
+          | "p_os_version"
         >;
-        Returns: boolean;
+        // Null when the visitor is over the hourly limit.
+        Returns: number | null;
       };
       submit_feedback: {
         Args: Nullable<Functions["submit_feedback"]["Args"], "p_page">;

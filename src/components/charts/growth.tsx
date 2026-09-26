@@ -9,19 +9,27 @@ const styles = {
 
 /**
  * A change in percent, by default 30-day MRR growth: direction is carried by the icon and sign as
- * well as by color. `period` is the visible suffix and the words for screen readers.
+ * well as by color. `period` is the visible suffix and the words for screen readers. With
+ * `lowerIsBetter`, such as for a bounce rate, a rise is shown in the error color and a fall in the
+ * success color.
  */
 export function Growth({
   pct,
   period = { short: "30d", long: "over the last 30 days" },
+  lowerIsBetter = false,
   className,
 }: {
   pct: number;
   period?: { short: string | null; long: string };
+  lowerIsBetter?: boolean;
   className?: string;
 }) {
   const direction = pct > 0 ? "up" : pct < 0 ? "down" : "flat";
-  const { Icon, color, word } = styles[direction];
+  const { Icon, word } = styles[direction];
+  const color =
+    lowerIsBetter && direction !== "flat"
+      ? styles[direction === "up" ? "down" : "up"].color
+      : styles[direction].color;
   const size = new Intl.NumberFormat("en-US", {
     maximumFractionDigits: Math.abs(pct) >= 100 ? 0 : 1,
   }).format(Math.abs(pct));

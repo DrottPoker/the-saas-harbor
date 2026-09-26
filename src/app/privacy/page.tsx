@@ -91,8 +91,9 @@ export default function Privacy() {
               message email names the sender but never contains the message.
             </li>
             <li>
-              <strong className="font-medium text-foreground">Visits.</strong> Page views for the
-              site statistics, which are not linked to you or your account (see Site statistics).
+              <strong className="font-medium text-foreground">Visits.</strong> Page views, the time
+              pages were visible and clicks on links to other sites, for the site statistics, which
+              are not linked to you or your account (see Site statistics).
             </li>
             <li>
               <strong className="font-medium text-foreground">Preferences.</strong> Whether you
@@ -167,17 +168,21 @@ export default function Privacy() {
             device. For each page you open, the site notes which page it is and, when you arrive,
             which site linked to it. Addresses keep only campaign tags (utm_source and the like);
             other query values, and ids in private addresses such as a conversation, are removed.
-            Admin pages and visits by signed-in admins are not counted.
+            Admin pages, visits by signed-in admins and automated browsers are not counted.
           </p>
           <p>
             <strong className="font-medium text-foreground">Our own statistics.</strong> Our server
-            stores the page, the linking site, the campaign tags, your country, which it looks up
-            from your IP address, and the type of device, browser and operating system, in our
-            database at Supabase. To tell visitors apart, it combines your IP address and your
-            browser&apos;s user agent with a random value that changes every day and is then
-            deleted, and keeps only the resulting code. Your IP address is not stored, and the code
-            cannot be traced back to you, recognised the next day or connected to your account.
-            Admins see only totals, such as visitors per day and the most visited pages. Page views
+            stores the page, the linking site, the campaign tags, your country and city, which it
+            looks up from your IP address, your browser&apos;s language, and the type and major
+            version of your device&apos;s browser and operating system, in our database at Supabase.
+            It also stores how long each page was visible, which your browser reports when you leave
+            or hide the page, and which links to other sites you click, such as a product&apos;s
+            website, without their query. Pages you view within 30 minutes of each other count as
+            one visit. To tell visitors apart, it combines your IP address and your browser&apos;s
+            user agent with a random value that changes every day and is then deleted, and keeps
+            only the resulting code. Your IP address is not stored, and the code cannot be traced
+            back to you, recognised the next day or connected to your account. Admins see only
+            totals, such as visitors per day and the most visited pages. Page views and link clicks
             are deleted after 25 months.
           </p>
           <p>
@@ -281,8 +286,9 @@ export default function Privacy() {
             Feedback is kept until you delete your account.
           </p>
           <p>
-            Page views for the site statistics are kept for 25 months. They are not linked to your
-            account, so deleting it does not remove them, and nothing in them points to you.
+            Page views and link clicks for the site statistics are kept for 25 months. They are not
+            linked to your account, so deleting it does not remove them, and nothing in them points
+            to you.
           </p>
           <p>
             Information that was public may already have been copied by others, such as search
