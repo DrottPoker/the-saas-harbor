@@ -127,7 +127,8 @@ test.beforeAll(async ({ playwright }, info) => {
     ...["/dashboard/settings", "/api/email/send", "/api/analytics", "/admin/analytics/data"],
     ...["/messages", `/messages/${id}`, `/report/saas/${id}`, "/api/revenue/sync"],
     ...["/api/domains/check"],
-    ...["/sitemap.xml", "/robots.txt", "/opengraph-image", "/llms.txt"],
+    ...["/sitemap.xml", "/robots.txt", "/opengraph-image", "/llms.txt", "/indexnow.txt"],
+    ...["/favicon.ico", "/apple-icon", "/logo.png"],
     ...[
       "/categories",
       "/categories/design",
@@ -191,6 +192,17 @@ test("anonymous navigation, private route protection and responsive empty state"
   await expect(
     page.getByRole("main").getByRole("link", { name: "List your SaaS", exact: true }),
   ).toHaveAttribute("href", "/auth?mode=signup");
+  // Search engines learn the site's name, logo and organization from the home page.
+  await expect(page).toHaveTitle(
+    "Free SaaS directory and verified MRR leaderboard | The SaaS Harbor",
+  );
+  const site = JSON.parse(
+    (await page.locator('script[type="application/ld+json"]').first().textContent())!,
+  );
+  expect(site["@graph"].map((item: { "@type": string }) => item["@type"])).toEqual([
+    "Organization",
+    "WebSite",
+  ]);
   await expect(
     page.getByRole("banner").getByRole("link", { name: "List your SaaS" }),
   ).toHaveAttribute("href", "/auth?mode=signup");
@@ -212,6 +224,33 @@ test("anonymous navigation, private route protection and responsive empty state"
   expect(await sitemap.text()).not.toContain("/demo/");
   expect(await sitemap.text()).toContain(`<loc>${origin}/categories</loc>`);
   expect(robots).toContain("Disallow: /md/");
+  // Crawlers that do not run JavaScript get the whole page: its metadata in the head, and its
+  // content in the main element rather than behind a loading placeholder.
+  const html = await (
+    await page.request.get("/", {
+      headers: { "User-Agent": "Mozilla/5.0 (compatible; GPTBot/1.2)" },
+    })
+  ).text();
+  const headEnd = html.indexOf("</head>");
+  for (const tag of ["<title>", '<meta name="description"', '<link rel="canonical"']) {
+    expect(html.indexOf(tag), tag).toBeGreaterThan(-1);
+    expect(html.indexOf(tag), tag).toBeLessThan(headEnd);
+  }
+  expect(html).not.toContain('<div hidden id="S:');
+  expect(html.slice(html.indexOf("<main"), html.indexOf("</main>"))).toContain(
+    "Get your SaaS seen.",
+  );
+  // Icons for browsers, other services and search results, and the key for IndexNow notices.
+  for (const [path, type] of [
+    ["/favicon.ico", "image/x-icon"],
+    ["/apple-icon", "image/png"],
+    ["/logo.png", "image/png"],
+  ]) {
+    const icon = await page.request.get(path);
+    expect(icon.status(), path).toBe(200);
+    expect(icon.headers()["content-type"], path).toBe(type);
+  }
+  expect(await (await page.request.get("/indexnow.txt")).text()).toMatch(/^[0-9a-f]{32}$/);
   // AI assistants get a guide to the site, linked from every page.
   const llms = await page.request.get("/llms.txt");
   expect(llms.headers()["content-type"]).toBe("text/plain; charset=utf-8");
@@ -226,17 +265,25 @@ test("anonymous navigation, private route protection and responsive empty state"
   await expect(
     page.getByRole("heading", { name: "AI & Machine Learning SaaS", level: 1 }),
   ).toBeVisible();
-  await page.goto("/categories/crypto");
+  // A missing page says so with its status too, as nothing is streamed before the page knows.
+  expect((await page.goto("/categories/crypto"))?.status()).toBe(404);
   await expect(page.getByRole("heading", { name: "Page not found" })).toBeVisible();
   await page.goto("/dashboard");
   await expect(page).toHaveURL(/\/auth$/);
   await page.goto(`/discover?category=Design&q=missing-${run}`);
   await expect(page.getByRole("heading", { name: "No matching products" })).toBeVisible();
   // A page past the last one is empty rather than an error, and a repeated search reads its first.
+  // Later pages are pages of their own for search engines, and searches stay out of results.
   await page.goto("/discover?page=999");
   await expect(page.getByRole("heading", { name: "No matching products" })).toBeVisible();
+  await expect(page.locator('link[rel="canonical"]')).toHaveAttribute(
+    "href",
+    `${origin}/discover?page=999`,
+  );
   await page.goto(`/?q=missing-${run}&q=other`);
   await expect(page.getByRole("heading", { name: "No matching products" })).toBeVisible();
+  await expect(page.locator('meta[name="robots"]')).toHaveAttribute("content", "noindex, follow");
+  await expect(page.locator('link[rel="canonical"]')).toHaveAttribute("href", origin);
   await page.setViewportSize({ width: 390, height: 844 });
   for (const path of [
     "/",
@@ -489,6 +536,8 @@ test("registration, email confirmation, profile and SaaS editing, storage, priva
   await page.goto(`/users/tester-${run}`);
   await expect(page.getByRole("heading", { name: `tester-${run}`, exact: true })).toBeVisible();
   await expect(page.getByText(`@tester-${run}`, { exact: true })).toBeVisible();
+  // Without a product, a headline or an About section, the profile stays out of search results.
+  await expect(page.locator('meta[name="robots"]')).toHaveAttribute("content", "noindex");
   await page.goto("/dashboard/profile");
   await page.getByLabel("Name", { exact: true }).fill("Local Test Maker");
   await expect(page.getByLabel("Username")).toHaveValue(`tester-${run}`);
@@ -555,6 +604,10 @@ test("registration, email confirmation, profile and SaaS editing, storage, priva
   ).toBeVisible();
   await page.goto(current);
   await expect(page).toHaveTitle("Local Test Maker | The SaaS Harbor");
+  await expect(page.locator('meta[name="robots"]')).toHaveAttribute(
+    "content",
+    "max-image-preview:large, max-snippet:-1",
+  );
   await expect(page.locator('link[rel="canonical"]')).toHaveAttribute(
     "href",
     new URL(page.url()).href,
@@ -787,6 +840,15 @@ test("registration, email confirmation, profile and SaaS editing, storage, priva
     expect(await (await page.request.get("/llms.txt")).text()).toContain(
       `[${productName}](${origin}${productPath}.md): $104 verified MRR, Design.`,
     );
+  if (ranking!.findIndex((row) => row.id === productId) < 12) {
+    await page.goto("/");
+    const board = (await page.locator('script[type="application/ld+json"]').allTextContents())
+      .map((text) => JSON.parse(text))
+      .find((data) => data["@type"] === "CollectionPage");
+    expect(board.mainEntity.itemListElement).toContainEqual(
+      expect.objectContaining({ name: productName, url: `${origin}${productPath}` }),
+    );
+  }
   const { data: design } = await anon
     .from("leaderboard")
     .select("id")
@@ -951,6 +1013,10 @@ test("registration, email confirmation, profile and SaaS editing, storage, priva
   await page.getByLabel("Product name", { exact: true }).fill(`Renamed ${run}`);
   await page.getByRole("button", { name: "Save changes" }).click();
   await expect(page).toHaveURL(/saved=/);
+  // The page is not streamed, so the redirect is a real one that search engines follow.
+  const renamed = await page.request.get(`/saas/second-${run}`, { maxRedirects: 0 });
+  expect(renamed.status()).toBe(308);
+  expect(renamed.headers().location).toMatch(new RegExp(`/saas/renamed-${run}$`));
   await page.goto(`/saas/second-${run}`);
   await expect(page).toHaveURL(`/saas/renamed-${run}`);
   // Verified revenue that stays private earns the followed link too.

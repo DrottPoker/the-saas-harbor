@@ -16,13 +16,14 @@ const mono = Geist_Mono({ subsets: ["latin"], variable: "--font-geist-mono" });
 export const metadata: Metadata = {
   // Makes image and canonical addresses absolute.
   metadataBase: new URL(siteUrl()),
-  title: {
-    default: `${SITE_NAME} | Independent SaaS, ranked by revenue`,
-    template: `%s | ${SITE_NAME}`,
-  },
+  // Every public page sets its own title; this one is for the rest, such as an unknown address.
+  title: { default: SITE_NAME, template: `%s | ${SITE_NAME}` },
   description: SITE_DESCRIPTION,
+  // Search results and AI answers may show large sharing images and quote as much as they need.
+  // A page that sets its own robots, such as a noindex, replaces this.
+  robots: { "max-image-preview": "large", "max-snippet": -1 },
   openGraph: {
-    title: `${SITE_NAME} | Independent SaaS, ranked by revenue`,
+    title: SITE_NAME,
     description: SITE_DESCRIPTION,
     siteName: SITE_NAME,
     type: "website",

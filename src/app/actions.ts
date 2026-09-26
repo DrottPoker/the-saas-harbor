@@ -19,6 +19,7 @@ import {
   type ActionState,
 } from "@/lib/domain";
 import { addressAcceptsMail } from "@/lib/email-domain";
+import { announceProduct, announceRemovedProduct } from "@/lib/indexnow";
 import { termsUpdated } from "@/lib/legal";
 import { requireUser, serverClient } from "@/lib/supabase/server";
 import { uploadImage } from "@/lib/upload";
@@ -242,7 +243,7 @@ export async function deleteSaasAction(
   if (!z.uuid().safeParse(saasId).success) return { error: "You can only delete your own SaaS." };
   const { data: saas, error } = await client
     .from("saas")
-    .select("name, logo_path")
+    .select("name, logo_path, slug")
     .eq("id", saasId)
     .eq("owner_id", user.id)
     .maybeSingle();
@@ -273,6 +274,7 @@ export async function deleteSaasAction(
   } catch (error) {
     return { error: message(error) };
   }
+  announceRemovedProduct(saas.slug);
   revalidatePath("/", "layout");
   redirect("/dashboard?deleted=1", RedirectType.replace);
 }
@@ -375,6 +377,7 @@ export async function saveSaas(_state: ActionState, form: FormData): Promise<Act
   let uploaded: string | null = null;
   let savedId: string;
   let existed: boolean;
+  let previousSlug: string | null;
   try {
     const fields = saasSchema.parse({
       ...Object.fromEntries(
@@ -390,13 +393,14 @@ export async function saveSaas(_state: ActionState, form: FormData): Promise<Act
     });
     const { data: existing, error: readError } = await client
       .from("saas")
-      .select("owner_id, logo_path")
+      .select("owner_id, logo_path, slug")
       .eq("id", fields.id)
       .maybeSingle();
     if (readError) return { error: "The SaaS profile could not be loaded." };
     if (existing && existing.owner_id !== user.id)
       return { error: "You can only edit your own SaaS." };
     existed = !!existing;
+    previousSlug = existing?.slug ?? null;
     uploaded = await uploadImage(client, user.id, form.get("image"));
     const { data, error } = await client.rpc("save_saas", {
       p_id: fields.id,
@@ -424,6 +428,8 @@ export async function saveSaas(_state: ActionState, form: FormData): Promise<Act
     if (uploaded) await client.storage.from("profile-images").remove([uploaded]);
     return { error: message(error) };
   }
+  // Search engines that take IndexNow notices hear about the page at once.
+  announceProduct(savedId, previousSlug);
   revalidatePath("/", "layout");
   // New products continue to revenue verification; edits return to the dashboard.
   redirect(

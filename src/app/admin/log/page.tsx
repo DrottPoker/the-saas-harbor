@@ -2,8 +2,8 @@ import { LogList } from "@/components/admin/rows";
 import { ResultsFooter } from "@/components/listings";
 import { EmptyState, PageHeader } from "@/components/shell";
 import { ADMIN_PAGE_SIZE, profileNames, requireAdmin } from "@/lib/admin";
-import { PAST_LAST_PAGE, safePage } from "@/lib/data";
-import { firstValues, type SearchParams } from "@/lib/params";
+import { PAST_LAST_PAGE } from "@/lib/data";
+import { firstValues, safePage, type SearchParams } from "@/lib/params";
 
 export const metadata = { title: "Log" };
 

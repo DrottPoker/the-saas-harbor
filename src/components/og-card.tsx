@@ -125,6 +125,28 @@ export function OgCard({
   );
 }
 
+/**
+ * The logo mark alone as a square PNG: for the favicon and the organization's logo on a clear
+ * background, and for the Apple touch icon on the light page color, as iOS fills clear pixels black.
+ */
+export function markImage(size: number, { background = false } = {}) {
+  return new ImageResponse(
+    <div
+      style={{
+        width: "100%",
+        height: "100%",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        background: background ? colors.background : "transparent",
+      }}
+    >
+      <OgMark size={background ? Math.round(size * 0.8) : size} />
+    </div>,
+    { width: size, height: size },
+  );
+}
+
 // The site's sharing image, also used when a product or maker image has nothing to show. It
 // invites founders of small SaaS: listing is free (see the terms), and it holds no live figures.
 export function siteImage() {

@@ -10,21 +10,14 @@ import { ProfileDetails, RoleList, Skills } from "@/components/profile/profile-s
 import { ReportLink } from "@/components/report-link";
 import { EmptyState, Notice, Shell } from "@/components/shell";
 import { Button } from "@/components/ui/button";
-import {
-  findProfile,
-  listings,
-  makerTotals,
-  PAGE_SIZE,
-  publicProfileExperience,
-  safePage,
-} from "@/lib/data";
+import { findProfile, listings, makerTotals, PAGE_SIZE, publicProfileExperience } from "@/lib/data";
 import { formatUsd } from "@/lib/domain";
 import { excerpt } from "@/lib/moderation";
 import { pageMetadata, SITE_NAME } from "@/lib/seo";
 import { makerJsonLd } from "@/lib/structured-data";
 import { JsonLd } from "@/components/json-ld";
 import { currentUser } from "@/lib/supabase/server";
-import { firstValues } from "@/lib/params";
+import { firstValues, safePage } from "@/lib/params";
 
 type Props = { params: Promise<{ slug: string }>; searchParams: Promise<{ page?: string }> };
 
@@ -32,16 +25,22 @@ export async function generateMetadata({ params }: Pick<Props, "params">): Promi
   const found = await findProfile((await params).slug);
   if (!found || "redirect" in found) return {};
   const profile = found.item;
-  return pageMetadata({
-    title: profile.name,
-    description:
-      profile.headline ||
-      (profile.bio && excerpt(profile.bio, 160)) ||
-      `${profile.name} on ${SITE_NAME}`,
-    path: `/users/${profile.slug}`,
-    type: "profile",
-    markdown: true,
-  });
+  const totals = await makerTotals(profile.id);
+  return {
+    ...pageMetadata({
+      title: profile.name,
+      description:
+        profile.headline ||
+        (profile.bio && excerpt(profile.bio, 160)) ||
+        `${profile.name} on ${SITE_NAME}`,
+      path: `/users/${profile.slug}`,
+      type: "profile",
+      markdown: true,
+    }),
+    // A profile without products, a headline or an About section has nothing for search engines
+    // yet, and the sitemap leaves out profiles without products.
+    ...(!totals.products && !profile.headline && !profile.bio && { robots: { index: false } }),
+  };
 }
 
 const across = (count: number) => `Across ${count} ${count === 1 ? "product" : "products"}`;

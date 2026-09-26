@@ -30,7 +30,8 @@ function applyTheme(theme: Theme) {
 export function ThemeMenu({ className }: { className?: string }) {
   const [theme, setTheme] = useState<Theme>("system");
 
-  // React's dev remount clears attributes set by the inline script; re-apply before paint.
+  // React clears attributes set by the inline script when it draws the page itself: a dev remount,
+  // or a missing page, whose HTML is Next.js's bare error document. Re-apply before paint.
   useLayoutEffect(() => {
     const saved = savedTheme();
     if (saved !== "system") document.documentElement.setAttribute("data-theme", saved);

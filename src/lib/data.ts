@@ -279,6 +279,3 @@ export const makerTotals = cache(async (id: string) => {
     customers: sum(data.map((row) => row.customers)),
   };
 });
-export function safePage(value: string | undefined) {
-  return Math.min(10000, Math.max(1, Number.parseInt(value || "1", 10) || 1));
-}

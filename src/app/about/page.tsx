@@ -2,8 +2,14 @@ import Link from "next/link";
 import { demoActive } from "@/lib/data";
 import { PageHeader, Shell } from "@/components/shell";
 import { Button } from "@/components/ui/button";
+import { pageMetadata } from "@/lib/seo";
 
-export const metadata = { title: "How it works", alternates: { canonical: "/about" } };
+export const metadata = pageMetadata({
+  title: "How it works",
+  description:
+    "How The SaaS Harbor verifies MRR with read-only keys to Stripe, Paddle, Polar and Dodo Payments, how the leaderboard is ranked, and what is public.",
+  path: "/about",
+});
 
 const sections = [
   {

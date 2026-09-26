@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { safePage } from "./params";
 
 export const SITE_NAME = "The SaaS Harbor";
 export const SITE_DESCRIPTION =
@@ -26,7 +27,7 @@ export function pageMetadata({
   type?: "website" | "profile";
   /** The page has a Markdown version for AI assistants at the same address plus `.md`. */
   markdown?: boolean;
-}): Metadata {
+}): Metadata & { title: string } {
   return {
     title,
     description,
@@ -36,6 +37,28 @@ export function pageMetadata({
     },
     openGraph: { title, description, url: path, siteName: SITE_NAME, type, locale: "en_US" },
     twitter: { card: "summary_large_image", title, description },
+  };
+}
+
+/**
+ * Metadata for a list that a search, filters and pages vary. Search results are not indexed, a
+ * filtered list points search engines at the plain one, and each later page is a page of its own,
+ * as Google advises for lists split into pages. `laterTitle` names the later pages when the first
+ * page's title describes the whole site.
+ */
+export function listMetadata(
+  list: { title: string; description: string; path: string; laterTitle?: string },
+  params: Record<string, string | undefined>,
+): Metadata & { title: string } {
+  const search = !!params.q?.trim();
+  const page = search || params.category || params.tech ? 1 : safePage(params.page);
+  return {
+    ...pageMetadata({
+      title: page > 1 ? `${list.laterTitle ?? list.title}, page ${page}` : list.title,
+      description: list.description,
+      path: page > 1 ? `${list.path}?page=${page}` : list.path,
+    }),
+    ...(search && { robots: { index: false, follow: true } }),
   };
 }
 

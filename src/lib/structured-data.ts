@@ -15,6 +15,15 @@ const applicationCategories: Record<string, string> = {
   Finance: "FinanceApplication",
 };
 
+// Ids that tie every page to the site and the organization behind it, which the home page
+// describes.
+const websiteId = () => `${siteUrl()}/#website`;
+const organizationId = () => `${siteUrl()}/#organization`;
+const isPartOf = () => ({ "@id": websiteId() });
+
+/** The organization's logo, served by src/app/logo.png. */
+export const LOGO_SIZE = 512;
+
 function breadcrumbs(items: { name: string; path: string }[]): JsonLd {
   return {
     "@type": "BreadcrumbList",
@@ -27,13 +36,48 @@ function breadcrumbs(items: { name: string; path: string }[]): JsonLd {
   };
 }
 
-export function websiteJsonLd(): JsonLd {
+/** The site and the organization that runs it, for the home page. */
+export function siteJsonLd(): JsonLd {
+  const url = `${siteUrl()}/`;
   return {
     "@context": "https://schema.org",
-    "@type": "WebSite",
-    name: SITE_NAME,
+    "@graph": [
+      {
+        "@type": "Organization",
+        "@id": organizationId(),
+        name: SITE_NAME,
+        url,
+        logo: {
+          "@type": "ImageObject",
+          url: `${siteUrl()}/logo.png`,
+          width: LOGO_SIZE,
+          height: LOGO_SIZE,
+        },
+        description: SITE_DESCRIPTION,
+      },
+      {
+        "@type": "WebSite",
+        "@id": websiteId(),
+        name: SITE_NAME,
+        alternateName: "SaaS Harbor",
+        url,
+        description: SITE_DESCRIPTION,
+        inLanguage: "en",
+        publisher: { "@id": organizationId() },
+      },
+    ],
+  };
+}
+
+/** The first page of the leaderboard on the home page, in rank order. */
+export function leaderboardJsonLd(ranked: Listing[]): JsonLd {
+  return {
+    "@context": "https://schema.org",
+    "@type": "CollectionPage",
     url: `${siteUrl()}/`,
-    description: SITE_DESCRIPTION,
+    name: "SaaS ranked by verified MRR",
+    isPartOf: isPartOf(),
+    mainEntity: rankedList(ranked),
   };
 }
 
@@ -47,6 +91,7 @@ export function productJsonLd(item: Listing): JsonLd {
     url: `${siteUrl()}${path}`,
     name: item.name,
     description: item.tagline,
+    isPartOf: isPartOf(),
     breadcrumb: breadcrumbs([
       { name: "Browse", path: "/discover" },
       { name: category, path: `/categories/${categorySlug(category)}` },
@@ -84,6 +129,7 @@ export function makerJsonLd(profile: Profile): JsonLd {
     "@type": "ProfilePage",
     "@id": url,
     url,
+    isPartOf: isPartOf(),
     dateModified: profile.updated_at,
     mainEntity: {
       "@type": "Person",
@@ -103,6 +149,7 @@ export function categoriesJsonLd(categories: string[]): JsonLd {
     "@type": "CollectionPage",
     url: `${siteUrl()}/categories`,
     name: "Categories",
+    isPartOf: isPartOf(),
     mainEntity: {
       "@type": "ItemList",
       itemListElement: categories.map((category, index) => ({
@@ -128,6 +175,7 @@ export function techsJsonLd(items: Tech[]): JsonLd {
     "@type": "CollectionPage",
     url: `${siteUrl()}/tech`,
     name: "Tech stacks",
+    isPartOf: isPartOf(),
     mainEntity: {
       "@type": "ItemList",
       itemListElement: items.map((tech, index) => ({
@@ -166,20 +214,26 @@ function rankedCollection(
     "@type": "CollectionPage",
     url: `${siteUrl()}${path}`,
     name,
+    isPartOf: isPartOf(),
     breadcrumb: breadcrumbs([
       { name: parentName, path: parentPath },
       { name: crumb, path },
     ]),
-    mainEntity: {
-      "@type": "ItemList",
-      itemListOrder: "https://schema.org/ItemListOrderDescending",
-      itemListElement: ranked.map((item, index) => ({
-        "@type": "ListItem",
-        position: index + 1,
-        name: item.name,
-        url: `${siteUrl()}/saas/${item.slug}`,
-      })),
-    },
+    mainEntity: rankedList(ranked),
+  };
+}
+
+/** Ranked products in leaderboard order, highest MRR first. */
+function rankedList(ranked: Listing[]): JsonLd {
+  return {
+    "@type": "ItemList",
+    itemListOrder: "https://schema.org/ItemListOrderDescending",
+    itemListElement: ranked.map((item, index) => ({
+      "@type": "ListItem",
+      position: index + 1,
+      name: item.name,
+      url: `${siteUrl()}/saas/${item.slug}`,
+    })),
   };
 }
 

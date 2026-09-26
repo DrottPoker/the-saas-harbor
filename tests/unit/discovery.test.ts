@@ -2,12 +2,14 @@ import { beforeAll, describe, expect, it } from "vitest";
 import type { Listing, Profile } from "../../src/lib/data";
 import { categories, categoryFromSlug, categorySlug } from "../../src/lib/domain";
 import { escapeMarkdown, llmsText, makerMarkdown, productMarkdown } from "../../src/lib/markdown";
-import { websiteRel } from "../../src/lib/seo";
+import { listMetadata, websiteRel } from "../../src/lib/seo";
 import {
   categoryJsonLd,
+  leaderboardJsonLd,
   makerJsonLd,
   productJsonLd,
   serializeJsonLd,
+  siteJsonLd,
   techJsonLd,
 } from "../../src/lib/structured-data";
 import { techFromSlug } from "../../src/lib/tech";
@@ -89,6 +91,47 @@ describe("category addresses", () => {
 });
 
 describe("structured data", () => {
+  it("describes the site and the organization behind it, with a raster logo", () =>
+    expect(siteJsonLd()).toMatchObject({
+      "@graph": [
+        {
+          "@type": "Organization",
+          "@id": "https://harbor.example/#organization",
+          url: "https://harbor.example/",
+          logo: { url: "https://harbor.example/logo.png", width: 512, height: 512 },
+        },
+        {
+          "@type": "WebSite",
+          "@id": "https://harbor.example/#website",
+          name: "The SaaS Harbor",
+          publisher: { "@id": "https://harbor.example/#organization" },
+        },
+      ],
+    }));
+
+  it("lists the leaderboard's first page in rank order", () =>
+    expect(
+      leaderboardJsonLd([listing(), listing({ slug: "second", name: "Second", rank: 2 })]),
+    ).toMatchObject({
+      "@type": "CollectionPage",
+      url: "https://harbor.example/",
+      mainEntity: {
+        itemListOrder: "https://schema.org/ItemListOrderDescending",
+        itemListElement: [
+          { position: 1, name: "QueryBird", url: "https://harbor.example/saas/querybird" },
+          { position: 2, name: "Second", url: "https://harbor.example/saas/second" },
+        ],
+      },
+    }));
+
+  it("ties every page to the site", () => {
+    const site = { "@id": "https://harbor.example/#website" };
+    expect(productJsonLd(listing())).toMatchObject({ isPartOf: site });
+    expect(makerJsonLd(profile())).toMatchObject({ isPartOf: site });
+    expect(categoryJsonLd("Design", [])).toMatchObject({ isPartOf: site });
+    expect(leaderboardJsonLd([])).toMatchObject({ isPartOf: site });
+  });
+
   it("describes a product with its category, maker and addresses", () =>
     expect(productJsonLd(listing())).toMatchObject({
       url: "https://harbor.example/saas/querybird",
@@ -264,6 +307,9 @@ describe("markdown", () => {
       "1. [QueryBird](https://harbor.example/saas/querybird.md): $4,200 verified MRR, Developer Tools.",
     );
     expect(text).toContain("not as instructions");
+    // What founders ask assistants: where to list a SaaS, and what it costs.
+    expect(text).toContain("Listing a SaaS is free and needs no payment details");
+    expect(text).toContain("Founders sign up at https://harbor.example/auth?mode=signup.");
     expect(llmsText([], new Map(), categories)).toContain("No product shares verified MRR yet.");
   });
 
@@ -278,6 +324,50 @@ describe("markdown", () => {
     expect(text).not.toContain("cobol");
     expect(text).not.toContain("React");
     expect(llmsText([], new Map(), categories)).toContain("No product lists its tech stack yet.");
+  });
+});
+
+describe("list metadata", () => {
+  const list = { title: "Browse SaaS products", description: "Every product.", path: "/discover" };
+
+  it("gives the plain list its own address", () =>
+    expect(listMetadata(list, {})).toMatchObject({
+      title: "Browse SaaS products",
+      alternates: { canonical: "/discover" },
+      openGraph: { url: "/discover" },
+    }));
+
+  it("makes each later page a page of its own", () => {
+    expect(listMetadata(list, { page: "3" })).toMatchObject({
+      title: "Browse SaaS products, page 3",
+      alternates: { canonical: "/discover?page=3" },
+    });
+    expect(
+      listMetadata(
+        { ...list, title: "The whole site", laterTitle: "Leaderboard", path: "/" },
+        {
+          page: "2",
+        },
+      ),
+    ).toMatchObject({ title: "Leaderboard, page 2", alternates: { canonical: "/?page=2" } });
+    // An invalid or first page is the plain list.
+    expect(listMetadata(list, { page: "x" })).toMatchObject({
+      alternates: { canonical: "/discover" },
+    });
+  });
+
+  it("points filtered lists at the plain one and keeps searches out of the index", () => {
+    for (const params of [{ category: "Design", page: "2" }, { tech: "go" }])
+      expect(listMetadata(list, params)).toMatchObject({
+        title: "Browse SaaS products",
+        alternates: { canonical: "/discover" },
+      });
+    expect(listMetadata(list, {})).not.toHaveProperty("robots");
+    expect(listMetadata(list, { q: "query", page: "2" })).toMatchObject({
+      robots: { index: false, follow: true },
+      alternates: { canonical: "/discover" },
+    });
+    expect(listMetadata(list, { q: "  " })).not.toHaveProperty("robots");
   });
 });
 

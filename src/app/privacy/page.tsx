@@ -1,4 +1,3 @@
-import type { Metadata } from "next";
 import Link from "next/link";
 import {
   Contact,
@@ -8,21 +7,18 @@ import {
 } from "@/components/legal";
 import { Notice, PageHeader, Shell } from "@/components/shell";
 import { legalDate, operator, privacyUpdated } from "@/lib/legal";
+import { pageMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = {
-  title: "Privacy policy",
-  description: "What The SaaS Harbor stores about you, why, who can see it, and how to delete it.",
-  alternates: { canonical: "/privacy" },
-};
+const description =
+  "What The SaaS Harbor stores about you, why, who can see it, and how to delete it.";
+
+export const metadata = pageMetadata({ title: "Privacy policy", description, path: "/privacy" });
 
 export default function Privacy() {
   const contact = <Contact />;
   return (
     <Shell size="narrow">
-      <PageHeader
-        title="Privacy policy"
-        description="What The SaaS Harbor stores about you, why, who can see it, and how to delete it."
-      />
+      <PageHeader title="Privacy policy" description={description} />
       <div className="grid gap-10 border-t pt-10">
         <div className="grid gap-4">
           <p className="text-sm text-muted-foreground">Last updated {legalDate(privacyUpdated)}.</p>

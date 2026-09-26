@@ -88,7 +88,9 @@ export async function proxy(request: NextRequest) {
   await client.auth.getClaims();
   return response;
 }
-// Embedded badges carry their own headers and need no session.
+// The icons, the logo and embedded badges carry their own headers and need no session.
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|icon.svg|saas/[^/]+/badge\\.svg$).*)"],
+  matcher: [
+    "/((?!_next/static|_next/image|favicon\\.ico$|icon\\.svg$|apple-icon$|logo\\.png$|saas/[^/]+/badge\\.svg$).*)",
+  ],
 };

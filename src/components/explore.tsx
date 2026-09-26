@@ -1,10 +1,13 @@
 import Link from "next/link";
 import { Search } from "lucide-react";
-import { demoRows, listings, safePage, type Sort } from "@/lib/data";
+import { demoRows, listings, type Sort } from "@/lib/data";
 import { categories } from "@/lib/domain";
+import { safePage } from "@/lib/params";
+import { leaderboardJsonLd } from "@/lib/structured-data";
 import { techFromSlug } from "@/lib/tech";
 import { cn } from "@/lib/utils";
 import { FounderHeader } from "./founder-header";
+import { JsonLd } from "./json-ld";
 import { Leaderboard, ListingGrid, ResultsFooter } from "./listings";
 import { EmptyState, Notice, PageHeader, Shell } from "./shell";
 import { Button } from "./ui/button";
@@ -98,6 +101,8 @@ export async function Explore({
 
   return (
     <Shell>
+      {/* Search engines and AI assistants read the plain leaderboard's first page as a list. */}
+      {ranked && !filtered && !!rows.length && <JsonLd data={leaderboardJsonLd(rows)} />}
       {ranked ? (
         <>
           <FounderHeader />

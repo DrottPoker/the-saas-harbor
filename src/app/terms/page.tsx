@@ -1,24 +1,19 @@
-import type { Metadata } from "next";
 import Link from "next/link";
 import { Contact, LegalList, LegalSection, legalLink } from "@/components/legal";
 import { Notice, PageHeader, Shell } from "@/components/shell";
 import { legalDate, operator, termsUpdated } from "@/lib/legal";
 import { DAILY_PRODUCT_LIMIT, PRODUCT_LIMIT } from "@/lib/moderation";
+import { pageMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = {
-  title: "Terms of Service",
-  description:
-    "The rules for using The SaaS Harbor, how moderation works, and the limits of our responsibility.",
-  alternates: { canonical: "/terms" },
-};
+const description =
+  "The rules for using The SaaS Harbor, how moderation works, and the limits of our responsibility.";
+
+export const metadata = pageMetadata({ title: "Terms of Service", description, path: "/terms" });
 
 export default function Terms() {
   return (
     <Shell size="narrow">
-      <PageHeader
-        title="Terms of Service"
-        description="The rules for using The SaaS Harbor, how moderation works, and the limits of our responsibility."
-      />
+      <PageHeader title="Terms of Service" description={description} />
       <div className="grid gap-10 border-t pt-10">
         <div className="grid gap-4">
           <p className="text-sm text-muted-foreground">Last updated {legalDate(termsUpdated)}.</p>
