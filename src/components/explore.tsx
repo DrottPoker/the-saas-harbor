@@ -3,7 +3,7 @@ import { Search } from "lucide-react";
 import { demoRows, listings, safePage, type Sort } from "@/lib/data";
 import { categories } from "@/lib/domain";
 import { cn } from "@/lib/utils";
-import { FounderHero } from "./founder-hero";
+import { FounderHeader } from "./founder-header";
 import { Leaderboard, ListingGrid, ResultsFooter } from "./listings";
 import { EmptyState, Notice, PageHeader, Shell } from "./shell";
 import { Button } from "./ui/button";
@@ -18,10 +18,11 @@ export const categoryChipRow =
   "-mx-4 mb-4 flex gap-1.5 overflow-x-auto px-4 pb-1 sm:-mx-6 sm:px-6 lg:mx-0 lg:flex-wrap lg:px-0 lg:pb-0";
 
 const intro: Record<Mode, { title: string; description: string; path: string; sort: Sort }> = {
+  // The leaderboard is the home page: FounderHeader opens it, and this heads the list itself.
   ranked: {
-    title: "Independent SaaS, ranked by revenue",
+    title: "Leaderboard",
     description:
-      "Monthly recurring revenue verified through each product's payment provider and shared by its founder.",
+      "Ranked by monthly recurring revenue, verified through each product's payment provider.",
     path: "/",
     sort: "rank",
   },
@@ -57,8 +58,6 @@ export async function Explore({
   const demo = error ? [] : await demoRows({ sort, category, search, page, count });
   const meta = mode === "newest" ? "joined" : "maker";
   const filtered = !!category || !!search || page > 1;
-  // The plain home page opens with what listing gives a founder; filtered lists get to the point.
-  const hero = ranked && !filtered;
   function url(nextCategory: string, nextPage = 1) {
     const query = new URLSearchParams();
     if (nextCategory) query.set("category", nextCategory);
@@ -87,13 +86,14 @@ export async function Explore({
 
   return (
     <Shell>
-      {hero ? (
+      {ranked ? (
         <>
-          <FounderHero ranked={error ? null : count} />
-          <div className="flex flex-col gap-5 border-t pt-10 pb-6 sm:flex-row sm:items-end sm:justify-between">
-            <div className="max-w-2xl">
-              <h2 className="text-2xl font-semibold tracking-tight">Leaderboard</h2>
-              <p className="mt-1.5 text-muted-foreground">{description}</p>
+          {/* Only the whole leaderboard's count says which place is open. */}
+          <FounderHeader ranked={filtered || error ? null : count} />
+          <div className="flex flex-col gap-3 border-t pt-6 pb-5 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <h2 className="text-xl font-semibold tracking-tight">{title}</h2>
+              <p className="mt-1 text-sm text-muted-foreground">{description}</p>
             </div>
             <div className="flex shrink-0 max-sm:w-full">{searchForm}</div>
           </div>

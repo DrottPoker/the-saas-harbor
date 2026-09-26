@@ -171,17 +171,15 @@ test("anonymous navigation, private route protection and responsive empty state"
   const second = nonceOf((await page.reload())?.headers()["content-security-policy"]);
   expect(second).toBeTruthy();
   expect(second).not.toBe(first);
-  // The home page opens with what a founder gets, and every way to list a product starts with
+  // The home page tells founders what they get, and every way to list a product starts with
   // creating an account.
   await expect(
-    page.getByRole("heading", { name: "Free exposure for your SaaS", level: 1 }),
+    page.getByRole("heading", { name: /^Get your SaaS seen\.\s*List it for free\.$/, level: 1 }),
   ).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Listed in three steps" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Leaderboard", level: 2 })).toBeVisible();
-  await expect(page.getByRole("link", { name: "List your SaaS for free" })).toHaveAttribute(
-    "href",
-    "/auth?mode=signup",
-  );
+  await expect(
+    page.getByRole("main").getByRole("link", { name: "List your SaaS", exact: true }),
+  ).toHaveAttribute("href", "/auth?mode=signup");
   await expect(
     page.getByRole("banner").getByRole("link", { name: "List your SaaS" }),
   ).toHaveAttribute("href", "/auth?mode=signup");
@@ -192,12 +190,6 @@ test("anonymous navigation, private route protection and responsive empty state"
     "href",
     "/auth",
   );
-  // A filtered leaderboard gets to the point.
-  await page.goto("/?category=Design");
-  await expect(
-    page.getByRole("heading", { name: "Independent SaaS, ranked by revenue", level: 1 }),
-  ).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Free exposure for your SaaS" })).toHaveCount(0);
   // Crawlers get the sitemap and stay out of private areas.
   const origin = test.info().project.use.baseURL!;
   const robots = await (await page.request.get("/robots.txt")).text();
@@ -292,17 +284,16 @@ test("demo products fill the lists without a rank, until real products take thei
     .select("id", { count: "exact", head: true });
   if (error || count == null) throw new Error("Unable to count ranked products.");
   await page.goto("/");
-  // The home page tells founders how early they are.
-  await expect(
-    page.getByText(
-      count === 0
-        ? "The leaderboard just opened. Rank #1 is still free."
-        : count < 12
-          ? `The leaderboard just opened, with ${count} verified ${count === 1 ? "product" : "products"} so far. Get in early.`
-          : `Join the ${count} products ranked by verified revenue.`,
-      { exact: true },
-    ),
-  ).toBeVisible();
+  // While few products are ranked, the home page shows founders the place that is still open.
+  const spot = page.getByText(/^(is still free|is next)$/);
+  if (count < 12) {
+    await expect(page.getByText(`#${count + 1}`, { exact: true })).toBeVisible();
+    await expect(spot).toHaveText(count === 0 ? "is still free" : "is next");
+    if (count > 0)
+      await expect(
+        page.getByText(`Only ${count} ${count === 1 ? "product is" : "products are"} ranked`),
+      ).toBeVisible();
+  } else await expect(spot).toHaveCount(0);
   const heading = page.getByRole("heading", { name: "Demo products" });
   if (count >= 12) {
     await expect(heading).toHaveCount(0);
@@ -1964,10 +1955,18 @@ test("visits are counted without cookies, and admins see them under Analytics", 
   // Tabs switch the breakdown within a card.
   await card("Pages").getByRole("tab", { name: "Entry pages" }).click();
   await expect(card("Pages").getByRole("columnheader", { name: "Entry page" })).toBeVisible();
+  // Local statistics keep every earlier run's sources and campaigns, so this run's can be past
+  // the top 10 rows; the card then shows them all.
+  const listed = (name: string, text: string) =>
+    expect(async () => {
+      const more = card(name).getByRole("button", { name: /^Show (all|the top 100)$/ });
+      if (await more.count()) await more.click();
+      await expect(card(name).getByText(text)).toBeVisible({ timeout: 2000 });
+    }).toPass();
   await card("Sources").getByRole("tab", { name: "Sources" }).click();
-  await expect(card("Sources").getByText(`e2e-${run}`)).toBeVisible();
+  await listed("Sources", `e2e-${run}`);
   await card("Sources").getByRole("tab", { name: "Campaigns" }).click();
-  await expect(card("Sources").getByText(`launch-${run}`)).toBeVisible();
+  await listed("Sources", `launch-${run}`);
   await expect(
     card("Links to other sites").getByRole("link", { name: new RegExp(`example-${run}`) }),
   ).toHaveAttribute("href", `https://example-${run}.test/pricing`);
