@@ -1960,6 +1960,8 @@ test("visits are counted without cookies, and admins see them under Analytics", 
   await listed("Sources", `e2e-${run}`);
   await card("Sources").getByRole("tab", { name: "Campaigns" }).click();
   await listed("Sources", `launch-${run}`);
+  // Earlier runs' links fill the top 10 as well.
+  await listed("Links to other sites", `example-${run}.test`);
   await expect(
     card("Links to other sites").getByRole("link", { name: new RegExp(`example-${run}`) }),
   ).toHaveAttribute("href", `https://example-${run}.test/pricing`);
