@@ -258,6 +258,10 @@ export default function Privacy() {
             only currency codes.
           </p>
           <p>
+            When you follow a link from a product page to the product&apos;s website, your browser
+            tells that site that you came from The SaaS Harbor, but not from which page.
+          </p>
+          <p>
             We may disclose personal data when the law requires it, to protect the rights and safety
             of the site, its users or us, or to a buyer or successor if the service is sold or
             merged, who then takes over this policy (a legal obligation, Article 6(1)(c), or our

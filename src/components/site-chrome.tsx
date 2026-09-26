@@ -37,14 +37,18 @@ export function SiteHeader({ user, unread }: { user: User | null; unread: number
               </form>
             </>
           ) : (
-            <Link className={quietLink} href="/auth">
+            <Link className={`${quietLink} whitespace-nowrap`} href="/auth">
               Sign in
             </Link>
           )}
+          {/* Visitors create an account first, so they go straight to sign-up. */}
           <Button asChild size="sm" className={user ? "max-sm:w-8 max-sm:px-0" : undefined}>
-            <Link href="/dashboard/saas/new">
+            <Link href={user ? "/dashboard/saas/new" : "/auth?mode=signup"}>
               <Plus className={user ? undefined : "max-sm:hidden"} />
-              <span className={user ? "max-sm:sr-only" : undefined}>Submit SaaS</span>
+              <span className={user ? "max-sm:sr-only" : undefined}>
+                {/* The shorter label keeps a visitor's header on one line on the narrowest phones. */}
+                List<span className={user ? undefined : "max-[359px]:hidden"}> your</span> SaaS
+              </span>
             </Link>
           </Button>
         </div>

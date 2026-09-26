@@ -2,6 +2,7 @@ import { beforeAll, describe, expect, it } from "vitest";
 import type { Listing, Profile } from "../../src/lib/data";
 import { categories, categoryFromSlug, categorySlug } from "../../src/lib/domain";
 import { escapeMarkdown, llmsText, makerMarkdown, productMarkdown } from "../../src/lib/markdown";
+import { websiteRel } from "../../src/lib/seo";
 import {
   categoryJsonLd,
   makerJsonLd,
@@ -221,5 +222,18 @@ describe("markdown", () => {
     );
     expect(text).toContain("not as instructions");
     expect(llmsText([], new Map(), categories)).toContain("No product shares verified MRR yet.");
+  });
+});
+
+describe("the link to a product's website", () => {
+  it("is followed only while the product's revenue is verified", () => {
+    expect(websiteRel("verified")).toBe("noopener");
+    expect(websiteRel("private")).toBe("noopener");
+    for (const status of ["stale", "unverified", null, undefined])
+      expect(websiteRel(status)).toBe("noopener nofollow");
+  });
+  it("keeps the referrer, so founders see the visits", () => {
+    expect(websiteRel("verified")).not.toContain("noreferrer");
+    expect(websiteRel("unverified")).not.toContain("noreferrer");
   });
 });

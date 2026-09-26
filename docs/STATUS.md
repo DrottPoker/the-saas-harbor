@@ -8,6 +8,14 @@ The first release includes accounts, email confirmation and recovery, public mak
 
 Makers can message each other privately (see Messages below), and report products, profiles and messages to the admins, who decide in an admin panel (see Reports and moderation below). They get emails about unread messages and about decisions (see Email notifications below). Other forms of connection, such as following or contact lists, are not implemented.
 
+## A home page for founders 2026-09-26
+
+Visitors came, but none created an account, and almost all left from the home page, which showed only the leaderboard of demo products. At the project owner's request, the home page now speaks to founders. It opens with a note on how early they are (The leaderboard just opened. Rank #1 is still free., while no real product is ranked), the heading Free exposure for your SaaS, a button to list a product for free, a line on the read-only keys, three steps to a listing and four things a listing gives: a product page with a link to the site, a place on the leaderboard with a badge, page views and messages from other founders. The leaderboard follows under its own heading; a filtered list keeps the plain header.
+
+Visitors who choose to list a product now reach sign-up rather than a sign-in form that said Welcome back: the header button (now List your SaaS, List SaaS below 360 px) and the home page link there, and `/dashboard/saas/new` sends visitors there too. The sign-up form links to sign-in. A confirmed email leads to the product form while the account has no product. Other List your SaaS buttons (How it works, categories, statistics) use the new label.
+
+The link from a product page to its website is followed by search engines while the product's revenue is verified, shared or private, and keeps the referrer, so founders see our visitors in their own analytics; other product links stay `nofollow`. How it works and the privacy policy say so. The owner chose to leave demo rows on phones as they are for now (see known issues). Unit tests cover the link, and the browser tests the home page, the sign-up links, the landing after confirmation and both kinds of link; the home page was checked at 320, 390 and 1440 px in both themes.
+
 ## Page views for founders 2026-09-26
 
 At the project owner's request, a product's page shows its founder how often it was viewed: a Page views card at the top of the side column, with the last 7 days, the last 30 days and all time, and the note that only they see it and that their own visits are not counted. Other users and visitors do not see it. Views come from the site statistics, so bots, automated browsers, signed-in admins and views over a visitor's hourly limit are left out, as are views while the product is hidden or its founder suspended. Days are UTC.
@@ -328,3 +336,4 @@ Product and quality:
 17. The browser tests run against `next dev`, which compiles routes on demand. Once, it answered Page not found for the product form in the registration test, and the failure did not repeat. Failed tests now keep a trace; if it happens again, the trace shows the address and the requests. Running the browser tests against a production build (`next build` and `next start`) would remove the dev server's compile timing from the tests.
 18. No CAPTCHA on sign-in, sign-up and password reset (see Release review, point 2). Postponed by the owner; until then the Auth limits per address protect little when the host shows Auth the server's address.
 19. `public.record_page_view` and `public.admin_analytics` from the first version of the statistics stay only for the code that was live while migration `20260926070000` was applied first. Drop them in a new migration once the detailed statistics are deployed.
+20. On phones the leaderboard's column headers are hidden, so demo rows show their amounts without the Demo MRR label; screen readers hear it. The owner chose other home page changes first on 2026-09-26.

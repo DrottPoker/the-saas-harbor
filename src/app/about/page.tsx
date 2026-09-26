@@ -23,6 +23,13 @@ const sections = [
     ],
   },
   {
+    title: "Links to your website",
+    body: [
+      "Each product page links to the product's website. While the product's revenue is verified, whether its figures are shared or private, the link is not marked nofollow, so search engines can follow it and count it for your site. Without verified revenue the link is marked nofollow.",
+      "Visitors who follow the link show up in your own analytics as coming from The SaaS Harbor.",
+    ],
+  },
+  {
     title: "Demo products",
     demo: true,
     body: [
@@ -89,7 +96,7 @@ export default async function About() {
           ))}
         <div>
           <Button asChild>
-            <Link href="/dashboard/saas/new">Submit your SaaS</Link>
+            <Link href="/dashboard/saas/new">List your SaaS</Link>
           </Button>
         </div>
       </div>

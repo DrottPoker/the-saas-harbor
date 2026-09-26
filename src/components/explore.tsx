@@ -3,6 +3,7 @@ import { Search } from "lucide-react";
 import { demoRows, listings, safePage, type Sort } from "@/lib/data";
 import { categories } from "@/lib/domain";
 import { cn } from "@/lib/utils";
+import { FounderHero } from "./founder-hero";
 import { Leaderboard, ListingGrid, ResultsFooter } from "./listings";
 import { EmptyState, Notice, PageHeader, Shell } from "./shell";
 import { Button } from "./ui/button";
@@ -56,6 +57,8 @@ export async function Explore({
   const demo = error ? [] : await demoRows({ sort, category, search, page, count });
   const meta = mode === "newest" ? "joined" : "maker";
   const filtered = !!category || !!search || page > 1;
+  // The plain home page opens with what listing gives a founder; filtered lists get to the point.
+  const hero = ranked && !filtered;
   function url(nextCategory: string, nextPage = 1) {
     const query = new URLSearchParams();
     if (nextCategory) query.set("category", nextCategory);
@@ -64,29 +67,40 @@ export async function Explore({
     return `${path}${query.size ? `?${query}` : ""}`;
   }
 
+  const searchForm = (
+    <form action={path} role="search" className="relative w-full sm:w-64">
+      <Search
+        aria-hidden="true"
+        className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-faint-foreground"
+      />
+      <input
+        name="q"
+        type="search"
+        aria-label="Search products by name"
+        placeholder="Search products"
+        defaultValue={search}
+        className={cn(fieldClasses, "h-9 pl-9")}
+      />
+      {category && <input type="hidden" name="category" value={category} />}
+    </form>
+  );
+
   return (
     <Shell>
-      <PageHeader
-        title={title}
-        description={description}
-        actions={
-          <form action={path} role="search" className="relative w-full sm:w-64">
-            <Search
-              aria-hidden="true"
-              className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-faint-foreground"
-            />
-            <input
-              name="q"
-              type="search"
-              aria-label="Search products by name"
-              placeholder="Search products"
-              defaultValue={search}
-              className={cn(fieldClasses, "h-9 pl-9")}
-            />
-            {category && <input type="hidden" name="category" value={category} />}
-          </form>
-        }
-      />
+      {hero ? (
+        <>
+          <FounderHero ranked={error ? null : count} />
+          <div className="flex flex-col gap-5 border-t pt-10 pb-6 sm:flex-row sm:items-end sm:justify-between">
+            <div className="max-w-2xl">
+              <h2 className="text-2xl font-semibold tracking-tight">Leaderboard</h2>
+              <p className="mt-1.5 text-muted-foreground">{description}</p>
+            </div>
+            <div className="flex shrink-0 max-sm:w-full">{searchForm}</div>
+          </div>
+        </>
+      ) : (
+        <PageHeader title={title} description={description} actions={searchForm} />
+      )}
 
       <nav aria-label="Categories" className={categoryChipRow}>
         {["", ...categories].map((item) => (
@@ -120,7 +134,7 @@ export async function Explore({
             title={ranked ? "No revenue shared yet" : "No products yet"}
             action={
               <Button asChild size="sm">
-                <Link href="/dashboard/saas/new">Submit your SaaS</Link>
+                <Link href="/dashboard/saas/new">List your SaaS</Link>
               </Button>
             }
           >

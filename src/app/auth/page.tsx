@@ -15,7 +15,7 @@ const copy: Record<Mode, { title: string; description: string }> = {
   login: { title: "Sign in", description: "Welcome back. Sign in to manage your products." },
   signup: {
     title: "Create your account",
-    description: "List your SaaS and choose what to share.",
+    description: "Free to list. You choose what to share.",
   },
   reset: {
     title: "Reset your password",

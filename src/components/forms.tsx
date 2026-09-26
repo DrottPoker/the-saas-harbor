@@ -257,7 +257,7 @@ export function AuthForm({
           <strong className="font-medium text-foreground [overflow-wrap:anywhere]">
             {state.values?.email}
           </strong>
-          . Open it to confirm your account. You can sign in once it is confirmed.
+          . Open it to confirm your account and add your product.
         </p>
         <p className="text-[13px] leading-5 text-muted-foreground">
           Nothing after a few minutes? Look in your spam folder, or sign up again if the address was
@@ -373,6 +373,13 @@ export function AuthForm({
             No account yet?{" "}
             <Link className="font-medium text-foreground hover:underline" href="/auth?mode=signup">
               Create one
+            </Link>
+          </>
+        ) : signup && !choosing ? (
+          <>
+            Already have an account?{" "}
+            <Link className="font-medium text-foreground hover:underline" href="/auth">
+              Sign in
             </Link>
           </>
         ) : choosing ? (

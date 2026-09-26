@@ -171,9 +171,33 @@ test("anonymous navigation, private route protection and responsive empty state"
   const second = nonceOf((await page.reload())?.headers()["content-security-policy"]);
   expect(second).toBeTruthy();
   expect(second).not.toBe(first);
+  // The home page opens with what a founder gets, and every way to list a product starts with
+  // creating an account.
   await expect(
-    page.getByRole("heading", { name: "Independent SaaS, ranked by revenue" }),
+    page.getByRole("heading", { name: "Free exposure for your SaaS", level: 1 }),
   ).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Listed in three steps" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Leaderboard", level: 2 })).toBeVisible();
+  await expect(page.getByRole("link", { name: "List your SaaS for free" })).toHaveAttribute(
+    "href",
+    "/auth?mode=signup",
+  );
+  await expect(
+    page.getByRole("banner").getByRole("link", { name: "List your SaaS" }),
+  ).toHaveAttribute("href", "/auth?mode=signup");
+  await page.goto("/dashboard/saas/new");
+  await expect(page).toHaveURL("/auth?mode=signup");
+  await expect(page.getByRole("heading", { name: "Create your account" })).toBeVisible();
+  await expect(page.getByRole("main").getByRole("link", { name: "Sign in" })).toHaveAttribute(
+    "href",
+    "/auth",
+  );
+  // A filtered leaderboard gets to the point.
+  await page.goto("/?category=Design");
+  await expect(
+    page.getByRole("heading", { name: "Independent SaaS, ranked by revenue", level: 1 }),
+  ).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Free exposure for your SaaS" })).toHaveCount(0);
   // Crawlers get the sitemap and stay out of private areas.
   const origin = test.info().project.use.baseURL!;
   const robots = await (await page.request.get("/robots.txt")).text();
@@ -268,6 +292,17 @@ test("demo products fill the lists without a rank, until real products take thei
     .select("id", { count: "exact", head: true });
   if (error || count == null) throw new Error("Unable to count ranked products.");
   await page.goto("/");
+  // The home page tells founders how early they are.
+  await expect(
+    page.getByText(
+      count === 0
+        ? "The leaderboard just opened. Rank #1 is still free."
+        : count < 12
+          ? `The leaderboard just opened, with ${count} verified ${count === 1 ? "product" : "products"} so far. Get in early.`
+          : `Join the ${count} products ranked by verified revenue.`,
+      { exact: true },
+    ),
+  ).toBeVisible();
   const heading = page.getByRole("heading", { name: "Demo products" });
   if (count >= 12) {
     await expect(heading).toHaveCount(0);
@@ -437,7 +472,9 @@ test("registration, email confirmation, profile and SaaS editing, storage, priva
   await elsewhere.goto(confirmation);
   await expect(elsewhere.getByRole("heading", { name: "Confirm your email" })).toBeVisible();
   await elsewhere.getByRole("button", { name: "Confirm email" }).click();
-  await expect(elsewhere).toHaveURL(/\/dashboard$/);
+  // A new account starts by listing its first product.
+  await expect(elsewhere).toHaveURL(/\/dashboard\/saas\/new$/);
+  await expect(elsewhere.getByRole("heading", { name: "Add a SaaS" })).toBeVisible();
   await elsewhere.goto(confirmation);
   await elsewhere.getByRole("button", { name: "Confirm email" }).click();
   await expect(
@@ -742,6 +779,12 @@ test("registration, email confirmation, profile and SaaS editing, storage, priva
   await expect(row.locator("polyline")).toHaveCount(1);
   await page.goto(`/saas/${productId}`);
   await expect(page).toHaveTitle(`${productName}: $104 verified MRR | The SaaS Harbor`);
+  // Verified revenue earns a link to the website that search engines follow, and the site sees
+  // where its visitors came from.
+  await expect(page.getByRole("link", { name: "Visit website" })).toHaveAttribute(
+    "rel",
+    "noopener",
+  );
   await expect(page.getByText("+92.6%", { exact: true })).toBeVisible();
   const chart = page.getByRole("group", { name: /MRR at month end/ });
   await expect(chart).toBeVisible();
@@ -839,6 +882,12 @@ test("registration, email confirmation, profile and SaaS editing, storage, priva
     .eq("id", productId)
     .single();
   expect(afterDisconnect?.revenue_status).toBe("unverified");
+  // Without verified revenue, the link to the website is not followed.
+  await page.goto(`/saas/harbor-test-${run}`);
+  await expect(page.getByRole("link", { name: "Visit website" })).toHaveAttribute(
+    "rel",
+    "noopener nofollow",
+  );
   await page.goto(`/dashboard/saas/${secondId}`);
   await page.getByLabel("Restricted key", { exact: true }).fill("rk_test_harborfixture0002");
   await page.getByRole("button", { name: "Connect and verify" }).click();
@@ -860,6 +909,11 @@ test("registration, email confirmation, profile and SaaS editing, storage, priva
   await expect(page).toHaveURL(/saved=/);
   await page.goto(`/saas/second-${run}`);
   await expect(page).toHaveURL(`/saas/renamed-${run}`);
+  // Verified revenue that stays private earns the followed link too.
+  await expect(page.getByRole("link", { name: "Visit website" })).toHaveAttribute(
+    "rel",
+    "noopener",
+  );
   await expect(page.getByRole("heading", { name: `Renamed ${run}`, exact: true })).toBeVisible();
   // The signed-in header carries extra links, so check it separately on a phone-sized screen.
   await page.setViewportSize({ width: 390, height: 844 });

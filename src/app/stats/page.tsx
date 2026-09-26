@@ -88,7 +88,7 @@ export default async function Stats() {
           title="Not enough products yet"
           action={
             <Button asChild size="sm">
-              <Link href="/dashboard/saas/new">Submit your SaaS</Link>
+              <Link href="/dashboard/saas/new">List your SaaS</Link>
             </Button>
           }
         >

@@ -38,3 +38,14 @@ export function pageMetadata({
     twitter: { card: "summary_large_image", title, description },
   };
 }
+
+/**
+ * The rel of the link from a product's page to its website. Search engines are asked to follow it
+ * only while the product's revenue is verified, shared or private, so the link rewards real
+ * products rather than spam. Without noreferrer, the founder's analytics show the visits we send.
+ */
+export function websiteRel(revenueStatus: string | null | undefined) {
+  return revenueStatus === "verified" || revenueStatus === "private"
+    ? "noopener"
+    : "noopener nofollow";
+}

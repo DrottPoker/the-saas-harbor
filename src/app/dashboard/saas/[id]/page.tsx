@@ -1,4 +1,4 @@
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { z } from "zod";
 import { SaasForm } from "@/components/forms";
 import { BackLink } from "@/components/back-link";
@@ -9,7 +9,7 @@ import { Notice, PageHeader, Shell } from "@/components/shell";
 import { RevenueConnectionSection } from "@/components/revenue-connection";
 import { CONNECTION_COLUMNS, type RevenueConnection } from "@/lib/data";
 import { PRODUCT_LIMIT } from "@/lib/moderation";
-import { requireUser } from "@/lib/supabase/server";
+import { currentUser, requireUser } from "@/lib/supabase/server";
 import { firstValues, type SearchParams } from "@/lib/params";
 import { siteUrl } from "@/lib/seo";
 
@@ -23,9 +23,11 @@ export async function generateMetadata({ params }: Pick<Props, "params">) {
 }
 
 export default async function EditSaas({ params, searchParams }: Props) {
-  const { user, client } = await requireUser();
   const { id } = await params;
   const isNew = id === "new";
+  // Visitors who want to list a product start by creating an account, not by signing in.
+  if (isNew && !(await currentUser())) redirect("/auth?mode=signup");
+  const { user, client } = await requireUser();
   if (!isNew && !z.uuid().safeParse(id).success) notFound();
   if (isNew) {
     const { count, error } = await client

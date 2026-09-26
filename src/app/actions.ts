@@ -160,7 +160,10 @@ export async function confirmEmailLinkAction(
   const link = emailLink(value(form, "token_hash"), value(form, "type"));
   if (!link) return { error: "This link is incomplete. Open it again from the email." };
   const client = await serverClient();
-  const { error } = await client.auth.verifyOtp({ token_hash: link.tokenHash, type: link.type });
+  const { data, error } = await client.auth.verifyOtp({
+    token_hash: link.tokenHash,
+    type: link.type,
+  });
   if (error)
     return {
       error:
@@ -169,7 +172,18 @@ export async function confirmEmailLinkAction(
           : "This link has expired or has already been used. Sign in if you confirmed your email before, or sign up again to get a new link.",
     };
   revalidatePath("/", "layout");
-  redirect(link.type === "recovery" ? "/auth?mode=update" : "/dashboard");
+  if (link.type === "recovery") redirect("/auth?mode=update");
+  redirect(await startPage(client, data.user?.id));
+}
+
+/** Where a confirmed account starts: listing its first product, until it has one. */
+async function startPage(client: Awaited<ReturnType<typeof serverClient>>, userId?: string) {
+  if (!userId) return "/dashboard";
+  const { count, error } = await client
+    .from("saas")
+    .select("id", { count: "exact", head: true })
+    .eq("owner_id", userId);
+  return !error && count === 0 ? "/dashboard/saas/new" : "/dashboard";
 }
 
 export async function signOut() {

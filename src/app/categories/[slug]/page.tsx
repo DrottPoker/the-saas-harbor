@@ -76,7 +76,7 @@ export default async function Category({ params }: Props) {
           title={`No ${category} products yet`}
           action={
             <Button asChild size="sm">
-              <Link href="/dashboard/saas/new">Submit your SaaS</Link>
+              <Link href="/dashboard/saas/new">List your SaaS</Link>
             </Button>
           }
         >

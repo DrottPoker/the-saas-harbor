@@ -4,6 +4,7 @@ import { parseHistory } from "@/lib/charts";
 import type { Listing, PageViewCounts, RevenueStatus } from "@/lib/data";
 import { categorySlug, formatDate, formatUsd } from "@/lib/domain";
 import { providerName } from "@/lib/revenue/catalog";
+import { websiteRel } from "@/lib/seo";
 import { PersonAvatar, ProductLogo } from "./avatars";
 import { Badge } from "./badge";
 import { Growth } from "./charts/growth";
@@ -156,7 +157,7 @@ export function ProductProfile({
         </div>
         {item.website && (
           <Button asChild variant="outline" className="self-start">
-            <a href={item.website} target="_blank" rel="noopener noreferrer nofollow">
+            <a href={item.website} target="_blank" rel={websiteRel(item.revenue_status)}>
               Visit website
               <ArrowUpRight />
             </a>
