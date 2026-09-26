@@ -26,7 +26,7 @@ const sections = [
     title: "Demo products",
     demo: true,
     body: [
-      "While the directory is new, the leaderboard, Browse and New arrivals show demo products after the real ones, so you can see what a listing looks like. They are marked Demo, and the products, their founders and their figures are made up. They are never ranked or verified, cannot be contacted, and disappear as real products join.",
+      "While the directory is new, the leaderboard, Browse and New arrivals show demo products after the real ones, so you can see what a listing looks like. Their figures are listed as Demo MRR, their pages are marked Demo, and the products, their founders and their figures are made up. They are never ranked or verified, cannot be contacted, and disappear as real products join.",
     ],
   },
   {

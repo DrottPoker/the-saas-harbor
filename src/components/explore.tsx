@@ -139,21 +139,10 @@ export async function Explore({
           )}
           {!!demo.length && (
             <section aria-labelledby="demo-products" className={cn(!!rows.length && "mt-10")}>
-              <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-                <div className="max-w-2xl">
-                  <h2 id="demo-products" className="text-lg font-semibold">
-                    Demo products
-                  </h2>
-                  <p className="mt-1 text-sm text-muted-foreground">
-                    Examples of how products appear here while the directory is new. The products,
-                    their founders and their figures are made up, and they disappear as real
-                    products join.
-                  </p>
-                </div>
-                <Button asChild size="sm" variant="outline" className="self-start sm:self-auto">
-                  <Link href="/dashboard/saas/new">Submit your SaaS</Link>
-                </Button>
-              </div>
+              {/* The owner wants no visible heading here; each demo page carries the Demo tag. */}
+              <h2 id="demo-products" className="sr-only">
+                Demo products
+              </h2>
               {ranked ? (
                 <Leaderboard items={demo} demo labelledBy="demo-products" />
               ) : (

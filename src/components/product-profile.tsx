@@ -12,7 +12,7 @@ import { DemoLogo } from "./demo-logo";
 import { SendMessageButton } from "./messages/send-message-button";
 import { Metric } from "./metric";
 import { ReportLink } from "./report-link";
-import { Notice, Shell } from "./shell";
+import { Shell } from "./shell";
 import { Button } from "./ui/button";
 
 function hostname(url: string | null) {
@@ -69,18 +69,6 @@ export function ProductProfile({
 
   return (
     <Shell size="medium">
-      {demo && (
-        <Notice className="mb-8">
-          This is a demo product. {name}, its founder and its figures are made up to show how a
-          listing looks, and demo products disappear as real products join.{" "}
-          <Link
-            href="/dashboard/saas/new"
-            className="font-medium underline underline-offset-2 hover:no-underline"
-          >
-            List your SaaS
-          </Link>
-        </Notice>
-      )}
       <nav aria-label="Breadcrumb" className="mb-8 text-sm text-muted-foreground">
         <Link href="/discover" className="hover:text-foreground">
           Browse

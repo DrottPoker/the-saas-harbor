@@ -260,7 +260,7 @@ test("anonymous navigation, private route protection and responsive empty state"
 
 // Demo products fill the lists until a full page of real products shares verified MRR. The local
 // database may already hold that many, so the test checks whichever state it finds.
-test("demo products fill the lists, marked as demos, until real products take their place", async ({
+test("demo products fill the lists without a rank, until real products take their place", async ({
   page,
 }) => {
   const { count, error } = await admin
@@ -278,11 +278,14 @@ test("demo products fill the lists, marked as demos, until real products take th
   const violations: string[] = [];
   watchPolicy(page, violations);
   // The leaderboard's first page is filled after the real products, and demo rows have no rank.
-  await expect(heading).toBeVisible();
+  // The list's heading is for screen readers only, and the rows carry no Demo tag.
+  await expect(heading).toHaveClass("sr-only");
+  await expect(page.getByText("Examples of how products appear here")).toHaveCount(0);
   const rows = page.getByRole("list", { name: "Demo products" }).getByRole("listitem");
   await expect(rows).toHaveCount(Math.min(13, 12 - count));
   for (const row of await rows.all()) {
-    await expect(row.getByText("Demo", { exact: true })).toBeVisible();
+    await expect(row.getByText("Demo", { exact: true })).toHaveCount(0);
+    await expect(row.getByText("Demo MRR", { exact: true })).toBeAttached();
     await expect(row.getByText("Rank", { exact: true })).toHaveCount(0);
   }
   await expect(rows.first().getByRole("link")).toHaveAttribute("href", "/demo/metricfold");
@@ -295,13 +298,15 @@ test("demo products fill the lists, marked as demos, until real products take th
     "/demo/retrywell",
   );
   await page.goto("/newest");
-  await expect(heading).toBeVisible();
+  await expect(heading).toBeAttached();
 
-  // A demo page says what it is, stays out of search engines and offers no way to contact anyone.
+  // A demo page carries the Demo tag, stays out of search engines and offers no way to contact
+  // anyone.
   await page.goto("/demo/metricfold");
   await expect(page).toHaveTitle(/^Metricfold \(demo\)/);
   await expect(page.getByRole("heading", { name: "Metricfold", level: 1 })).toBeVisible();
-  await expect(page.getByText("This is a demo product.")).toBeVisible();
+  await expect(page.getByText("Demo", { exact: true })).toBeVisible();
+  await expect(page.getByText("This is a demo product.")).toHaveCount(0);
   await expect(page.getByText("Demo figures, made up for this example")).toBeVisible();
   await expect(page.locator('meta[name="robots"]')).toHaveAttribute("content", "noindex, nofollow");
   await expect(page.getByRole("group", { name: /MRR at month end/ })).toBeVisible();

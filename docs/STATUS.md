@@ -8,6 +8,10 @@ The first release includes accounts, email confirmation and recovery, public mak
 
 Makers can message each other privately (see Messages below), and report products, profiles and messages to the admins, who decide in an admin panel (see Reports and moderation below). They get emails about unread messages and about decisions (see Email notifications below). Other forms of connection, such as following or contact lists, are not implemented.
 
+## Quieter demo products 2026-09-26
+
+At the project owner's request, the leaderboard no longer shows the Demo products heading and explanation above the demo rows, nor a Demo tag on each row, and a demo product's page no longer has the notice that it is made up; the page keeps its Demo tag and the note that its figures are made up. The rows stay unranked under a Demo MRR column (read out to screen readers on each row too), and the How it works page still explains them. On phones the column header is hidden, so there the rows are marked only by having no rank. Cards in Browse and New arrivals keep their Demo tag.
+
 ## Vercel Speed Insights 2026-09-26
 
 At the project owner's request, production also reports Core Web Vitals (load and response times per page) to Vercel Speed Insights, rendered next to Web Analytics only when `VERCEL_ENV` is `production`, with the same cleaned addresses. The privacy policy names it under Site statistics. The owner turns it on under the Vercel project's Speed Insights tab.

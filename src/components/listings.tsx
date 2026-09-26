@@ -30,8 +30,9 @@ function Logo({ item }: { item: Listing }) {
 }
 
 /**
- * The ranking. With `demo`, the same table lists demo products instead: unranked, marked Demo, and
- * with their launch date where real products show when they were verified.
+ * The ranking. With `demo`, the same table lists demo products instead: unranked, under a Demo MRR
+ * column, and with their launch date where real products show when they were verified. Their
+ * pages carry the Demo tag.
  */
 export function Leaderboard({
   items,
@@ -94,14 +95,7 @@ export function Leaderboard({
                 <span className="flex min-w-0 items-center gap-3">
                   <Logo item={item} />
                   <span className="min-w-0">
-                    {item.demo ? (
-                      <span className="flex min-w-0 items-center gap-2">
-                        <span className="truncate font-medium">{item.name}</span>
-                        <Badge>Demo</Badge>
-                      </span>
-                    ) : (
-                      <span className="block truncate font-medium">{item.name}</span>
-                    )}
+                    <span className="block truncate font-medium">{item.name}</span>
                     <span className="block truncate text-sm text-muted-foreground">
                       {item.tagline}
                     </span>
@@ -114,7 +108,7 @@ export function Leaderboard({
                   {history && history.length > 1 && <Sparkline history={history} />}
                 </span>
                 <span className="flex flex-col items-end">
-                  <span className="sr-only">MRR </span>
+                  <span className="sr-only">{item.demo ? "Demo MRR " : "MRR "}</span>
                   <span className="font-semibold tabular-nums">
                     {formatUsd(item.mrr_cents ?? 0)}
                   </span>
