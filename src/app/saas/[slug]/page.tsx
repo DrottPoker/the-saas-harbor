@@ -2,13 +2,24 @@ import type { Metadata } from "next";
 import { notFound, permanentRedirect } from "next/navigation";
 import { findSaas, publicProfile } from "@/lib/data";
 import { formatUsd } from "@/lib/domain";
-import { currentUser } from "@/lib/supabase/server";
+import { currentUser, serverClient } from "@/lib/supabase/server";
 import { pageMetadata } from "@/lib/seo";
 import { productJsonLd } from "@/lib/structured-data";
 import { JsonLd } from "@/components/json-ld";
 import { ProductProfile } from "@/components/product-profile";
 
 type Props = { params: Promise<{ slug: string }> };
+
+/** How often the page was viewed, for its founder. A failure leaves the numbers out. */
+async function pageViews(saasId: string) {
+  const client = await serverClient();
+  const { data, error } = await client.rpc("saas_page_view_counts", { p_saas: saasId }).single();
+  if (error) {
+    console.error("Page views could not be loaded:", error.code);
+    return null;
+  }
+  return data;
+}
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const found = await findSaas((await params).slug);
@@ -36,7 +47,12 @@ export default async function SaasProfile({ params }: Props) {
   // An id, an earlier slug or another letter case moves to the current address.
   if ("redirect" in found) permanentRedirect(found.redirect);
   const item = found.item;
-  const maker = item.owner_id ? await publicProfile(item.owner_id) : null;
+  // The founder also sees how often the page was viewed.
+  const ownId = viewer && item.id && viewer.id === item.owner_id ? item.id : null;
+  const [maker, views] = await Promise.all([
+    item.owner_id ? publicProfile(item.owner_id) : null,
+    ownId ? pageViews(ownId) : null,
+  ]);
   return (
     <>
       <JsonLd data={productJsonLd(item)} />
@@ -44,6 +60,7 @@ export default async function SaasProfile({ params }: Props) {
         item={item}
         headline={maker?.headline ?? null}
         viewerId={viewer?.id ?? null}
+        views={views}
       />
     </>
   );

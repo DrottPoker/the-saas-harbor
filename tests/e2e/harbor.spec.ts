@@ -1726,6 +1726,64 @@ test("visits are counted without cookies, and admins see them under Analytics", 
   expect((await sent).status()).toBe(200);
   await second.context.close();
 
+  // A view of a product's page counts for the product. Only its founder sees the count, on the
+  // page, and their own views do not add to it.
+  const founderEmail = `harbor-views-${run}@example.test`;
+  const founderSecret = randomBytes(24).toString("hex");
+  const { data: founderUser, error: founderError } = await admin.auth.admin.createUser({
+    email: founderEmail,
+    password: founderSecret,
+    email_confirm: true,
+  });
+  if (founderError || !founderUser.user) throw new Error("Unable to create a founder fixture.");
+  userIds.push(founderUser.user.id);
+  const founderClient = createClient(url, publicKey, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+  await founderClient.auth.signInWithPassword({ email: founderEmail, password: founderSecret });
+  const { error: saveError } = await founderClient.rpc("save_saas", {
+    p_id: randomUUID(),
+    p_name: `Viewed ${run}`,
+    p_tagline: "A product created only by the local statistics test.",
+    p_description: "This is an isolated local integration fixture for page views.",
+    p_category: "Other",
+    p_website: "https://example.com",
+    p_logo_path: null,
+    p_launched_on: null,
+    p_share_mrr: false,
+    p_share_customers: false,
+    p_share_launch: false,
+  });
+  if (saveError) throw new Error("Unable to create the viewed product.");
+  await founderClient.auth.signOut();
+  const viewedPath = `/saas/viewed-${run}`;
+  const viewCounts = (page: Page) => page.getByRole("region", { name: "Page views" });
+  // The product page's own page view, not one from a page before it that is still on its way.
+  const viewed = (page: Page) =>
+    page.waitForResponse(
+      (response) =>
+        new URL(response.url()).pathname === "/api/analytics" &&
+        response.request().postDataJSON()?.path === viewedPath,
+    );
+  const third = await visit(chrome);
+  sent = viewed(third.page);
+  await third.page.goto(viewedPath);
+  expect((await sent).status()).toBe(200);
+  await expect(viewCounts(third.page)).toHaveCount(0);
+  await third.context.close();
+  const founder = await visit(`${firefox} Founder`);
+  await login(founder.page, founderEmail, founderSecret);
+  sent = viewed(founder.page);
+  await founder.page.goto(viewedPath);
+  expect((await sent).status()).toBe(200);
+  await expect(viewCounts(founder.page).getByRole("definition")).toHaveText(["1", "1", "1"]);
+  // The founder's view above was recorded for the site, but not for the product.
+  sent = viewed(founder.page);
+  await founder.page.reload();
+  expect((await sent).status()).toBe(200);
+  await expect(viewCounts(founder.page).getByRole("definition")).toHaveText(["1", "1", "1"]);
+  await founder.context.close();
+
   // Other sites, bots and malformed beacons are refused or left out.
   const post = (headers: Record<string, string>, body: unknown) =>
     request.post("/api/analytics", {
@@ -1766,6 +1824,12 @@ test("visits are counted without cookies, and admins see them under Analytics", 
   sent = reader.beacon("pageview");
   await adminPage.goto(`/users/admin-${run}`);
   expect((await sent).status()).toBe(204);
+  // Other signed-in users do not see a product's page views.
+  await adminPage.goto(viewedPath);
+  await expect(
+    adminPage.getByRole("heading", { name: `Viewed ${run}`, exact: true }),
+  ).toBeVisible();
+  await expect(viewCounts(adminPage)).toHaveCount(0);
 
   // The reports hold the visits and nothing that was left out.
   const client = createClient(url, publicKey, {

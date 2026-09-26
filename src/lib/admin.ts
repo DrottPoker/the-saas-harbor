@@ -9,12 +9,17 @@ export type LogEntry = Database["public"]["Tables"]["moderation_log"]["Row"];
 export type AdminClient = Awaited<ReturnType<typeof serverClient>>;
 
 // Whether the signed-in user is an admin, once per request. The database decides.
-export const isAdmin = cache(async () => {
-  if (!(await currentUser())) return false;
+export const isAdmin = cache(async () => !!(await currentUser()) && (await sessionIsAdmin()));
+
+/**
+ * Whether the session's user is an admin, for Route Handlers that have looked up the user
+ * already: React's cache only lasts a render, so isAdmin() would look them up again there.
+ */
+export async function sessionIsAdmin() {
   const client = await serverClient();
   const { data, error } = await client.rpc("is_admin");
   return !error && data === true;
-});
+}
 
 /** The admin's session for Server Actions, or null for everyone else. */
 export async function adminSession() {

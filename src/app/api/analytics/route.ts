@@ -1,5 +1,5 @@
 import { userAgent, type NextRequest } from "next/server";
-import { isAdmin } from "@/lib/admin";
+import { sessionIsAdmin } from "@/lib/admin";
 import {
   BEACON_MAX_BYTES,
   beaconSchema,
@@ -18,6 +18,7 @@ import {
   type Beacon,
 } from "@/lib/analytics";
 import { adminClient } from "@/lib/supabase/admin";
+import { currentUser } from "@/lib/supabase/server";
 
 // Leaving something out is not an error the browser needs to hear about.
 const done = () => new Response(null, { status: 204 });
@@ -34,7 +35,7 @@ function sameOrigin(request: NextRequest) {
   }
 }
 
-async function record(request: NextRequest, beacon: Beacon) {
+async function record(request: NextRequest, beacon: Beacon, viewer: string | null) {
   const headers = request.headers;
   const agent = headers.get("user-agent") ?? "";
   const ip = clientAddress(headers);
@@ -88,6 +89,8 @@ async function record(request: NextRequest, beacon: Beacon) {
     p_browser_version: majorVersion(parsed.browser.version),
     p_os: systemName(parsed.os.name),
     p_os_version: majorVersion(parsed.os.version),
+    // Only leaves out a founder's views of their own product; not stored.
+    p_viewer: viewer,
   });
   if (error) {
     console.error("A page view could not be recorded:", error.code);
@@ -100,7 +103,8 @@ async function record(request: NextRequest, beacon: Beacon) {
 // Site statistics from PageViews in the root layout: page views, how long pages were visible, and
 // clicks on links to other sites. Bots, admin pages and signed-in admins are left out, and the
 // database hashes the address and user agent into a visitor that changes daily; neither is stored
-// (migrations 20260926060000 and 20260926070000).
+// (migrations 20260926060000 and 20260926070000). A view of a product's page also counts for the
+// product, unless its founder is the one signed in (migration 20260926080000).
 export async function POST(request: NextRequest) {
   if (!sameOrigin(request)) return new Response("Forbidden", { status: 403 });
   if (Number(request.headers.get("content-length") ?? 0) > BEACON_MAX_BYTES)
@@ -114,9 +118,10 @@ export async function POST(request: NextRequest) {
     return new Response("Bad request", { status: 400 });
   }
   if (userAgent(request).isBot || isAutomated(request.headers.get("user-agent"))) return done();
-  if (await isAdmin()) return done();
+  const viewer = await currentUser();
+  if (viewer && (await sessionIsAdmin())) return done();
   try {
-    return await record(request, beacon);
+    return await record(request, beacon, viewer?.id ?? null);
   } catch (error) {
     console.error("Site statistics could not be recorded:", (error as Error).message);
     return done();

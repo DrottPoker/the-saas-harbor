@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { ArrowUpRight, BadgeCheck } from "lucide-react";
 import { parseHistory } from "@/lib/charts";
-import type { Listing, RevenueStatus } from "@/lib/data";
+import type { Listing, PageViewCounts, RevenueStatus } from "@/lib/data";
 import { categorySlug, formatDate, formatUsd } from "@/lib/domain";
 import { providerName } from "@/lib/revenue/catalog";
 import { PersonAvatar, ProductLogo } from "./avatars";
@@ -31,19 +31,48 @@ const missingRevenue: Record<RevenueStatus, string> = {
   unverified: "Not verified",
 };
 
+/** How often the page was viewed, shown to the founder only. */
+function ViewCounts({ views }: { views: PageViewCounts }) {
+  const periods = [
+    ["Last 7 days", views.last_7_days],
+    ["Last 30 days", views.last_30_days],
+    ["All time", views.all_time],
+  ] as const;
+  return (
+    <section aria-labelledby="page-views" className="rounded-xl border bg-surface p-5">
+      <h2 id="page-views" className="text-sm text-muted-foreground">
+        Page views
+      </h2>
+      <dl className="mt-3 grid gap-3 text-sm">
+        {periods.map(([label, count]) => (
+          <div key={label} className="flex justify-between gap-4">
+            <dt className="text-muted-foreground">{label}</dt>
+            <dd className="font-medium tabular-nums">{count.toLocaleString("en-US")}</dd>
+          </div>
+        ))}
+      </dl>
+      <p className="mt-4 text-[13px] text-muted-foreground">
+        Only you can see this. Your own visits are not counted.
+      </p>
+    </section>
+  );
+}
+
 /**
  * A product's public page. A demo product (`item.demo`) says that it is made up, and has no maker
- * profile, website, messages or reports.
+ * profile, website, messages or reports. `views` is set for the product's founder only.
  */
 export function ProductProfile({
   item,
   headline,
   viewerId,
+  views = null,
 }: {
   item: Listing;
   /** The maker's headline. */
   headline: string | null;
   viewerId: string | null;
+  views?: PageViewCounts | null;
 }) {
   const demo = item.demo;
   const name = item.name ?? "SaaS";
@@ -182,6 +211,7 @@ export function ProductProfile({
           </p>
         </section>
         <aside className="grid content-start gap-4">
+          {views && <ViewCounts views={views} />}
           <div className="rounded-xl border bg-surface p-5">
             <h2 className="text-sm text-muted-foreground">Founder</h2>
             {demo ? (

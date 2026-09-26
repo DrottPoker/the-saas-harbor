@@ -55,6 +55,7 @@ export type Database = Omit<GeneratedDatabase, "public"> & {
           | "p_language"
           | "p_browser_version"
           | "p_os_version"
+          | "p_viewer"
         >;
         // Null when the visitor is over the hourly limit.
         Returns: number | null;

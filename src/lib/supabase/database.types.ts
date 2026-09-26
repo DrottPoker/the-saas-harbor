@@ -1154,6 +1154,14 @@ export type Database = {
         }
         Returns: undefined
       }
+      saas_page_view_counts: {
+        Args: { p_saas: string }
+        Returns: {
+          all_time: number
+          last_30_days: number
+          last_7_days: number
+        }[]
+      }
       saas_slug_redirect: { Args: { p_slug: string }; Returns: string }
       save_notification_settings: {
         Args: { p_messages: boolean; p_reports: boolean }
@@ -1264,6 +1272,7 @@ export type Database = {
           p_utm_medium: string
           p_utm_source: string
           p_utm_term: string
+          p_viewer?: string
         }
         Returns: number
       }

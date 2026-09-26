@@ -8,6 +8,12 @@ The first release includes accounts, email confirmation and recovery, public mak
 
 Makers can message each other privately (see Messages below), and report products, profiles and messages to the admins, who decide in an admin panel (see Reports and moderation below). They get emails about unread messages and about decisions (see Email notifications below). Other forms of connection, such as following or contact lists, are not implemented.
 
+## Page views for founders 2026-09-26
+
+At the project owner's request, a product's page shows its founder how often it was viewed: a Page views card at the top of the side column, with the last 7 days, the last 30 days and all time, and the note that only they see it and that their own visits are not counted. Other users and visitors do not see it. Views come from the site statistics, so bots, automated browsers, signed-in admins and views over a visitor's hourly limit are left out, as are views while the product is hidden or its founder suspended. Days are UTC.
+
+Each view of a listed product's page adds one to a daily count for the product (`private.saas_page_views`, migration `20260926080000_product_page_views.sql`, applied to production on 2026-09-26, before the code; the live code's calls keep working, since the new argument is optional), which holds no visitor data, is kept as long as the product and goes with it or the account. The analytics route now tells the database who is signed in, only so a founder's own views are left out; it is not stored. The migration counted the page views recorded before it, founders' own included, since who made them is not known. The privacy policy describes the counts. pgTAP (`product_page_views.test.sql`) and the statistics browser test cover it, and the card was checked at 390 px and 1440 px in both themes.
+
 ## Sharing card 2026-09-26
 
 At the project owner's request, the site's sharing card, which X and others show for thesaasharbor.com, no longer shows how many products are listed and ranked. It now reads Free exposure for small SaaS, with a public page, a place on the leaderboard and other founders to meet, and Cost: Free, Made for: Indie SaaS and the four providers along the bottom. The terms already say the site is free to use. Product, profile and statistics cards fall back to it as before. X keeps a card it has fetched for a while, so links shared earlier may show the old one until X fetches it again.

@@ -14,6 +14,9 @@ export type Profile = Database["public"]["Tables"]["profiles"]["Row"];
 export type Saas = Database["public"]["Tables"]["saas"]["Row"];
 export type SaasSettings = Database["public"]["Tables"]["saas_settings"]["Row"];
 export type RevenueSnapshot = Database["public"]["Tables"]["revenue_snapshots"]["Row"];
+/** How often a product's page was viewed, which only its founder reads. */
+export type PageViewCounts =
+  Database["public"]["Functions"]["saas_page_view_counts"]["Returns"][number];
 export type RevenueConnection = Omit<
   Database["public"]["Tables"]["revenue_connections"]["Row"],
   "encrypted_key" | "last_checked_at"

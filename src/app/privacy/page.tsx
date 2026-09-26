@@ -156,7 +156,8 @@ export default function Privacy() {
             </li>
             <li>
               To see how many people visit the site, which pages they read and how they found it,
-              through the site statistics below (our legitimate interests, Article 6(1)(f)).
+              and to show founders how often their products&apos; pages were viewed, through the
+              site statistics below (our legitimate interests, Article 6(1)(f)).
             </li>
           </List>
           <p>We do not sell data or show ads, and we do not follow you across other sites.</p>
@@ -186,6 +187,14 @@ export default function Privacy() {
             are deleted after 25 months.
           </p>
           <p>
+            <strong className="font-medium text-foreground">Views of a product&apos;s page.</strong>{" "}
+            Each view of a product&apos;s page also adds one to that product&apos;s count for the
+            day, which only its founder sees, as totals for the last 7 and 30 days and all time. The
+            count holds nothing about who viewed the page. When you are signed in, the server checks
+            whether the product is yours, so that a founder&apos;s views of their own product are
+            not counted; your account is not stored with the view.
+          </p>
+          <p>
             <strong className="font-medium text-foreground">Vercel Web Analytics.</strong> Vercel
             records the same kind of information: the page&apos;s address, the site that linked to
             it, your country, and the type of device, browser and operating system. To count
@@ -213,9 +222,9 @@ export default function Privacy() {
             </li>
             <li>
               <strong className="font-medium text-foreground">Only you:</strong> your connection
-              status, your verification history and any figures you keep private. Stored keys are
-              never shown, not even to you. Which payment provider verified the figures is public
-              once they are verified.
+              status, your verification history, any figures you keep private and how often your
+              products&apos; pages were viewed. Stored keys are never shown, not even to you. Which
+              payment provider verified the figures is public once they are verified.
             </li>
             <li>
               <strong className="font-medium text-foreground">The two of you:</strong> a
@@ -288,7 +297,8 @@ export default function Privacy() {
           <p>
             Page views and link clicks for the site statistics are kept for 25 months. They are not
             linked to your account, so deleting it does not remove them, and nothing in them points
-            to you.
+            to you. A product&apos;s daily view counts are kept as long as the product and deleted
+            with it or with your account.
           </p>
           <p>
             Information that was public may already have been copied by others, such as search
