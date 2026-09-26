@@ -1,31 +1,22 @@
 import Link from "next/link";
-import { ArrowRight } from "lucide-react";
-import { PAGE_SIZE } from "@/lib/data";
+import { ArrowRight, Check } from "lucide-react";
 import { currentUser } from "@/lib/supabase/server";
 import { Button } from "./ui/button";
 
-/** The next free place on the leaderboard, while few real products are ranked. */
-function openSpot(ranked: number) {
-  if (ranked >= PAGE_SIZE) return null;
-  return {
-    rank: ranked + 1,
-    title: ranked === 0 ? "is still free" : "is next",
-    body:
-      ranked === 0
-        ? "Listing needs no revenue check. Connect your payment provider, now or later, to take the top spot."
-        : `Only ${ranked} ${ranked === 1 ? "product is" : "products are"} ranked so far. Connect your payment provider, now or later, to join them.`,
-  };
-}
+const gains = [
+  "A public page for your product",
+  "A link to your website",
+  "Page views and messages from other founders",
+  "A place on the leaderboard, if you connect your revenue",
+];
 
 /**
  * The top of the leaderboard, which is the home page: an invitation to list any SaaS, verified or
- * not, and while few products are ranked, the place on the leaderboard that is still open. `ranked` is the number of real
- * products on the whole leaderboard, or null when the list is filtered or could not be read.
+ * not, and what a listing gives.
  */
-export async function FounderHeader({ ranked }: { ranked: number | null }) {
+export async function FounderHeader() {
   // Visitors create an account first; signed-in users go straight to the product form.
   const start = (await currentUser()) ? "/dashboard/saas/new" : "/auth?mode=signup";
-  const spot = ranked == null ? null : openSpot(ranked);
   return (
     <div className="grid gap-6 pb-10 lg:grid-cols-[minmax(0,1fr)_20rem] lg:items-center lg:gap-12">
       <div>
@@ -51,17 +42,22 @@ export async function FounderHeader({ ranked }: { ranked: number | null }) {
           </Link>
         </div>
       </div>
-      {spot && (
-        <div className="flex items-center gap-5 rounded-xl border border-dashed border-brand/60 bg-surface p-5">
-          <p className="text-6xl leading-none font-semibold tracking-tight text-brand tabular-nums">
-            #{spot.rank}
-          </p>
-          <div>
-            <p className="font-semibold">{spot.title}</p>
-            <p className="mt-1 text-sm leading-5 text-muted-foreground">{spot.body}</p>
-          </div>
-        </div>
-      )}
+      <section aria-labelledby="listing-gains" className="rounded-xl border bg-surface p-5">
+        <h2 id="listing-gains" className="font-semibold">
+          Free for every SaaS
+        </h2>
+        <ul className="mt-3 grid gap-2.5 text-sm">
+          {gains.map((gain) => (
+            <li key={gain} className="flex gap-2.5">
+              <Check aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-brand" />
+              {gain}
+            </li>
+          ))}
+        </ul>
+        <p className="mt-4 border-t pt-3 text-[13px] text-muted-foreground">
+          No payment details and no revenue check needed.
+        </p>
+      </section>
     </div>
   );
 }

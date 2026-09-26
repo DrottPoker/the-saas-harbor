@@ -88,8 +88,7 @@ export async function Explore({
     <Shell>
       {ranked ? (
         <>
-          {/* Only the whole leaderboard's count says which place is open. */}
-          <FounderHeader ranked={filtered || error ? null : count} />
+          <FounderHeader />
           <div className="flex flex-col gap-3 border-t pt-6 pb-5 sm:flex-row sm:items-end sm:justify-between">
             <div>
               <h2 className="text-xl font-semibold tracking-tight">{title}</h2>

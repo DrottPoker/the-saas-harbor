@@ -176,6 +176,9 @@ test("anonymous navigation, private route protection and responsive empty state"
   await expect(
     page.getByRole("heading", { name: /^Get your SaaS seen\.\s*List it for free\.$/, level: 1 }),
   ).toBeVisible();
+  await expect(page.getByRole("region", { name: "Free for every SaaS" })).toContainText(
+    "No payment details and no revenue check needed.",
+  );
   await expect(page.getByRole("heading", { name: "Leaderboard", level: 2 })).toBeVisible();
   await expect(
     page.getByRole("main").getByRole("link", { name: "List your SaaS", exact: true }),
@@ -284,16 +287,6 @@ test("demo products fill the lists without a rank, until real products take thei
     .select("id", { count: "exact", head: true });
   if (error || count == null) throw new Error("Unable to count ranked products.");
   await page.goto("/");
-  // While few products are ranked, the home page shows founders the place that is still open.
-  const spot = page.getByText(/^(is still free|is next)$/);
-  if (count < 12) {
-    await expect(page.getByText(`#${count + 1}`, { exact: true })).toBeVisible();
-    await expect(spot).toHaveText(count === 0 ? "is still free" : "is next");
-    if (count > 0)
-      await expect(
-        page.getByText(`Only ${count} ${count === 1 ? "product is" : "products are"} ranked`),
-      ).toBeVisible();
-  } else await expect(spot).toHaveCount(0);
   const heading = page.getByRole("heading", { name: "Demo products" });
   if (count >= 12) {
     await expect(heading).toHaveCount(0);
