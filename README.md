@@ -34,7 +34,7 @@ Sales, escrow, company profiles and payment providers other than Stripe, Paddle,
 
 ## Run locally
 
-Requires Node.js 22.14 or later (see `.nvmrc`), npm and Docker Desktop. The Chromium build for Vercel (`@sparticuz/chromium`, an optional dependency) installs only on Node.js 22.17 or later; without it, `npm run build` warns that it is missing, and local screenshots use Playwright's Chromium anyway. Dependencies have exact versions and a lockfile, and `.npmrc` keeps new installs exact.
+Requires Node.js 22.14 or later (see `.nvmrc`), npm and Docker Desktop. The Chromium build for Vercel (`@sparticuz/chromium`, an optional dependency) installs only on Node.js 22.17 or later. Older versions skip it, which is fine locally: screenshots there use Playwright's Chromium, and `next.config.ts` keeps the build from warning about the missing package. Dependencies have exact versions and a lockfile, and `.npmrc` keeps new installs exact.
 
 Development and tests run the whole backend locally: Supabase (PostgreSQL, Auth, Storage) runs in Docker through the Supabase CLI. Production uses Supabase Cloud (see [Production](#production)).
 
