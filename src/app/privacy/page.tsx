@@ -188,6 +188,12 @@ export default function Privacy() {
             identify you, and it cannot recognise you from one day to the next or connect your
             visits to your account.
           </p>
+          <p>
+            <strong className="font-medium text-foreground">Vercel Speed Insights.</strong> To see
+            how fast the site loads, Vercel records how long each page takes to load and respond,
+            with the same cleaned page address and the type of device. It uses no cookies and does
+            not identify you.
+          </p>
         </Section>
 
         <Section id="visibility" title="Who can see it">
