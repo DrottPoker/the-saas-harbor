@@ -73,7 +73,6 @@ describe("profile boundaries", () => {
     share_mrr: true,
     share_customers: false,
     share_launch: false,
-    show_screenshot: true,
     tech_stack: ["nextjs", "supabase"],
   };
   it("takes a tech stack of known, unique technologies, up to the limit", () => {

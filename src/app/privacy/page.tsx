@@ -58,10 +58,9 @@ export default function Privacy() {
             </li>
             <li>
               <strong className="font-medium text-foreground">Products.</strong> Name, tagline,
-              description, category, website, logo, tech stack and launch date, and a screenshot of
-              the website&apos;s landing page unless you turn it off. If you verify a product&apos;s
-              domain: the domain, the code for its DNS record, and when the record was last looked
-              up.
+              description, category, website, logo, tech stack and launch date. If you verify a
+              product&apos;s domain: the domain, the code for its DNS record, and when the record
+              was last looked up.
             </li>
             <li>
               <strong className="font-medium text-foreground">Revenue verification.</strong> If you
@@ -128,12 +127,6 @@ export default function Privacy() {
 
         <Section id="website" title="What we look up about your website">
           <p>
-            To show a screenshot of your product&apos;s website, our server opens the website in a
-            web browser, as a visitor would, when you list the product or change its website, every
-            30 days, and when you ask for a new one. The browser names itself as The SaaS Harbor. It
-            stores a picture of the page, a few screens long, in your folder in our image storage.
-          </p>
-          <p>
             When you check your product&apos;s domain, and every day while it is verified, our
             server looks up one DNS record under that domain: the TXT record you add for the
             product. The lookup goes through ordinary DNS servers and carries only the record&apos;s
@@ -149,9 +142,8 @@ export default function Privacy() {
             </li>
             <li>
               To verify revenue through the payment provider you connect, and show the figures you
-              choose to share, to show a screenshot of a product&apos;s website, and to show that a
-              product&apos;s domain is its founder&apos;s through the DNS record you add. This is
-              part of the same service (Article 6(1)(b)).
+              choose to share, and to show that a product&apos;s domain is its founder&apos;s
+              through the DNS record you add. This is part of the same service (Article 6(1)(b)).
             </li>
             <li>
               To deliver the messages you send to other users, and to email you about unread
@@ -234,11 +226,11 @@ export default function Privacy() {
           <List>
             <li>
               <strong className="font-medium text-foreground">Everyone:</strong> your profile, your
-              products, their logos and screenshots, whether a product&apos;s domain is verified,
-              and the verified figures you choose to share. Sharing MRR also shows its month-end
-              history and 30-day growth. Paying customers and the launch date each have their own
-              setting. A badge you embed on your own site shows the shared MRR there, and browsers
-              and caches may keep it for up to ten minutes after you stop sharing.
+              products and their logos, whether a product&apos;s domain is verified, and the
+              verified figures you choose to share. Sharing MRR also shows its month-end history and
+              30-day growth. Paying customers and the launch date each have their own setting. A
+              badge you embed on your own site shows the shared MRR there, and browsers and caches
+              may keep it for up to ten minutes after you stop sharing.
             </li>
             <li>
               <strong className="font-medium text-foreground">Only you:</strong> your connection
@@ -302,8 +294,7 @@ export default function Privacy() {
             profile, products, images, provider keys, verification history, conversations and
             sign-in records are deleted right away. A conversation is deleted for both users when
             either of them deletes their account. Deleting a single product removes its details, its
-            logo, its provider key, its verification history, its screenshot and its domain check in
-            the same way. A screenshot that is replaced or turned off is deleted within minutes.
+            logo, its provider key, its verification history and its domain check in the same way.
             Logos and photos you replaced earlier are kept until you delete your account. Copies in
             backups disappear when those backups expire.
           </p>

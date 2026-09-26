@@ -4,16 +4,6 @@ const config: NextConfig = {
   poweredByHeader: false,
   distDir: process.env.NEXT_DIST_DIR || ".next",
   experimental: { serverActions: { bodySizeLimit: "4mb" } },
-  // The screenshot route runs @sparticuz/chromium on Vercel, which reads its packed browser from
-  // files that tracing does not find on its own.
-  outputFileTracingIncludes: {
-    "/api/screenshots/capture": ["./node_modules/@sparticuz/chromium/bin/**"],
-  },
-  // @sparticuz/chromium is optional and installs only on Node.js 22.17 or later; where it is
-  // missing, the screenshot code never loads it, so the missing module is no problem.
-  turbopack: {
-    ignoreIssue: [{ path: /screenshots[\\/]capture\.ts$/, title: /Module not found/ }],
-  },
   // Profiles moved from /makers to /users: everyone is a user, and the founder of the products they own.
   async redirects() {
     return [{ source: "/makers/:path*", destination: "/users/:path*", permanent: true }];

@@ -1,6 +1,6 @@
-// A founder's website and its DNS, for the tests only. The DNS server answers TXT lookups from
-// records the tests set over HTTP (PUT or DELETE /dns/<name>, with a JSON array of values); a name
-// without records does not exist. /site is a landing page to take a screenshot of.
+// A founder's DNS, for the tests only. The DNS server answers TXT lookups from records the tests
+// set over HTTP (PUT or DELETE /dns/<name>, with a JSON array of values); a name without records
+// does not exist.
 import { createSocket } from "node:dgram";
 
 const DNS_PORT = Number(process.env.FAKE_DNS_PORT || 3053);
@@ -59,27 +59,13 @@ dns.on("message", (query, remote) => {
 });
 dns.bind(DNS_PORT, "127.0.0.1");
 
-const landing = `<!doctype html>
-<html lang="en">
-  <head><meta charset="utf-8"><title>Harbor Test Site</title></head>
-  <body style="margin:0;font-family:sans-serif;background:#f3efe6;color:#1d2a33">
-    <header style="padding:48px 64px;background:#1d4e89;color:#fff">
-      <h1 style="margin:0;font-size:48px">Harbor Test Site</h1>
-      <p style="font-size:20px">A landing page for the screenshot test.</p>
-    </header>
-    <main style="padding:48px 64px;height:2400px">
-      <p>Everything below the fold is part of the full-page screenshot.</p>
-    </main>
-  </body>
-</html>`;
-
 async function body(request) {
   const parts = [];
   for await (const part of request) parts.push(part);
   return Buffer.concat(parts).toString("utf8");
 }
 
-/** Handles the DNS records and the landing page; returns false for anything else. */
+/** Handles the DNS records; returns false for anything else. */
 export function handleSite(url, request, response) {
   const record = url.pathname.match(/^\/dns\/([^/]+)$/);
   if (record) {
@@ -92,11 +78,6 @@ export function handleSite(url, request, response) {
         records.set(name, JSON.parse(text));
         response.writeHead(204).end();
       });
-    return true;
-  }
-  if (url.pathname === "/site") {
-    response.writeHead(200, { "content-type": "text/html; charset=utf-8" });
-    response.end(landing);
     return true;
   }
   return false;

@@ -758,8 +758,6 @@ export type Database = {
           logo_path: string | null
           name: string
           owner_id: string
-          screenshot_path: string | null
-          screenshot_taken_at: string | null
           slug: string
           tagline: string
           tech_stack: string[]
@@ -779,8 +777,6 @@ export type Database = {
           logo_path?: string | null
           name: string
           owner_id: string
-          screenshot_path?: string | null
-          screenshot_taken_at?: string | null
           slug: string
           tagline: string
           tech_stack?: string[]
@@ -800,8 +796,6 @@ export type Database = {
           logo_path?: string | null
           name?: string
           owner_id?: string
-          screenshot_path?: string | null
-          screenshot_taken_at?: string | null
           slug?: string
           tagline?: string
           tech_stack?: string[]
@@ -834,7 +828,6 @@ export type Database = {
           share_customers: boolean
           share_launch: boolean
           share_mrr: boolean
-          show_screenshot: boolean
           updated_at: string
         }
         Insert: {
@@ -844,7 +837,6 @@ export type Database = {
           share_customers?: boolean
           share_launch?: boolean
           share_mrr?: boolean
-          show_screenshot?: boolean
           updated_at?: string
         }
         Update: {
@@ -854,7 +846,6 @@ export type Database = {
           share_customers?: boolean
           share_launch?: boolean
           share_mrr?: boolean
-          show_screenshot?: boolean
           updated_at?: string
         }
         Relationships: [
@@ -942,8 +933,6 @@ export type Database = {
           provider: string | null
           rank: number | null
           revenue_status: string | null
-          screenshot_path: string | null
-          screenshot_taken_at: string | null
           slug: string | null
           tagline: string | null
           tech_stack: string[] | null
@@ -990,8 +979,6 @@ export type Database = {
           owner_slug: string | null
           provider: string | null
           revenue_status: string | null
-          screenshot_path: string | null
-          screenshot_taken_at: string | null
           slug: string | null
           tagline: string | null
           tech_stack: string[] | null
@@ -1136,14 +1123,6 @@ export type Database = {
           website: string
         }[]
       }
-      claim_due_screenshots: {
-        Args: { p_limit: number; p_saas?: string }
-        Returns: {
-          owner_id: string
-          saas_id: string
-          website: string
-        }[]
-      }
       claim_emails: {
         Args: { p_limit: number; p_message_delay: number }
         Returns: {
@@ -1216,16 +1195,6 @@ export type Database = {
         }
         Returns: undefined
       }
-      record_screenshot: {
-        Args: {
-          p_error: string
-          p_path: string
-          p_saas: string
-          p_website: string
-        }
-        Returns: string[]
-      }
-      request_screenshot: { Args: { p_saas: string }; Returns: undefined }
       saas_domain_verification: {
         Args: { p_saas: string }
         Returns: {
@@ -1240,14 +1209,6 @@ export type Database = {
           all_time: number
           last_30_days: number
           last_7_days: number
-        }[]
-      }
-      saas_screenshot_status: {
-        Args: { p_saas: string }
-        Returns: {
-          attempted_at: string
-          last_error: string
-          requested_at: string
         }[]
       }
       saas_slug_redirect: { Args: { p_slug: string }; Returns: string }
@@ -1283,7 +1244,6 @@ export type Database = {
           p_share_customers: boolean
           p_share_launch: boolean
           p_share_mrr: boolean
-          p_show_screenshot?: boolean
           p_tagline: string
           p_tech_stack?: string[]
           p_website: string
@@ -1324,7 +1284,6 @@ export type Database = {
         }
         Returns: string
       }
-      take_stale_screenshots: { Args: { p_limit: number }; Returns: string[] }
       track_engagement: {
         Args: {
           p_engaged_ms: number

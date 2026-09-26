@@ -50,8 +50,6 @@ const result = spawnSync(npx, ["playwright", "test", ...extra], {
     FX_API_BASE: fakeProviders,
     // Domain checks ask the fake server's DNS (tests/e2e/fake-site.mjs).
     DOMAIN_DNS_SERVERS: "127.0.0.1:3053",
-    // Screenshots may reach the fake server's landing page on this machine.
-    SCREENSHOT_ALLOW_PRIVATE: "true",
     // Notification emails go to Mailpit, and message emails are due at once.
     SMTP_HOST: "127.0.0.1",
     SMTP_PORT: String(mailpitSmtpPort),

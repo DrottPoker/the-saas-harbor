@@ -242,7 +242,7 @@ export async function deleteSaasAction(
   if (!z.uuid().safeParse(saasId).success) return { error: "You can only delete your own SaaS." };
   const { data: saas, error } = await client
     .from("saas")
-    .select("name, logo_path, screenshot_path")
+    .select("name, logo_path")
     .eq("id", saasId)
     .eq("owner_id", user.id)
     .maybeSingle();
@@ -259,16 +259,6 @@ export async function deleteSaasAction(
       if (removeError)
         throw new Error(
           "The logo could not be deleted, so the product was kept. Please try again.",
-        );
-    }
-    // The screenshot is this product's own, in the founder's folder.
-    if (saas.screenshot_path?.startsWith(`${user.id}/`)) {
-      const { error: removeError } = await client.storage
-        .from("profile-images")
-        .remove([saas.screenshot_path]);
-      if (removeError)
-        throw new Error(
-          "The screenshot could not be deleted, so the product was kept. Please try again.",
         );
     }
     // Foreign keys remove the settings, figures, provider connection and verification history.
@@ -395,7 +385,6 @@ export async function saveSaas(_state: ActionState, form: FormData): Promise<Act
       share_mrr: form.has("share_mrr"),
       share_customers: form.has("share_customers"),
       share_launch: form.has("share_launch"),
-      show_screenshot: form.has("show_screenshot"),
       // One entry per ticked technology.
       tech_stack: form.getAll("tech").map(String),
     });
@@ -422,7 +411,6 @@ export async function saveSaas(_state: ActionState, form: FormData): Promise<Act
       p_share_customers: fields.share_customers,
       p_share_launch: fields.share_launch,
       p_tech_stack: fields.tech_stack,
-      p_show_screenshot: fields.show_screenshot,
     });
     if (error)
       throw new Error(

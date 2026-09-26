@@ -166,7 +166,6 @@ export const saasSchema = z.object({
   share_mrr: z.boolean(),
   share_customers: z.boolean(),
   share_launch: z.boolean(),
-  show_screenshot: z.boolean(),
   tech_stack: z
     .array(z.string())
     .max(TECH_STACK_MAX, `Choose up to ${TECH_STACK_MAX} technologies.`)

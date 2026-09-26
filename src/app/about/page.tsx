@@ -30,9 +30,9 @@ const sections = [
     ],
   },
   {
-    title: "Tech stacks and screenshots",
+    title: "Tech stacks",
     body: [
-      "Founders list the technologies a product is built with, and each technology has a page with the products built with it. Each product page also shows a screenshot of the website's landing page. Our server takes it with a web browser when the product is listed or its website changes, and again every 30 days; founders can ask for a new one or turn it off.",
+      "Founders list the technologies a product is built with, and each technology has a page with the products built with it.",
     ],
   },
   {

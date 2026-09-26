@@ -3,7 +3,6 @@ import { ArrowUpRight, BadgeCheck } from "lucide-react";
 import { parseHistory } from "@/lib/charts";
 import type { Listing, PageViewCounts, RevenueStatus } from "@/lib/data";
 import { categorySlug, formatDate, formatUsd } from "@/lib/domain";
-import { imageUrl } from "@/lib/images";
 import { providerName } from "@/lib/revenue/catalog";
 import { websiteRel } from "@/lib/seo";
 import { PersonAvatar, ProductLogo } from "./avatars";
@@ -82,7 +81,6 @@ export function ProductProfile({
   const site = hostname(item.website);
   const status = (item.revenue_status ?? "unverified") as RevenueStatus;
   const history = parseHistory(item.mrr_history);
-  const screenshot = demo ? null : imageUrl(item.screenshot_path);
   // Category pages list real products only, so demo products link to the filtered Browse list.
   const categoryHref = demo
     ? `/discover?category=${encodeURIComponent(item.category ?? "")}`
@@ -209,30 +207,6 @@ export function ProductProfile({
 
       <div className="mt-12 grid gap-10 lg:grid-cols-[minmax(0,1fr)_17rem] lg:gap-14">
         <div className="grid content-start gap-10">
-          {screenshot && (
-            <figure className="grid gap-2">
-              <div className="overflow-hidden rounded-xl border bg-subtle">
-                {/* eslint-disable-next-line @next/next/no-img-element -- A stored image of any height, shown from the top. */}
-                <img
-                  src={screenshot}
-                  alt={`Screenshot of ${site ?? name}`}
-                  loading="lazy"
-                  className="aspect-[16/10] w-full object-cover object-top"
-                />
-              </div>
-              <figcaption className="flex flex-wrap justify-between gap-x-4 gap-y-1 text-[13px] text-muted-foreground">
-                <span>Taken {formatDate(item.screenshot_taken_at)}</span>
-                <a
-                  href={screenshot}
-                  target="_blank"
-                  rel="noopener"
-                  className="underline underline-offset-2 hover:text-foreground"
-                >
-                  View full page
-                </a>
-              </figcaption>
-            </figure>
-          )}
           <section>
             <h2 className="text-lg font-semibold">About {name}</h2>
             <p className="mt-3 leading-7 whitespace-pre-wrap text-foreground/85 [overflow-wrap:anywhere]">

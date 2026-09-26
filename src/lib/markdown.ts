@@ -4,7 +4,6 @@
 import { monthLabel, parseHistory, wholeUsd } from "./charts";
 import type { CategoryCount, Listing, Profile, RevenueStatus } from "./data";
 import { categorySlug, formatDate, formatUsd } from "./domain";
-import { imageUrl } from "./images";
 import { providerName } from "./revenue/catalog";
 import { rolePeriod, sortRoles, type ProfileExperience } from "./profile";
 import { SITE_DESCRIPTION, SITE_NAME, siteUrl } from "./seo";
@@ -76,26 +75,6 @@ function techStackLines(stack: readonly string[] | null | undefined) {
   ];
 }
 
-/** The screenshot of a product's website, when there is one. */
-function screenshotLines(item: Listing) {
-  const url = imageUrl(item.screenshot_path);
-  if (!url) return [];
-  let site = "the website";
-  try {
-    site = new URL(item.website ?? "").hostname.replace(/^www\./, "");
-  } catch {
-    // A product always has a website; without one the alt text stays general.
-  }
-  return [
-    "",
-    "## Screenshot",
-    "",
-    `![Screenshot of ${hostText(site)}](${url})`,
-    "",
-    `Taken ${formatDate(item.screenshot_taken_at)}.`,
-  ];
-}
-
 export function productMarkdown(item: Listing) {
   const base = siteUrl();
   const status = (item.revenue_status ?? "unverified") as RevenueStatus;
@@ -153,7 +132,6 @@ export function productMarkdown(item: Listing) {
     "",
     escapeMarkdown(item.description ?? ""),
     ...techStackLines(item.tech_stack),
-    ...screenshotLines(item),
     "",
     "---",
     "",

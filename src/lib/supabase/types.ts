@@ -24,13 +24,7 @@ export type Database = Omit<GeneratedDatabase, "public"> & {
       | "claim_emails"
       | "complete_email"
       | "track_page_view"
-      | "record_screenshot"
     > & {
-      // A failure has no file, and a stored file no failure.
-      record_screenshot: {
-        Args: Nullable<Functions["record_screenshot"]["Args"], "p_path" | "p_error">;
-        Returns: string[];
-      };
       claim_emails: {
         Args: Functions["claim_emails"]["Args"];
         Returns: Nullable<Row<"claim_emails">, "name" | "context">[];

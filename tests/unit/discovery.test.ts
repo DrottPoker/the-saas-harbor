@@ -47,8 +47,6 @@ function listing(overrides: Partial<Listing> = {}): Listing {
     tech_stack: ["postgresql", "go", "gone-now"],
     verified_domain: null,
     domain_verified_at: null,
-    screenshot_path: null,
-    screenshot_taken_at: null,
     rank: 1,
     ...overrides,
   };

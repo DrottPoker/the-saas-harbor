@@ -639,7 +639,7 @@ export function SaasForm({
       </Section>
       <Section
         title="Visibility"
-        description="Revenue and customers come from your payment provider and are private unless you share them. Only shared, verified MRR is ranked. The screenshot shows your website's landing page."
+        description="Revenue and customers come from your payment provider and are private unless you share them. Only shared, verified MRR is ranked."
       >
         <div className="grid gap-2.5">
           <Share
@@ -651,13 +651,6 @@ export function SaasForm({
             name="share_customers"
             label="Show paying customer count publicly"
             checked={shared("share_customers")}
-          />
-          <Share
-            name="show_screenshot"
-            label="Show a screenshot of the website"
-            checked={
-              state.values ? !!state.values.show_screenshot : (settings?.show_screenshot ?? true)
-            }
           />
         </div>
         <div className="grid gap-2.5 sm:max-w-xs">
