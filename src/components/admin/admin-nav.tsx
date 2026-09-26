@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 
 const items = [
   ["/admin", "Overview"],
+  ["/admin/analytics", "Analytics"],
   ["/admin/reports", "Reports"],
   ["/admin/feedback", "Feedback"],
   ["/admin/products", "Products"],

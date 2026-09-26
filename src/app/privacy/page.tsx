@@ -91,6 +91,10 @@ export default function Privacy() {
               message email names the sender but never contains the message.
             </li>
             <li>
+              <strong className="font-medium text-foreground">Visits.</strong> Page views for the
+              site statistics, which are not linked to you or your account (see Site statistics).
+            </li>
+            <li>
               <strong className="font-medium text-foreground">Preferences.</strong> Whether you
               chose the light or dark theme, in a cookie on your device.
             </li>
@@ -159,16 +163,30 @@ export default function Privacy() {
 
         <Section id="statistics" title="Site statistics">
           <p>
-            We count visits with Vercel Web Analytics, which uses no cookies and stores nothing on
-            your device. For each page you open, Vercel records the page&apos;s address, the site
-            that linked to it, your country, and the type of device, browser and operating system.
-            Addresses keep only campaign tags (utm_source and the like); other query values are
-            removed before anything is sent, and admin pages are not measured.
+            We count visits in two ways, both without cookies and without storing anything on your
+            device. For each page you open, the site notes which page it is and, when you arrive,
+            which site linked to it. Addresses keep only campaign tags (utm_source and the like);
+            other query values, and ids in private addresses such as a conversation, are removed.
+            Admin pages and visits by signed-in admins are not counted.
           </p>
           <p>
-            To count visitors rather than page views, Vercel derives a code from the request that
-            changes every day. It does not identify you, and it cannot recognise you from one day to
-            the next or connect your visits to your account.
+            <strong className="font-medium text-foreground">Our own statistics.</strong> Our server
+            stores the page, the linking site, the campaign tags, your country, which it looks up
+            from your IP address, and the type of device, browser and operating system, in our
+            database at Supabase. To tell visitors apart, it combines your IP address and your
+            browser&apos;s user agent with a random value that changes every day and is then
+            deleted, and keeps only the resulting code. Your IP address is not stored, and the code
+            cannot be traced back to you, recognised the next day or connected to your account.
+            Admins see only totals, such as visitors per day and the most visited pages. Page views
+            are deleted after 25 months.
+          </p>
+          <p>
+            <strong className="font-medium text-foreground">Vercel Web Analytics.</strong> Vercel
+            records the same kind of information: the page&apos;s address, the site that linked to
+            it, your country, and the type of device, browser and operating system. To count
+            visitors, it derives a code from the request that changes every day. It does not
+            identify you, and it cannot recognise you from one day to the next or connect your
+            visits to your account.
           </p>
         </Section>
 
@@ -199,9 +217,10 @@ export default function Privacy() {
               <strong className="font-medium text-foreground">Admins:</strong> the people the
               operator appoints to review reports. They see your email address, when you joined and
               last signed in, reports about you or by you, the decisions about your account, and the
-              feedback you send, with your name. An admin sees a private message only when one of
-              the two users reports it, and then only a copy of that message. A user who is reported
-              never learns who reported them.
+              feedback you send, with your name. The site statistics show admins only totals, never
+              who visited. An admin sees a private message only when one of the two users reports
+              it, and then only a copy of that message. A user who is reported never learns who
+              reported them.
             </li>
             <li>
               <strong className="font-medium text-foreground">Service providers:</strong> our
@@ -209,9 +228,9 @@ export default function Privacy() {
               site runs on Vercel, with its servers in Frankfurt, Germany. The database, sign-in and
               image storage run on Supabase, in its Frankfurt, Germany region. Account emails, such
               as confirmation and password reset messages, and notification emails are sent through
-              Resend. Vercel also provides the site statistics. Vercel and Resend are based in the
-              United States. If a provider handles data outside the EU or EEA, we use the safeguards
-              the GDPR requires, such as the EU standard contractual clauses.
+              Resend. Vercel also counts visits for the site statistics. Vercel and Resend are based
+              in the United States. If a provider handles data outside the EU or EEA, we use the
+              safeguards the GDPR requires, such as the EU standard contractual clauses.
             </li>
           </List>
           <p>
@@ -254,6 +273,10 @@ export default function Privacy() {
             their account. Deleting a reported product or message keeps the report and its copy, so
             admins can still review it. Admin decisions are deleted with the account they concern.
             Feedback is kept until you delete your account.
+          </p>
+          <p>
+            Page views for the site statistics are kept for 25 months. They are not linked to your
+            account, so deleting it does not remove them, and nothing in them points to you.
           </p>
           <p>
             Information that was public may already have been copied by others, such as search

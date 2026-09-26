@@ -1018,6 +1018,10 @@ export type Database = {
           suspended_at: string
         }[]
       }
+      admin_analytics: {
+        Args: { p_bucket: string; p_from: string; p_to: string }
+        Returns: Json
+      }
       admin_dismiss_report: {
         Args: { p_note: string; p_report: string }
         Returns: undefined
@@ -1088,6 +1092,22 @@ export type Database = {
       mark_conversation_read: {
         Args: { p_conversation: string; p_read_at: string }
         Returns: undefined
+      }
+      record_page_view: {
+        Args: {
+          p_browser: string
+          p_country: string
+          p_device: string
+          p_ip: string
+          p_os: string
+          p_path: string
+          p_referrer: string
+          p_user_agent: string
+          p_utm_campaign: string
+          p_utm_medium: string
+          p_utm_source: string
+        }
+        Returns: boolean
       }
       record_revenue_verification: {
         Args: {

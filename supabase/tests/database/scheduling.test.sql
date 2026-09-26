@@ -7,9 +7,10 @@ select plan(8);
 
 select results_eq(
   $$ select jobname::text, schedule::text from cron.job where jobname like 'harbor-%' order by 1 $$,
-  $$ values ('harbor-email-send'::text, '* * * * *'::text), ('harbor-job-history', '17 3 * * *'),
+  $$ values ('harbor-analytics-retention'::text, '41 3 * * *'::text),
+    ('harbor-email-send', '* * * * *'), ('harbor-job-history', '17 3 * * *'),
     ('harbor-revenue-sync', '*/10 * * * *') $$,
-  'emails every minute, revenue every ten minutes, history cleanup daily');
+  'emails every minute, revenue every ten minutes, history and statistics cleanup daily');
 select ok(
   (select command like '%/api/email/send%' from cron.job where jobname = 'harbor-email-send')
   and (select command like '%/api/revenue/sync%' from cron.job where jobname = 'harbor-revenue-sync'),

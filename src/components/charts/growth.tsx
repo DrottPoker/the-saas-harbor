@@ -7,8 +7,19 @@ const styles = {
   flat: { Icon: ArrowRight, color: "text-muted-foreground", word: "Unchanged" },
 };
 
-/** 30-day MRR growth: direction is carried by the icon and sign as well as by color. */
-export function Growth({ pct, className }: { pct: number; className?: string }) {
+/**
+ * A change in percent, by default 30-day MRR growth: direction is carried by the icon and sign as
+ * well as by color. `period` is the visible suffix and the words for screen readers.
+ */
+export function Growth({
+  pct,
+  period = { short: "30d", long: "over the last 30 days" },
+  className,
+}: {
+  pct: number;
+  period?: { short: string | null; long: string };
+  className?: string;
+}) {
   const direction = pct > 0 ? "up" : pct < 0 ? "down" : "flat";
   const { Icon, color, word } = styles[direction];
   const size = new Intl.NumberFormat("en-US", {
@@ -24,11 +35,13 @@ export function Growth({ pct, className }: { pct: number; className?: string }) 
           {size}%
         </span>
       </span>
-      <span aria-hidden="true" className="ml-0.5 text-muted-foreground">
-        30d
-      </span>
+      {period.short && (
+        <span aria-hidden="true" className="ml-0.5 text-muted-foreground">
+          {period.short}
+        </span>
+      )}
       <span className="sr-only">
-        {direction === "flat" ? "Unchanged" : `${word} ${size}%`} over the last 30 days
+        {direction === "flat" ? "Unchanged" : `${word} ${size}%`} {period.long}
       </span>
     </span>
   );

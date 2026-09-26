@@ -23,6 +23,7 @@ export type Database = Omit<GeneratedDatabase, "public"> & {
       | "username_change_available_at"
       | "claim_emails"
       | "complete_email"
+      | "record_page_view"
     > & {
       claim_emails: {
         Args: Functions["claim_emails"]["Args"];
@@ -39,6 +40,13 @@ export type Database = Omit<GeneratedDatabase, "public"> & {
       check_username: {
         Args: Functions["check_username"]["Args"];
         Returns: "format" | "reserved" | "taken" | null;
+      };
+      record_page_view: {
+        Args: Nullable<
+          Functions["record_page_view"]["Args"],
+          "p_referrer" | "p_utm_source" | "p_utm_medium" | "p_utm_campaign" | "p_country"
+        >;
+        Returns: boolean;
       };
       submit_feedback: {
         Args: Nullable<Functions["submit_feedback"]["Args"], "p_page">;

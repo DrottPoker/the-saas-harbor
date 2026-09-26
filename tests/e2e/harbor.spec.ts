@@ -124,13 +124,13 @@ test.beforeAll(async ({ playwright }, info) => {
     ...["/", "/discover", "/newest", "/about", "/privacy", "/terms", "/account-deleted"],
     ...["/auth", "/auth/confirm", `/saas/${id}`, `/users/${id}`, "/demo/metricfold", "/missing"],
     ...["/dashboard", "/dashboard/profile", "/dashboard/reports", `/dashboard/saas/${id}`],
-    ...["/dashboard/settings", "/api/email/send"],
+    ...["/dashboard/settings", "/api/email/send", "/api/analytics"],
     ...["/messages", `/messages/${id}`, `/report/saas/${id}`, "/api/revenue/sync"],
     ...["/sitemap.xml", "/robots.txt", "/opengraph-image", "/llms.txt"],
     ...["/categories", "/categories/design", "/saas/any.md", "/users/any.md"],
     ...["/stats", "/stats/opengraph-image", "/feedback"],
     ...["/saas/any/opengraph-image", "/users/any/opengraph-image", "/saas/any/badge.svg"],
-    ...["", "/reports", "/feedback", "/products", "/accounts", "/log"].map(
+    ...["", "/analytics", "/reports", "/feedback", "/products", "/accounts", "/log"].map(
       (section) => `/admin${section}`,
     ),
     ...["reports", "products", "accounts"].map((section) => `/admin/${section}/${id}`),
@@ -1642,6 +1642,169 @@ test("users send feedback from any page, and admins read it and mark it handled"
   await adminPage.goto("/admin/feedback");
   await expect(adminPage.getByText(message)).toBeVisible();
   await adminPage.context().close();
+});
+
+test("visits are counted without cookies, and admins see them under Analytics", async ({
+  browser,
+  request,
+}) => {
+  test.setTimeout(180000);
+  const baseURL = test.info().project.use.baseURL!;
+  const since = new Date(Date.now() - 1000).toISOString();
+  const address = `harbor-analytics-${run}@example.test`;
+  const secret = randomBytes(24).toString("hex");
+  const { data, error } = await admin.auth.admin.createUser({
+    email: address,
+    password: secret,
+    email_confirm: true,
+  });
+  if (error || !data.user) throw new Error("Unable to create an analytics fixture.");
+  userIds.push(data.user.id);
+  const { error: grantError } = await admin.rpc("set_admin", { p_email: address, p_admin: true });
+  if (grantError) throw new Error("Unable to grant admin rights.");
+
+  // Headless browsers count as automated, so these visitors present ordinary browsers. The run
+  // makes them new visitors, so a run soon after another still starts new visits.
+  const chrome = `Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36 Run/${run}`;
+  const firefox = `Mozilla/5.0 (X11; Linux x86_64; rv:142.0) Gecko/20100101 Firefox/142.0 Run/${run}`;
+  const violations: string[] = [];
+  const visit = async (agent: string) => {
+    const context = await browser.newContext({ baseURL, userAgent: agent });
+    const page = await context.newPage();
+    watchPolicy(page, violations);
+    const beacon = () =>
+      page.waitForResponse((response) => new URL(response.url()).pathname === "/api/analytics");
+    return { context, page, beacon };
+  };
+
+  // A visit from a campaign link, then a second page through the site's own navigation.
+  const first = await visit(chrome);
+  let sent = first.beacon();
+  await first.page.goto(`/about?utm_source=e2e-${run}&utm_campaign=launch-${run}&token=secret`);
+  expect((await sent).status()).toBe(204);
+  sent = first.beacon();
+  await first.page.getByRole("contentinfo").getByRole("link", { name: "Privacy" }).click();
+  await expect(first.page).toHaveURL("/privacy");
+  expect((await sent).status()).toBe(204);
+  expect(await first.context.cookies()).toEqual([]);
+  await first.context.close();
+
+  // A visit linked from another site.
+  const second = await visit(firefox);
+  sent = second.beacon();
+  await second.page.goto("/stats", { referer: `https://www.news-${run}.example/thread` });
+  expect((await sent).status()).toBe(204);
+  await second.context.close();
+
+  // Other sites, bots and malformed beacons are refused or left out.
+  const post = (headers: Record<string, string>, body: unknown) =>
+    request.post("/api/analytics", {
+      headers: { "Content-Type": "application/json", ...headers },
+      data: body,
+    });
+  expect(
+    (
+      await post({ Origin: "https://evil.example", "User-Agent": chrome }, { path: "/terms" })
+    ).status(),
+  ).toBe(403);
+  expect((await post({ Origin: baseURL, "User-Agent": chrome }, "not json")).status()).toBe(400);
+  expect(
+    (
+      await post(
+        { Origin: baseURL, "User-Agent": "Mozilla/5.0 (compatible; Googlebot/2.1)" },
+        { path: `/users/bot-${run}` },
+      )
+    ).status(),
+  ).toBe(204);
+
+  // A signed-in admin is not counted, on the site or in the panel.
+  const reader = await visit(chrome);
+  const adminPage = reader.page;
+  await login(adminPage, address, secret);
+  sent = reader.beacon();
+  await adminPage.goto(`/users/admin-${run}`);
+  expect((await sent).status()).toBe(204);
+
+  // The totals since the test began hold the two visits and nothing that was left out.
+  const client = createClient(url, publicKey, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+  await client.auth.signInWithPassword({ email: address, password: secret });
+  const { data: totals, error: readError } = await client.rpc("admin_analytics", {
+    p_from: since,
+    p_to: new Date(Date.now() + 60000).toISOString(),
+    p_bucket: "hour",
+  });
+  if (readError) throw new Error("Unable to read the statistics.");
+  const stats = totals as {
+    visitors: number;
+    pages: { path: string; page_views: number }[];
+    sources: { source: string | null; visits: number }[];
+    campaigns: { campaign: string; visits: number }[];
+    countries: { country: string | null }[];
+    browsers: { browser: string }[];
+  };
+  expect(stats.visitors).toBeGreaterThanOrEqual(2);
+  const paths = stats.pages.map((page) => page.path);
+  expect(paths).toEqual(expect.arrayContaining(["/about", "/privacy", "/stats"]));
+  for (const left of [`/users/bot-${run}`, `/users/admin-${run}`, "/terms", "/admin/analytics"])
+    expect(paths).not.toContain(left);
+  expect(stats.sources).toEqual(
+    expect.arrayContaining([
+      { source: `e2e-${run}`, visits: 1 },
+      { source: `news-${run}.example`, visits: 1 },
+    ]),
+  );
+  expect(stats.campaigns).toEqual(
+    expect.arrayContaining([{ campaign: `launch-${run}`, visits: 1 }]),
+  );
+  expect(stats.browsers.map((row) => row.browser)).toEqual(
+    expect.arrayContaining(["Chrome", "Firefox"]),
+  );
+  // Only this client's session; the browser stays signed in.
+  await client.auth.signOut({ scope: "local" });
+
+  // The panel shows the same, for every period, in both themes and on a phone.
+  await adminPage.goto("/admin");
+  await adminPage
+    .getByRole("navigation", { name: "Admin" })
+    .getByRole("link", { name: "Analytics" })
+    .click();
+  await expect(adminPage).toHaveURL("/admin/analytics");
+  await adminPage
+    .getByRole("navigation", { name: "Period" })
+    .getByRole("link", { name: "24 hours" })
+    .click();
+  await expect(adminPage).toHaveURL("/admin/analytics?range=24h");
+  await expect(
+    adminPage
+      .getByRole("table", { name: "The most viewed pages" })
+      .getByRole("link", { name: "/about" }),
+  ).toHaveAttribute("href", "/about");
+  await expect(
+    adminPage.getByRole("table", { name: "Visits by source" }).getByText(`e2e-${run}`),
+  ).toBeVisible();
+  await expect(
+    adminPage.getByRole("table", { name: "Visits by campaign" }).getByText(`launch-${run}`),
+  ).toBeVisible();
+  const analyticsPages = ["24h", "7d", "30d", "90d", "12m"].map(
+    (range) => `/admin/analytics?range=${range}`,
+  );
+  for (const theme of ["dark", "light"] as const) {
+    await setThemeCookie(adminPage, theme);
+    for (const path of analyticsPages) {
+      await adminPage.goto(path);
+      await expect(adminPage.getByRole("heading", { name: "Analytics", level: 1 })).toBeVisible();
+      await expectAccessible(adminPage);
+    }
+  }
+  await adminPage.setViewportSize({ width: 390, height: 844 });
+  for (const path of analyticsPages) {
+    await adminPage.goto(path);
+    await expectNoHorizontalScroll(adminPage);
+  }
+  await reader.context.close();
+  expect(violations).toEqual([]);
 });
 
 test("users get one email per unread conversation, and can turn it off", async ({
