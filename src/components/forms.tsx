@@ -21,6 +21,7 @@ import {
   type ActionState,
 } from "@/lib/domain";
 import type { Saas, SaasSettings } from "@/lib/data";
+import { TECH_STACK_MAX, techGroups, technologies } from "@/lib/tech";
 import { cn } from "@/lib/utils";
 import { PersonAvatar, ProductLogo } from "./avatars";
 import { Notice } from "./shell";
@@ -501,6 +502,50 @@ export function ConfirmLinkForm({
   );
 }
 
+/**
+ * The technologies a product is built with, one checkbox each, in groups that open when something
+ * in them is ticked. `key` mounts the boxes again after a failed save, so they show what was sent.
+ */
+function TechStackField({ stack }: { stack: string[] }) {
+  const chosen = new Set(stack);
+  return (
+    <div key={stack.join()} className="grid gap-2">
+      {techGroups.map((group) => {
+        const items = technologies.filter((tech) => tech.group === group);
+        return (
+          <details
+            key={group}
+            open={items.some((tech) => chosen.has(tech.slug))}
+            className="group rounded-lg border bg-surface"
+          >
+            <summary className="cursor-pointer rounded-lg px-4 py-2.5 text-sm font-medium select-none hover:bg-subtle">
+              {group}
+            </summary>
+            <fieldset className="flex flex-wrap gap-1.5 border-t px-4 py-3">
+              <legend className="sr-only">{group}</legend>
+              {items.map((tech) => (
+                <label
+                  key={tech.slug}
+                  className="flex items-center gap-2 rounded-full border bg-background px-3 py-1 text-[13px] text-muted-foreground has-checked:border-foreground has-checked:text-foreground"
+                >
+                  <input
+                    type="checkbox"
+                    name="tech"
+                    value={tech.slug}
+                    defaultChecked={chosen.has(tech.slug)}
+                    className="size-3.5 accent-brand"
+                  />
+                  {tech.name}
+                </label>
+              ))}
+            </fieldset>
+          </details>
+        );
+      })}
+    </div>
+  );
+}
+
 export function SaasForm({
   id,
   saas,
@@ -513,6 +558,7 @@ export function SaasForm({
   const [state, action] = useEditorAction(saveSaas);
   const shared = (key: "share_mrr" | "share_customers" | "share_launch") =>
     state.values ? !!state.values[key] : settings?.[key];
+  const stack = state.values ? (state.values.tech?.split("\n") ?? []) : (saas?.tech_stack ?? []);
   return (
     <form action={action}>
       <input type="hidden" name="id" value={id} />
@@ -584,6 +630,12 @@ export function SaasForm({
       </Section>
       <Section title="Logo" description="A square logo works best.">
         <ImageField label="Upload logo" current={saas?.logo_path} name={saas?.name ?? ""} />
+      </Section>
+      <Section
+        title="Tech stack"
+        description={`What the product is built with, up to ${TECH_STACK_MAX}. Shown on its page, with links to other products built with the same.`}
+      >
+        <TechStackField stack={stack} />
       </Section>
       <Section
         title="Visibility"

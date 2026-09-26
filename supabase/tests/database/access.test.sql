@@ -163,7 +163,7 @@ select throws_ok('select count(*) from public.revenue_connections', '42501', nul
   'anonymous visitors cannot read connections');
 select ok(
   not has_function_privilege('anon',
-    'public.save_saas(uuid,text,text,text,text,text,text,date,boolean,boolean,boolean)', 'execute'),
+    'public.save_saas(uuid,text,text,text,text,text,text,date,boolean,boolean,boolean,text[])', 'execute'),
   'anonymous visitors cannot execute save_saas'
 );
 

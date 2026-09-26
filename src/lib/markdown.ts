@@ -7,6 +7,7 @@ import { categorySlug, formatDate, formatUsd } from "./domain";
 import { providerName } from "./revenue/catalog";
 import { rolePeriod, sortRoles, type ProfileExperience } from "./profile";
 import { SITE_DESCRIPTION, SITE_NAME, siteUrl } from "./seo";
+import { groupTechStack, technologies } from "./tech";
 
 /**
  * Maker text as plain Markdown text, line breaks kept. Characters that make emphasis, code,
@@ -51,6 +52,22 @@ function mrrText(item: Listing) {
 
 function growthText(pct: number) {
   return `${pct > 0 ? "+" : ""}${pct.toFixed(1)}%`;
+}
+
+/** A product's tech stack, one line per group, each technology linking to its page. */
+function techStackLines(stack: readonly string[] | null | undefined) {
+  const groups = groupTechStack(stack);
+  if (!groups.length) return [];
+  const base = siteUrl();
+  return [
+    "",
+    "## Tech stack",
+    "",
+    ...groups.map(
+      ({ group, items }) =>
+        `- ${group}: ${items.map((tech) => `[${tech.name}](${base}/tech/${tech.slug})`).join(", ")}`,
+    ),
+  ];
 }
 
 export function productMarkdown(item: Listing) {
@@ -102,6 +119,7 @@ export function productMarkdown(item: Listing) {
     `## About ${inline(item.name)}`,
     "",
     escapeMarkdown(item.description ?? ""),
+    ...techStackLines(item.tech_stack),
     "",
     "---",
     "",
@@ -177,7 +195,9 @@ export function llmsText(
   ranked: Listing[],
   counts: Map<string, CategoryCount>,
   categories: readonly string[],
+  techCounts: Map<string, CategoryCount> = new Map(),
 ) {
+  const usedTech = technologies.filter((tech) => techCounts.get(tech.slug)?.products);
   const base = siteUrl();
   const lines = [
     `# ${SITE_NAME}`,
@@ -194,6 +214,7 @@ export function llmsText(
     `- [Browse](${base}/discover): every listed product, A to Z`,
     `- [New arrivals](${base}/newest): the latest products to join`,
     `- [Categories](${base}/categories): products by category`,
+    `- [Tech stacks](${base}/tech): products by the technologies their founders list`,
     `- [Statistics](${base}/stats): combined, median and distributed verified MRR`,
     `- [How it works](${base}/about): verification, ranking and what is public`,
     "",
@@ -206,6 +227,15 @@ export function llmsText(
         : "no products yet";
       return `- [${category}](${base}/categories/${categorySlug(category)}): ${detail}`;
     }),
+    "",
+    "## Tech stacks",
+    "",
+    ...(usedTech.length
+      ? usedTech.map((tech) => {
+          const count = techCounts.get(tech.slug)!;
+          return `- [${tech.name}](${base}/tech/${tech.slug}): ${count.products} ${count.products === 1 ? "product" : "products"}, ${count.ranked} ranked`;
+        })
+      : ["No product lists its tech stack yet."]),
     "",
     "## Leaderboard",
     "",

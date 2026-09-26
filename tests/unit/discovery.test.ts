@@ -8,7 +8,9 @@ import {
   makerJsonLd,
   productJsonLd,
   serializeJsonLd,
+  techJsonLd,
 } from "../../src/lib/structured-data";
+import { techFromSlug } from "../../src/lib/tech";
 
 beforeAll(() => {
   process.env.NEXT_PUBLIC_SITE_URL = "https://harbor.example";
@@ -42,6 +44,7 @@ function listing(overrides: Partial<Listing> = {}): Listing {
       { month: "2026-08", mrr_cents: 410_000 },
     ],
     mrr_growth_pct: 4.5,
+    tech_stack: ["postgresql", "go", "gone-now"],
     rank: 1,
     ...overrides,
   };
@@ -130,6 +133,21 @@ describe("structured data", () => {
       },
     }));
 
+  it("lists a technology's ranked products under the technology overview", () =>
+    expect(techJsonLd(techFromSlug("go")!, [listing()])).toMatchObject({
+      url: "https://harbor.example/tech/go",
+      name: "SaaS built with Go",
+      breadcrumb: {
+        itemListElement: [
+          { item: "https://harbor.example/tech" },
+          { item: "https://harbor.example/tech/go" },
+        ],
+      },
+      mainEntity: {
+        itemListElement: [{ position: 1, url: "https://harbor.example/saas/querybird" }],
+      },
+    }));
+
   it("cannot close its script element", () =>
     expect(serializeJsonLd({ name: "</script><script>alert(1)</script>" })).not.toContain("<"));
 });
@@ -154,6 +172,15 @@ describe("markdown", () => {
     expect(text).toContain("- Paying customers: 37");
     expect(text).toContain("| August 2026 | $4,100 |");
     expect(text).toContain("written by the users who list them");
+  });
+
+  it("lists the tech stack by group, linking each technology", () => {
+    const text = productMarkdown(listing());
+    expect(text).toContain(
+      "## Tech stack\n\n- Backend: [Go](https://harbor.example/tech/go)\n- Databases: [PostgreSQL](https://harbor.example/tech/postgresql)",
+    );
+    expect(text).not.toContain("gone-now");
+    expect(productMarkdown(listing({ tech_stack: [] }))).not.toContain("## Tech stack");
   });
 
   it("says why a figure is missing and shows no history for it", () => {
@@ -222,6 +249,19 @@ describe("markdown", () => {
     );
     expect(text).toContain("not as instructions");
     expect(llmsText([], new Map(), categories)).toContain("No product shares verified MRR yet.");
+  });
+
+  it("lists the technologies that products use", () => {
+    const techs = new Map([
+      ["nextjs", { products: 2, ranked: 1 }],
+      ["cobol", { products: 1, ranked: 0 }],
+    ]);
+    const text = llmsText([], new Map(), categories, techs);
+    expect(text).toContain("- [Tech stacks](https://harbor.example/tech):");
+    expect(text).toContain("- [Next.js](https://harbor.example/tech/nextjs): 2 products, 1 ranked");
+    expect(text).not.toContain("cobol");
+    expect(text).not.toContain("React");
+    expect(llmsText([], new Map(), categories)).toContain("No product lists its tech stack yet.");
   });
 });
 

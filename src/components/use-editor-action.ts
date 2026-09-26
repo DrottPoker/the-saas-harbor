@@ -11,11 +11,12 @@ export function useEditorAction(
 ) {
   return useActionState<EditorState, FormData>(async (state, form) => {
     const result = await action(state, form);
-    const values = Object.fromEntries(
-      [...form.entries()].filter(
-        ([key, value]) => typeof value === "string" && !SECRET_FIELDS.has(key),
-      ),
-    ) as Record<string, string>;
+    const values: Record<string, string> = {};
+    for (const [key, value] of form.entries()) {
+      if (typeof value !== "string" || SECRET_FIELDS.has(key)) continue;
+      // A group of checkboxes sends one entry per ticked box; they are kept one per line.
+      values[key] = key in values ? `${values[key]}\n${value}` : value;
+    }
     return { ...result, values };
   }, {});
 }

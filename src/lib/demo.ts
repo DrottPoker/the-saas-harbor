@@ -333,6 +333,8 @@ function toListing(product: DemoProduct, now: Date): Listing {
     verified_at: null,
     livemode: null,
     provider: null,
+    // Technology pages list real products only, so demo products name no stack.
+    tech_stack: null,
     // Never "verified": a demo figure must not read as one anywhere.
     revenue_status: product.verified === false ? "unverified" : shared ? "demo" : "private",
     mrr_history: history,

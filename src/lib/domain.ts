@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { DETAILS_MAX_LENGTH, DETAILS_REQUIRED, NOTE_MAX_LENGTH, REASONS } from "./moderation";
 import { latestDate, latestMonth } from "./profile";
+import { TECH_STACK_MAX, techFromSlug } from "./tech";
 
 export const categories = [
   "AI & Machine Learning",
@@ -165,6 +166,13 @@ export const saasSchema = z.object({
   share_mrr: z.boolean(),
   share_customers: z.boolean(),
   share_launch: z.boolean(),
+  tech_stack: z
+    .array(z.string())
+    .max(TECH_STACK_MAX, `Choose up to ${TECH_STACK_MAX} technologies.`)
+    .refine(
+      (stack) => stack.every((slug) => techFromSlug(slug)) && new Set(stack).size === stack.length,
+      "Choose technologies from the list.",
+    ),
 });
 export type ActionState = { error?: string; success?: string };
 

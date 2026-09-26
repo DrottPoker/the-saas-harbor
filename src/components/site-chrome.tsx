@@ -80,6 +80,9 @@ export function SiteFooter() {
           <Link className={quietLink} href="/categories">
             Categories
           </Link>
+          <Link className={quietLink} href="/tech">
+            Tech stacks
+          </Link>
           <Link className={quietLink} href="/stats">
             Statistics
           </Link>

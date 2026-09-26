@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Search } from "lucide-react";
 import { demoRows, listings, safePage, type Sort } from "@/lib/data";
 import { categories } from "@/lib/domain";
+import { techFromSlug } from "@/lib/tech";
 import { cn } from "@/lib/utils";
 import { FounderHeader } from "./founder-header";
 import { Leaderboard, ListingGrid, ResultsFooter } from "./listings";
@@ -51,16 +52,26 @@ export async function Explore({
   const category = categories.includes(params.category as (typeof categories)[number])
     ? params.category!
     : "";
+  // Technology pages (/tech/<slug>) link here for their full lists.
+  const tech = techFromSlug(params.tech ?? "");
   const page = safePage(params.page);
   const search = (params.q ?? "").slice(0, 80);
   const { title, description, path, sort } = intro[mode];
-  const { rows, count, error } = await listings({ sort, category, page, search });
-  const demo = error ? [] : await demoRows({ sort, category, search, page, count });
+  const { rows, count, error } = await listings({
+    sort,
+    category,
+    page,
+    search,
+    tech: tech?.slug,
+  });
+  // Demo products name no technologies, so a technology filter leaves them out.
+  const demo = error || tech ? [] : await demoRows({ sort, category, search, page, count });
   const meta = mode === "newest" ? "joined" : "maker";
-  const filtered = !!category || !!search || page > 1;
+  const filtered = !!category || !!search || !!tech || page > 1;
   function url(nextCategory: string, nextPage = 1) {
     const query = new URLSearchParams();
     if (nextCategory) query.set("category", nextCategory);
+    if (tech) query.set("tech", tech.slug);
     if (search) query.set("q", search);
     if (nextPage > 1) query.set("page", String(nextPage));
     return `${path}${query.size ? `?${query}` : ""}`;
@@ -81,6 +92,7 @@ export async function Explore({
         className={cn(fieldClasses, "h-9 pl-9")}
       />
       {category && <input type="hidden" name="category" value={category} />}
+      {tech && <input type="hidden" name="tech" value={tech.slug} />}
     </form>
   );
 
@@ -113,6 +125,25 @@ export async function Explore({
           </Link>
         ))}
       </nav>
+      {tech && (
+        <p className="mb-4 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted-foreground">
+          <span>
+            Built with{" "}
+            <Link
+              href={`/tech/${tech.slug}`}
+              className="font-medium text-foreground hover:underline"
+            >
+              {tech.name}
+            </Link>
+          </span>
+          <Link
+            href={`${path}${category ? `?category=${encodeURIComponent(category)}` : ""}`}
+            className="underline underline-offset-2 hover:text-foreground"
+          >
+            Show all technologies
+          </Link>
+        </p>
+      )}
 
       {error ? (
         <Notice tone="error">{error}</Notice>
@@ -126,7 +157,7 @@ export async function Explore({
               </Button>
             }
           >
-            Try another category or search term.
+            Try another category, technology or search term.
           </EmptyState>
         ) : (
           <EmptyState

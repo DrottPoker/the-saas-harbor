@@ -14,6 +14,7 @@ import { SendMessageButton } from "./messages/send-message-button";
 import { Metric } from "./metric";
 import { ReportLink } from "./report-link";
 import { Shell } from "./shell";
+import { TechStack } from "./tech-stack";
 import { Button } from "./ui/button";
 
 function hostname(url: string | null) {
@@ -205,12 +206,15 @@ export function ProductProfile({
       )}
 
       <div className="mt-12 grid gap-10 lg:grid-cols-[minmax(0,1fr)_17rem] lg:gap-14">
-        <section>
-          <h2 className="text-lg font-semibold">About {name}</h2>
-          <p className="mt-3 leading-7 whitespace-pre-wrap text-foreground/85 [overflow-wrap:anywhere]">
-            {item.description}
-          </p>
-        </section>
+        <div className="grid content-start gap-10">
+          <section>
+            <h2 className="text-lg font-semibold">About {name}</h2>
+            <p className="mt-3 leading-7 whitespace-pre-wrap text-foreground/85 [overflow-wrap:anywhere]">
+              {item.description}
+            </p>
+          </section>
+          <TechStack stack={item.tech_stack} />
+        </div>
         <aside className="grid content-start gap-4">
           {views && <ViewCounts views={views} />}
           <div className="rounded-xl border bg-surface p-5">

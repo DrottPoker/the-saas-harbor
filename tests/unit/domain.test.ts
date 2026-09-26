@@ -9,6 +9,7 @@ import {
   profileSchema,
   saasSchema,
 } from "../../src/lib/domain";
+import { TECH_STACK_MAX, technologies } from "../../src/lib/tech";
 
 describe("email links", () => {
   const hash = "0f".repeat(28);
@@ -72,7 +73,19 @@ describe("profile boundaries", () => {
     share_mrr: true,
     share_customers: false,
     share_launch: false,
+    tech_stack: ["nextjs", "supabase"],
   };
+  it("takes a tech stack of known, unique technologies, up to the limit", () => {
+    const stack = (tech_stack: string[]) =>
+      saasSchema.safeParse({ ...product, tech_stack }).success;
+    expect(stack([])).toBe(true);
+    expect(stack(["nextjs", "stripe"])).toBe(true);
+    expect(stack(["nextjs", "nextjs"])).toBe(false);
+    expect(stack(["cobol"])).toBe(false);
+    expect(stack(["Next.js"])).toBe(false);
+    expect(stack(technologies.slice(0, TECH_STACK_MAX).map((tech) => tech.slug))).toBe(true);
+    expect(stack(technologies.slice(0, TECH_STACK_MAX + 1).map((tech) => tech.slug))).toBe(false);
+  });
   it("rejects invalid calendar dates", () =>
     expect(saasSchema.safeParse({ ...product, launched_on: "2026-02-30" }).success).toBe(false));
   it("takes launch dates from 1970 until today, wherever today is", () => {

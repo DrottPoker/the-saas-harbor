@@ -127,7 +127,14 @@ test.beforeAll(async ({ playwright }, info) => {
     ...["/dashboard/settings", "/api/email/send", "/api/analytics", "/admin/analytics/data"],
     ...["/messages", `/messages/${id}`, `/report/saas/${id}`, "/api/revenue/sync"],
     ...["/sitemap.xml", "/robots.txt", "/opengraph-image", "/llms.txt"],
-    ...["/categories", "/categories/design", "/saas/any.md", "/users/any.md"],
+    ...[
+      "/categories",
+      "/categories/design",
+      "/tech",
+      "/tech/nextjs",
+      "/saas/any.md",
+      "/users/any.md",
+    ],
     ...["/stats", "/stats/opengraph-image", "/feedback"],
     ...["/saas/any/opengraph-image", "/users/any/opengraph-image", "/saas/any/badge.svg"],
     ...["", "/analytics", "/reports", "/feedback", "/products", "/accounts", "/log"].map(
@@ -235,6 +242,8 @@ test("anonymous navigation, private route protection and responsive empty state"
     "/discover",
     "/categories",
     "/categories/design",
+    "/tech",
+    "/tech/nextjs",
     "/auth",
     "/privacy",
     "/terms",
@@ -260,6 +269,9 @@ test("anonymous navigation, private route protection and responsive empty state"
     "/newest",
     "/categories",
     "/categories/design",
+    "/tech",
+    "/tech/nextjs",
+    "/discover?tech=nextjs",
     "/about",
     "/privacy",
     "/terms",
@@ -570,6 +582,17 @@ test("registration, email confirmation, profile and SaaS editing, storage, priva
   await page.goto("/dashboard/saas/new");
   await fillProduct(page, productName);
   await page.getByLabel("Category").selectOption("Design");
+  // The tech stack is ticked in groups that open on demand.
+  await page
+    .locator("summary")
+    .filter({ hasText: /^Frontend$/ })
+    .click();
+  await page.getByLabel("Next.js", { exact: true }).check();
+  await page
+    .locator("summary")
+    .filter({ hasText: /^Databases$/ })
+    .click();
+  await page.getByLabel("PostgreSQL", { exact: true }).check();
   await page.getByLabel("Upload logo").setInputFiles({
     name: "invalid.png",
     mimeType: "image/png",
@@ -579,6 +602,10 @@ test("registration, email confirmation, profile and SaaS editing, storage, priva
   await expect(page.getByRole("alert").filter({ hasText: "Choose a valid PNG" })).toBeVisible();
   await expect(page.getByLabel("Product name", { exact: true })).toHaveValue(productName);
   await expect(page.getByLabel("Category")).toHaveValue("Design");
+  // A failed save keeps every ticked technology.
+  await expect(page.getByLabel("Next.js", { exact: true })).toBeChecked();
+  await expect(page.getByLabel("PostgreSQL", { exact: true })).toBeChecked();
+  await expect(page.getByLabel("React", { exact: true })).not.toBeChecked();
   await page
     .getByLabel("Upload logo")
     .setInputFiles({ name: "logo.png", mimeType: "image/png", buffer: png });
@@ -692,6 +719,37 @@ test("registration, email confirmation, profile and SaaS editing, storage, priva
     applicationSubCategory: "Design",
   });
   await expect(page.getByRole("navigation", { name: "Breadcrumb" })).toContainText("Design");
+  // The tech stack links each technology to the products built with it.
+  const stack = page.getByRole("region", { name: "Tech stack" });
+  await expect(stack.getByRole("link")).toHaveText(["Next.js", "PostgreSQL"]);
+  await expect(stack.getByRole("link", { name: "Next.js" })).toHaveAttribute(
+    "href",
+    "/tech/nextjs",
+  );
+  expect(await (await page.request.get(`${productPath}.md`)).text()).toContain(
+    `## Tech stack\n\n- Frontend: [Next.js](${origin}/tech/nextjs)\n- Databases: [PostgreSQL](${origin}/tech/postgresql)`,
+  );
+  await page.goto(`/discover?tech=nextjs&q=${encodeURIComponent(productName)}`);
+  await expect(page.getByText("Built with Next.js")).toBeVisible();
+  await expect(page.getByRole("link").filter({ hasText: productName })).toBeVisible();
+  await page.goto(`/discover?tech=react&q=${encodeURIComponent(productName)}`);
+  await expect(page.getByRole("heading", { name: "No matching products" })).toBeVisible();
+  const { data: builtWith } = await anon
+    .from("public_saas")
+    .select("id")
+    .contains("tech_stack", ["nextjs"])
+    .neq("revenue_status", "verified")
+    .order("name")
+    .order("id");
+  if (builtWith!.findIndex((row) => row.id === productId) < 12) {
+    await page.goto("/tech/nextjs");
+    await expect(page.getByRole("heading", { name: "SaaS built with Next.js" })).toBeVisible();
+    await expect(page.getByRole("link").filter({ hasText: productName })).toBeVisible();
+  }
+  expect(await (await page.request.get("/sitemap.xml")).text()).toContain(
+    `<loc>${origin}/tech/nextjs</loc>`,
+  );
+  await page.goto(productPath);
   await expect(page.getByText(/Verified with Stripe through a read-only key/)).toBeVisible();
   await expect(page.getByText("Not shared", { exact: true })).toHaveCount(3);
   // Visible text only: the page source also carries framework references like "$104".
@@ -790,6 +848,7 @@ test("registration, email confirmation, profile and SaaS editing, storage, priva
     `/users/${firstUserId}`,
     "/discover",
     "/categories/design",
+    "/tech/nextjs",
     "/dashboard",
     `/dashboard/saas/${productId}`,
     "/dashboard/profile",

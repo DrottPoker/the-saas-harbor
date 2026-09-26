@@ -759,6 +759,7 @@ export type Database = {
           owner_id: string
           slug: string
           tagline: string
+          tech_stack: string[]
           updated_at: string
           website: string
         }
@@ -775,6 +776,7 @@ export type Database = {
           owner_id: string
           slug: string
           tagline: string
+          tech_stack?: string[]
           updated_at?: string
           website: string
         }
@@ -791,6 +793,7 @@ export type Database = {
           owner_id?: string
           slug?: string
           tagline?: string
+          tech_stack?: string[]
           updated_at?: string
           website?: string
         }
@@ -925,6 +928,7 @@ export type Database = {
           revenue_status: string | null
           slug: string | null
           tagline: string | null
+          tech_stack: string[] | null
           updated_at: string | null
           verified_at: string | null
           website: string | null
@@ -968,6 +972,7 @@ export type Database = {
           revenue_status: string | null
           slug: string | null
           tagline: string | null
+          tech_stack: string[] | null
           updated_at: string | null
           verified_at: string | null
           website: string | null
@@ -988,6 +993,14 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      tech_counts: {
+        Row: {
+          products: number | null
+          ranked: number | null
+          tech: string | null
+        }
+        Relationships: []
       }
     }
     Functions: {
@@ -1196,6 +1209,7 @@ export type Database = {
           p_share_launch: boolean
           p_share_mrr: boolean
           p_tagline: string
+          p_tech_stack?: string[]
           p_website: string
         }
         Returns: string

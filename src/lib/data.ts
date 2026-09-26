@@ -35,6 +35,7 @@ export async function listings({
   search = "",
   page = 1,
   owner,
+  tech,
   unranked = false,
 }: {
   sort?: Sort;
@@ -42,6 +43,8 @@ export async function listings({
   search?: string;
   page?: number;
   owner?: string;
+  /** Only products built with this technology (a slug from src/lib/tech.ts). */
+  tech?: string;
   /** Only products that are not on the leaderboard. */
   unranked?: boolean;
 } = {}) {
@@ -60,6 +63,7 @@ export async function listings({
   const pattern = containsPattern(search);
   if (pattern) query = query.ilike("name", pattern);
   if (owner) query = query.eq("owner_id", owner);
+  if (tech) query = query.contains("tech_stack", [tech]);
   if (unranked) query = query.neq("revenue_status", "verified");
   query =
     sort === "rank"
@@ -126,6 +130,19 @@ export const categoryCounts = cache(async () => {
       row.category
         ? [[row.category, { products: row.products ?? 0, ranked: row.ranked ?? 0 }]]
         : [],
+    ),
+  );
+});
+
+/** Listed and ranked products per technology slug. Technologies without products are missing. */
+export const techCounts = cache(async () => {
+  const client = publicClient();
+  if (!client) throw new Error("Supabase is not configured.");
+  const { data, error } = await client.from("tech_counts").select("*");
+  if (error) throw new Error("Technologies could not be loaded.");
+  return new Map<string, CategoryCount>(
+    data.flatMap((row) =>
+      row.tech ? [[row.tech, { products: row.products ?? 0, ranked: row.ranked ?? 0 }]] : [],
     ),
   );
 });

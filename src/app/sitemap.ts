@@ -1,8 +1,9 @@
 import type { MetadataRoute } from "next";
-import { categoryCounts } from "@/lib/data";
+import { categoryCounts, techCounts } from "@/lib/data";
 import { categories, categorySlug } from "@/lib/domain";
 import { publicClient } from "@/lib/supabase/server";
 import { siteUrl } from "@/lib/seo";
+import { technologies } from "@/lib/tech";
 
 // Listed products and the makers behind them, read like a visitor would, so hidden products and
 // suspended makers never appear. Built per request, since products change all the time.
@@ -21,8 +22,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   ];
   const client = publicClient();
   if (!client) return pages;
-  // Category pages with listed products; empty ones ask search engines not to index them.
-  const counts = await categoryCounts();
+  // Category and technology pages with listed products; empty ones ask search engines not to
+  // index them.
+  const [counts, techs] = await Promise.all([categoryCounts(), techCounts()]);
   pages.push(
     { url: `${base}/categories`, changeFrequency: "weekly", priority: 0.6 },
     ...categories
@@ -31,6 +33,14 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         url: `${base}/categories/${categorySlug(category)}`,
         changeFrequency: "daily" as const,
         priority: 0.6,
+      })),
+    { url: `${base}/tech`, changeFrequency: "weekly", priority: 0.5 },
+    ...technologies
+      .filter((tech) => techs.get(tech.slug)?.products)
+      .map((tech) => ({
+        url: `${base}/tech/${tech.slug}`,
+        changeFrequency: "daily" as const,
+        priority: 0.5,
       })),
   );
   // The API returns at most 1,000 rows per request, so products are read a page at a time, up to

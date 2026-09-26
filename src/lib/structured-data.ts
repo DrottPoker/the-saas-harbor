@@ -4,6 +4,7 @@ import type { Listing, Profile } from "./data";
 import { categorySlug } from "./domain";
 import { imageUrl } from "./images";
 import { SITE_DESCRIPTION, SITE_NAME, siteUrl } from "./seo";
+import type { Tech } from "./tech";
 
 type JsonLd = Record<string, unknown>;
 
@@ -117,14 +118,57 @@ export function categoriesJsonLd(categories: string[]): JsonLd {
 /** A category page and its ranked products, in leaderboard order. */
 export function categoryJsonLd(category: string, ranked: Listing[]): JsonLd {
   const path = `/categories/${categorySlug(category)}`;
+  return rankedCollection(`${category} SaaS`, path, "Categories", "/categories", category, ranked);
+}
+
+/** The overview of the technologies, in the catalog's order. */
+export function techsJsonLd(items: Tech[]): JsonLd {
+  return {
+    "@context": "https://schema.org",
+    "@type": "CollectionPage",
+    url: `${siteUrl()}/tech`,
+    name: "Tech stacks",
+    mainEntity: {
+      "@type": "ItemList",
+      itemListElement: items.map((tech, index) => ({
+        "@type": "ListItem",
+        position: index + 1,
+        name: tech.name,
+        url: `${siteUrl()}/tech/${tech.slug}`,
+      })),
+    },
+  };
+}
+
+/** A technology's page and the ranked products built with it, in leaderboard order. */
+export function techJsonLd(tech: Tech, ranked: Listing[]): JsonLd {
+  const path = `/tech/${tech.slug}`;
+  return rankedCollection(
+    `SaaS built with ${tech.name}`,
+    path,
+    "Tech stacks",
+    "/tech",
+    tech.name,
+    ranked,
+  );
+}
+
+function rankedCollection(
+  name: string,
+  path: string,
+  parentName: string,
+  parentPath: string,
+  crumb: string,
+  ranked: Listing[],
+): JsonLd {
   return {
     "@context": "https://schema.org",
     "@type": "CollectionPage",
     url: `${siteUrl()}${path}`,
-    name: `${category} SaaS`,
+    name,
     breadcrumb: breadcrumbs([
-      { name: "Categories", path: "/categories" },
-      { name: category, path },
+      { name: parentName, path: parentPath },
+      { name: crumb, path },
     ]),
     mainEntity: {
       "@type": "ItemList",

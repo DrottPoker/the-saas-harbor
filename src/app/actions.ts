@@ -385,6 +385,8 @@ export async function saveSaas(_state: ActionState, form: FormData): Promise<Act
       share_mrr: form.has("share_mrr"),
       share_customers: form.has("share_customers"),
       share_launch: form.has("share_launch"),
+      // One entry per ticked technology.
+      tech_stack: form.getAll("tech").map(String),
     });
     const { data: existing, error: readError } = await client
       .from("saas")
@@ -408,6 +410,7 @@ export async function saveSaas(_state: ActionState, form: FormData): Promise<Act
       p_share_mrr: fields.share_mrr,
       p_share_customers: fields.share_customers,
       p_share_launch: fields.share_launch,
+      p_tech_stack: fields.tech_stack,
     });
     if (error)
       throw new Error(
