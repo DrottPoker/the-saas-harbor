@@ -60,6 +60,7 @@ export function productJsonLd(item: Listing): JsonLd {
       applicationSubCategory: category,
       url: item.website ?? `${siteUrl()}${path}`,
       image: imageUrl(item.logo_path) ?? undefined,
+      screenshot: imageUrl(item.screenshot_path) ?? undefined,
       datePublished: item.launched_on ?? undefined,
       creator: {
         "@type": "Person",

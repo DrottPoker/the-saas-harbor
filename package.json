@@ -26,6 +26,7 @@
     "env:local": "node scripts/local-env.mjs",
     "revenue:sync": "node scripts/revenue-sync.mjs",
     "domains:check": "node scripts/domains-check.mjs",
+    "screenshots:capture": "node scripts/screenshots-capture.mjs",
     "email:send": "node scripts/email-send.mjs",
     "admin": "node scripts/admin.mjs",
     "auth:production": "node scripts/production-auth.mjs",
@@ -41,6 +42,7 @@
     "lucide-react": "1.45.0",
     "next": "16.3.6",
     "nodemailer": "10.0.10",
+    "playwright-core": "1.63.0",
     "radix-ui": "1.6.7",
     "react": "19.3.0",
     "react-dom": "19.3.0",
@@ -66,5 +68,8 @@
     "typescript": "6.0.3",
     "typescript-eslint": "8.70.0",
     "vitest": "5.0.0"
+  },
+  "optionalDependencies": {
+    "@sparticuz/chromium": "153.0.0"
   }
 }

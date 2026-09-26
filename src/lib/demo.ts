@@ -337,6 +337,8 @@ function toListing(product: DemoProduct, now: Date): Listing {
     tech_stack: null,
     verified_domain: null,
     domain_verified_at: null,
+    screenshot_path: null,
+    screenshot_taken_at: null,
     // Never "verified": a demo figure must not read as one anywhere.
     revenue_status: product.verified === false ? "unverified" : shared ? "demo" : "private",
     mrr_history: history,

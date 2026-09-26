@@ -4,6 +4,7 @@
 import { monthLabel, parseHistory, wholeUsd } from "./charts";
 import type { CategoryCount, Listing, Profile, RevenueStatus } from "./data";
 import { categorySlug, formatDate, formatUsd } from "./domain";
+import { imageUrl } from "./images";
 import { providerName } from "./revenue/catalog";
 import { rolePeriod, sortRoles, type ProfileExperience } from "./profile";
 import { SITE_DESCRIPTION, SITE_NAME, siteUrl } from "./seo";
@@ -26,6 +27,11 @@ export function escapeMarkdown(text: string) {
 /** Maker text on one line, for list items and table cells. */
 function inline(text: string | null | undefined) {
   return escapeMarkdown((text ?? "").replace(/\s+/g, " "));
+}
+
+/** A host name as text: only the characters host names use, with underscores escaped. */
+function hostText(host: string) {
+  return host.replace(/[^A-Za-z0-9._-]/g, "").replace(/_/g, "\\_");
 }
 
 /** A maker's link as an autolink, which cannot be closed early. */
@@ -70,6 +76,26 @@ function techStackLines(stack: readonly string[] | null | undefined) {
   ];
 }
 
+/** The screenshot of a product's website, when there is one. */
+function screenshotLines(item: Listing) {
+  const url = imageUrl(item.screenshot_path);
+  if (!url) return [];
+  let site = "the website";
+  try {
+    site = new URL(item.website ?? "").hostname.replace(/^www\./, "");
+  } catch {
+    // A product always has a website; without one the alt text stays general.
+  }
+  return [
+    "",
+    "## Screenshot",
+    "",
+    `![Screenshot of ${hostText(site)}](${url})`,
+    "",
+    `Taken ${formatDate(item.screenshot_taken_at)}.`,
+  ];
+}
+
 export function productMarkdown(item: Listing) {
   const base = siteUrl();
   const status = (item.revenue_status ?? "unverified") as RevenueStatus;
@@ -87,7 +113,7 @@ export function productMarkdown(item: Listing) {
     ...(item.website ? [`- Website: ${autolink(item.website)}`] : []),
     ...(item.verified_domain
       ? [
-          `- Domain: ${inline(item.verified_domain)}, verified with a DNS record, last checked ${formatDate(item.domain_verified_at)}`,
+          `- Domain: ${hostText(item.verified_domain)}, verified with a DNS record, last checked ${formatDate(item.domain_verified_at)}`,
         ]
       : []),
     ...(item.launched_on ? [`- Launched: ${formatDate(item.launched_on)}`] : []),
@@ -125,6 +151,7 @@ export function productMarkdown(item: Listing) {
     "",
     escapeMarkdown(item.description ?? ""),
     ...techStackLines(item.tech_stack),
+    ...screenshotLines(item),
     "",
     "---",
     "",

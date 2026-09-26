@@ -126,7 +126,7 @@ test.beforeAll(async ({ playwright }, info) => {
     ...["/dashboard", "/dashboard/profile", "/dashboard/reports", `/dashboard/saas/${id}`],
     ...["/dashboard/settings", "/api/email/send", "/api/analytics", "/admin/analytics/data"],
     ...["/messages", `/messages/${id}`, `/report/saas/${id}`, "/api/revenue/sync"],
-    ...["/api/domains/check"],
+    ...["/api/domains/check", "/api/screenshots/capture"],
     ...["/sitemap.xml", "/robots.txt", "/opengraph-image", "/llms.txt"],
     ...[
       "/categories",
@@ -2442,5 +2442,100 @@ test("founders verify their website's domain with a DNS record", async ({ page }
   await page.goto(productPath);
   await expect(page.getByText(/The founder proved control of/)).toHaveCount(0);
   await page.request.delete(fakeDns);
+  expect(violations).toEqual([]);
+});
+
+// The scheduled job takes a screenshot of the founder's landing page with a headless browser. The
+// tests' landing page is on this machine, which only the tests may screenshot.
+test("a screenshot of the founder's website shows on the product page", async ({ page }) => {
+  test.setTimeout(180000);
+  const violations: string[] = [];
+  watchPolicy(page, violations);
+  const address = `harbor-screenshot-${run}@example.test`;
+  const secret = randomBytes(24).toString("hex");
+  const { data: created, error } = await admin.auth.admin.createUser({
+    email: address,
+    password: secret,
+    email_confirm: true,
+  });
+  if (error || !created.user) throw new Error("Unable to create the screenshot maker.");
+  const ownerId = created.user.id;
+  userIds.push(ownerId);
+  await login(page, address, secret);
+  await page.goto("/dashboard/saas/new");
+  await fillProduct(page, `Screenshot ${run}`);
+  await page.getByLabel("Website", { exact: true }).fill("http://127.0.0.1:3011/site");
+  await expect(page.getByLabel("Show a screenshot of the website", { exact: true })).toBeChecked();
+  await page.getByRole("button", { name: "Add SaaS", exact: true }).click();
+  await expect(page).toHaveURL(/created=1/);
+  const id = new URL(page.url()).pathname.split("/").at(-1)!;
+  const productPath = `/saas/screenshot-${run}`;
+  const shotSection = page.locator("#screenshot");
+  await expect(shotSection.getByText(/is taken within a few minutes/)).toBeVisible();
+  // An address on a machine rather than a domain has nothing to verify.
+  await expect(page.locator("#domain").getByText(/not on a domain of its own/)).toBeVisible();
+
+  // The job answers only with the secret, then takes the screenshot, which the page shows.
+  const cron = { Authorization: `Bearer ${process.env.TEST_CRON_SECRET}` };
+  expect((await page.request.post("/api/screenshots/capture")).status()).toBe(401);
+  const taken = await page.request.post("/api/screenshots/capture", {
+    headers: cron,
+    data: { saas: id },
+  });
+  expect(taken.status()).toBe(200);
+  expect(await taken.json()).toEqual({ taken: 1, failed: 0 });
+  await page.goto(productPath);
+  const shot = page.getByRole("img", { name: "Screenshot of 127.0.0.1" });
+  await expect(shot).toBeVisible();
+  const source = (await shot.getAttribute("src"))!;
+  const image = await page.request.get(source);
+  expect(image.status()).toBe(200);
+  expect(image.headers()["content-type"]).toBe("image/jpeg");
+  expect((await image.body()).subarray(0, 3).toString("hex")).toBe("ffd8ff");
+  await expect(page.getByRole("link", { name: "View full page" })).toHaveAttribute("href", source);
+  expect(await (await page.request.get(`${productPath}.md`)).text()).toContain(
+    `## Screenshot\n\n![Screenshot of 127.0.0.1](${source})`,
+  );
+  const structured = JSON.parse(
+    (await page.locator('script[type="application/ld+json"]').textContent())!,
+  );
+  expect(structured.mainEntity.screenshot).toBe(source);
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expectNoHorizontalScroll(page);
+  await page.setViewportSize({ width: 1280, height: 720 });
+  for (const theme of ["dark", "light"] as const) {
+    await setThemeCookie(page, theme);
+    for (const path of [productPath, `/dashboard/saas/${id}`]) {
+      await page.goto(path);
+      await expectAccessible(page);
+    }
+  }
+
+  // The editor shows it, and a new one waits ten minutes.
+  await page.goto(`/dashboard/saas/${id}`);
+  await expect(shotSection.getByRole("img", { name: "Screenshot of 127.0.0.1" })).toBeVisible();
+  await expect(shotSection.getByText(/^Taken /)).toBeVisible();
+  await shotSection.getByRole("button", { name: "Take a new screenshot" }).click();
+  await expect(
+    shotSection.getByRole("alert").filter({ hasText: "in the last ten minutes" }),
+  ).toBeVisible();
+
+  // Turning it off takes it off the page, and the next run deletes the file.
+  const files = async () =>
+    ((await admin.storage.from("profile-images").list(ownerId)).data ?? [])
+      .map((file) => file.name)
+      .filter((name) => name.startsWith("screenshot-"));
+  expect(await files()).toHaveLength(1);
+  await page.getByLabel("Show a screenshot of the website", { exact: true }).uncheck();
+  await page.getByRole("button", { name: "Save changes" }).click();
+  await expect(page).toHaveURL(/saved=/);
+  await page.goto(productPath);
+  await expect(page.getByRole("img", { name: /^Screenshot of/ })).toHaveCount(0);
+  const off = await page.request.post("/api/screenshots/capture", {
+    headers: cron,
+    data: { saas: id },
+  });
+  expect(await off.json()).toEqual({ taken: 0, failed: 0 });
+  expect(await files()).toEqual([]);
   expect(violations).toEqual([]);
 });

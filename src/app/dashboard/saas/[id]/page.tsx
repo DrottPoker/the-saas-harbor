@@ -8,12 +8,23 @@ import { DomainVerification } from "@/components/domain-verification";
 import { ModerationNotice } from "@/components/moderation-notice";
 import { Notice, PageHeader, Shell } from "@/components/shell";
 import { RevenueConnectionSection } from "@/components/revenue-connection";
+import { ScreenshotSection } from "@/components/screenshot-section";
 import { CONNECTION_COLUMNS, type RevenueConnection } from "@/lib/data";
 import { RECORD_LABEL, recordName, recordValue, websiteDomain } from "@/lib/domain-verification";
+import { imageUrl } from "@/lib/images";
 import { PRODUCT_LIMIT } from "@/lib/moderation";
 import { currentUser, requireUser } from "@/lib/supabase/server";
 import { firstValues, type SearchParams } from "@/lib/params";
 import { siteUrl } from "@/lib/seo";
+
+// The host of an address without a domain of its own, such as an IP address.
+function hostOf(website: string) {
+  try {
+    return new URL(website).hostname;
+  } catch {
+    return null;
+  }
+}
 
 type Props = {
   params: Promise<{ id: string }>;
@@ -59,7 +70,7 @@ export default async function EditSaas({ params, searchParams }: Props) {
     );
   }
 
-  const [saas, settings, connection, snapshot, verification] = await Promise.all([
+  const [saas, settings, connection, snapshot, verification, screenshot] = await Promise.all([
     client.from("saas").select("*").eq("id", id).eq("owner_id", user.id).maybeSingle(),
     client.from("saas_settings").select("*").eq("saas_id", id).maybeSingle(),
     client.from("revenue_connections").select(CONNECTION_COLUMNS).eq("saas_id", id).maybeSingle(),
@@ -72,8 +83,16 @@ export default async function EditSaas({ params, searchParams }: Props) {
       .limit(1)
       .maybeSingle(),
     client.rpc("saas_domain_verification", { p_saas: id }).maybeSingle(),
+    client.rpc("saas_screenshot_status", { p_saas: id }).maybeSingle(),
   ]);
-  if (saas.error || settings.error || connection.error || snapshot.error || verification.error)
+  if (
+    saas.error ||
+    settings.error ||
+    connection.error ||
+    snapshot.error ||
+    verification.error ||
+    screenshot.error
+  )
     throw new Error("Your SaaS could not be loaded.");
   if (!saas.data) notFound();
   const domain = websiteDomain(saas.data.website);
@@ -114,6 +133,14 @@ export default async function EditSaas({ params, searchParams }: Props) {
           verifiedDomain={saas.data.verified_domain}
           verifiedAt={saas.data.domain_verified_at}
           missingSince={verification.data?.missing_since ?? null}
+        />
+        <ScreenshotSection
+          saasId={id}
+          url={imageUrl(saas.data.screenshot_path)}
+          site={domain ?? hostOf(saas.data.website)}
+          takenAt={saas.data.screenshot_taken_at}
+          enabled={settings.data?.show_screenshot ?? true}
+          status={screenshot.data ?? null}
         />
         {/* A hidden product has no public page, so it has no badge either. */}
         {!saas.data.hidden_at && (
