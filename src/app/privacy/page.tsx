@@ -149,8 +149,27 @@ export default function Privacy() {
               To fix bugs and improve the site from the feedback you send (our legitimate interests,
               Article 6(1)(f)).
             </li>
+            <li>
+              To see how many people visit the site, which pages they read and how they found it,
+              through the site statistics below (our legitimate interests, Article 6(1)(f)).
+            </li>
           </List>
-          <p>We do not sell data, show ads, or use analytics or tracking of any kind.</p>
+          <p>We do not sell data or show ads, and we do not follow you across other sites.</p>
+        </Section>
+
+        <Section id="statistics" title="Site statistics">
+          <p>
+            We count visits with Vercel Web Analytics, which uses no cookies and stores nothing on
+            your device. For each page you open, Vercel records the page&apos;s address, the site
+            that linked to it, your country, and the type of device, browser and operating system.
+            Addresses keep only campaign tags (utm_source and the like); other query values are
+            removed before anything is sent, and admin pages are not measured.
+          </p>
+          <p>
+            To count visitors rather than page views, Vercel derives a code from the request that
+            changes every day. It does not identify you, and it cannot recognise you from one day to
+            the next or connect your visits to your account.
+          </p>
         </Section>
 
         <Section id="visibility" title="Who can see it">
@@ -190,9 +209,9 @@ export default function Privacy() {
               site runs on Vercel, with its servers in Frankfurt, Germany. The database, sign-in and
               image storage run on Supabase, in its Frankfurt, Germany region. Account emails, such
               as confirmation and password reset messages, and notification emails are sent through
-              Resend. Vercel and Resend are based in the United States. If a provider handles data
-              outside the EU or EEA, we use the safeguards the GDPR requires, such as the EU
-              standard contractual clauses.
+              Resend. Vercel also provides the site statistics. Vercel and Resend are based in the
+              United States. If a provider handles data outside the EU or EEA, we use the safeguards
+              the GDPR requires, such as the EU standard contractual clauses.
             </li>
           </List>
           <p>

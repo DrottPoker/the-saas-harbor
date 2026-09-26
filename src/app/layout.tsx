@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import { headers } from "next/headers";
 import { FeedbackButton } from "@/components/feedback-button";
 import { SiteFooter, SiteHeader } from "@/components/site-chrome";
+import { VercelAnalytics } from "@/components/vercel-analytics";
 import { SITE_DESCRIPTION, SITE_NAME, siteUrl } from "@/lib/seo";
 import { currentUser, unreadMessageCount } from "@/lib/supabase/server";
 import { themeScript } from "@/lib/theme";
@@ -59,6 +60,8 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         </main>
         <SiteFooter />
         <FeedbackButton />
+        {/* Vercel sets VERCEL_ENV; local servers, tests and previews measure nothing. */}
+        {process.env.VERCEL_ENV === "production" && <VercelAnalytics />}
       </body>
     </html>
   );

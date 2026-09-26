@@ -8,6 +8,10 @@ The first release includes accounts, email confirmation and recovery, public mak
 
 Makers can message each other privately (see Messages below), and report products, profiles and messages to the admins, who decide in an admin panel (see Reports and moderation below). They get emails about unread messages and about decisions (see Email notifications below). Other forms of connection, such as following or contact lists, are not implemented.
 
+## Vercel Web Analytics 2026-09-26
+
+At the project owner's request, production measures visits with Vercel Web Analytics: page views, visitors, the pages, referring sites, countries, devices, browsers and operating systems, read in the Vercel dashboard. It uses no cookies. The script is rendered only when `VERCEL_ENV` is `production`, admin pages are never sent, and addresses keep only their `utm_*` campaign tags. The privacy policy has a new Site statistics section, names the purpose (legitimate interests) and no longer says the site uses no analytics; its date is now September 26, 2026. The owner turns Web Analytics on under the Vercel project's Analytics tab. Statistics of our own in the admin panel, stored in our database, come next.
+
 ## Feedback 2026-09-26
 
 At the project owner's request, users can send feedback: bugs and errors, suggestions, or other feedback. A Feedback button sits in the bottom right corner of every page on screens 640 px and wider, and the footer has a Send feedback link on every screen; both open `/feedback` with the page the user was on. Visitors sign in first and come back to the form. After sending, the form gives way to a thank-you. Feedback lands in the admin panel under Feedback (New, Handled, All) and on the overview, with the sender's name linked to their account and the page it came from, and admins mark it handled or new again. It is limited to 5 an hour and 20 a day per user, suspended accounts cannot send it, and it is deleted with the sender's account; the privacy policy says so. Admins get no email about new feedback yet; the overview shows how much is new.

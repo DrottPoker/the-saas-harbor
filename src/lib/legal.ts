@@ -8,7 +8,7 @@ export const operator: { name: string; email: string | null } = {
 
 // Dates of the current versions, as YYYY-MM-DD. The terms' date is also their version: sign-up
 // records it for each new account (private.terms_acceptances).
-export const privacyUpdated = "2026-09-25";
+export const privacyUpdated = "2026-09-26";
 export const termsUpdated = "2026-09-25";
 
 /** A version date as the pages show it, such as September 25, 2026. */
