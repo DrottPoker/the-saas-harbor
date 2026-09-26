@@ -10,7 +10,7 @@ Makers can message each other privately (see Messages below), and report product
 
 ## Screenshots removed 2026-09-26
 
-Screenshots of each product's landing page, taken by the app with headless Chromium, were added and removed the same day at the project owner's request: they gave little over the link to the website, and needed a browser in a serverless function, a proxy to keep it off private addresses, and a job every five minutes. Migration `20260926120000_remove_screenshots.sql` drops what `20260926110000_screenshots.sql` added (the columns, tables, functions, triggers, the setting and the job) and makes the public views again without the columns. No screenshot had been taken in production, and none was stored locally. If images come back, a founder-uploaded picture, like the logo, is the simpler way.
+Screenshots of each product's landing page, taken by the app with headless Chromium, were added and removed the same day at the project owner's request: they gave little over the link to the website, and needed a browser in a serverless function, a proxy to keep it off private addresses, and a job every five minutes. Migration `20260926120000_remove_screenshots.sql`, applied to production on 2026-09-26 before the code, drops what `20260926110000_screenshots.sql` added (the columns, tables, functions, triggers, the setting and the job) and makes the public views again without the columns. No screenshot had been taken in production, and none was stored locally. If images come back, a founder-uploaded picture, like the logo, is the simpler way.
 
 ## Verified domains 2026-09-26
 
