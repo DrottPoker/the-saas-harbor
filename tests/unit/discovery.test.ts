@@ -189,7 +189,7 @@ describe("markdown", () => {
     ).toContain(
       "- Domain: querybird.example, verified with a DNS record, last checked Sep 26, 2026",
     );
-    expect(productMarkdown(listing())).not.toContain("- Domain:");
+    expect(productMarkdown(listing())).toContain("- Domain: not verified");
   });
 
   it("lists the tech stack by group, linking each technology", () => {

@@ -2368,6 +2368,17 @@ test("founders verify their website's domain with a DNS record", async ({ page }
   const productPath = `/saas/domain-${run}`;
   const section = page.locator("#domain");
   await expect(section.getByText(`${domain} is not verified yet.`)).toBeVisible();
+  // The product page's details say whether the domain is verified; verifying it is optional.
+  const domainStatus = page
+    .locator("dl > div")
+    .filter({ has: page.locator("dt", { hasText: /^Domain$/ }) })
+    .locator("dd");
+  await page.goto(productPath);
+  await expect(domainStatus).toHaveText("Not verified");
+  expect(await (await page.request.get(`${productPath}.md`)).text()).toContain(
+    "- Domain: not verified",
+  );
+  await page.goto(`/dashboard/saas/${id}`);
   await expect(section.getByLabel("Name", { exact: true })).toHaveValue(record);
   const value = await section.getByLabel("Value", { exact: true }).inputValue();
   expect(value).toMatch(/^thesaasharbor-verification=[0-9a-f]{32}$/);
@@ -2399,8 +2410,7 @@ test("founders verify their website's domain with a DNS record", async ({ page }
     await expectAccessible(page);
   }
   await page.goto(productPath);
-  const mark = page.getByText(/The founder proved control of .+ with a DNS record\./);
-  await expect(mark).toContainText(domain);
+  await expect(domainStatus).toHaveText("Verified");
   await page.setViewportSize({ width: 390, height: 844 });
   await expectNoHorizontalScroll(page);
   await page.setViewportSize({ width: 1280, height: 720 });
@@ -2440,7 +2450,7 @@ test("founders verify their website's domain with a DNS record", async ({ page }
   await page.getByRole("button", { name: "Save changes" }).click();
   await expect(page).toHaveURL(/saved=/);
   await page.goto(productPath);
-  await expect(page.getByText(/The founder proved control of/)).toHaveCount(0);
+  await expect(domainStatus).toHaveText("Not verified");
   await page.request.delete(fakeDns);
   expect(violations).toEqual([]);
 });

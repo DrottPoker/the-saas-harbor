@@ -111,9 +111,11 @@ export function productMarkdown(item: Listing) {
     `- Category: [${category}](${base}/categories/${categorySlug(category)})`,
     `- Founder: [${inline(item.owner_name)}](${base}/users/${item.owner_slug}.md)`,
     ...(item.website ? [`- Website: ${autolink(item.website)}`] : []),
-    ...(item.verified_domain
+    ...(item.website
       ? [
-          `- Domain: ${hostText(item.verified_domain)}, verified with a DNS record, last checked ${formatDate(item.domain_verified_at)}`,
+          item.verified_domain
+            ? `- Domain: ${hostText(item.verified_domain)}, verified with a DNS record, last checked ${formatDate(item.domain_verified_at)}`
+            : "- Domain: not verified",
         ]
       : []),
     ...(item.launched_on ? [`- Launched: ${formatDate(item.launched_on)}`] : []),

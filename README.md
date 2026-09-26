@@ -8,7 +8,7 @@ A focused, responsive home for independent SaaS: public maker profiles, product 
 - Personal maker profiles laid out like product pages: photo, headline, location, key figures across the maker's products, About, products, experience, skills, and links to a website, LinkedIn, GitHub and X.
 - Multiple SaaS profiles per maker, with a logo, pitch, description, category, website and tech stack.
 - Revenue verified through a read-only key to the product's payment provider (Stripe, Paddle, Polar or Dodo Payments, one per product): MRR and paying customers are read from the provider, never typed in, and re-verified every hour.
-- Domain verification: a founder adds a DNS TXT record with a code for the product to the website's domain, and the product page says they proved control of it. The record is looked up again every day; after three days without it, or when the website moves to another domain, the mark goes.
+- Optional domain verification: a founder adds a DNS TXT record with a code for the product to the website's domain, and the product page's details then show the domain as Verified instead of Not verified. The record is looked up again every day; after three days without it, or when the website moves to another domain, the mark goes.
 - A screenshot of each product's landing page on its page, taken by the app with a headless browser when the product is listed or its website changes, and again every 30 days. Founders can ask for a new one or turn it off.
 - Verified MRR, paying customers and launch date, each with an independent public-sharing choice. Products without a connected provider are listed but not ranked.
 - Private verification history, a public leaderboard, category, technology and name filters, and newest arrivals.

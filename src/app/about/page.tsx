@@ -38,7 +38,7 @@ const sections = [
   {
     title: "Verified domains",
     body: [
-      "A founder can show that the product's website is theirs: they add a DNS record with a code for the product to the website's domain, and the product page then says that the founder proved control of the domain. The record is looked up again every day. When it has been missing for three days, or the website moves to another domain, the product is no longer marked.",
+      "A founder can show that the product's website is theirs: they add a DNS record with a code for the product to the website's domain, and the product page then shows the domain as verified. Verifying is optional; other products show Not verified. The record is looked up again every day. When it has been missing for three days, or the website moves to another domain, the product is no longer marked.",
     ],
   },
   {

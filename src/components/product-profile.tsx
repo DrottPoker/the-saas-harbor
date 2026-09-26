@@ -199,15 +199,6 @@ export function ProductProfile({
           </>
         )}
       </p>
-      {!demo && item.verified_domain && (
-        <p className="mt-1.5 flex items-center gap-1.5 text-[13px] text-muted-foreground">
-          <BadgeCheck aria-hidden="true" className="size-4 shrink-0 text-brand" />
-          <span className="[overflow-wrap:anywhere]">
-            The founder proved control of {item.verified_domain} with a DNS record. Last checked{" "}
-            {formatDate(item.domain_verified_at)}.
-          </span>
-        </p>
-      )}
 
       {history && (
         <RevenueHistory
@@ -282,6 +273,20 @@ export function ProductProfile({
               <div className="flex justify-between gap-4">
                 <dt className="text-muted-foreground">Website</dt>
                 <dd className="truncate text-right">{site}</dd>
+              </div>
+            )}
+            {/* Verifying the domain is optional; the founder adds a DNS record from the editor. */}
+            {site && !demo && (
+              <div className="flex justify-between gap-4">
+                <dt className="text-muted-foreground">Domain</dt>
+                {item.verified_domain ? (
+                  <dd className="flex items-center gap-1.5 text-right">
+                    <BadgeCheck aria-hidden="true" className="size-4 shrink-0 text-brand" />
+                    Verified
+                  </dd>
+                ) : (
+                  <dd className="text-right text-muted-foreground">Not verified</dd>
+                )}
               </div>
             )}
             {item.created_at && (
