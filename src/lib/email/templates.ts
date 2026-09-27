@@ -111,7 +111,7 @@ export function renderEmail(row: ClaimedEmail, { origin, contact }: EmailSetting
   const settings = { label: "Choose which emails you get", url: `${origin}/dashboard/settings` };
   const disagree = contact
     ? `A person made this decision, not an automated system. If you think it is wrong, write to ${contact} and say why.`
-    : "A person made this decision, not an automated system. The terms explain how to disagree with it.";
+    : "A person made this decision, not an automated system.";
 
   if (row.kind === "message") {
     const unread = count(context.unread);

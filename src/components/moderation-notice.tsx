@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { formatDate } from "@/lib/domain";
+import { operator } from "@/lib/legal";
 import { decisionLabels, isReason } from "@/lib/moderation";
 import { cn } from "@/lib/utils";
 import { Contact } from "./legal";
@@ -58,8 +59,13 @@ export function ModerationNotice({
         )}
       </dl>
       <p className="mt-3">
-        A person made this decision, not an automated system. If you think it is wrong, write to{" "}
-        <Contact className="font-medium underline" />. The{" "}
+        A person made this decision, not an automated system.{" "}
+        {operator.email && (
+          <>
+            If you think it is wrong, write to <Contact className="font-medium underline" />.{" "}
+          </>
+        )}
+        The{" "}
         <Link href="/terms#moderation" className="font-medium underline">
           terms
         </Link>{" "}

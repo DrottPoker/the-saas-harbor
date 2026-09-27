@@ -1,5 +1,5 @@
 import { Contact, LegalList as List, LegalSection as Section } from "@/components/legal";
-import { Notice, PageHeader, Shell } from "@/components/shell";
+import { PageHeader, Shell } from "@/components/shell";
 import { legalDate, operator, privacyUpdated } from "@/lib/legal";
 import { providerList } from "@/lib/revenue/catalog";
 import { pageMetadata } from "@/lib/seo";
@@ -9,116 +9,96 @@ const description =
 
 export const metadata = pageMetadata({ title: "Privacy policy", description, path: "/privacy" });
 
+// The policy describes how the service handles personal data today, without promises about how
+// it will work, so it can follow the service as it changes.
 export default function Privacy() {
-  const contact = <Contact />;
+  // Sentences that name the contact address show once it is set in src/lib/legal.ts.
+  const contact = operator.email && <Contact />;
   return (
     <Shell size="narrow">
       <PageHeader title="Privacy policy" description={description} />
       <div className="grid gap-10 border-t pt-10">
-        <div className="grid gap-4">
-          <p className="text-sm text-muted-foreground">Last updated {legalDate(privacyUpdated)}.</p>
-          {!operator.email && (
-            <Notice>
-              A contact address for privacy questions and requests will be published here soon.
-            </Notice>
-          )}
-        </div>
+        <p className="text-sm text-muted-foreground">Last updated {legalDate(privacyUpdated)}.</p>
 
         <Section id="responsible" title="Who is responsible">
           <p>
             The SaaS Harbor is run by {operator.name}, which is responsible for the personal data
-            described here. For privacy questions and requests, write to {contact}.
+            described here.
+            {contact && <> For privacy questions and requests, write to {contact}.</>}
           </p>
         </Section>
 
         <Section id="data" title="What we store">
           <List>
             <li>
-              <strong className="font-medium text-foreground">Account.</strong> Your email address
-              and your password, which is stored only as a salted hash, and which version of the
-              Terms of Service you accepted when you created the account, and when. We also record
-              account events, such as sign-ins, with their time and IP address, to keep accounts
-              secure. From your latest sign-in we also keep the country your IP address points to,
-              as a two-letter code such as SE and never the address itself, so admins can see it
-              when they review your account. The next sign-in replaces it.
+              <strong className="font-medium text-foreground">Account.</strong> Your email address,
+              your password as a salted hash, which version of the Terms of Service you accepted and
+              when, account events such as sign-ins with their time and IP address, and the country
+              of your latest sign-in.
             </li>
             <li>
               <strong className="font-medium text-foreground">
                 Sign-in with Google or GitHub.
               </strong>{" "}
-              If you sign in with Google, Google tells us your Google account ID, email address,
-              name and the address of your profile picture. If you sign in with GitHub, GitHub tells
-              us your GitHub account ID, username, email address, name and the address of your
-              profile picture. Our sign-in service stores them with your account. We use them only
-              to sign you in: your name, username and picture from Google or GitHub are not shown on
-              the site. An account created this way that never chooses a username and accepts the
-              Terms of Service is deleted after seven days.
+              If you sign in with Google or GitHub, that service sends us your account ID there,
+              email address, name and the address of your profile picture, and for GitHub your
+              username. They are stored with your account and used to sign you in. An account
+              created this way that does not finish sign-up is deleted after a few days.
             </li>
             <li>
               <strong className="font-medium text-foreground">Profile.</strong> Your username, which
-              is also your page address, and your name, headline, location, About text, experience,
-              skills, links and photo. You choose the username when you sign up; everything else is
-              up to you to fill in. We also keep when you last changed your username, privately,
-              since it can change once every 30 days.
+              is also your page address, the details you add, such as your name, headline, location,
+              About text, experience, skills, links and photo, and when you last changed your
+              username.
             </li>
             <li>
-              <strong className="font-medium text-foreground">Products.</strong> Name, tagline,
-              description, category, website, logo, tech stack and launch date. If you verify a
-              product&apos;s domain: the domain, the code for its DNS record, and when the record
-              was last looked up.
+              <strong className="font-medium text-foreground">Products.</strong> The details you
+              add, such as name, tagline, description, category, website, logo, tech stack and
+              launch date, and for a product&apos;s domain, the domain, its DNS record and when it
+              was checked.
             </li>
             <li>
-              <strong className="font-medium text-foreground">Revenue verification.</strong> If you
-              connect a payment provider ({providerList("or")}): which one, the read-only key you
-              paste, with the Chargebee site or RevenueCat project it belongs to, stored encrypted,
-              and the results of verification, kept as one result per day, the latest of that day.
-              That is your monthly recurring revenue, the number of paying customers, totals per
-              currency, revenue at each of the last twelve month-ends, and one-way hashes of
-              subscription IDs (with RevenueCat, of the project ID), which stop one account from
-              verifying two products.
+              <strong className="font-medium text-foreground">Revenue verification.</strong> Which
+              payment provider you connect ({providerList("or")}), the key you provide and the
+              account details it needs, stored encrypted, and the results of verification, such as
+              monthly recurring revenue, paying customers, totals per currency, revenue history, and
+              one-way hashes of subscription or project IDs, which stop one account from verifying
+              two products.
             </li>
             <li>
               <strong className="font-medium text-foreground">Milestones.</strong> The MRR amounts
-              and leaderboard places your products reach while their MRR is shared, and when. Each
-              has a public page while the MRR stays verified and shared.
+              and leaderboard places your products reach, and when.
             </li>
             <li>
               <strong className="font-medium text-foreground">Messages.</strong> The messages you
               send and receive, how far you have read each conversation, and the users you block.
             </li>
             <li>
-              <strong className="font-medium text-foreground">Reports and moderation.</strong> When
-              you report something: the reason, your explanation and a copy of what you reported,
-              which for a message is its text and time. When an admin decides about your product or
-              account: the decision, its reason and explanation, when it was made and by which
-              admin.
+              <strong className="font-medium text-foreground">Reports and moderation.</strong> The
+              reports you send, with a copy of what you reported, and decisions about your products
+              or account, with their reasons.
             </li>
             <li>
-              <strong className="font-medium text-foreground">Feedback.</strong> What you send with
-              Send feedback: whether it is a bug, a suggestion or other feedback, your text, the
-              page you sent it from, and whether an admin has handled it.
+              <strong className="font-medium text-foreground">Feedback.</strong> What you send as
+              feedback, the page you sent it from, and whether it has been handled.
             </li>
             <li>
-              <strong className="font-medium text-foreground">Email notifications.</strong> Which
-              emails you want, emails waiting to be sent to you, and a record of sent ones. A
-              message email names the sender but never contains the message. A milestone email names
-              your product and the milestone it reached.
+              <strong className="font-medium text-foreground">Emails.</strong> Which emails you
+              want, and a record of the emails sent to you.
             </li>
             <li>
-              <strong className="font-medium text-foreground">Visits.</strong> Page views, the time
-              pages were visible and clicks on links to other sites, for the site statistics (see
-              Site statistics). They are kept apart from your account.
+              <strong className="font-medium text-foreground">Visits.</strong> Statistics about
+              visits to the site (see Site statistics).
             </li>
             <li>
               <strong className="font-medium text-foreground">How you found the site.</strong> When
-              you create an account, we keep with it where the visit that led to it came from: the
-              site or app that linked to it, its campaign tags, the first page of that visit and
-              when the visit began.
+              you create an account, where the visit that led to it came from, such as the site or
+              app that linked to it, its campaign tags and its first page.
             </li>
             <li>
               <strong className="font-medium text-foreground">How you use the service.</strong> What
               follows from the data above, such as when you confirmed your email address, listed a
-              product and verified revenue, and where you stopped.
+              product or verified revenue.
             </li>
             <li>
               <strong className="font-medium text-foreground">Preferences.</strong> Whether you
@@ -129,143 +109,79 @@ export default function Privacy() {
 
         <Section id="revenue" title="What we read from your payment provider">
           <p>
-            With the key you provide, our server reads from the account you connect: subscriptions,
-            invoices, coupons and prices from Stripe; subscriptions and transactions from Paddle;
-            your organization, subscriptions and orders from Polar; brands, subscriptions and
-            payments from Dodo Payments; subscriptions, products and transactions from Creem;
-            subscriptions and paid invoices from Chargebee; your account, the key&apos;s
-            permissions, memberships, plans, promo codes and payments from Whop; and your
-            project&apos;s MRR and active subscriptions charts from RevenueCat. To check that a
-            RevenueCat key reaches nothing else, it also asks for your projects and customers, which
-            RevenueCat refuses for a key limited to charts. It only sends requests that read, and
-            never changes anything in your account.
+            With the key you provide, our server reads what it needs to verify revenue from the
+            account you connect, such as subscriptions, invoices, transactions, prices, discounts
+            and plans, depending on the provider. These records can include details about your
+            customers, such as names, email addresses and countries. We use the records to calculate
+            the figures described above, and do not store your customers&apos; details.
           </p>
           <p>
-            These records can include your customers&apos; names, email addresses and countries. We
-            use only amounts, taxes, currencies, dates, plan details and customer IDs, the last only
-            to count paying customers, to calculate the figures above, and we never store or log
-            details about your customers.
-          </p>
-          <p>
-            Disconnecting deletes the stored key at once. Earlier verification results stay in your
-            private history until you delete the product or your account. You can also delete the
-            key with your payment provider.
+            Disconnecting deletes the stored key. Earlier verification results stay in your private
+            history until you delete the product or your account. You can also revoke the key with
+            your payment provider.
           </p>
         </Section>
 
         <Section id="website" title="What we look up about your website">
           <p>
-            When you check your product&apos;s domain, and every day while it is verified, our
-            server looks up one DNS record under that domain: the TXT record you add for the
-            product. The lookup goes through ordinary DNS servers and carries only the record&apos;s
-            name.
+            When you verify your product&apos;s domain, our server looks up the DNS record you add
+            for it, and checks it again while the domain is verified.
           </p>
         </Section>
 
         <Section id="purposes" title="Why we use it">
           <List>
             <li>
-              To run your account and publish the profile and products you create. This is the
-              service you sign up for (performance of a contract, GDPR Article 6(1)(b)).
+              To provide the service: your account, profile and products, revenue verification and
+              domain checks, messages, and emails about your account and what happens on it, such as
+              unread messages and milestones (performance of a contract, GDPR Article 6(1)(b)).
             </li>
             <li>
-              To verify revenue through the payment provider you connect, and show the figures you
-              choose to share, and to show that a product&apos;s domain is its founder&apos;s
-              through the DNS record you add. This is part of the same service (Article 6(1)(b)).
+              To keep the service secure and fair, for example through sign-in records, limits on
+              what an account can do, and checks that stop one account from verifying two products
+              (our legitimate interests, Article 6(1)(f)).
             </li>
             <li>
-              To deliver the messages you send to other users, and to email you about unread
-              messages and about milestones your products reach, also part of the service (Article
-              6(1)(b)). You can turn message and milestone emails off.
+              To handle reports and moderate the site, including what the EU Digital Services Act
+              requires (a legal obligation, Article 6(1)(c), and our legitimate interests, Article
+              6(1)(f)).
             </li>
             <li>
-              To keep the service secure and fair, through the sign-in records, the country of your
-              latest sign-in, the subscription hashes described above, and limits on how many
-              messages, reports and products an account can add and how often it checks revenue and
-              domains. The limits keep the times you added a product for a day and the times you
-              checked revenue or a domain for an hour (our legitimate interests, Article 6(1)(f)).
-            </li>
-            <li>
-              To handle reports and moderate the site. The EU Digital Services Act requires us to
-              act on reports of illegal content and to explain our decisions (a legal obligation,
-              Article 6(1)(c)). Other reports and decisions keep the site safe for its users (our
-              legitimate interests, Article 6(1)(f)).
-            </li>
-            <li>
-              To fix bugs and improve the site from the feedback you send (our legitimate interests,
-              Article 6(1)(f)).
-            </li>
-            <li>
-              To see how many people visit the site, which pages they read and how they found it,
-              and to show founders how often their products&apos; pages were viewed, through the
-              site statistics below (our legitimate interests, Article 6(1)(f)).
-            </li>
-            <li>
-              To understand how people find and use the service, where they get stuck and which ways
-              of finding it bring users who go on to list and verify products, and to improve the
-              service from that, both in totals and for single accounts (our legitimate interests,
-              Article 6(1)(f)).
+              To understand how people find and use the service, and to improve and develop it, from
+              the site statistics, how accounts found the site, how far they get and the feedback
+              they send, in totals and for single accounts (our legitimate interests, Article
+              6(1)(f)).
             </li>
             <li>
               To write to you about your account, your products and the service, for example to help
-              you finish a listing or to ask what stopped you (our legitimate interests, Article
-              6(1)(f)). You can ask us to stop at any time by replying or writing to {contact}.
+              you finish a listing or to ask for your view (our legitimate interests, Article
+              6(1)(f)).
             </li>
           </List>
-          <p>We do not sell data or show ads, and we do not follow you across other sites.</p>
+          <p>
+            You can turn some emails off in your settings, and object to use based on our legitimate
+            interests (see Your rights).
+          </p>
         </Section>
 
         <Section id="statistics" title="Site statistics">
           <p>
-            We count visits in two ways, both without cookies and without storing anything on your
-            device. For each page you open, the site notes which page it is and, when you arrive,
-            which site or app linked to it. Addresses keep only campaign tags (utm_source and the
-            like); other query values, and ids in private addresses such as a conversation, are
-            removed. Admin pages, visits by signed-in admins and automated browsers are not counted.
+            We keep statistics about how the site is used: the pages visited and how long they were
+            visible, clicks on links to other sites, where visits came from (the linking site or app
+            and campaign tags), the country and city looked up from the IP address, the
+            browser&apos;s language, and the type and version of the device, browser and operating
+            system. To tell visitors apart, our server combines the IP address and the
+            browser&apos;s user agent with a value that changes every day, and keeps the result
+            instead of the IP address. When you create an account, this is used to find where the
+            visit that led to it came from, which is then kept with your account.
           </p>
           <p>
-            <strong className="font-medium text-foreground">Our own statistics.</strong> Our server
-            stores the page, the linking site or app, the campaign tags, your country and city,
-            which it looks up from your IP address, your browser&apos;s language, and the type and
-            major version of your device&apos;s browser and operating system, in our database at
-            Supabase. Browsers that offer client hints, such as Chrome, tell the system version
-            directly, and the page checks whether a Mac has a touch screen, which only an iPad has;
-            only the major version and the device type are kept. It also stores how long each page
-            was visible, which your browser reports when you leave or hide the page and when you
-            open the next one. For that, each page view gets a random key that only the open page
-            knows; the key is deleted within two days. It also stores which links to other sites you
-            click, such as a product&apos;s website, without their query. Pages count as one visit
-            until 30 minutes pass without you opening or looking at a page of the site. To tell
-            visitors apart, it combines your IP address and your browser&apos;s user agent with a
-            random value that changes every day and is then deleted, and keeps only the resulting
-            code. Your IP address is not stored, and the code cannot be recognised the next day.
-            When you create an account, the server uses the same code to find your visits that day
-            and copies where the visit that led to the account came from to your account (see What
-            we store). Admins see the statistics as totals, such as visitors per day and the most
-            visited pages, and see how a single account found the site. Page views and link clicks
-            are deleted after 25 months.
+            Admins see the statistics as totals, and how a single account found the site. The
+            founder of a product sees how often its page was viewed.
           </p>
           <p>
-            <strong className="font-medium text-foreground">Views of a product&apos;s page.</strong>{" "}
-            Each view of a product&apos;s page also adds one to that product&apos;s count for the
-            day, which only its founder sees, as totals for the last 7 and 30 days and all time. The
-            count holds nothing about who viewed the page. When you are signed in, the server checks
-            whether the product is yours, so that a founder&apos;s views of their own product are
-            not counted; your account is not stored with the view.
-          </p>
-          <p>
-            <strong className="font-medium text-foreground">Vercel Web Analytics.</strong> Vercel
-            records the same kind of information: the page&apos;s address, the site or app that
-            linked to it, your country, and the type of device, browser and operating system. To
-            count visitors, it derives a code from the request that changes every day. It does not
-            identify you, and it cannot recognise you from one day to the next or connect your
-            visits to your account.
-          </p>
-          <p>
-            <strong className="font-medium text-foreground">Vercel Speed Insights.</strong> To see
-            how fast the site loads, Vercel records how long each page takes to load and respond,
-            with the same cleaned page address and the type of device. It uses no cookies and does
-            not identify you.
+            We also use Vercel Web Analytics and Vercel Speed Insights, which record similar
+            information about visits and how fast pages load.
           </p>
         </Section>
 
@@ -273,128 +189,90 @@ export default function Privacy() {
           <List>
             <li>
               <strong className="font-medium text-foreground">Everyone:</strong> your profile, your
-              products and their logos, whether a product&apos;s domain is verified, and the
-              verified figures you choose to share. Sharing MRR also shows its month-end history and
-              30-day growth. Paying customers and the launch date each have their own setting. A
-              badge you embed on your own site shows the shared MRR there, and browsers and caches
-              may keep it for up to ten minutes after you stop sharing.
+              products, and the figures you choose to share, such as verified MRR and its history,
+              with the payment provider that verified them and the milestones reached. Whether a
+              product&apos;s domain is verified is public too. A badge you embed on your own site
+              shows the shared figures there.
             </li>
             <li>
-              <strong className="font-medium text-foreground">Only you:</strong> your connection
-              status, your verification history, any figures you keep private and how often your
-              products&apos; pages were viewed. Stored keys are never shown, not even to you. Which
-              payment provider verified the figures is public once they are verified.
+              <strong className="font-medium text-foreground">You:</strong> your account and
+              settings, the figures you keep private, your verification history and how often your
+              products&apos; pages were viewed.
             </li>
             <li>
-              <strong className="font-medium text-foreground">The two of you:</strong> a
-              conversation and its messages are visible only to the two users in it. A block is
-              visible only to the user who made it. Messages are not end-to-end encrypted, so people
-              who run the site&apos;s systems could technically access them; we only do so when the
-              law requires it.
+              <strong className="font-medium text-foreground">The users you write to:</strong> the
+              conversations you have with them. Messages are not end-to-end encrypted.
             </li>
             <li>
               <strong className="font-medium text-foreground">Admins:</strong> the people the
-              operator appoints to run and moderate the site. They see your email address, when you
-              joined and last signed in and from which country, how you found the site, how far you
-              have come with the service, reports about you or by you, the decisions about your
-              account, and the feedback you send, with your name. Apart from how you found the site,
-              the site statistics show admins only totals, never who visited. An admin sees a
-              private message only when one of the two users reports it, and then only a copy of
-              that message. A user who is reported never learns who reported them.
+              operator appoints to run and moderate the site. They see account details such as your
+              email address, when you joined and signed in and from which country, how you found the
+              site and how far you have come with the service, reports, decisions, feedback, and
+              messages that are reported.
             </li>
             <li>
               <strong className="font-medium text-foreground">Service providers:</strong> our
               hosting, database and email providers process data on our behalf to run the site. The
               site runs on Vercel, with its servers in Frankfurt, Germany. The database, sign-in and
-              image storage run on Supabase, in its Frankfurt, Germany region. Account emails, such
-              as confirmation and password reset messages, and notification emails are sent through
-              Resend. Vercel also counts visits for the site statistics. If you sign in with Google
-              or GitHub, that service learns that you signed in here, under its own privacy policy.
-              Vercel and Resend are based in the United States. If a provider handles data outside
-              the EU or EEA, we use the safeguards the GDPR requires, such as the EU standard
-              contractual clauses.
+              image storage run on Supabase, in its Frankfurt, Germany region. Emails are sent
+              through Resend. Vercel also records the statistics described above. If you sign in
+              with Google or GitHub, that service learns that you signed in here, under its own
+              privacy policy. Vercel and Resend are based in the United States. When a provider
+              handles data outside the EU or EEA, we rely on the safeguards the GDPR provides for,
+              such as the EU standard contractual clauses.
             </li>
           </List>
           <p>
-            Exchange rates for other currencies come from a public service. Those requests contain
-            only currency codes.
-          </p>
-          <p>
-            When you follow a link from a product page to the product&apos;s website, your browser
-            tells that site that you came from The SaaS Harbor, but not from which page.
+            When you follow a link to a product&apos;s website, that site may see that you came from
+            The SaaS Harbor.
           </p>
           <p>
             We may disclose personal data when the law requires it, to protect the rights and safety
             of the site, its users or us, or to a buyer or successor if the service is sold or
-            merged, who then takes over this policy (a legal obligation, Article 6(1)(c), or our
-            legitimate interests, Article 6(1)(f)).
+            merged (a legal obligation, Article 6(1)(c), or our legitimate interests, Article
+            6(1)(f)).
           </p>
         </Section>
 
         <Section id="cookies" title="Cookies">
           <p>
-            We only use cookies the site needs: sign-in cookies that keep you signed in, and a theme
-            cookie that remembers light or dark mode. There are no advertising or analytics cookies.
+            The site uses cookies to keep you signed in and to remember whether you chose the light
+            or dark theme.
           </p>
         </Section>
 
         <Section id="retention" title="How long we keep it">
           <p>
-            We keep your data for as long as you have an account. When you delete your account, your
-            profile, products, images, provider keys, verification history, conversations, sign-in
-            records and sign-in country are deleted right away. A conversation is deleted for both
-            users when either of them deletes their account. Deleting a single product removes its
-            details, its logo, its provider key, its verification history, its milestones and its
-            domain check in the same way. Logos and photos you replaced earlier are kept until you
-            delete your account. Copies in backups disappear when those backups expire.
+            We keep your data while you have an account. When you delete a product or your account,
+            the data that belongs to it is deleted, apart from what is needed for longer, such as
+            reports and decisions that are still relevant, and copies in backups until those backups
+            expire. The site statistics are kept apart from accounts for up to 25 months. Records of
+            sent emails and other technical records are kept for a short time. Information that was
+            public may already have been copied by others, such as search engines.
           </p>
           <p>
-            An email waits in a queue until it is sent, and a record of it is kept for a week
-            afterwards, then deleted. The notices that update an open conversation live hold only
-            ids and are deleted within a few days; deleting your account deletes the ones about you
-            at once, as well as emails queued to others about your messages.
-          </p>
-          <p>
-            A report is deleted when either the user who sent it or the user it is about deletes
-            their account. Deleting a reported product or message keeps the report and its copy, so
-            admins can still review it. Admin decisions are deleted with the account they concern.
-            Feedback is kept until you delete your account.
-          </p>
-          <p>
-            Page views and link clicks for the site statistics are kept for 25 months. They are kept
-            apart from your account, so deleting it does not remove them, and nothing in them points
-            to you. How you found the site is kept with your account and deleted with it. A
-            product&apos;s daily view counts are kept as long as the product and deleted with it or
-            with your account.
-          </p>
-          <p>
-            Information that was public may already have been copied by others, such as search
-            engines, before it was deleted.
-          </p>
-          <p>
-            We protect your data with technical and organisational measures, such as encrypted
-            provider keys and access rules in the database, but no online service can guarantee
-            complete security.
+            We use technical and organisational measures to protect your data, such as encryption of
+            provider keys and access rules in the database.
           </p>
         </Section>
 
         <Section id="rights" title="Your rights">
           <p>
-            You can see and change your profile and products, choose which emails you get, follow
-            the reports you sent, and delete a product or your whole account yourself at any time.
+            You can change your profile and products, choose which emails you get, and delete a
+            product or your whole account yourself.
           </p>
           <p>
             Under the GDPR you also have the right to access your data, have it corrected, erased or
             moved to another service, restrict how it is used, and object to use based on our
-            legitimate interests. To use these rights, write to {contact}. You can also complain to
-            a data protection authority, for example in the country where you live or work.
+            legitimate interests.{contact && <> To use these rights, write to {contact}.</>} You can
+            also complain to a data protection authority, for example in the country where you live
+            or work.
           </p>
         </Section>
 
         <Section id="changes" title="Changes to this policy">
           <p>
-            When this policy changes, we update the date at the top. We will email registered users
-            about changes that affect how we use data they have already given us.
+            This policy changes as the service does. The date at the top shows when it last changed.
           </p>
         </Section>
       </div>

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Contact, LegalList, LegalSection, legalLink } from "@/components/legal";
-import { Notice, PageHeader, Shell } from "@/components/shell";
+import { PageHeader, Shell } from "@/components/shell";
 import { legalDate, operator, termsUpdated } from "@/lib/legal";
 import { DAILY_PRODUCT_LIMIT, PRODUCT_LIMIT } from "@/lib/moderation";
 import { pageMetadata } from "@/lib/seo";
@@ -15,15 +15,7 @@ export default function Terms() {
     <Shell size="narrow">
       <PageHeader title="Terms of Service" description={description} />
       <div className="grid gap-10 border-t pt-10">
-        <div className="grid gap-4">
-          <p className="text-sm text-muted-foreground">Last updated {legalDate(termsUpdated)}.</p>
-          {!operator.email && (
-            <Notice>
-              A contact address for questions, reports from people without an account, and appeals
-              will be published here soon.
-            </Notice>
-          )}
-        </div>
+        <p className="text-sm text-muted-foreground">Last updated {legalDate(termsUpdated)}.</p>
 
         <LegalSection id="about" title="About these terms">
           <p>
@@ -131,8 +123,13 @@ export default function Terms() {
 
         <LegalSection id="moderation" title="Reports and moderation">
           <p>
-            Signed-in users can report a product, a profile or a message they received. Anyone else
-            can write to <Contact />.
+            Signed-in users can report a product, a profile or a message they received.
+            {operator.email && (
+              <>
+                {" "}
+                Anyone else can write to <Contact />.
+              </>
+            )}
           </p>
           <p>
             Admins appointed by the operator review every report themselves. Nothing is decided
@@ -155,10 +152,12 @@ export default function Terms() {
             problems they find without a report, and we may remove content or suspend accounts at
             our own discretion to protect the site, its users or us.
           </p>
-          <p>
-            If you disagree with a decision, write to <Contact /> and say why. We will look at the
-            decision again and reply.
-          </p>
+          {operator.email && (
+            <p>
+              If you disagree with a decision, write to <Contact /> and say why. We will look at the
+              decision again and reply.
+            </p>
+          )}
         </LegalSection>
 
         <LegalSection id="changes" title="Changes and availability">
@@ -224,11 +223,13 @@ export default function Terms() {
           </p>
         </LegalSection>
 
-        <LegalSection id="contact" title="Contact">
-          <p>
-            Questions about these terms, reports and appeals go to <Contact />.
-          </p>
-        </LegalSection>
+        {operator.email && (
+          <LegalSection id="contact" title="Contact">
+            <p>
+              Questions about these terms, reports and appeals go to <Contact />.
+            </p>
+          </LegalSection>
+        )}
       </div>
     </Shell>
   );

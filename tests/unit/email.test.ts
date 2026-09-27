@@ -84,10 +84,11 @@ describe("decision emails", () => {
     expect(email.text).toContain("Explanation:\nThe revenue claims are false.");
     expect(email.text).toContain("write to help@harbor.example");
   });
-  it("point to the terms while no contact address is published", () =>
-    expect(renderEmail(row("decision", hidden), { ...settings, contact: null })!.text).toContain(
-      "The terms explain how to disagree",
-    ));
+  it("name no address while none is set", () => {
+    const text = renderEmail(row("decision", hidden), { ...settings, contact: null })!.text;
+    expect(text).toContain("A person made this decision, not an automated system.");
+    expect(text).not.toContain("write to");
+  });
   it("cover suspensions and both reversals", () => {
     expect(
       renderEmail(row("decision", { ...hidden, action: "suspend_account" }), settings)!.subject,

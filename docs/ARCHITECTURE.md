@@ -104,7 +104,7 @@ Sign-up has two steps in one form (`AuthForm`): the email address and password, 
 
 An account created through Google or GitHub arrives without a username or Terms version in its metadata, so the triggers make no profile and record nothing. `requireUser()` sends such an account (`createdWithProvider`, from `app_metadata.provider`, and no profile) to `/auth/finish`, keeping `next`, and every signed-in page and Server Action goes through it, so nothing else opens until sign-up is finished. There `FinishSignupForm` asks for the username and the Terms box, and `finishSignupAction` calls `public.complete_signup(p_username, p_terms_version)`, which creates the profile with the username as name and address and records the accepted version, with the same username rules; it refuses a second call and a future version. The profile keeps nothing from the provider: not the name, the GitHub username or the picture. The daily job `harbor-unfinished-signups` (`private.delete_unfinished_signups`) deletes accounts created through a provider that still have no profile and no uploaded images after seven days (`google_sign_in.test.sql`).
 
-The privacy policy is `src/app/privacy/page.tsx`. The operator's name and contact address come from `src/lib/legal.ts`; while the address is unset, the privacy policy and the terms say one will be published, and every place that points to it says so too. Anything new that stores personal data must be described there and removed by account deletion, and product-scoped tables need an `on delete cascade` foreign key to `saas`.
+The privacy policy is `src/app/privacy/page.tsx`. The operator's name and contact address come from `src/lib/legal.ts`; while the address is unset, the sentences that name it are left out of the policy, the terms, the moderation notices and the decision emails, and they appear once it is set. At the owner's request (2026-09-27) the policy describes how the service handles personal data, in general terms, without promises about how it will work, so it can follow the service as it changes; it keeps what the GDPR asks for: the data, the purposes with their legal bases, who sees it, transfers, how long it is kept and the rights. Anything new that stores personal data must be described there and removed by account deletion, and product-scoped tables need an `on delete cascade` foreign key to `saas`.
 
 ## Maker profiles
 
@@ -198,7 +198,7 @@ Visits are counted twice, both without cookies or storage on the device.
 
 **Vercel Web Analytics.** In production the root layout also renders Vercel Web Analytics (`src/components/vercel-analytics.tsx`, `@vercel/analytics`) when `VERCEL_ENV` is `production`; elsewhere nothing is loaded. Vercel serves its script and receives page views on the site's own origin (`/_vercel/insights/*`), and the script is added by a nonce-carrying bundle, so the Content Security Policy needs no change. It counts visitors by a hash that changes daily. Before anything is sent, `vercelEvent` in `src/lib/analytics.ts` drops admin pages and every query value except the `utm_*` campaign tags, since addresses such as `/auth/confirm` carry tokens. The same component renders Vercel Speed Insights (`@vercel/speed-insights`), which reports Core Web Vitals per page from `/_vercel/speed-insights/*` on the site's origin, with the same `vercelEvent` cleaning. The figures of both are read in the Vercel dashboard.
 
-The privacy policy describes all of it under Site statistics.
+The privacy policy describes it in general terms under Site statistics.
 
 ## Security headers
 

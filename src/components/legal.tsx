@@ -26,13 +26,14 @@ export function LegalList({ children }: { children: React.ReactNode }) {
 
 export const legalLink = "font-medium text-foreground underline underline-offset-2";
 
-/** The operator's contact address as a link, or a note while none is published. */
+/**
+ * The operator's contact address as a link. Only for sentences shown while `operator.email` is
+ * set; there is nothing to show before.
+ */
 export function Contact({ className = legalLink }: { className?: string }) {
   return operator.email ? (
     <a className={className} href={`mailto:${operator.email}`}>
       {operator.email}
     </a>
-  ) : (
-    <>the contact address we will publish soon</>
-  );
+  ) : null;
 }
