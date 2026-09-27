@@ -47,6 +47,13 @@ const config: NextConfig = {
             : []),
         ],
       },
+      {
+        // The return from Google or GitHub would otherwise reach the next page with the provider as
+        // its referrer, and analytics would count a new visit from accounts.google.com or github.com.
+        // A redirect's policy applies to where it leads, so that page gets no referrer.
+        source: "/auth/callback",
+        headers: [{ key: "Referrer-Policy", value: "no-referrer" }],
+      },
     ];
   },
 };
