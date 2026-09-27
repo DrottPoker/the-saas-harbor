@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Dialog } from "radix-ui";
 import { X } from "lucide-react";
@@ -46,4 +47,10 @@ export function AuthDialog({
       </Dialog.Portal>
     </Dialog.Root>
   );
+}
+
+/** Loads the full /auth page instead of the dialog, for a page that needs sign-in first. */
+export function FullPageLoad({ href }: { href: string }) {
+  useEffect(() => window.location.replace(href), [href]);
+  return null;
 }

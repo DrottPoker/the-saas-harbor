@@ -479,10 +479,12 @@ function Setting({
 export function EmailSettingsForm({
   messages,
   reports,
+  milestones,
   admin,
 }: {
   messages: boolean;
   reports: boolean;
+  milestones: boolean;
   admin: boolean;
 }) {
   const [state, action] = useEditorAction(saveEmailSettingsAction);
@@ -497,6 +499,12 @@ export function EmailSettingsForm({
           label="New messages from other users"
           hint="One email per conversation, only when a message is still unread after a few minutes. It never contains the message."
           checked={checked("messages", messages)}
+        />
+        <Setting
+          name="milestones"
+          label="Milestones your products reach"
+          hint="When a product's shared MRR passes an amount such as $1K, or it reaches the top 10. Once per milestone, with a card to share."
+          checked={checked("milestones", milestones)}
         />
         {admin && (
           <>

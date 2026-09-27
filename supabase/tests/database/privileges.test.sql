@@ -40,7 +40,8 @@ select results_eq(
   $$ select relation, privileges from pgtap_table_privileges where role = 'anon' order by 1 $$,
   $$ values ('category_counts'::text, 'SELECT'::text), ('leaderboard', 'SELECT'),
     ('profile_experience', 'SELECT'), ('profiles', 'SELECT'), ('public_metrics', 'SELECT'),
-    ('public_saas', 'SELECT'), ('saas', 'SELECT'), ('tech_counts', 'SELECT') $$,
+    ('public_saas', 'SELECT'), ('saas', 'SELECT'), ('saas_milestones', 'SELECT'),
+    ('tech_counts', 'SELECT') $$,
   'visitors only read listings, products and profiles');
 select results_eq(
   $$ select relation, privileges from pgtap_table_privileges where role = 'authenticated' order by 1 $$,
@@ -51,7 +52,7 @@ select results_eq(
     ('messages', 'SELECT'), ('moderation_log', 'SELECT'), ('notification_settings', 'SELECT'),
     ('profile_experience', 'DELETE,INSERT,SELECT'), ('profiles', 'SELECT'),
     ('public_metrics', 'SELECT'), ('public_saas', 'SELECT'), ('reports', 'SELECT'),
-    ('revenue_snapshots', 'SELECT'), ('saas', 'DELETE,SELECT'),
+    ('revenue_snapshots', 'SELECT'), ('saas', 'DELETE,SELECT'), ('saas_milestones', 'SELECT'),
     ('saas_settings', 'INSERT,SELECT,UPDATE'), ('tech_counts', 'SELECT') $$,
   'makers hold only the table privileges the app uses');
 select is_empty($$ select * from pgtap_column_privileges where role = 'anon' $$,

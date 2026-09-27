@@ -135,3 +135,52 @@ describe("outcome emails", () => {
     expect(renderEmail(row("outcome", { status: "open", target: "saas" }), settings)).toBeNull();
   });
 });
+
+describe("milestone emails", () => {
+  const milestone = {
+    wanted: true,
+    shown: true,
+    name: "Tidewise",
+    slug: "tidewise",
+    provider: "stripe",
+    milestones: ["mrr-100", "mrr-500", "mrr-1000", "mrr-2500"],
+  };
+  const page = "https://harbor.example/saas/tidewise/milestones/mrr-2500";
+  it("lead with the highest threshold and link to its page and card", () => {
+    const email = renderEmail(row("milestone", milestone), settings)!;
+    expect(email.subject).toBe("Tidewise reached $2.5K MRR");
+    expect(email.text).toContain(
+      "Tidewise reached $2,500 in monthly recurring revenue. The revenue is verified through Stripe.",
+    );
+    expect(email.text).toContain(`Open the milestone page: ${page}`);
+    expect(email.text).toContain(
+      `Share on X: https://x.com/intent/post?text=Tidewise+just+reached+%242.5K+MRR%2C+verified+on+The+SaaS+Harbor.&url=${encodeURIComponent(page)}`,
+    );
+    expect(email.text).toContain(
+      `Share on LinkedIn: https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(page)}`,
+    );
+    expect(email.html).toContain(`<img src="${page}/opengraph-image"`);
+    expect(email.text).toContain("https://harbor.example/dashboard/settings");
+  });
+  it("lead with a place and name the threshold reached with it", () => {
+    const email = renderEmail(
+      row("milestone", { ...milestone, milestones: ["top-10", "top-3", "mrr-5000"] }),
+      settings,
+    )!;
+    expect(email.subject).toBe("Tidewise reached the top 3");
+    expect(email.text).toContain("It also reached $5K MRR.");
+    expect(email.text).toContain("/saas/tidewise/milestones/top-3");
+  });
+  it("are skipped when the MRR is no longer shown, the founder opted out or nothing is known", () => {
+    expect(renderEmail(row("milestone", { ...milestone, shown: false }), settings)).toBeNull();
+    expect(renderEmail(row("milestone", { ...milestone, wanted: false }), settings)).toBeNull();
+    expect(
+      renderEmail(row("milestone", { ...milestone, milestones: ["mrr-3"] }), settings),
+    ).toBeNull();
+    expect(renderEmail(row("milestone", null), settings)).toBeNull();
+  });
+  it("escape product names in HTML", () =>
+    expect(
+      renderEmail(row("milestone", { ...milestone, name: "<b>Tide</b>" }), settings)!.html,
+    ).not.toContain("<b>Tide</b>"));
+});

@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { unstable_rethrow } from "next/navigation";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { formatUsd, type ActionState } from "@/lib/domain";
+import { sendQueuedEmails } from "@/lib/email/outbox";
 import { isProviderId, providerName, type ProviderId } from "@/lib/revenue/catalog";
 import { makerMessage, VerificationError } from "@/lib/revenue/errors";
 import { adapter } from "@/lib/revenue/providers";
@@ -97,6 +98,8 @@ export async function connectProviderAction(
     );
     await beginCheck(client, saasId, false);
     const result = await connectProvider(saasId, provider, key);
+    // A verification may reach a milestone, which queues an email.
+    sendQueuedEmails();
     revalidatePath("/", "layout");
     return { success: `${providerName(provider)} connected. ${summary(result)}` };
   } catch (error) {
@@ -109,6 +112,7 @@ export async function refreshRevenueAction(saasId: string): Promise<ActionState>
     const client = await requireOwnedSaas(saasId);
     await beginCheck(client, saasId, true);
     const result = await syncConnection(saasId);
+    sendQueuedEmails();
     revalidatePath("/", "layout");
     return { success: summary(result) };
   } catch (error) {

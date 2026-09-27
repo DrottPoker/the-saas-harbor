@@ -13,6 +13,32 @@ export function isOAuthProvider(value: unknown): value is OAuthProvider {
   return OAUTH_PROVIDERS.includes(value as OAuthProvider);
 }
 
+// Pages that send visitors to /auth before anything else.
+const SIGNED_IN_AREAS = [
+  "/dashboard",
+  "/admin",
+  "/messages",
+  "/report",
+  "/feedback",
+  "/auth/finish",
+];
+
+/**
+ * Whether /auth opened from `from` (the Next-Url of a navigation inside the site) must be the full
+ * page rather than the dialog. Such a page sends a visitor to /auth, and a dialog would open over
+ * that same page, which sends them to /auth again, without end.
+ */
+export function authNeedsFullPage(from: string | null) {
+  if (!from) return false;
+  let pathname: string;
+  try {
+    pathname = new URL(from, "http://site.invalid").pathname;
+  } catch {
+    return false;
+  }
+  return SIGNED_IN_AREAS.some((area) => pathname === area || pathname.startsWith(`${area}/`));
+}
+
 /**
  * Whether a session's amr claim holds a sign-in with this method in the last `seconds`: password,
  * otp (an email link) or oauth (Google or GitHub).

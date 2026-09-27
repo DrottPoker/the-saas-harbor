@@ -330,18 +330,21 @@ export type Database = {
       notification_settings: {
         Row: {
           messages: boolean
+          milestones: boolean
           reports: boolean
           updated_at: string
           user_id: string
         }
         Insert: {
           messages?: boolean
+          milestones?: boolean
           reports?: boolean
           updated_at?: string
           user_id: string
         }
         Update: {
           messages?: boolean
+          milestones?: boolean
           reports?: boolean
           updated_at?: string
           user_id?: string
@@ -820,6 +823,46 @@ export type Database = {
           },
         ]
       }
+      saas_milestones: {
+        Row: {
+          milestone: string
+          reached_at: string
+          saas_id: string
+        }
+        Insert: {
+          milestone: string
+          reached_at?: string
+          saas_id: string
+        }
+        Update: {
+          milestone?: string
+          reached_at?: string
+          saas_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "saas_milestones_saas_id_fkey"
+            columns: ["saas_id"]
+            isOneToOne: false
+            referencedRelation: "leaderboard"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "saas_milestones_saas_id_fkey"
+            columns: ["saas_id"]
+            isOneToOne: false
+            referencedRelation: "public_saas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "saas_milestones_saas_id_fkey"
+            columns: ["saas_id"]
+            isOneToOne: false
+            referencedRelation: "saas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       saas_settings: {
         Row: {
           launched_on: string | null
@@ -1223,7 +1266,11 @@ export type Database = {
       }
       saas_slug_redirect: { Args: { p_slug: string }; Returns: string }
       save_notification_settings: {
-        Args: { p_messages: boolean; p_reports: boolean }
+        Args: {
+          p_messages: boolean
+          p_milestones?: boolean
+          p_reports: boolean
+        }
         Returns: undefined
       }
       save_profile: {

@@ -229,6 +229,23 @@ export const findSaas = cache(async (address: string): Promise<Found<Listing>> =
   return item?.slug ? { redirect: `/saas/${item.slug}` } : null;
 });
 
+/**
+ * When a product reached a milestone, or null. Visitors read milestones only while the product's
+ * MRR is verified and shared.
+ */
+export const publicMilestone = cache(async (saasId: string, key: string) => {
+  const client = publicClient();
+  if (!client) throw new Error("Supabase is not configured.");
+  const { data, error } = await client
+    .from("saas_milestones")
+    .select("reached_at")
+    .eq("saas_id", saasId)
+    .eq("milestone", key)
+    .maybeSingle();
+  if (error) throw new Error("This milestone could not be loaded.");
+  return data?.reached_at ?? null;
+});
+
 /** A maker by their address. An id or another letter case redirects to the current slug. */
 export const findProfile = cache(async (address: string): Promise<Found<Profile>> => {
   const client = publicClient();

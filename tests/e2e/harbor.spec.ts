@@ -146,6 +146,7 @@ test.beforeAll(async ({ playwright }, info) => {
     ],
     ...["/stats", "/stats/opengraph-image", "/feedback", "/list-your-saas", "/where-to-launch"],
     ...["/saas/any/opengraph-image", "/users/any/opengraph-image", "/saas/any/badge.svg"],
+    ...["/saas/any/milestones/mrr-100", "/saas/any/milestones/mrr-100/opengraph-image"],
     ...["", "/analytics", "/reports", "/feedback", "/products", "/accounts", "/log"].map(
       (section) => `/admin${section}`,
     ),
@@ -882,6 +883,51 @@ test("registration, email confirmation, profile and SaaS editing, storage, priva
   // Shared MRR reaches the badge, and the editor gives the code to embed it in either theme.
   expect((await badge(`${productPath}/badge.svg`)).body).toContain(">$104</text>");
   expect((await badge(`${productPath}/badge.svg?theme=dark`)).body).toContain('fill="#141c28"');
+  // Sharing $104 of MRR reaches the $100 milestone: one email with a card to share, and a page
+  // whose sharing image is that card.
+  const milestonePath = `${productPath}/milestones/mrr-100`;
+  const milestoneSubject = `${productName} reached $100 MRR`;
+  await sendDueEmails(page.request);
+  await expect
+    .poll(async () => (await inbox(page.request, email)).map((message) => message.Subject))
+    .toContain(milestoneSubject);
+  const milestoneEmail = await emailText(
+    page.request,
+    (await inbox(page.request, email)).find((message) => message.Subject === milestoneSubject)!.ID,
+  );
+  expect(milestoneEmail.Text).toContain(`Open the milestone page: ${origin}${milestonePath}`);
+  expect(milestoneEmail.Text).toContain("Share on X: https://x.com/intent/post?text=");
+  expect(milestoneEmail.HTML).toContain(`src="${origin}${milestonePath}/opengraph-image"`);
+  await page.goto(milestonePath);
+  await expect(page.getByRole("heading", { level: 1, name: "$100 MRR" })).toBeVisible();
+  await expect(
+    page.getByText(
+      `${productName} reached $100 in monthly recurring revenue. The revenue is verified through Stripe.`,
+    ),
+  ).toBeVisible();
+  await expect(page.getByLabel("Link", { exact: true })).toHaveValue(`${origin}${milestonePath}`);
+  expect(await page.locator('meta[property="og:image"]').getAttribute("content")).toContain(
+    `${milestonePath}/opengraph-image`,
+  );
+  const milestoneCard = await page.request.get(`${milestonePath}/opengraph-image`);
+  expect(milestoneCard.status()).toBe(200);
+  expect(milestoneCard.headers()["content-type"]).toBe("image/png");
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expectNoHorizontalScroll(page);
+  await page.setViewportSize({ width: 1280, height: 720 });
+  // A milestone not reached leads to the product page, an unknown one is not found, and the
+  // product's id moves to its slug.
+  const unreached = await page.request.get(`${productPath}/milestones/mrr-1000`, {
+    maxRedirects: 0,
+  });
+  expect(unreached.status()).toBe(307);
+  expect(unreached.headers().location).toBe(productPath);
+  expect((await page.request.get(`${productPath}/milestones/mrr-3`)).status()).toBe(404);
+  const movedMilestone = await page.request.get(`/saas/${productId}/milestones/mrr-100`, {
+    maxRedirects: 0,
+  });
+  expect(movedMilestone.status()).toBe(308);
+  expect(movedMilestone.headers().location).toBe(milestonePath);
   // Shared MRR reaches the Markdown versions, llms.txt and the category page. The local database
   // may rank other products above this one, so the lists are checked where it fits on them.
   expect(await (await page.request.get(`${productPath}.md`)).text()).toContain(
@@ -973,6 +1019,7 @@ test("registration, email confirmation, profile and SaaS editing, storage, priva
   const dataPages = [
     `/?q=${encodeURIComponent(productName)}`,
     `/saas/${productId}`,
+    `${productPath}/milestones/mrr-100`,
     `/users/${firstUserId}`,
     "/discover",
     "/categories/design",

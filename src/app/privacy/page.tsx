@@ -78,6 +78,11 @@ export default function Privacy() {
               verifying two products.
             </li>
             <li>
+              <strong className="font-medium text-foreground">Milestones.</strong> The MRR amounts
+              and leaderboard places your products reach while their MRR is shared, and when. Each
+              has a public page while the MRR stays verified and shared.
+            </li>
+            <li>
               <strong className="font-medium text-foreground">Messages.</strong> The messages you
               send and receive, how far you have read each conversation, and the users you block.
             </li>
@@ -96,7 +101,8 @@ export default function Privacy() {
             <li>
               <strong className="font-medium text-foreground">Email notifications.</strong> Which
               emails you want, emails waiting to be sent to you, and a record of sent ones. A
-              message email names the sender but never contains the message.
+              message email names the sender but never contains the message. A milestone email names
+              your product and the milestone it reached.
             </li>
             <li>
               <strong className="font-medium text-foreground">Visits.</strong> Page views, the time
@@ -158,7 +164,8 @@ export default function Privacy() {
             </li>
             <li>
               To deliver the messages you send to other users, and to email you about unread
-              messages, also part of the service (Article 6(1)(b)). You can turn message emails off.
+              messages and about milestones your products reach, also part of the service (Article
+              6(1)(b)). You can turn message and milestone emails off.
             </li>
             <li>
               To keep the service secure and fair, through the sign-in records, the country of your
@@ -312,9 +319,9 @@ export default function Privacy() {
             profile, products, images, provider keys, verification history, conversations, sign-in
             records and sign-in country are deleted right away. A conversation is deleted for both
             users when either of them deletes their account. Deleting a single product removes its
-            details, its logo, its provider key, its verification history and its domain check in
-            the same way. Logos and photos you replaced earlier are kept until you delete your
-            account. Copies in backups disappear when those backups expire.
+            details, its logo, its provider key, its verification history, its milestones and its
+            domain check in the same way. Logos and photos you replaced earlier are kept until you
+            delete your account. Copies in backups disappear when those backups expire.
           </p>
           <p>
             An email waits in a queue until it is sent, and a record of it is kept for a week

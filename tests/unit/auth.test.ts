@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  authNeedsFullPage,
   confirmationMethod,
   createdWithProvider,
   decodeOAuthFlow,
@@ -102,5 +103,17 @@ describe("oauthError", () => {
     expect(oauthError("toString", "google")).toBeNull();
     expect(oauthError("<script>", "google")).toBeNull();
     expect(oauthError(undefined, "google")).toBeNull();
+  });
+});
+
+describe("the sign-in dialog", () => {
+  it("gives way to the full page from pages that need sign-in", () => {
+    for (const from of ["/dashboard", "/dashboard/saas/new", "/report/saas/1", "/messages?x=1"])
+      expect(authNeedsFullPage(from), from).toBe(true);
+    expect(authNeedsFullPage("http://127.0.0.1:3001/admin/reports")).toBe(true);
+  });
+  it("opens over public pages", () => {
+    for (const from of [null, "", "/", "/saas/tidewise", "/dashboards", "/reporting", "/auth"])
+      expect(authNeedsFullPage(from), String(from)).toBe(false);
   });
 });

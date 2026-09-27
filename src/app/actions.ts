@@ -156,6 +156,7 @@ export async function saveEmailSettingsAction(
     p_messages: form.has("messages"),
     // Only admins see the report setting; everyone else keeps the default.
     p_reports: form.has("reports_shown") ? form.has("reports") : true,
+    p_milestones: form.has("milestones"),
   });
   if (error) return { error: "Your settings could not be saved. Please try again." };
   return { success: "Settings saved." };

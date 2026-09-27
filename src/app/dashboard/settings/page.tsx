@@ -10,7 +10,7 @@ export default async function EmailSettings() {
   const [{ data: settings, error }, admin] = await Promise.all([
     client
       .from("notification_settings")
-      .select("messages, reports")
+      .select("messages, reports, milestones")
       .eq("user_id", user.id)
       .maybeSingle(),
     isAdmin(),
@@ -28,6 +28,7 @@ export default async function EmailSettings() {
           <EmailSettingsForm
             messages={settings?.messages ?? true}
             reports={settings?.reports ?? true}
+            milestones={settings?.milestones ?? true}
             admin={admin}
           />
         </Section>
