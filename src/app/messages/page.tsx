@@ -1,20 +1,17 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { redirect } from "next/navigation";
 import { PersonAvatar } from "@/components/avatars";
 import { LocalTime } from "@/components/local-time";
 import { RefreshOnMessage } from "@/components/messages/refresh-on-message";
 import { EmptyState, PageHeader, Shell } from "@/components/shell";
 import { Button } from "@/components/ui/button";
-import { currentUser, serverClient } from "@/lib/supabase/server";
+import { requireUser } from "@/lib/supabase/server";
 import { cn } from "@/lib/utils";
 
 export const metadata: Metadata = { title: "Messages" };
 
 export default async function Inbox() {
-  const user = await currentUser();
-  if (!user) redirect("/auth?next=/messages");
-  const client = await serverClient();
+  const { user, client } = await requireUser({ next: "/messages" });
   const { data: conversations, error } = await client
     .from("inbox")
     .select("*")

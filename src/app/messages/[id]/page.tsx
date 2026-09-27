@@ -9,7 +9,7 @@ import { Conversation } from "@/components/messages/conversation";
 import { Notice, Shell } from "@/components/shell";
 import { publicProfile } from "@/lib/data";
 import { MESSAGE_COLUMNS, MESSAGE_PAGE_SIZE, type ChatMessage } from "@/lib/messages";
-import { currentUser, serverClient } from "@/lib/supabase/server";
+import { requireUser, serverClient } from "@/lib/supabase/server";
 
 type Props = { params: Promise<{ id: string }> };
 
@@ -25,8 +25,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function ConversationPage({ params }: Props) {
   const { id } = await params;
   if (!z.uuid().safeParse(id).success) notFound();
-  const user = await currentUser();
-  if (!user) redirect(`/auth?next=/messages/${id}`);
+  const { user } = await requireUser({ next: `/messages/${id}` });
   if (id === user.id) redirect("/messages");
   const other = await publicProfile(id);
   if (!other) notFound();

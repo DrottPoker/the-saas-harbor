@@ -5,6 +5,7 @@ A focused, responsive home for independent SaaS: public maker profiles, product 
 ## Included
 
 - Email/password registration, email confirmation, sign-in, sign-out, and password recovery.
+- Sign-in with Google, when it is turned on in Supabase Auth (see [Sign-in with Google](#sign-in-with-google)). An account created through Google chooses its username and accepts the Terms of Service before anything else opens.
 - Personal maker profiles laid out like product pages: photo, headline, location, key figures across the maker's products, About, products, experience, skills, and links to a website, LinkedIn, GitHub and X.
 - Multiple SaaS profiles per maker, with a logo, pitch, description, category, website and tech stack.
 - Revenue verified through a read-only key to the product's payment provider (Stripe, Paddle, Polar or Dodo Payments, one per product): MRR and paying customers are read from the provider, never typed in, and re-verified every hour.
@@ -21,7 +22,7 @@ A focused, responsive home for independent SaaS: public maker profiles, product 
 - Private messages between makers: Send message on maker profiles and product pages, live delivery and unread counts, blocking, and limits against spam.
 - Email notifications: one email per unread conversation, which names the sender but never contains the message, a note to admins about open reports, and emails to makers about decisions on their products or account and to reporters about the outcome. Makers choose under Dashboard → Email settings.
 - Reports and moderation: signed-in makers report a product, a profile or a message they received, and follow the outcome under Dashboard → Your reports. An admin panel at `/admin` lists reports, products, accounts and every decision. Admins hide products and suspend accounts with a reason and an explanation the maker sees in their dashboard. An account lists at most 20 products and adds at most 5 a day.
-- Deletion by the maker: a single product, confirmed by typing its name, or the whole account, confirmed with the password. Everything that belongs to it goes, including images, provider keys and verification history, and for the account also the sign-in records.
+- Deletion by the maker: a single product, confirmed by typing its name, or the whole account, confirmed with the password, or for an account that signs in only with Google, by signing in with Google again. Everything that belongs to it goes, including images, provider keys and verification history, and for the account also the sign-in records.
 - A home page for founders: a compact header invites every SaaS to list for free, verified or not, with a button straight to sign-up and a short list of what a listing gives; the leaderboard follows at once. A new account lands on the product form once its email is confirmed.
 - A followed link to the product's website while its revenue is verified, which also shows founders the visits we send them.
 - Page views for founders: a product's page shows its founder, and no one else, how often it was viewed in the last 7 days, the last 30 days and all time. Their own views, bots and admins are not counted.
@@ -70,6 +71,10 @@ Local Auth can deliver email to real inboxes through any SMTP provider. The sett
 3. Run `npm run db:restart`. It prints where Auth email goes.
 
 Without a password the stack falls back to Mailpit. The links in the emails point at the dev server on this computer (`http://localhost:3001`), so open them on this computer; any browser works. The browser tests need Mailpit and refuse to run while real email is on; `npm run db:restart -- --mailpit` switches back until the next plain restart.
+
+### Sign-in with Google
+
+Google sign-in is off in the committed config. To try it locally, create an OAuth client of your own in the Google Cloud console (APIs & Services → Credentials → Create credentials → OAuth client ID, type Web application) with `http://127.0.0.1:55321/auth/v1/callback` as an authorized redirect URI, then set `HARBOR_GOOGLE_ENABLED=true`, `HARBOR_GOOGLE_CLIENT_ID` and `HARBOR_GOOGLE_SECRET` in `supabase/.env.local` and run `npm run db:restart`. The sign-in and sign-up pages show Continue with Google once Supabase Auth reports the provider as enabled. The browser tests never talk to Google. For production, see Sign-in with Google under [Production](#production).
 
 ### Notification emails
 
@@ -193,7 +198,14 @@ Leave `REVENUE_ALLOW_TEST_KEYS`, `LOCAL_MAILPIT_URL` and the `*_API_BASE` overri
 **Supabase.** Link a machine once with `npx supabase link --project-ref vgwgeennghaqpvfsqewq` (the CLI must be logged in; it uses a temporary login role, so no database password is needed). Linking also pins production's service versions in `supabase/.temp`, which `supabase start` would then use locally; `npm run db:start` and `db:restart` remove those pins, so the local stack keeps the CLI's versions, as CI does. Start the local stack only through them. Then, only with the owner's approval and after the local checks pass:
 
 - `npx supabase db push --linked --dry-run` lists the migrations production lacks, and `npx supabase db push --linked` applies them. `npx supabase db diff --linked` should then report no changes.
-- `npm run auth:production` applies the Auth settings in `supabase/config.toml` with the `[remotes.production]` overrides: site URL and redirect URL on `thesaasharbor.com`, the email templates, 60 seconds between emails to one address, and Resend as SMTP. It asks for the Resend API key hidden, passes it only to the CLI, and asks before pushing, since `supabase config push` itself does not. Production reads its own `HARBOR_PRODUCTION_SMTP_*` variables, so the per-machine SMTP settings in `supabase/.env.local` never reach it. Run it again after changing the Auth settings or templates.
+- `npm run auth:production` applies the Auth settings in `supabase/config.toml` with the `[remotes.production]` overrides: site URL and the confirm and Google callback pages on `thesaasharbor.com` as redirect URLs, the email templates, 60 seconds between emails to one address, Resend as SMTP, and sign-in with Google once its client ID is in `supabase/.env`. It asks for the Resend API key and the Google client secret hidden, passes them only to the CLI, and asks before pushing, since `supabase config push` itself does not. Production reads its own `HARBOR_PRODUCTION_SMTP_*` variables, so the per-machine SMTP settings in `supabase/.env.local` never reach it. Run it again after changing the Auth settings or templates.
+
+**Sign-in with Google.** Once, in the Google Cloud console of the account that owns the site:
+
+1. APIs & Services → OAuth consent screen (Google Auth Platform): an External app named The SaaS Harbor, with `https://thesaasharbor.com` as home page, `https://thesaasharbor.com/privacy` and `https://thesaasharbor.com/terms`, `thesaasharbor.com` as authorized domain, and only the scopes `openid`, `email` and `profile`. Publish it (In production); while it is in Testing, only listed test users can sign in.
+2. Credentials → Create credentials → OAuth client ID, type Web application, with `https://thesaasharbor.com` as authorized JavaScript origin and `https://vgwgeennghaqpvfsqewq.supabase.co/auth/v1/callback` as authorized redirect URI.
+3. Put the client ID, which is public, in `supabase/.env` as `HARBOR_PRODUCTION_GOOGLE_CLIENT_ID` and commit it. Keep the client secret in a password manager.
+4. Run `npm run auth:production`, which asks for the secret and turns Google on.
 
 **Scheduled jobs.** After the first deployment, the owner stores where to call and the secret in Vault, in the SQL editor of the production project, with the same `CRON_SECRET` as in Vercel:
 

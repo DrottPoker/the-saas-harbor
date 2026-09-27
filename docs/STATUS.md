@@ -8,6 +8,17 @@ The first release includes accounts, email confirmation and recovery, public mak
 
 Makers can message each other privately (see Messages below), and report products, profiles and messages to the admins, who decide in an admin panel (see Reports and moderation below). They get emails about unread messages and about decisions (see Email notifications below). Other forms of connection, such as following or contact lists, are not implemented.
 
+## Sign-in with Google 2026-09-27
+
+At the project owner's request, users can create an account and sign in with Google through Supabase Auth, next to email and password:
+
+- **Continue with Google** on the sign-in and sign-up pages, above the email form, shown only while Supabase Auth has Google turned on. The Google mark is drawn in the text color, since the site keeps to its own palette; Google's branding guidelines prefer the four-color mark, so change it if Google's review asks.
+- **Username and Terms after the first sign-in.** An account created through Google has no username and has accepted no terms, so it goes to Choose your username (`/auth/finish`) first, with the same username rules and the same Terms box as email sign-up, and the version is recorded the same way. Nothing else opens until then; Sign out is on the page. Accounts that never finish are deleted after seven days.
+- **Deleting an account without a password** is confirmed by signing in with Google again for the same account, within five minutes; the database accepts that sign-in instead of a password.
+- The privacy policy describes what Google sends (account ID, email address, name, picture address), that the name and picture are not shown, and the seven-day deletion.
+
+It is off locally and in production until an OAuth client exists: README, Production, lists the owner's steps in the Google Cloud console and `npm run auth:production`. The round trip through Google has not been tried yet, since it needs that client; the browser tests cover the finishing step with an account marked as created through Google, and the routes while Google is off.
+
 ## A place AI assistants recommend to new SaaS 2026-09-27
 
 The project owner wants the site to be where founders are told to list a new SaaS, including by AI assistants. Assistants answer such questions from what search finds: long "SaaS directories" articles and lists on GitHub (such as awesome-launch-directories and awesome-saas-directories), and pages that answer the question directly. So the site now says plainly who it is for and why:
@@ -381,7 +392,8 @@ Product and quality:
 15. Notification emails have no one-click unsubscribe (`List-Unsubscribe`, RFC 8058): turning them off takes a sign-in. Large senders to Gmail and Yahoo need it, so add it before volumes grow. The emails are in English only.
 16. Demo products retire themselves at 12 ranked products, but their code stays. Remove it once the directory has grown; ARCHITECTURE lists the parts.
 17. The browser tests run against `next dev`, which compiles routes on demand. Once, it answered Page not found for the product form in the registration test, and the failure did not repeat. Failed tests now keep a trace; if it happens again, the trace shows the address and the requests. Running the browser tests against a production build (`next build` and `next start`) would remove the dev server's compile timing from the tests. On 2026-09-26 one run failed once in the registration test with `ECONNRESET` on a request to the test server (the redirect from a product id); it did not repeat in the next three full runs.
-18. No CAPTCHA on sign-in, sign-up and password reset (see Release review, point 2). Postponed by the owner; until then the Auth limits per address protect little when the host shows Auth the server's address.
-19. `public.record_page_view` and `public.admin_analytics` from the first version of the statistics stay only for the code that was live while migration `20260926070000` was applied first. Drop them in a new migration once the detailed statistics are deployed.
-20. On phones the leaderboard's column headers are hidden, so demo rows show their amounts without the Demo MRR label; screen readers hear it. The owner chose other home page changes first on 2026-09-26.
-21. Domain checks use the server's DNS resolver, which may remember for a while that a record did not exist when a founder checked before adding it; a check a little later then finds it. The lookup was tried against real DNS on the development machine (a record found, a missing one reported as missing), not yet from Vercel. The mark shows on product pages only, not on the leaderboard or cards.
+18. Sign-in with Google is built but off: it needs the owner's Google OAuth client and consent screen, then `npm run auth:production` (README, Production). Then try the whole round trip once in production: a new account, an existing email account signing in with Google, and deleting a Google-only account.
+19. No CAPTCHA on sign-in, sign-up and password reset (see Release review, point 2). Postponed by the owner; until then the Auth limits per address protect little when the host shows Auth the server's address.
+20. `public.record_page_view` and `public.admin_analytics` from the first version of the statistics stay only for the code that was live while migration `20260926070000` was applied first. Drop them in a new migration once the detailed statistics are deployed.
+21. On phones the leaderboard's column headers are hidden, so demo rows show their amounts without the Demo MRR label; screen readers hear it. The owner chose other home page changes first on 2026-09-26.
+22. Domain checks use the server's DNS resolver, which may remember for a while that a record did not exist when a founder checked before adding it; a check a little later then finds it. The lookup was tried against real DNS on the development machine (a record found, a missing one reported as missing), not yet from Vercel. The mark shows on product pages only, not on the leaderboard or cards.

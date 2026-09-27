@@ -36,6 +36,20 @@ async function removeImages(client: SupabaseClient<Database>, userId: string) {
   throw new Error(IMAGES_FAILED);
 }
 
+async function deleteWith(client: SupabaseClient<Database>, userId: string) {
+  await removeImages(client, userId);
+  const { error } = await client.rpc("delete_account");
+  if (error) throw new Error("Your account could not be deleted. Try again.");
+}
+
+/**
+ * Deletes the account of a user without a password, whose current session signed in with Google
+ * in the last five minutes; the database checks that sign-in again. Images go first, as below.
+ */
+export async function deleteSignedInAccount(client: SupabaseClient<Database>, userId: string) {
+  await deleteWith(client, userId);
+}
+
 /**
  * Deletes the signed-in maker's account and everything it owns. The password is checked by
  * signing in again on a separate client; the database only accepts deletion from a password
@@ -60,9 +74,7 @@ export async function deleteAccount(userId: string, email: string, password: str
   try {
     // The email comes from the current session, so this only guards against a mix-up.
     if (data.user.id !== userId) throw new Error("Your account could not be deleted. Try again.");
-    await removeImages(client, userId);
-    const { error: deleteError } = await client.rpc("delete_account");
-    if (deleteError) throw new Error("Your account could not be deleted. Try again.");
+    await deleteWith(client, userId);
   } catch (cause) {
     // The confirmation session is not needed once the attempt failed.
     await client.auth.signOut({ scope: "local" });

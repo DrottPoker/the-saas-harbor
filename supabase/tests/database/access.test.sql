@@ -619,19 +619,19 @@ select set_config('request.jwt.claim.sub', 'b0000000-0000-4000-8000-000000000001
 select set_config('request.jwt.claims', json_build_object('sub', 'b0000000-0000-4000-8000-000000000001')::text, true);
 select throws_ok(
   'select public.delete_account()',
-  '42501', 'Confirm your password to delete your account',
+  '42501', 'Confirm it is you to delete your account',
   'a session without a password sign-in cannot delete the account'
 );
 select set_config('request.jwt.claims', json_build_object('sub', 'b0000000-0000-4000-8000-000000000001', 'amr', json_build_array(json_build_object('method', 'password', 'timestamp', extract(epoch from now())::bigint - 600)))::text, true);
 select throws_ok(
   'select public.delete_account()',
-  '42501', 'Confirm your password to delete your account',
+  '42501', 'Confirm it is you to delete your account',
   'a password sign-in older than five minutes is not enough'
 );
 select set_config('request.jwt.claims', json_build_object('sub', 'b0000000-0000-4000-8000-000000000001', 'amr', json_build_array(json_build_object('method', 'otp', 'timestamp', extract(epoch from now())::bigint - 0)))::text, true);
 select throws_ok(
   'select public.delete_account()',
-  '42501', 'Confirm your password to delete your account',
+  '42501', 'Confirm it is you to delete your account',
   'an email link sign-in is not enough'
 );
 select set_config('request.jwt.claims', json_build_object('sub', 'b0000000-0000-4000-8000-000000000001', 'amr', json_build_array(json_build_object('method', 'password', 'timestamp', extract(epoch from now())::bigint - 5)))::text, true);

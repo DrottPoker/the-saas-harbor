@@ -1,10 +1,9 @@
 import type { Metadata } from "next";
-import { redirect } from "next/navigation";
 import { FeedbackForm } from "@/components/feedback-form";
 import { PageHeader, Shell } from "@/components/shell";
 import { feedbackHref, feedbackPage } from "@/lib/feedback";
 import { firstValues, type SearchParams } from "@/lib/params";
-import { currentUser } from "@/lib/supabase/server";
+import { requireUser } from "@/lib/supabase/server";
 
 export const metadata: Metadata = {
   title: "Send feedback",
@@ -18,7 +17,7 @@ export default async function SendFeedback({
 }) {
   const from = feedbackPage(firstValues(await searchParams).from);
   // Feedback comes from signed-in users, so sign-in continues here, remembering the page.
-  if (!(await currentUser())) redirect(`/auth?next=${encodeURIComponent(feedbackHref(from))}`);
+  await requireUser({ next: feedbackHref(from) });
   return (
     <Shell size="narrow">
       <PageHeader

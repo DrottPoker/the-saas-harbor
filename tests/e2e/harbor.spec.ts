@@ -123,6 +123,7 @@ test.beforeAll(async ({ playwright }, info) => {
   for (const path of [
     ...["/", "/discover", "/newest", "/about", "/privacy", "/terms", "/account-deleted"],
     ...["/auth", "/auth/confirm", `/saas/${id}`, `/users/${id}`, "/demo/metricfold", "/missing"],
+    ...["/auth/finish", "/auth/google", "/auth/callback"],
     ...["/dashboard", "/dashboard/profile", "/dashboard/reports", `/dashboard/saas/${id}`],
     ...["/dashboard/settings", "/api/email/send", "/api/analytics", "/admin/analytics/data"],
     ...["/messages", `/messages/${id}`, `/report/saas/${id}`, "/api/revenue/sync"],
@@ -1163,6 +1164,67 @@ test("password recovery confirms a local email link and accepts the new password
   await expect(
     page.getByRole("alert").filter({ hasText: "This reset link has expired" }),
   ).toBeVisible();
+});
+
+// The Google round trip needs a real OAuth client, so it is not run here. An account marked as
+// created through Google stands in for one after its first sign-in.
+test("an account created with Google chooses a username and accepts the Terms first", async ({
+  page,
+}) => {
+  // Google is off on the test stack: the sign-in page shows no button, and the routes say so.
+  await page.goto("/auth");
+  await expect(page.getByRole("link", { name: "Continue with Google" })).toHaveCount(0);
+  await page.goto("/auth/google");
+  await expect(page).toHaveURL(/\/auth\?error=unavailable$/);
+  await expect(page.getByText("Signing in with Google is not available right now.")).toBeVisible();
+  await page.goto("/auth/callback");
+  await expect(page).toHaveURL(/\/auth\?error=google$/);
+  await expect(page.getByText("Signing in with Google did not finish.")).toBeVisible();
+
+  const address = `harbor-google-${run}@example.test`;
+  const pass = randomBytes(24).toString("hex");
+  const { data, error } = await admin.auth.admin.createUser({
+    email: address,
+    password: pass,
+    email_confirm: true,
+    app_metadata: { provider: "google", providers: ["google"] },
+  });
+  if (error || !data.user) throw new Error("Unable to create the Google test account.");
+  userIds.push(data.user.id);
+  await page.goto("/auth");
+  await page.getByLabel("Email address").fill(address);
+  await page.getByLabel("Password", { exact: true }).fill(pass);
+  await page.getByRole("button", { name: "Sign in", exact: true }).click();
+  await expect(page).toHaveURL(/\/auth\/finish$/);
+  await expect(page.getByRole("heading", { name: "Choose your username" })).toBeVisible();
+  await expect(page.getByText(address)).toBeVisible();
+  await expectAccessible(page);
+
+  // Nothing else opens until sign-up is finished.
+  for (const path of ["/dashboard", "/dashboard/profile"]) {
+    await page.goto(path);
+    await expect(page).toHaveURL(/\/auth\/finish$/);
+  }
+  // Pages that sign-in returns to are remembered for afterwards.
+  await page.goto("/messages");
+  await expect(page).toHaveURL(/\/auth\/finish\?next=%2Fmessages$/);
+
+  const username = `google-${run}`;
+  await page.getByLabel("Username").fill("admin");
+  await page.getByLabel(/I agree to the/).check();
+  await page.getByRole("button", { name: "Create account" }).click();
+  await expect(page.getByText("That username is reserved.")).toBeVisible();
+  await page.getByLabel("Username").fill(username);
+  await page.getByRole("button", { name: "Create account" }).click();
+  await expect(page).toHaveURL(/\/messages$/);
+  const { data: profile } = await admin
+    .from("profiles")
+    .select("name, slug")
+    .eq("id", data.user.id)
+    .single();
+  expect(profile).toEqual({ name: username, slug: username });
+  await page.goto("/auth/finish");
+  await expect(page).toHaveURL(/\/dashboard$/);
 });
 
 test("a user deletes products, then their account and everything in it", async ({ page }) => {

@@ -2,8 +2,10 @@ import type { Metadata } from "next";
 import { AuthForm } from "@/components/forms";
 import { LogoMark } from "@/components/logo";
 import { Notice } from "@/components/shell";
+import { googleError } from "@/lib/auth";
 import { PASSWORD_MIN_LENGTH, safeNext } from "@/lib/domain";
 import { supabaseConfig } from "@/lib/supabase/config";
+import { googleSignInEnabled } from "@/lib/supabase/providers";
 import { requireUser } from "@/lib/supabase/server";
 import { firstValues, type SearchParams } from "@/lib/params";
 
@@ -51,14 +53,17 @@ export default async function Auth({ searchParams }: Props) {
   if (mode === "update") await requireUser();
   const { title, description } = copy[mode];
   const inbox = localInbox();
+  const error = googleError(params.error);
+  const google = (mode === "login" || mode === "signup") && (await googleSignInEnabled());
   return (
     <div className="mx-auto w-full max-w-sm px-4 pt-14 sm:pt-24">
       <LogoMark className="size-14" />
       <h1 className="mt-6 text-2xl font-semibold tracking-tight">{title}</h1>
       <p className="mt-1.5 text-muted-foreground">{description}</p>
       <div className="mt-8 grid gap-5">
+        {error && <Notice tone="error">{error}</Notice>}
         {supabaseConfig() ? (
-          <AuthForm mode={mode} next={safeNext(params.next)} />
+          <AuthForm mode={mode} next={safeNext(params.next)} google={google} />
         ) : (
           <Notice tone="error">
             Authentication is not configured. Follow the Supabase setup in README.md.

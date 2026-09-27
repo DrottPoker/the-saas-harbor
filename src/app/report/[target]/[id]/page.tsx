@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { notFound, redirect } from "next/navigation";
+import { notFound } from "next/navigation";
 import { z } from "zod";
 import { PersonAvatar, ProductLogo } from "@/components/avatars";
 import { BackLink } from "@/components/back-link";
@@ -9,7 +9,7 @@ import { Notice, PageHeader, Shell } from "@/components/shell";
 import { publicProfile, publicSaas } from "@/lib/data";
 import { MESSAGE_COLUMNS } from "@/lib/messages";
 import { isReportTarget, reportPath, type ReportTarget } from "@/lib/moderation";
-import { currentUser, serverClient } from "@/lib/supabase/server";
+import { requireUser, serverClient } from "@/lib/supabase/server";
 
 type Props = { params: Promise<{ target: string; id: string }> };
 
@@ -93,8 +93,7 @@ async function subject(target: ReportTarget, id: string, viewer: string) {
 export default async function Report({ params }: Props) {
   const { target, id } = await params;
   if (!isReportTarget(target) || !z.uuid().safeParse(id).success) notFound();
-  const user = await currentUser();
-  if (!user) redirect(`/auth?next=${encodeURIComponent(reportPath(target, id))}`);
+  const { user } = await requireUser({ next: reportPath(target, id) });
   const found = await subject(target, id, user.id);
   if (!found) notFound();
 

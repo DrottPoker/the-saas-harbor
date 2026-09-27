@@ -5,16 +5,24 @@ import { ModerationNotice } from "@/components/moderation-notice";
 import { ProfileForm } from "@/components/profile/profile-form";
 import { PageHeader, Shell } from "@/components/shell";
 import { Button } from "@/components/ui/button";
+import { confirmationMethod, signedInWithin } from "@/lib/auth";
+import { firstValues, type SearchParams } from "@/lib/params";
 import { requireUser } from "@/lib/supabase/server";
 
 export const metadata = { title: "Edit profile" };
 
-export default async function EditProfile() {
+export default async function EditProfile({
+  searchParams,
+}: {
+  searchParams: Promise<SearchParams>;
+}) {
   const { user, client } = await requireUser();
-  const [profile, experience, usernameLock] = await Promise.all([
+  const params = firstValues(await searchParams);
+  const [profile, experience, usernameLock, claims] = await Promise.all([
     client.from("profiles").select("*").eq("id", user.id).maybeSingle(),
     client.from("profile_experience").select("*").eq("profile_id", user.id),
     client.rpc("username_change_available_at"),
+    client.auth.getClaims(),
   ]);
   if (profile.error || experience.error || usernameLock.error)
     throw new Error("Your profile could not be loaded.");
@@ -51,7 +59,11 @@ export default async function EditProfile() {
           thisYear={new Date().getUTCFullYear()}
         />
       </div>
-      <DeleteAccount />
+      <DeleteAccount
+        method={confirmationMethod(user)}
+        confirmed={signedInWithin(claims.data?.claims.amr, "oauth", 5 * 60)}
+        failed={params.google === "failed"}
+      />
     </Shell>
   );
 }

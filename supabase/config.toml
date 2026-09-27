@@ -159,9 +159,15 @@ site_url = "http://127.0.0.1:3002"
 # The public URL that Auth serves on. Defaults to the API external URL with `/auth/v1` appended.
 # external_url = ""
 # A list of *exact* URLs that auth providers are permitted to redirect to post authentication.
-# Email links open /auth/confirm on the address the app passes (see supabase/templates), so every
-# app origin needs its confirm page here: the browser tests on 3002 and the dev server on 3001.
-additional_redirect_urls = ["http://127.0.0.1:3002/auth/confirm", "http://localhost:3001/auth/confirm"]
+# Email links open /auth/confirm on the address the app passes (see supabase/templates), and Google
+# sign-ins return to /auth/callback, so every app origin needs both pages here: the browser tests
+# on 3002 and the dev server on 3001.
+additional_redirect_urls = [
+  "http://127.0.0.1:3002/auth/confirm",
+  "http://127.0.0.1:3002/auth/callback",
+  "http://localhost:3001/auth/confirm",
+  "http://localhost:3001/auth/callback",
+]
 # How long tokens are valid for, in seconds. Defaults to 3600 (1 hour), maximum 604,800 (1 week).
 jwt_expiry = 3600
 # JWT issuer URL. If not set, defaults to auth.external_url.
@@ -342,6 +348,18 @@ skip_nonce_check = false
 # If enabled, it will allow the user to successfully authenticate when the provider does not return an email address.
 email_optional = false
 
+# Sign-in with Google. Off by default: every machine needs its own OAuth client, set in
+# supabase/.env.local (see README). The client's redirect URI is this stack's
+# http://127.0.0.1:55321/auth/v1/callback.
+[auth.external.google]
+enabled = "env(HARBOR_GOOGLE_ENABLED)"
+client_id = "env(HARBOR_GOOGLE_CLIENT_ID)"
+secret = "env(HARBOR_GOOGLE_SECRET)"
+redirect_uri = ""
+url = ""
+skip_nonce_check = false
+email_optional = false
+
 # Allow Solana wallet holders to sign in to your project via the Sign in with Solana (SIWS, EIP-4361) standard.
 # You can configure "web3" rate limit in the [auth.rate_limit] section and set up [auth.captcha] if self-hosting.
 [auth.web3.solana]
@@ -434,7 +452,16 @@ project_id = "vgwgeennghaqpvfsqewq"
 
 [remotes.production.auth]
 site_url = "https://thesaasharbor.com"
-additional_redirect_urls = ["https://thesaasharbor.com/auth/confirm"]
+additional_redirect_urls = [
+  "https://thesaasharbor.com/auth/confirm",
+  "https://thesaasharbor.com/auth/callback",
+]
+
+# `npm run auth:production` sets the client and asks for its secret; never put it in a file.
+[remotes.production.auth.external.google]
+enabled = "env(HARBOR_PRODUCTION_GOOGLE_ENABLED)"
+client_id = "env(HARBOR_PRODUCTION_GOOGLE_CLIENT_ID)"
+secret = "env(HARBOR_PRODUCTION_GOOGLE_SECRET)"
 
 [remotes.production.auth.email]
 max_frequency = "60s"

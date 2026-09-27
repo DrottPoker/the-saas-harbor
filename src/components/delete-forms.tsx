@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { deleteAccountAction, deleteSaasAction } from "@/app/actions";
 import { Feedback, Field, Section, Submit } from "./forms";
+import { GoogleButton } from "./google-button";
+import { Notice } from "./shell";
 import { Input } from "./ui/input";
 import { useEditorAction } from "./use-editor-action";
 
@@ -26,8 +28,20 @@ function DeleteSection({
   );
 }
 
-export function DeleteAccount() {
+export function DeleteAccount({
+  method,
+  confirmed = false,
+  failed = false,
+}: {
+  /** Accounts without a password confirm by signing in with Google again. */
+  method: "password" | "google";
+  /** Whether this session signed in with Google in the last five minutes. */
+  confirmed?: boolean;
+  /** Whether the last confirmation with Google did not finish. */
+  failed?: boolean;
+}) {
   const [state, action] = useEditorAction(deleteAccountAction);
+  const google = method === "google";
   return (
     <DeleteSection
       id="delete-account"
@@ -49,22 +63,42 @@ export function DeleteAccount() {
             for what we store.
           </p>
         </div>
-        <Field name="delete_password" label="Confirm with your password">
-          <Input
-            id="delete_password"
-            name="password"
-            type="password"
-            autoComplete="current-password"
-            maxLength={128}
-            required
-          />
-        </Field>
+        {!google ? (
+          <Field name="delete_password" label="Confirm with your password">
+            <Input
+              id="delete_password"
+              name="password"
+              type="password"
+              autoComplete="current-password"
+              maxLength={128}
+              required
+            />
+          </Field>
+        ) : confirmed ? (
+          <Notice>You confirmed with Google. Delete your account within five minutes.</Notice>
+        ) : (
+          <div className="grid gap-3">
+            <p className="text-sm text-muted-foreground">
+              Your account signs in with Google. Confirm it is you with Google first.
+            </p>
+            {failed && (
+              <Notice tone="error">Google did not confirm it is you. Please try again.</Notice>
+            )}
+            <div>
+              <GoogleButton href="/auth/google?confirm=delete" className="h-9">
+                Confirm with Google
+              </GoogleButton>
+            </div>
+          </div>
+        )}
         <Feedback state={state} />
-        <div>
-          <Submit variant="destructive" pendingLabel="Deleting...">
-            Delete account
-          </Submit>
-        </div>
+        {(!google || confirmed) && (
+          <div>
+            <Submit variant="destructive" pendingLabel="Deleting...">
+              Delete account
+            </Submit>
+          </div>
+        )}
       </form>
     </DeleteSection>
   );

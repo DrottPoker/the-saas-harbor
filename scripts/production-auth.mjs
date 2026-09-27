@@ -1,11 +1,13 @@
 import { spawnSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import { createInterface } from "node:readline";
+import { parseEnv } from "node:util";
 
 // npm run auth:production
 // Pushes the Auth settings in supabase/config.toml to production, with the [remotes.production]
-// overrides and Resend as SMTP. The Resend API key is typed here, hidden, and passed only to the
-// Supabase CLI's environment, never written to a file. `supabase config push` does not ask before
+// overrides, Resend as SMTP and, once its client ID is set, sign-in with Google. The Resend API
+// key and the Google secret are typed here, hidden, and passed only to the Supabase CLI's
+// environment, never written to a file. `supabase config push` does not ask before
 // it pushes, so this script asks instead.
 const PROJECT = "vgwgeennghaqpvfsqewq";
 const npx = process.platform === "win32" ? "npx.cmd" : "npx";
@@ -55,13 +57,29 @@ const key = (await askHidden("Resend API key for Supabase Auth (re_...): ")).tri
 if (!/^re_[A-Za-z0-9_]{10,}$/.test(key))
   throw new Error("That does not look like a Resend API key.");
 
+// Sign-in with Google is on once the public client ID is committed in supabase/.env. Its secret is
+// typed here like the Resend key.
+const googleClientId =
+  parseEnv(readFileSync(new URL("../supabase/.env", import.meta.url), "utf8"))
+    .HARBOR_PRODUCTION_GOOGLE_CLIENT_ID ?? "";
+if (googleClientId && !/^[0-9]+-[a-z0-9]+\.apps\.googleusercontent\.com$/.test(googleClientId))
+  throw new Error("HARBOR_PRODUCTION_GOOGLE_CLIENT_ID in supabase/.env is not a Google client ID.");
+const googleSecret = googleClientId
+  ? (await askHidden("Google OAuth client secret (GOCSPX-...): ")).trim()
+  : "";
+if (googleClientId && !/^GOCSPX-[A-Za-z0-9_-]{10,}$/.test(googleSecret))
+  throw new Error("That does not look like a Google OAuth client secret.");
+
 console.log(
   [
     "",
     `This pushes supabase/config.toml to the production project ${PROJECT}:`,
-    "  site URL https://thesaasharbor.com, confirm page as the only redirect URL,",
+    "  site URL https://thesaasharbor.com, the confirm and Google callback pages as redirect URLs,",
     "  the email templates and subjects, 60 seconds between emails to one address,",
     "  and Auth email through smtp.resend.com as The SaaS Harbor <noreply@thesaasharbor.com>.",
+    googleClientId
+      ? `  Sign-in with Google on, with the client ${googleClientId}.`
+      : "  Sign-in with Google off (no HARBOR_PRODUCTION_GOOGLE_CLIENT_ID in supabase/.env).",
     "",
   ].join("\n"),
 );
@@ -86,6 +104,9 @@ const result = spawnSync(npx, ["supabase", "config", "push"], {
     HARBOR_PRODUCTION_SMTP_PASS: key,
     HARBOR_PRODUCTION_SMTP_ADMIN_EMAIL: "noreply@thesaasharbor.com",
     HARBOR_PRODUCTION_SMTP_SENDER_NAME: "The SaaS Harbor",
+    HARBOR_PRODUCTION_GOOGLE_ENABLED: googleClientId ? "true" : "false",
+    HARBOR_PRODUCTION_GOOGLE_CLIENT_ID: googleClientId,
+    HARBOR_PRODUCTION_GOOGLE_SECRET: googleSecret,
   },
 });
 process.exit(result.status ?? 1);

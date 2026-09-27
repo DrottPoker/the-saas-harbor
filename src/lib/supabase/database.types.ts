@@ -1137,6 +1137,10 @@ export type Database = {
         Args: { p_error: string; p_id: number; p_status: string }
         Returns: undefined
       }
+      complete_signup: {
+        Args: { p_terms_version: string; p_username: string }
+        Returns: undefined
+      }
       delete_account: { Args: never; Returns: undefined }
       directory_stats: { Args: never; Returns: Json }
       is_admin: { Args: never; Returns: boolean }

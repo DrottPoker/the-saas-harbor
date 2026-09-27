@@ -3,7 +3,8 @@
 import { redirect, RedirectType } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
-import { deleteAccount } from "@/lib/account";
+import { deleteAccount, deleteSignedInAccount } from "@/lib/account";
+import { confirmationMethod, signedInWithin } from "@/lib/auth";
 import { parseSkills } from "@/lib/profile";
 import {
   emailLink,
@@ -21,7 +22,7 @@ import {
 import { addressAcceptsMail } from "@/lib/email-domain";
 import { announceProduct, announceRemovedProduct } from "@/lib/indexnow";
 import { termsUpdated } from "@/lib/legal";
-import { requireUser, serverClient } from "@/lib/supabase/server";
+import { requireUser, serverClient, signupFinished, startPage } from "@/lib/supabase/server";
 import { uploadImage } from "@/lib/upload";
 
 const value = (form: FormData, key: string) => String(form.get(key) ?? "");
@@ -30,14 +31,14 @@ function message(error: unknown) {
   return error instanceof Error ? error.message : "Something went wrong. Please try again.";
 }
 
-async function openedFromEmailLink(client: Awaited<ReturnType<typeof serverClient>>) {
+// Whether the current session signed in with this method in the last `seconds`.
+async function signedInRecently(
+  client: Awaited<ReturnType<typeof serverClient>>,
+  method: "otp" | "oauth",
+  seconds: number,
+) {
   const { data } = await client.auth.getClaims();
-  const amr: unknown = data?.claims.amr;
-  const since = Date.now() / 1000 - 15 * 60;
-  return (
-    Array.isArray(amr) &&
-    amr.some((entry) => entry?.method === "otp" && Number(entry?.timestamp) >= since)
-  );
+  return signedInWithin(data?.claims.amr, method, seconds);
 }
 
 // What is wrong with the email address, password and, for sign-up, the Terms of Service box.
@@ -122,7 +123,7 @@ export async function authenticate(
     await requireUser();
     // Only a session opened from an email link in the last 15 minutes may set a new password, so
     // a stolen session cannot take over the account. Every other session ends afterwards.
-    if (!(await openedFromEmailLink(client)))
+    if (!(await signedInRecently(client, "otp", 15 * 60)))
       return { error: "This reset link has expired. Request a new one to choose a password." };
     const { error } = await client.auth.updateUser({ password });
     if (error) return { error: "Password could not be updated. Request a new reset link." };
@@ -174,17 +175,34 @@ export async function confirmEmailLinkAction(
     };
   revalidatePath("/", "layout");
   if (link.type === "recovery") redirect("/auth?mode=update");
-  redirect(await startPage(client, data.user?.id));
+  redirect(data.user ? await startPage(client, data.user.id) : "/dashboard");
 }
 
-/** Where a confirmed account starts: listing its first product, until it has one. */
-async function startPage(client: Awaited<ReturnType<typeof serverClient>>, userId?: string) {
-  if (!userId) return "/dashboard";
-  const { count, error } = await client
-    .from("saas")
-    .select("id", { count: "exact", head: true })
-    .eq("owner_id", userId);
-  return !error && count === 0 ? "/dashboard/saas/new" : "/dashboard";
+// The last step of a sign-up through Google: the username and the Terms of Service, which email
+// sign-up asks for before the account is created.
+export async function finishSignupAction(
+  _state: ActionState,
+  form: FormData,
+): Promise<ActionState> {
+  const { user, client } = await requireUser({ unfinished: true });
+  const next = safeNext(value(form, "next"));
+  if (await signupFinished()) redirect(next || "/dashboard");
+  if (form.get("terms") !== "on") return { error: "Tick the box to accept the Terms of Service." };
+  const { username, problem } = await usernameProblem(client, value(form, "username"));
+  if (problem) return { error: problem };
+  const { error } = await client.rpc("complete_signup", {
+    p_username: username,
+    p_terms_version: termsUpdated,
+  });
+  if (error)
+    return {
+      error:
+        error.message === "username taken"
+          ? USERNAME_PROBLEMS.taken
+          : "Your account could not be set up. Please try again.",
+    };
+  revalidatePath("/", "layout");
+  redirect(next || (await startPage(client, user.id)));
 }
 
 export async function signOut() {
@@ -199,12 +217,21 @@ export async function deleteAccountAction(
   _state: ActionState,
   form: FormData,
 ): Promise<ActionState> {
-  const { user, client } = await requireUser();
-  const password = value(form, "password");
-  if (!password || password.length > 128) return { error: "Enter your password to confirm." };
-  if (!user.email) return { error: "Your account could not be deleted. Try again." };
+  const { user, client } = await requireUser({ unfinished: true });
   try {
-    await deleteAccount(user.id, user.email, password);
+    if (confirmationMethod(user) === "google") {
+      // The database checks the same five minutes.
+      if (!(await signedInRecently(client, "oauth", 5 * 60)))
+        return {
+          error: "Confirm with Google again, then delete your account within five minutes.",
+        };
+      await deleteSignedInAccount(client, user.id);
+    } else {
+      const password = value(form, "password");
+      if (!password || password.length > 128) return { error: "Enter your password to confirm." };
+      if (!user.email) return { error: "Your account could not be deleted. Try again." };
+      await deleteAccount(user.id, user.email, password);
+    }
   } catch (error) {
     return { error: message(error) };
   }

@@ -9,6 +9,7 @@ import {
   authenticate,
   checkSignupDetails,
   confirmEmailLinkAction,
+  finishSignupAction,
   saveEmailSettingsAction,
   saveSaas,
 } from "@/app/actions";
@@ -24,6 +25,7 @@ import type { Saas, SaasSettings } from "@/lib/data";
 import { TECH_STACK_MAX, techGroups, technologies } from "@/lib/tech";
 import { cn } from "@/lib/utils";
 import { PersonAvatar, ProductLogo } from "./avatars";
+import { GoogleButton } from "./google-button";
 import { Notice } from "./shell";
 import { Button } from "./ui/button";
 import { Input, fieldClasses } from "./ui/input";
@@ -189,6 +191,43 @@ export function UsernameInput(props: Omit<React.ComponentProps<typeof Input>, "t
   );
 }
 
+/** The Terms of Service box of a sign-up. The server checks it again and records the version. */
+function TermsCheckbox({ defaultChecked }: { defaultChecked: boolean }) {
+  return (
+    <div className="flex items-start gap-3">
+      <input
+        id="terms"
+        name="terms"
+        type="checkbox"
+        required
+        defaultChecked={defaultChecked}
+        className="mt-0.5 size-4 shrink-0 accent-brand"
+      />
+      <label htmlFor="terms" className="text-[13px] leading-5 text-muted-foreground">
+        I agree to the{" "}
+        <Link
+          className="font-medium text-foreground underline"
+          href="/terms"
+          target="_blank"
+          rel="noopener"
+        >
+          Terms of Service
+        </Link>
+        . I have read the{" "}
+        <Link
+          className="font-medium text-foreground underline"
+          href="/privacy"
+          target="_blank"
+          rel="noopener"
+        >
+          Privacy Policy
+        </Link>
+        .
+      </label>
+    </div>
+  );
+}
+
 const authCopy = {
   login: "Sign in",
   signup: "Create account",
@@ -206,10 +245,13 @@ const USERNAME_HINT =
 export function AuthForm({
   mode,
   next,
+  google = false,
 }: {
   mode: "login" | "signup" | "reset" | "update";
   /** Where to continue after signing in, already checked with safeNext(). */
   next?: string | null;
+  /** Whether Supabase Auth offers sign-in with Google. */
+  google?: boolean;
 }) {
   const [state, action, creating] = useEditorAction(authenticate.bind(null, mode));
   const signup = mode === "signup";
@@ -270,134 +312,124 @@ export function AuthForm({
       </section>
     );
 
+  const withGoogle = google && (mode === "login" || (signup && !choosing));
   return (
-    <form
-      action={signup ? undefined : action}
-      onSubmit={signup ? submit : undefined}
-      className="grid gap-5"
-    >
-      {mode === "login" && next && <input type="hidden" name="next" value={next} />}
-      {choosing && (
-        <Field name="username" label="Username" hint={USERNAME_HINT}>
-          <UsernameInput ref={username} defaultValue={state.values?.username} />
-        </Field>
-      )}
-      <div className={cn("grid gap-5", choosing && "hidden")}>
-        {mode !== "update" && (
-          <Field name="email" label="Email address">
-            <Input
-              id="email"
-              name="email"
-              type="email"
-              autoComplete="email"
-              defaultValue={state.values?.email}
-              required
-              maxLength={254}
-            />
-          </Field>
-        )}
-        {mode !== "reset" && (
-          <Field
-            name="password"
-            label={mode === "update" ? "New password" : "Password"}
-            hint={
-              mode === "signup" || mode === "update"
-                ? `At least ${PASSWORD_MIN_LENGTH} characters.`
-                : undefined
-            }
-            aside={
-              mode === "login" && (
-                // No taller than the label, so the field sits where it does on the other forms;
-                // the padding keeps the link easy to tap.
-                <Link
-                  className="-my-1.5 py-1.5 text-[13px] leading-none text-muted-foreground hover:text-foreground"
-                  href="/auth?mode=reset"
-                >
-                  Forgot password?
-                </Link>
-              )
-            }
+    <div className="grid gap-5">
+      {withGoogle && (
+        <>
+          <GoogleButton
+            href={next ? `/auth/google?next=${encodeURIComponent(next)}` : "/auth/google"}
           >
-            <Input
-              id="password"
-              name="password"
-              type="password"
-              autoComplete={mode === "login" ? "current-password" : "new-password"}
-              minLength={mode === "login" ? 1 : PASSWORD_MIN_LENGTH}
-              maxLength={PASSWORD_MAX_LENGTH}
-              required
-            />
-          </Field>
-        )}
-        {signup && (
-          // Required here and checked again by the server, which records the accepted version.
-          <div className="flex items-start gap-3">
-            <input
-              id="terms"
-              name="terms"
-              type="checkbox"
-              required
-              defaultChecked={state.values?.terms === "on"}
-              className="mt-0.5 size-4 shrink-0 accent-brand"
-            />
-            <label htmlFor="terms" className="text-[13px] leading-5 text-muted-foreground">
-              I agree to the{" "}
-              <Link
-                className="font-medium text-foreground underline"
-                href="/terms"
-                target="_blank"
-                rel="noopener"
-              >
-                Terms of Service
-              </Link>
-              . I have read the{" "}
-              <Link
-                className="font-medium text-foreground underline"
-                href="/privacy"
-                target="_blank"
-                rel="noopener"
-              >
-                Privacy Policy
-              </Link>
-              .
-            </label>
+            Continue with Google
+          </GoogleButton>
+          <div className="flex items-center gap-3 text-[13px] text-muted-foreground">
+            <span className="h-px flex-1 bg-border" />
+            or with email
+            <span className="h-px flex-1 bg-border" />
           </div>
+        </>
+      )}
+      <form
+        action={signup ? undefined : action}
+        onSubmit={signup ? submit : undefined}
+        className="grid gap-5"
+      >
+        {mode === "login" && next && <input type="hidden" name="next" value={next} />}
+        {choosing && (
+          <Field name="username" label="Username" hint={USERNAME_HINT}>
+            <UsernameInput ref={username} defaultValue={state.values?.username} />
+          </Field>
         )}
-      </div>
-      <Feedback state={signup && !choosing ? details : state} />
-      <Submit className="h-10 w-full" pending={signup ? checking || creating : undefined}>
-        {choosing ? "Continue" : authCopy[mode]}
-      </Submit>
-      <p className="text-center text-sm text-muted-foreground">
-        {mode === "login" ? (
-          <>
-            No account yet?{" "}
-            <Link className="font-medium text-foreground hover:underline" href="/auth?mode=signup">
-              Create one
-            </Link>
-          </>
-        ) : signup && !choosing ? (
-          <>
-            Already have an account?{" "}
+        <div className={cn("grid gap-5", choosing && "hidden")}>
+          {mode !== "update" && (
+            <Field name="email" label="Email address">
+              <Input
+                id="email"
+                name="email"
+                type="email"
+                autoComplete="email"
+                defaultValue={state.values?.email}
+                required
+                maxLength={254}
+              />
+            </Field>
+          )}
+          {mode !== "reset" && (
+            <Field
+              name="password"
+              label={mode === "update" ? "New password" : "Password"}
+              hint={
+                mode === "signup" || mode === "update"
+                  ? `At least ${PASSWORD_MIN_LENGTH} characters.`
+                  : undefined
+              }
+              aside={
+                mode === "login" && (
+                  // No taller than the label, so the field sits where it does on the other forms;
+                  // the padding keeps the link easy to tap.
+                  <Link
+                    className="-my-1.5 py-1.5 text-[13px] leading-none text-muted-foreground hover:text-foreground"
+                    href="/auth?mode=reset"
+                  >
+                    Forgot password?
+                  </Link>
+                )
+              }
+            >
+              <Input
+                id="password"
+                name="password"
+                type="password"
+                autoComplete={mode === "login" ? "current-password" : "new-password"}
+                minLength={mode === "login" ? 1 : PASSWORD_MIN_LENGTH}
+                maxLength={PASSWORD_MAX_LENGTH}
+                required
+              />
+            </Field>
+          )}
+          {signup && (
+            // Required here and checked again by the server, which records the accepted version.
+            <TermsCheckbox defaultChecked={state.values?.terms === "on"} />
+          )}
+        </div>
+        <Feedback state={signup && !choosing ? details : state} />
+        <Submit className="h-10 w-full" pending={signup ? checking || creating : undefined}>
+          {choosing ? "Continue" : authCopy[mode]}
+        </Submit>
+        <p className="text-center text-sm text-muted-foreground">
+          {mode === "login" ? (
+            <>
+              No account yet?{" "}
+              <Link
+                className="font-medium text-foreground hover:underline"
+                href="/auth?mode=signup"
+              >
+                Create one
+              </Link>
+            </>
+          ) : signup && !choosing ? (
+            <>
+              Already have an account?{" "}
+              <Link className="font-medium text-foreground hover:underline" href="/auth">
+                Sign in
+              </Link>
+            </>
+          ) : choosing ? (
+            <button
+              type="button"
+              className="font-medium text-foreground hover:underline"
+              onClick={() => setStep("details")}
+            >
+              Back
+            </button>
+          ) : (
             <Link className="font-medium text-foreground hover:underline" href="/auth">
-              Sign in
+              Back to sign in
             </Link>
-          </>
-        ) : choosing ? (
-          <button
-            type="button"
-            className="font-medium text-foreground hover:underline"
-            onClick={() => setStep("details")}
-          >
-            Back
-          </button>
-        ) : (
-          <Link className="font-medium text-foreground hover:underline" href="/auth">
-            Back to sign in
-          </Link>
-        )}
-      </p>
-    </form>
+          )}
+        </p>
+      </form>
+    </div>
   );
 }
 
@@ -498,6 +530,24 @@ export function ConfirmLinkForm({
           {type === "recovery" ? "Request a new reset link" : "Back to sign in"}
         </Link>
       </p>
+    </form>
+  );
+}
+
+/** The last step of a sign-up through Google: a username and the Terms of Service. */
+export function FinishSignupForm({ next }: { next?: string | null }) {
+  const [state, action] = useEditorAction(finishSignupAction);
+  return (
+    <form action={action} className="grid gap-5">
+      {next && <input type="hidden" name="next" value={next} />}
+      <Field name="username" label="Username" hint={USERNAME_HINT}>
+        <UsernameInput defaultValue={state.values?.username} autoFocus />
+      </Field>
+      <TermsCheckbox defaultChecked={state.values?.terms === "on"} />
+      <Feedback state={state} />
+      <Submit className="h-10 w-full" pendingLabel="Creating your account...">
+        Create account
+      </Submit>
     </form>
   );
 }
