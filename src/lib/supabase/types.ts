@@ -107,7 +107,11 @@ export type Database = Omit<GeneratedDatabase, "public"> & {
       };
       admin_account: {
         Args: Functions["admin_account"]["Args"];
-        Returns: Nullable<Row<"admin_account">, "last_sign_in_at" | "email_confirmed_at">[];
+        // Accounts without a recorded sign-in country have neither of the last two.
+        Returns: Nullable<
+          Row<"admin_account">,
+          "last_sign_in_at" | "email_confirmed_at" | "country" | "country_at"
+        >[];
       };
     };
   };

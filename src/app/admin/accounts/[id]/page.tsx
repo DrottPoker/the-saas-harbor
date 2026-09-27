@@ -10,6 +10,7 @@ import { Badge } from "@/components/badge";
 import { BackLink } from "@/components/back-link";
 import { Notice } from "@/components/shell";
 import { openReportCounts, profileNames, requireAdmin } from "@/lib/admin";
+import { countryName } from "@/lib/analytics-reports";
 import { formatDate } from "@/lib/domain";
 import { decisionLabels, isReason } from "@/lib/moderation";
 import { firstValues, type SearchParams } from "@/lib/params";
@@ -99,6 +100,15 @@ export default async function AdminAccount({ params, searchParams }: Props) {
                 ["Email", account.data.email],
                 ["Joined", date(account.data.created_at)],
                 ["Last sign-in", date(account.data.last_sign_in_at)],
+                [
+                  // From the IP address of the latest sign-in that had one, with its date.
+                  "Sign-in country",
+                  account.data.country ? (
+                    `${countryName(account.data.country)} (${account.data.country}) · ${date(account.data.country_at)}`
+                  ) : (
+                    <span className="text-muted-foreground">Not known yet</span>
+                  ),
+                ],
                 ["Email confirmed", account.data.email_confirmed_at ? "Yes" : "No"],
                 ["Reports sent", String(sent.count ?? 0)],
                 [

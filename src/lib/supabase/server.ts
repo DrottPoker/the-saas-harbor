@@ -2,8 +2,9 @@ import "server-only";
 import { cache } from "react";
 import { createServerClient } from "@supabase/ssr";
 import { createClient, type User } from "@supabase/supabase-js";
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
+import { countryCode } from "@/lib/analytics";
 import { createdWithProvider } from "@/lib/auth";
 import { cookieOptions, supabaseConfig } from "./config";
 import type { Database } from "./types";
@@ -86,6 +87,15 @@ export async function requireUser({
   if (!user) redirect(`/auth${query}`);
   if (!unfinished && !(await signupFinished())) redirect(`/auth/finish${query}`);
   return { user, client: await serverClient() };
+}
+/**
+ * Stores the country of the sign-in that just opened `client`'s session, from the host's IP
+ * geolocation, for the account page in the admin panel. Only the two-letter code is kept, and a
+ * failure never stops the sign-in.
+ */
+export async function recordSignInCountry(client: Client) {
+  const country = countryCode((await headers()).get("x-vercel-ip-country"));
+  if (country) await client.rpc("record_sign_in_country", { p_country: country });
 }
 /** Where a new account starts: listing its first product, until it has one. */
 export async function startPage(client: Client, userId: string) {

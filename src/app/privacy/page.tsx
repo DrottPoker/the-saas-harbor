@@ -38,7 +38,9 @@ export default function Privacy() {
               and your password, which is stored only as a salted hash, and which version of the
               Terms of Service you accepted when you created the account, and when. We also record
               account events, such as sign-ins, with their time and IP address, to keep accounts
-              secure.
+              secure. From your latest sign-in we also keep the country your IP address points to,
+              as a two-letter code such as SE and never the address itself, so admins can see it
+              when they review your account. The next sign-in replaces it.
             </li>
             <li>
               <strong className="font-medium text-foreground">
@@ -159,11 +161,11 @@ export default function Privacy() {
               messages, also part of the service (Article 6(1)(b)). You can turn message emails off.
             </li>
             <li>
-              To keep the service secure and fair, through the sign-in records, the subscription
-              hashes described above, and limits on how many messages, reports and products an
-              account can add and how often it checks revenue and domains. The limits keep the times
-              you added a product for a day and the times you checked revenue or a domain for an
-              hour (our legitimate interests, Article 6(1)(f)).
+              To keep the service secure and fair, through the sign-in records, the country of your
+              latest sign-in, the subscription hashes described above, and limits on how many
+              messages, reports and products an account can add and how often it checks revenue and
+              domains. The limits keep the times you added a product for a day and the times you
+              checked revenue or a domain for an hour (our legitimate interests, Article 6(1)(f)).
             </li>
             <li>
               To handle reports and moderate the site. The EU Digital Services Act requires us to
@@ -262,11 +264,11 @@ export default function Privacy() {
             <li>
               <strong className="font-medium text-foreground">Admins:</strong> the people the
               operator appoints to review reports. They see your email address, when you joined and
-              last signed in, reports about you or by you, the decisions about your account, and the
-              feedback you send, with your name. The site statistics show admins only totals, never
-              who visited. An admin sees a private message only when one of the two users reports
-              it, and then only a copy of that message. A user who is reported never learns who
-              reported them.
+              last signed in and from which country, reports about you or by you, the decisions
+              about your account, and the feedback you send, with your name. The site statistics
+              show admins only totals, never who visited. An admin sees a private message only when
+              one of the two users reports it, and then only a copy of that message. A user who is
+              reported never learns who reported them.
             </li>
             <li>
               <strong className="font-medium text-foreground">Service providers:</strong> our
@@ -307,12 +309,12 @@ export default function Privacy() {
         <Section id="retention" title="How long we keep it">
           <p>
             We keep your data for as long as you have an account. When you delete your account, your
-            profile, products, images, provider keys, verification history, conversations and
-            sign-in records are deleted right away. A conversation is deleted for both users when
-            either of them deletes their account. Deleting a single product removes its details, its
-            logo, its provider key, its verification history and its domain check in the same way.
-            Logos and photos you replaced earlier are kept until you delete your account. Copies in
-            backups disappear when those backups expire.
+            profile, products, images, provider keys, verification history, conversations, sign-in
+            records and sign-in country are deleted right away. A conversation is deleted for both
+            users when either of them deletes their account. Deleting a single product removes its
+            details, its logo, its provider key, its verification history and its domain check in
+            the same way. Logos and photos you replaced earlier are kept until you delete your
+            account. Copies in backups disappear when those backups expire.
           </p>
           <p>
             An email waits in a queue until it is sent, and a record of it is kept for a week

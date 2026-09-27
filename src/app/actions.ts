@@ -22,7 +22,13 @@ import {
 import { addressAcceptsMail } from "@/lib/email-domain";
 import { announceProduct, announceRemovedProduct } from "@/lib/indexnow";
 import { termsUpdated } from "@/lib/legal";
-import { requireUser, serverClient, signupFinished, startPage } from "@/lib/supabase/server";
+import {
+  recordSignInCountry,
+  requireUser,
+  serverClient,
+  signupFinished,
+  startPage,
+} from "@/lib/supabase/server";
 import { uploadImage } from "@/lib/upload";
 
 const value = (form: FormData, key: string) => String(form.get(key) ?? "");
@@ -135,6 +141,8 @@ export async function authenticate(
         error: "Unable to sign in. Check your email and password, and confirm your email first.",
       };
   }
+  // A sign-up without email confirmation has signed in too.
+  if (mode === "login" || mode === "signup") await recordSignInCountry(client);
   revalidatePath("/", "layout");
   redirect((mode === "login" && safeNext(value(form, "next"))) || "/dashboard");
 }
@@ -173,6 +181,7 @@ export async function confirmEmailLinkAction(
           ? "This link has expired or has already been used. Request a new reset link."
           : "This link has expired or has already been used. Sign in if you confirmed your email before, or sign up again to get a new link.",
     };
+  await recordSignInCountry(client);
   revalidatePath("/", "layout");
   if (link.type === "recovery") redirect("/auth?mode=update");
   redirect(data.user ? await startPage(client, data.user.id) : "/dashboard");

@@ -1017,6 +1017,8 @@ export type Database = {
       admin_account: {
         Args: { p_id: string }
         Returns: {
+          country: string
+          country_at: string
           created_at: string
           email: string
           email_confirmed_at: string
@@ -1197,6 +1199,10 @@ export type Database = {
           p_saas_id: string
           p_subscription_hashes: string[]
         }
+        Returns: undefined
+      }
+      record_sign_in_country: {
+        Args: { p_country: string }
         Returns: undefined
       }
       saas_domain_verification: {

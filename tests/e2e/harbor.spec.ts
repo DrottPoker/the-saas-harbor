@@ -1731,6 +1731,8 @@ test("reports reach the admin panel, where admins hide products and suspend acco
   await expect.poll(() => subjects(reporter.email)).toContain("Your report has been reviewed");
 
   // The maker sees the product as hidden, with the reason and the explanation.
+  // Vercel sends the country of the visitor's IP address; the sign-in stores it for admins.
+  await makerPage.setExtraHTTPHeaders({ "x-vercel-ip-country": "SE" });
   await login(makerPage, maker.email, maker.password);
   const ownProduct = makerPage
     .getByRole("list", { name: "Your products" })
@@ -1754,6 +1756,9 @@ test("reports reach the admin panel, where admins hide products and suspend acco
   await adminPage.goto(`/admin/accounts?q=${encodeURIComponent(maker.email)}`);
   await adminPage.getByRole("link").filter({ hasText: maker.email }).click();
   await expect(adminPage.getByRole("heading", { name: maker.name, level: 1 })).toBeVisible();
+  await expect(
+    adminPage.getByRole("region", { name: "Account" }).getByText(/^Sweden \(SE\) · /),
+  ).toBeVisible();
   const suspend = adminPage.getByRole("region", { name: "Suspend the account" });
   await suspend.getByLabel("Reason").selectOption("spam");
   await suspend

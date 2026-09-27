@@ -1,7 +1,12 @@
 import { cookies } from "next/headers";
 import { NextResponse, type NextRequest } from "next/server";
 import { decodeOAuthFlow, OAUTH_FLOW_COOKIE, oauthFailure } from "@/lib/auth";
-import { hasFinishedSignup, serverClient, startPage } from "@/lib/supabase/server";
+import {
+  hasFinishedSignup,
+  recordSignInCountry,
+  serverClient,
+  startPage,
+} from "@/lib/supabase/server";
 
 // Google and GitHub return here through Supabase with a one-time code, which becomes the session
 // in this browser. New accounts continue to choosing a username and accepting the Terms.
@@ -30,6 +35,7 @@ export async function GET(request: NextRequest) {
     await client.auth.signOut({ scope: "local" });
     return to(`/auth?error=account${provider}`);
   }
+  await recordSignInCountry(client);
   if (!(await hasFinishedSignup(client, data.user)))
     return to(flow.next ? `/auth/finish?next=${encodeURIComponent(flow.next)}` : "/auth/finish");
   return to(flow.next ?? (await startPage(client, data.user.id)));
