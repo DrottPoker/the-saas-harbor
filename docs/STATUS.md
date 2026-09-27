@@ -29,7 +29,7 @@ Vercel Web Analytics listed accounts.google.com and github.com as referring site
 
 ## Sign-in country for admins 2026-09-27
 
-At the project owner's request, an account's page in the admin panel shows the country of its latest sign-in, such as Sweden (SE), with the date. Every sign-in (password, email link, Google or GitHub) stores the country Vercel reports for the IP address, one row per account (migration `20260927130000_sign_in_country.sql`); the address itself is never stored, and deleting the account removes the row. Accounts show Not known yet until their next sign-in, and local sign-ins record nothing because only Vercel sends the header. The user's own session records it, so a VPN, or a user calling the function directly, can change it: it is a hint for moderation, not proof. The privacy policy describes it.
+At the project owner's request, an account's page in the admin panel shows the country of its latest sign-in, such as Sweden (SE), with the date. Every sign-in (password, email link, Google or GitHub) stores the country Vercel reports for the IP address, one row per account (migration `20260927130000_sign_in_country.sql`, applied to production on 2026-09-27, before the code); the address itself is never stored, and deleting the account removes the row. Accounts show Not known yet until their next sign-in, and local sign-ins record nothing because only Vercel sends the header. The user's own session records it, so a VPN, or a user calling the function directly, can change it: it is a hint for moderation, not proof. The privacy policy describes it.
 
 ## Account menu 2026-09-27
 
