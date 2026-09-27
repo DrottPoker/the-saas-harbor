@@ -103,7 +103,13 @@ export function pageView(value: string) {
 
 const bareHost = (host: string) => host.toLowerCase().replace(/^www\./, "");
 
-/** The site a visit came from, as a host without www, or null for none and for this site. */
+const ANDROID_PACKAGE = /^[a-z][a-z0-9_]*(\.[a-z][a-z0-9_]*)+$/;
+
+/**
+ * Where a visit came from: another site's host without www, or android-app:<package> for a link
+ * opened from an Android app, which gives android-app://<package>/ as the referrer. The reports
+ * name known apps by their site (private.analytics_referrer_site). Null for none and for this site.
+ */
 export function referrerHost(referrer: string | null | undefined, siteHost: string) {
   if (!referrer) return null;
   let url: URL;
@@ -111,6 +117,10 @@ export function referrerHost(referrer: string | null | undefined, siteHost: stri
     url = new URL(referrer);
   } catch {
     return null;
+  }
+  if (url.protocol === "android-app:") {
+    const app = url.hostname.toLowerCase();
+    return ANDROID_PACKAGE.test(app) && app.length <= 241 ? `android-app:${app}` : null;
   }
   if (url.protocol !== "https:" && url.protocol !== "http:") return null;
   const host = bareHost(url.hostname);

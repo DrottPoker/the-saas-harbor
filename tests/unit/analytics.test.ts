@@ -93,7 +93,29 @@ describe("analytics", () => {
     expect(referrerHost("https://www.thesaasharbor.com/stats", site)).toBeNull();
     expect(referrerHost("https://thesaasharbor.com/", site)).toBeNull();
     expect(referrerHost("http://127.0.0.1:3001/about", "127.0.0.1:3001")).toBeNull();
-    for (const other of [null, undefined, "", "not a url", "android-app://com.google.android.gm/"])
+    for (const other of [null, undefined, "", "not a url", "ios-app://123/x", "file:///etc"])
+      expect(referrerHost(other, site)).toBeNull();
+  });
+
+  it("keeps the Android app a link was opened from", () => {
+    const site = "thesaasharbor.com";
+    expect(referrerHost("android-app://com.reddit.frontpage/", site)).toBe(
+      "android-app:com.reddit.frontpage",
+    );
+    expect(
+      referrerHost(
+        "android-app://com.google.android.googlequicksearchbox/https/www.google.com",
+        site,
+      ),
+    ).toBe("android-app:com.google.android.googlequicksearchbox");
+    expect(referrerHost("android-app://com.Slack", site)).toBe("android-app:com.slack");
+    for (const other of [
+      "android-app://",
+      "android-app://single/",
+      "android-app://com.example.1app/",
+      "android-app://com.exa mple/",
+      `android-app://com.${"a".repeat(240)}/`,
+    ])
       expect(referrerHost(other, site)).toBeNull();
   });
 

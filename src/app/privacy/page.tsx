@@ -194,24 +194,24 @@ export default function Privacy() {
           <p>
             We count visits in two ways, both without cookies and without storing anything on your
             device. For each page you open, the site notes which page it is and, when you arrive,
-            which site linked to it. Addresses keep only campaign tags (utm_source and the like);
-            other query values, and ids in private addresses such as a conversation, are removed.
-            Admin pages, visits by signed-in admins and automated browsers are not counted.
+            which site or app linked to it. Addresses keep only campaign tags (utm_source and the
+            like); other query values, and ids in private addresses such as a conversation, are
+            removed. Admin pages, visits by signed-in admins and automated browsers are not counted.
           </p>
           <p>
             <strong className="font-medium text-foreground">Our own statistics.</strong> Our server
-            stores the page, the linking site, the campaign tags, your country and city, which it
-            looks up from your IP address, your browser&apos;s language, and the type and major
-            version of your device&apos;s browser and operating system, in our database at Supabase.
-            It also stores how long each page was visible, which your browser reports when you leave
-            or hide the page, and which links to other sites you click, such as a product&apos;s
-            website, without their query. Pages you view within 30 minutes of each other count as
-            one visit. To tell visitors apart, it combines your IP address and your browser&apos;s
-            user agent with a random value that changes every day and is then deleted, and keeps
-            only the resulting code. Your IP address is not stored, and the code cannot be traced
-            back to you, recognised the next day or connected to your account. Admins see only
-            totals, such as visitors per day and the most visited pages. Page views and link clicks
-            are deleted after 25 months.
+            stores the page, the linking site or app, the campaign tags, your country and city,
+            which it looks up from your IP address, your browser&apos;s language, and the type and
+            major version of your device&apos;s browser and operating system, in our database at
+            Supabase. It also stores how long each page was visible, which your browser reports when
+            you leave or hide the page, and which links to other sites you click, such as a
+            product&apos;s website, without their query. Pages you view within 30 minutes of each
+            other count as one visit. To tell visitors apart, it combines your IP address and your
+            browser&apos;s user agent with a random value that changes every day and is then
+            deleted, and keeps only the resulting code. Your IP address is not stored, and the code
+            cannot be traced back to you, recognised the next day or connected to your account.
+            Admins see only totals, such as visitors per day and the most visited pages. Page views
+            and link clicks are deleted after 25 months.
           </p>
           <p>
             <strong className="font-medium text-foreground">Views of a product&apos;s page.</strong>{" "}
@@ -223,9 +223,9 @@ export default function Privacy() {
           </p>
           <p>
             <strong className="font-medium text-foreground">Vercel Web Analytics.</strong> Vercel
-            records the same kind of information: the page&apos;s address, the site that linked to
-            it, your country, and the type of device, browser and operating system. To count
-            visitors, it derives a code from the request that changes every day. It does not
+            records the same kind of information: the page&apos;s address, the site or app that
+            linked to it, your country, and the type of device, browser and operating system. To
+            count visitors, it derives a code from the request that changes every day. It does not
             identify you, and it cannot recognise you from one day to the next or connect your
             visits to your account.
           </p>

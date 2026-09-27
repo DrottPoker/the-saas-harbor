@@ -112,6 +112,11 @@ describe("analytics reports", () => {
 
   it("names breakdown rows", () => {
     expect(dimensionValue("source", { value: null })).toBe("Direct or unknown");
+    expect(dimensionValue("referrer", { value: null })).toBe("Direct or unknown");
+    expect(dimensionValue("referrer", { value: "reddit.com" })).toBe("reddit.com");
+    expect(dimensionValue("referrer", { value: "android-app:com.reddit.frontpage" })).toBe(
+      "com.reddit.frontpage (Android app)",
+    );
     expect(dimensionValue("country", { value: "SE" })).toBe("Sweden");
     expect(dimensionValue("city", { value: "Göteborg", detail: "SE" })).toBe("Göteborg, Sweden");
     expect(dimensionValue("language", { value: "sv" })).toBe("Swedish");

@@ -341,8 +341,12 @@ const deviceNames: Record<string, string> = {
 export function dimensionValue(dimension: Dimension, row: Pick<BreakdownRow, "value" | "detail">) {
   const { value, detail } = row;
   switch (dimension) {
-    case "source":
     case "referrer":
+      // An Android app is stored as android-app:<package>.
+      return value?.startsWith("android-app:")
+        ? `${value.slice("android-app:".length)} (Android app)`
+        : (value ?? "Direct or unknown");
+    case "source":
     case "channel":
       return value ?? "Direct or unknown";
     case "country":

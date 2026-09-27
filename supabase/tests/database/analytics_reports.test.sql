@@ -2,7 +2,7 @@
 -- the periods, and every admin report. Runs in a rolled-back transaction, from no page views.
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(46);
+select plan(47);
 
 delete from private.page_views;
 delete from private.outbound_clicks;
@@ -97,6 +97,22 @@ select results_eq(
   $$ values ('X'::text), ('Google'), ('Hacker News'), ('Hacker News'), ('ChatGPT'),
        ('example.org'), ('Weekly'), (null) $$,
   'known sites get their usual name, others keep their host or tag');
+select results_eq(
+  $$ select private.analytics_channel(r, s, null), private.analytics_source(r, s) from (values
+       ('android-app:com.reddit.frontpage', null),
+       ('android-app:com.google.android.googlequicksearchbox', null),
+       ('android-app:com.google.android.gm', null), ('android-app:com.openai.chatgpt', null),
+       ('android-app:com.whatsapp', null), ('android-app:com.example.reader', null),
+       ('android-app:com.google.android.apps.photos', null),
+       ('android-app:com.reddit.frontpage', 'weekly'), ('docs.google.com', null),
+       ('accounts.google.com', null), ('threads.com', null)) t(r, s) $$,
+  $$ values ('Organic social'::text, 'Reddit'::text), ('Organic search', 'Google'),
+       ('Email', 'Gmail'), ('AI assistants', 'ChatGPT'), ('Organic social', 'WhatsApp'),
+       ('Referral', 'com.example.reader (Android app)'),
+       ('Referral', 'com.google.android.apps.photos (Android app)'), ('Organic social', 'weekly'),
+       ('Referral', 'docs.google.com'), ('Referral', 'accounts.google.com'),
+       ('Organic social', 'Threads') $$,
+  'known Android apps count as their site, and only google.<tld> itself is Google search');
 
 -- Periods.
 select results_eq(
