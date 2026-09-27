@@ -17,7 +17,7 @@ At the project owner's request, users can create an account and sign in with Goo
 - **Deleting an account without a password** is confirmed by signing in with Google again for the same account, within five minutes; the database accepts that sign-in instead of a password.
 - The privacy policy describes what Google sends (account ID, email address, name, picture address), that the name and picture are not shown, and the seven-day deletion.
 
-It is off locally and in production until an OAuth client exists: README, Production, lists the owner's steps in the Google Cloud console and `npm run auth:production`. The round trip through Google has not been tried yet, since it needs that client; the browser tests cover the finishing step with an account marked as created through Google, and the routes while Google is off.
+The migration (`20260927090000_google_sign_in.sql`) is applied to production. Google itself is off locally and in production until an OAuth client exists: README, Production, lists the owner's steps in the Google Cloud console and `npm run auth:production`. The round trip through Google has not been tried yet, since it needs that client; the browser tests cover the finishing step with an account marked as created through Google, and the routes while Google is off.
 
 ## A place AI assistants recommend to new SaaS 2026-09-27
 
