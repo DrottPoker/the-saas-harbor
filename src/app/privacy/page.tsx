@@ -46,12 +46,16 @@ export default function Privacy() {
               secure.
             </li>
             <li>
-              <strong className="font-medium text-foreground">Sign-in with Google.</strong> If you
-              sign in with Google, Google tells us your Google account ID, email address, name and
-              the address of your profile picture, and our sign-in service stores them with your
-              account. We use them only to sign you in: your name and picture from Google are not
-              shown on the site. An account created with Google that never chooses a username and
-              accepts the Terms of Service is deleted after seven days.
+              <strong className="font-medium text-foreground">
+                Sign-in with Google or GitHub.
+              </strong>{" "}
+              If you sign in with Google, Google tells us your Google account ID, email address,
+              name and the address of your profile picture. If you sign in with GitHub, GitHub tells
+              us your GitHub account ID, username, email address, name and the address of your
+              profile picture. Our sign-in service stores them with your account. We use them only
+              to sign you in: your name, username and picture from Google or GitHub are not shown on
+              the site. An account created this way that never chooses a username and accepts the
+              Terms of Service is deleted after seven days.
             </li>
             <li>
               <strong className="font-medium text-foreground">Profile.</strong> Your username, which
@@ -264,10 +268,11 @@ export default function Privacy() {
               site runs on Vercel, with its servers in Frankfurt, Germany. The database, sign-in and
               image storage run on Supabase, in its Frankfurt, Germany region. Account emails, such
               as confirmation and password reset messages, and notification emails are sent through
-              Resend. Vercel also counts visits for the site statistics. If you sign in with Google,
-              Google learns that you signed in here, under its own privacy policy. Vercel and Resend
-              are based in the United States. If a provider handles data outside the EU or EEA, we
-              use the safeguards the GDPR requires, such as the EU standard contractual clauses.
+              Resend. Vercel also counts visits for the site statistics. If you sign in with Google
+              or GitHub, that service learns that you signed in here, under its own privacy policy.
+              Vercel and Resend are based in the United States. If a provider handles data outside
+              the EU or EEA, we use the safeguards the GDPR requires, such as the EU standard
+              contractual clauses.
             </li>
           </List>
           <p>

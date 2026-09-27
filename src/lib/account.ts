@@ -44,7 +44,7 @@ async function deleteWith(client: SupabaseClient<Database>, userId: string) {
 
 /**
  * Deletes the account of a user without a password, whose current session signed in with Google
- * in the last five minutes; the database checks that sign-in again. Images go first, as below.
+ * or GitHub in the last five minutes; the database checks that sign-in again. Images go first, as below.
  */
 export async function deleteSignedInAccount(client: SupabaseClient<Database>, userId: string) {
   await deleteWith(client, userId);

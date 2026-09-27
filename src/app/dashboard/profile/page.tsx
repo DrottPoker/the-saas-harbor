@@ -62,7 +62,7 @@ export default async function EditProfile({
       <DeleteAccount
         method={confirmationMethod(user)}
         confirmed={signedInWithin(claims.data?.claims.amr, "oauth", 5 * 60)}
-        failed={params.google === "failed"}
+        failed={params.confirm === "failed"}
       />
     </Shell>
   );

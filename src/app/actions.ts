@@ -4,7 +4,7 @@ import { redirect, RedirectType } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { deleteAccount, deleteSignedInAccount } from "@/lib/account";
-import { confirmationMethod, signedInWithin } from "@/lib/auth";
+import { confirmationMethod, PROVIDER_NAMES, signedInWithin } from "@/lib/auth";
 import { parseSkills } from "@/lib/profile";
 import {
   emailLink,
@@ -178,8 +178,8 @@ export async function confirmEmailLinkAction(
   redirect(data.user ? await startPage(client, data.user.id) : "/dashboard");
 }
 
-// The last step of a sign-up through Google: the username and the Terms of Service, which email
-// sign-up asks for before the account is created.
+// The last step of a sign-up through Google or GitHub: the username and the Terms of Service,
+// which email sign-up asks for before the account is created.
 export async function finishSignupAction(
   _state: ActionState,
   form: FormData,
@@ -218,12 +218,13 @@ export async function deleteAccountAction(
   form: FormData,
 ): Promise<ActionState> {
   const { user, client } = await requireUser({ unfinished: true });
+  const method = confirmationMethod(user);
   try {
-    if (confirmationMethod(user) === "google") {
+    if (method !== "password") {
       // The database checks the same five minutes.
       if (!(await signedInRecently(client, "oauth", 5 * 60)))
         return {
-          error: "Confirm with Google again, then delete your account within five minutes.",
+          error: `Confirm with ${PROVIDER_NAMES[method]} again, then delete your account within five minutes.`,
         };
       await deleteSignedInAccount(client, user.id);
     } else {

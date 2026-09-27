@@ -21,11 +21,12 @@ import {
   USERNAME_MIN_LENGTH,
   type ActionState,
 } from "@/lib/domain";
+import { PROVIDER_NAMES, type OAuthProvider } from "@/lib/auth";
 import type { Saas, SaasSettings } from "@/lib/data";
 import { TECH_STACK_MAX, techGroups, technologies } from "@/lib/tech";
 import { cn } from "@/lib/utils";
 import { PersonAvatar, ProductLogo } from "./avatars";
-import { GoogleButton } from "./google-button";
+import { ProviderButton } from "./provider-button";
 import { Notice } from "./shell";
 import { Button } from "./ui/button";
 import { Input, fieldClasses } from "./ui/input";
@@ -245,13 +246,13 @@ const USERNAME_HINT =
 export function AuthForm({
   mode,
   next,
-  google = false,
+  providers = [],
 }: {
   mode: "login" | "signup" | "reset" | "update";
   /** Where to continue after signing in, already checked with safeNext(). */
   next?: string | null;
-  /** Whether Supabase Auth offers sign-in with Google. */
-  google?: boolean;
+  /** The sign-in providers Supabase Auth offers, such as Google and GitHub. */
+  providers?: OAuthProvider[];
 }) {
   const [state, action, creating] = useEditorAction(authenticate.bind(null, mode));
   const signup = mode === "signup";
@@ -312,16 +313,23 @@ export function AuthForm({
       </section>
     );
 
-  const withGoogle = google && (mode === "login" || (signup && !choosing));
+  const withProviders = providers.length > 0 && (mode === "login" || (signup && !choosing));
+  const query = next ? `?next=${encodeURIComponent(next)}` : "";
   return (
     <div className="grid gap-5">
-      {withGoogle && (
+      {withProviders && (
         <>
-          <GoogleButton
-            href={next ? `/auth/google?next=${encodeURIComponent(next)}` : "/auth/google"}
-          >
-            Continue with Google
-          </GoogleButton>
+          <div className="grid gap-3">
+            {providers.map((provider) => (
+              <ProviderButton
+                key={provider}
+                provider={provider}
+                href={`/auth/oauth/${provider}${query}`}
+              >
+                Continue with {PROVIDER_NAMES[provider]}
+              </ProviderButton>
+            ))}
+          </div>
           <div className="flex items-center gap-3 text-[13px] text-muted-foreground">
             <span className="h-px flex-1 bg-border" />
             or with email
@@ -534,7 +542,7 @@ export function ConfirmLinkForm({
   );
 }
 
-/** The last step of a sign-up through Google: a username and the Terms of Service. */
+/** The last step of a sign-up through Google or GitHub: a username and the Terms of Service. */
 export function FinishSignupForm({ next }: { next?: string | null }) {
   const [state, action] = useEditorAction(finishSignupAction);
   return (

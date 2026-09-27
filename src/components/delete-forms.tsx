@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { deleteAccountAction, deleteSaasAction } from "@/app/actions";
 import { Feedback, Field, Section, Submit } from "./forms";
-import { GoogleButton } from "./google-button";
+import { PROVIDER_NAMES, type OAuthProvider } from "@/lib/auth";
+import { ProviderButton } from "./provider-button";
 import { Notice } from "./shell";
 import { Input } from "./ui/input";
 import { useEditorAction } from "./use-editor-action";
@@ -33,15 +34,16 @@ export function DeleteAccount({
   confirmed = false,
   failed = false,
 }: {
-  /** Accounts without a password confirm by signing in with Google again. */
-  method: "password" | "google";
-  /** Whether this session signed in with Google in the last five minutes. */
+  /** Accounts without a password confirm by signing in with their provider again. */
+  method: "password" | OAuthProvider;
+  /** Whether this session signed in with Google or GitHub in the last five minutes. */
   confirmed?: boolean;
-  /** Whether the last confirmation with Google did not finish. */
+  /** Whether the last confirmation with the provider did not finish. */
   failed?: boolean;
 }) {
   const [state, action] = useEditorAction(deleteAccountAction);
-  const google = method === "google";
+  const provider = method === "password" ? null : method;
+  const name = provider && PROVIDER_NAMES[provider];
   return (
     <DeleteSection
       id="delete-account"
@@ -63,7 +65,7 @@ export function DeleteAccount({
             for what we store.
           </p>
         </div>
-        {!google ? (
+        {!provider ? (
           <Field name="delete_password" label="Confirm with your password">
             <Input
               id="delete_password"
@@ -75,24 +77,28 @@ export function DeleteAccount({
             />
           </Field>
         ) : confirmed ? (
-          <Notice>You confirmed with Google. Delete your account within five minutes.</Notice>
+          <Notice>You confirmed with {name}. Delete your account within five minutes.</Notice>
         ) : (
           <div className="grid gap-3">
             <p className="text-sm text-muted-foreground">
-              Your account signs in with Google. Confirm it is you with Google first.
+              Your account signs in with {name}. Confirm it is you with {name} first.
             </p>
             {failed && (
-              <Notice tone="error">Google did not confirm it is you. Please try again.</Notice>
+              <Notice tone="error">{name} did not confirm it is you. Please try again.</Notice>
             )}
             <div>
-              <GoogleButton href="/auth/google?confirm=delete" className="h-9">
-                Confirm with Google
-              </GoogleButton>
+              <ProviderButton
+                provider={provider}
+                href={`/auth/oauth/${provider}?confirm=delete`}
+                className="h-9"
+              >
+                Confirm with {name}
+              </ProviderButton>
             </div>
           </div>
         )}
         <Feedback state={state} />
-        {(!google || confirmed) && (
+        {(!provider || confirmed) && (
           <div>
             <Submit variant="destructive" pendingLabel="Deleting...">
               Delete account

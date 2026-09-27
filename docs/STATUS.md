@@ -8,6 +8,12 @@ The first release includes accounts, email confirmation and recovery, public mak
 
 Makers can message each other privately (see Messages below), and report products, profiles and messages to the admins, who decide in an admin panel (see Reports and moderation below). They get emails about unread messages and about decisions (see Email notifications below). Other forms of connection, such as following or contact lists, are not implemented.
 
+## Sign-in with GitHub 2026-09-27
+
+At the project owner's request, GitHub is a second sign-in provider next to Google. Everything built for Google now serves any provider in `OAUTH_PROVIDERS` (`src/lib/auth.ts`): a Continue with GitHub button under Google's, with GitHub's mark in the text color, the same username and Terms step, confirming account deletion by signing in with GitHub again, and the same cleanup after seven days. The routes moved from `/auth/google` to `/auth/oauth/<provider>`. A GitHub account without a verified email address gets its own message instead of the general failure. The privacy policy lists what GitHub sends (account ID, username, email address, name, picture address). No migration was needed: the database already accepts any provider.
+
+GitHub is off until the owner creates a GitHub OAuth App and runs `npm run auth:production` (README, Production). The round trip through GitHub has not been tried yet; the browser tests cover the finishing step with an account marked as created through GitHub, the buttons against what the local stack has turned on, and the failure messages. Up to GitHub itself was checked by hand with a placeholder app on the local stack.
+
 ## Sign-in with Google 2026-09-27
 
 At the project owner's request, users can create an account and sign in with Google through Supabase Auth, next to email and password:
@@ -17,7 +23,7 @@ At the project owner's request, users can create an account and sign in with Goo
 - **Deleting an account without a password** is confirmed by signing in with Google again for the same account, within five minutes; the database accepts that sign-in instead of a password.
 - The privacy policy describes what Google sends (account ID, email address, name, picture address), that the name and picture are not shown, and the seven-day deletion.
 
-The migration (`20260927090000_google_sign_in.sql`) is applied to production. Google itself is off locally and in production until an OAuth client exists: README, Production, lists the owner's steps in the Google Cloud console and `npm run auth:production`. The round trip through Google has not been tried yet, since it needs that client; the browser tests cover the finishing step with an account marked as created through Google, and the routes while Google is off.
+The migration (`20260927090000_google_sign_in.sql`) is applied to production, and the owner turned Google on there the same day and confirmed that signing in works.
 
 ## A place AI assistants recommend to new SaaS 2026-09-27
 
@@ -392,7 +398,7 @@ Product and quality:
 15. Notification emails have no one-click unsubscribe (`List-Unsubscribe`, RFC 8058): turning them off takes a sign-in. Large senders to Gmail and Yahoo need it, so add it before volumes grow. The emails are in English only.
 16. Demo products retire themselves at 12 ranked products, but their code stays. Remove it once the directory has grown; ARCHITECTURE lists the parts.
 17. The browser tests run against `next dev`, which compiles routes on demand. Once, it answered Page not found for the product form in the registration test, and the failure did not repeat. Failed tests now keep a trace; if it happens again, the trace shows the address and the requests. Running the browser tests against a production build (`next build` and `next start`) would remove the dev server's compile timing from the tests. On 2026-09-26 one run failed once in the registration test with `ECONNRESET` on a request to the test server (the redirect from a product id); it did not repeat in the next three full runs.
-18. Sign-in with Google is built but off: it needs the owner's Google OAuth client and consent screen, then `npm run auth:production` (README, Production). Then try the whole round trip once in production: a new account, an existing email account signing in with Google, and deleting a Google-only account.
+18. Sign-in with GitHub is built but off: it needs the owner's GitHub OAuth App, then `npm run auth:production` (README, Production). Then try it once in production: a new account, an existing email account signing in with GitHub, a GitHub account without a verified email address, and deleting an account that signs in only with GitHub. Whether deleting a Google-only account works in production has not been confirmed yet.
 19. No CAPTCHA on sign-in, sign-up and password reset (see Release review, point 2). Postponed by the owner; until then the Auth limits per address protect little when the host shows Auth the server's address.
 20. `public.record_page_view` and `public.admin_analytics` from the first version of the statistics stay only for the code that was live while migration `20260926070000` was applied first. Drop them in a new migration once the detailed statistics are deployed.
 21. On phones the leaderboard's column headers are hidden, so demo rows show their amounts without the Demo MRR label; screen readers hear it. The owner chose other home page changes first on 2026-09-26.

@@ -160,7 +160,7 @@ site_url = "http://127.0.0.1:3002"
 # external_url = ""
 # A list of *exact* URLs that auth providers are permitted to redirect to post authentication.
 # Email links open /auth/confirm on the address the app passes (see supabase/templates), and Google
-# sign-ins return to /auth/callback, so every app origin needs both pages here: the browser tests
+# and GitHub sign-ins return to /auth/callback, so every app origin needs both pages here: the browser tests
 # on 3002 and the dev server on 3001.
 additional_redirect_urls = [
   "http://127.0.0.1:3002/auth/confirm",
@@ -360,6 +360,17 @@ url = ""
 skip_nonce_check = false
 email_optional = false
 
+# Sign-in with GitHub, off by default like Google. A GitHub OAuth App has one callback URL, so every
+# machine needs its own app, with http://127.0.0.1:55321/auth/v1/callback (see README).
+[auth.external.github]
+enabled = "env(HARBOR_GITHUB_ENABLED)"
+client_id = "env(HARBOR_GITHUB_CLIENT_ID)"
+secret = "env(HARBOR_GITHUB_SECRET)"
+redirect_uri = ""
+url = ""
+skip_nonce_check = false
+email_optional = false
+
 # Allow Solana wallet holders to sign in to your project via the Sign in with Solana (SIWS, EIP-4361) standard.
 # You can configure "web3" rate limit in the [auth.rate_limit] section and set up [auth.captcha] if self-hosting.
 [auth.web3.solana]
@@ -457,11 +468,16 @@ additional_redirect_urls = [
   "https://thesaasharbor.com/auth/callback",
 ]
 
-# `npm run auth:production` sets the client and asks for its secret; never put it in a file.
+# `npm run auth:production` sets the clients and asks for their secrets; never put them in a file.
 [remotes.production.auth.external.google]
 enabled = "env(HARBOR_PRODUCTION_GOOGLE_ENABLED)"
 client_id = "env(HARBOR_PRODUCTION_GOOGLE_CLIENT_ID)"
 secret = "env(HARBOR_PRODUCTION_GOOGLE_SECRET)"
+
+[remotes.production.auth.external.github]
+enabled = "env(HARBOR_PRODUCTION_GITHUB_ENABLED)"
+client_id = "env(HARBOR_PRODUCTION_GITHUB_CLIENT_ID)"
+secret = "env(HARBOR_PRODUCTION_GITHUB_SECRET)"
 
 [remotes.production.auth.email]
 max_frequency = "60s"

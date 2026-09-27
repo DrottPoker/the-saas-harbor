@@ -123,7 +123,7 @@ test.beforeAll(async ({ playwright }, info) => {
   for (const path of [
     ...["/", "/discover", "/newest", "/about", "/privacy", "/terms", "/account-deleted"],
     ...["/auth", "/auth/confirm", `/saas/${id}`, `/users/${id}`, "/demo/metricfold", "/missing"],
-    ...["/auth/finish", "/auth/google", "/auth/callback"],
+    ...["/auth/finish", "/auth/oauth/apple", "/auth/callback"],
     ...["/dashboard", "/dashboard/profile", "/dashboard/reports", `/dashboard/saas/${id}`],
     ...["/dashboard/settings", "/api/email/send", "/api/analytics", "/admin/analytics/data"],
     ...["/messages", `/messages/${id}`, `/report/saas/${id}`, "/api/revenue/sync"],
@@ -1166,30 +1166,51 @@ test("password recovery confirms a local email link and accepts the new password
   ).toBeVisible();
 });
 
-// The Google round trip needs a real OAuth client, so it is not run here. An account marked as
-// created through Google stands in for one after its first sign-in.
-test("an account created with Google chooses a username and accepts the Terms first", async ({
+// The round trip through Google or GitHub needs a real OAuth client, so it is not run here. An
+// account marked as created through GitHub stands in for one after its first sign-in.
+test("an account created with Google or GitHub chooses a username and accepts the Terms first", async ({
   page,
 }) => {
-  // Google is off on the test stack: the sign-in page shows no button, and the routes say so.
+  // The sign-in page offers exactly the providers the local stack has turned on, which depends on
+  // this machine's supabase/.env.local.
+  const settings = await fetch(`${url}/auth/v1/settings`, { headers: { apikey: publicKey } });
+  const external = ((await settings.json()) as { external: Record<string, boolean> }).external;
   await page.goto("/auth");
-  await expect(page.getByRole("link", { name: "Continue with Google" })).toHaveCount(0);
-  await page.goto("/auth/google");
-  await expect(page).toHaveURL(/\/auth\?error=unavailable$/);
-  await expect(page.getByText("Signing in with Google is not available right now.")).toBeVisible();
+  for (const [provider, name] of [
+    ["google", "Google"],
+    ["github", "GitHub"],
+  ] as const) {
+    await expect(page.getByRole("link", { name: `Continue with ${name}` })).toHaveCount(
+      external[provider] ? 1 : 0,
+    );
+  }
+  const off = (["google", "github"] as const).find((provider) => !external[provider]);
+  if (off) {
+    await page.goto(`/auth/oauth/${off}`);
+    await expect(page).toHaveURL(new RegExp(`/auth\\?error=unavailable&provider=${off}$`));
+    await expect(page.getByText(/^Signing in with (Google|GitHub) is not available/)).toBeVisible();
+  }
+  await page.goto("/auth/oauth/apple");
+  await expect(page).toHaveURL(/\/auth$/);
+  // Supabase returns failures to the callback; an unverified email address gets its own message.
+  await page.goto("/auth/callback?error=server_error&error_code=provider_email_needs_verification");
+  await expect(page).toHaveURL(/\/auth\?error=email$/);
+  await expect(page.getByText("did not give us a verified email address")).toBeVisible();
   await page.goto("/auth/callback");
-  await expect(page).toHaveURL(/\/auth\?error=google$/);
-  await expect(page.getByText("Signing in with Google did not finish.")).toBeVisible();
+  await expect(page).toHaveURL(/\/auth\?error=failed$/);
+  await expect(
+    page.getByText("did not finish. Try again, or use your email address."),
+  ).toBeVisible();
 
-  const address = `harbor-google-${run}@example.test`;
+  const address = `harbor-oauth-${run}@example.test`;
   const pass = randomBytes(24).toString("hex");
   const { data, error } = await admin.auth.admin.createUser({
     email: address,
     password: pass,
     email_confirm: true,
-    app_metadata: { provider: "google", providers: ["google"] },
+    app_metadata: { provider: "github", providers: ["github"] },
   });
-  if (error || !data.user) throw new Error("Unable to create the Google test account.");
+  if (error || !data.user) throw new Error("Unable to create the GitHub test account.");
   userIds.push(data.user.id);
   await page.goto("/auth");
   await page.getByLabel("Email address").fill(address);

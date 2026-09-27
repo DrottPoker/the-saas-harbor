@@ -9,8 +9,8 @@ import { requireUser, signupFinished } from "@/lib/supabase/server";
 
 export const metadata: Metadata = { title: "Choose your username" };
 
-// After the first sign-in with Google: the username and the Terms of Service, which sign-up with
-// email asks for before the account is created. Nothing else opens until this is done.
+// After the first sign-in with Google or GitHub: the username and the Terms of Service, which
+// sign-up with email asks for before the account is created. Nothing else opens until this is done.
 export default async function FinishSignup({
   searchParams,
 }: {
