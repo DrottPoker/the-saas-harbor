@@ -1,4 +1,3 @@
-import { BackLink } from "@/components/back-link";
 import { EmailSettingsForm, Section } from "@/components/forms";
 import { PageHeader, Shell } from "@/components/shell";
 import { isAdmin } from "@/lib/admin";
@@ -19,9 +18,8 @@ export default async function EmailSettings() {
   if (error) throw new Error("Your settings could not be loaded.");
   return (
     <Shell size="medium">
-      <BackLink href="/dashboard">Dashboard</BackLink>
       <PageHeader
-        className="mt-4 border-b"
+        className="border-b"
         title="Email settings"
         description="Choose which emails you get from The SaaS Harbor."
       />

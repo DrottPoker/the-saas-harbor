@@ -42,6 +42,11 @@ async function login(page: Page, address: string, pass: string) {
   await page.getByRole("button", { name: "Sign in", exact: true }).click();
   await expect(page).toHaveURL(/\/dashboard$/);
 }
+/** Opens the account menu, which the header labels with the user's name. */
+async function openAccountMenu(page: Page, name: string) {
+  await page.getByRole("banner").getByRole("button", { name, exact: true }).click();
+  return page.getByRole("menu");
+}
 async function fillProduct(page: Page, name: string) {
   await page.getByLabel("Product name", { exact: true }).fill(name);
   await page.getByLabel("Tagline").fill("A product created only by the local integration test.");
@@ -660,6 +665,16 @@ test("registration, email confirmation, profile and SaaS editing, storage, priva
   );
   await expect(page.getByRole("link", { name: "Edit profile" })).toBeVisible();
   await expect(page.getByRole("link", { name: "Send message" })).toHaveCount(0);
+  // The profile is in the account menu at the top right; the dashboard is for products.
+  await page.goto("/dashboard");
+  await expect(page.getByRole("main").getByText("Local Test Maker")).toHaveCount(0);
+  const account = await openAccountMenu(page, "Local Test Maker");
+  await expect(account.getByText(`@local-test-maker-${run}`, { exact: true })).toBeVisible();
+  await expect(account.getByRole("menuitem", { name: "Your reports" })).toHaveCount(0);
+  await expect(account.getByRole("menuitem", { name: /Admin panel/ })).toHaveCount(0);
+  await expectAccessible(page);
+  await account.getByRole("menuitem", { name: "Your profile" }).click();
+  await expect(page).toHaveURL(current);
   await page.goto("/dashboard/saas/new");
   await fillProduct(page, productName);
   await page.getByLabel("Category").selectOption("Design");
@@ -1067,13 +1082,16 @@ test("registration, email confirmation, profile and SaaS editing, storage, priva
   }
   await page.setViewportSize({ width: 1280, height: 720 });
   await page.goto("/dashboard");
-  await page.getByRole("button", { name: "Sign out", exact: true }).click();
+  await openAccountMenu(page, "Local Test Maker");
+  await account.getByRole("menuitem", { name: "Sign out" }).click();
   await expect(page).toHaveURL("/");
   await page.goto("/dashboard");
   await expect(page).toHaveURL(/\/auth$/);
   await login(page, email, password);
   await page.reload();
-  await expect(page.getByRole("heading", { name: "Local Test Maker", exact: true })).toBeVisible();
+  await expect(
+    page.getByRole("banner").getByRole("button", { name: "Local Test Maker", exact: true }),
+  ).toBeVisible();
 });
 
 test("another owner cannot read private history, edit SaaS, or overwrite images", async ({
@@ -1220,8 +1238,12 @@ test("an account created with Google or GitHub chooses a username and accepts th
   await page.getByRole("button", { name: "Sign in", exact: true }).click();
   await expect(page).toHaveURL(/\/auth\/finish$/);
   await expect(page.getByRole("heading", { name: "Choose your username" })).toBeVisible();
-  await expect(page.getByText(address)).toBeVisible();
+  await expect(page.getByRole("main").getByText(address)).toBeVisible();
   await expectAccessible(page);
+  // Without a username, the account menu shows the email address and leads only here.
+  const account = await openAccountMenu(page, address);
+  await expect(account.getByRole("menuitem")).toHaveText(["Choose your username", "Sign out"]);
+  await page.keyboard.press("Escape");
 
   // Nothing else opens until sign-up is finished.
   for (const path of ["/dashboard", "/dashboard/profile"]) {
@@ -1663,7 +1685,8 @@ test("reports reach the admin panel, where admins hide products and suspend acco
 
   // The admin opens the product report from the queue and hides the product.
   await login(adminPage, moderator.email, moderator.password);
-  await adminPage.getByRole("link", { name: "Open admin panel" }).click();
+  const adminMenu = await openAccountMenu(adminPage, moderator.name);
+  await adminMenu.getByRole("menuitem", { name: /^Admin panel, \d+ open reports?$/ }).click();
   await expect(adminPage).toHaveURL("/admin");
   await adminPage
     .getByRole("navigation", { name: "Admin" })
@@ -1720,8 +1743,11 @@ test("reports reach the admin panel, where admins hide products and suspend acco
   await expect(
     hiddenNotice.getByText("The customer numbers in the description are not true."),
   ).toBeVisible();
-  // The reporter sees the outcome, never the maker.
-  await reporterPage.goto("/dashboard/reports");
+  // The reporter sees the outcome, never the maker, under Your reports in the account menu.
+  await reporterPage.goto("/");
+  const reporterMenu = await openAccountMenu(reporterPage, reporter.name);
+  await reporterMenu.getByRole("menuitem", { name: "Your reports" }).click();
+  await expect(reporterPage).toHaveURL("/dashboard/reports");
   await expect(sent.filter({ hasText: product }).getByText("Action taken")).toBeVisible();
 
   // The admin finds the maker by email and suspends the account.
@@ -2294,7 +2320,8 @@ test("users get one email per unread conversation, and can turn it off", async (
 
   // The recipient turns message emails off, and on again, in their settings.
   await login(page, recipient.email, recipient.password);
-  await page.getByRole("link", { name: "Settings" }).click();
+  const account = await openAccountMenu(page, recipient.name);
+  await account.getByRole("menuitem", { name: "Email settings" }).click();
   await expect(page).toHaveURL("/dashboard/settings");
   const setting = page.getByRole("checkbox", { name: /New messages from other users/ });
   // Waits for the save itself: the confirmation text stays on screen between saves.

@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { BackLink } from "@/components/back-link";
 import { DeleteAccount } from "@/components/delete-forms";
 import { ModerationNotice } from "@/components/moderation-notice";
 import { ProfileForm } from "@/components/profile/profile-form";
@@ -28,9 +27,8 @@ export default async function EditProfile({
     throw new Error("Your profile could not be loaded.");
   return (
     <Shell size="medium">
-      <BackLink href="/dashboard">Dashboard</BackLink>
       <PageHeader
-        className="mt-4 border-b"
+        className="border-b"
         title="Profile"
         description="Everything on your profile is public."
         actions={

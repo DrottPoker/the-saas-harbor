@@ -1,8 +1,8 @@
 import Link from "next/link";
 import { LayoutDashboard, Plus } from "lucide-react";
-import type { User } from "@supabase/supabase-js";
-import { signOut } from "@/app/actions";
+import type { AccountMenuData } from "@/lib/account-menu";
 import { providerList } from "@/lib/revenue/catalog";
+import { AccountMenu } from "./account-menu";
 import { Brand } from "./logo";
 import { MessagesLink } from "./messages/messages-link";
 import { Navigation } from "./navigation";
@@ -14,28 +14,28 @@ const quietLink = "text-sm text-muted-foreground transition-colors hover:text-fo
 // Below md a signed-in header shows icons with 32 px targets, so everything fits on one line.
 const iconLink = `${quietLink} inline-flex items-center justify-center gap-1.5 max-md:h-8 max-md:min-w-8`;
 
-export function SiteHeader({ user, unread }: { user: User | null; unread: number }) {
+export function SiteHeader({
+  account,
+  unread,
+}: {
+  account: AccountMenuData | null;
+  unread: number;
+}) {
   return (
     <header className="sticky top-0 z-40 border-b bg-background/80 backdrop-blur-md">
       <div className="mx-auto flex h-14 max-w-6xl items-center gap-3 px-4 sm:gap-6 sm:px-6">
-        <Brand compact={!!user} />
+        <Brand compact={!!account} />
         <Navigation className="hidden md:flex" />
         <div className="ml-auto flex items-center gap-2 sm:gap-4">
           {/* On small screens the theme menu sits in the navigation row below. */}
           <ThemeMenu className="max-md:hidden" />
-          {user ? (
+          {account ? (
             <>
-              <MessagesLink userId={user.id} initialCount={unread} className={iconLink} />
+              <MessagesLink userId={account.id} initialCount={unread} className={iconLink} />
               <Link className={iconLink} href="/dashboard">
                 <LayoutDashboard aria-hidden="true" className="size-4 md:hidden" />
                 <span className="max-md:sr-only">Dashboard</span>
               </Link>
-              {/* On small screens sign-out lives on the dashboard to keep the header on one line. */}
-              <form action={signOut} className="hidden md:block">
-                <button className={quietLink} type="submit">
-                  Sign out
-                </button>
-              </form>
             </>
           ) : (
             <Link className={`${quietLink} whitespace-nowrap`} href="/auth">
@@ -43,15 +43,16 @@ export function SiteHeader({ user, unread }: { user: User | null; unread: number
             </Link>
           )}
           {/* Visitors create an account first, so they go straight to sign-up. */}
-          <Button asChild size="sm" className={user ? "max-sm:w-8 max-sm:px-0" : undefined}>
-            <Link href={user ? "/dashboard/saas/new" : "/auth?mode=signup"}>
-              <Plus className={user ? undefined : "max-sm:hidden"} />
-              <span className={user ? "max-sm:sr-only" : undefined}>
+          <Button asChild size="sm" className={account ? "max-sm:w-8 max-sm:px-0" : undefined}>
+            <Link href={account ? "/dashboard/saas/new" : "/auth?mode=signup"}>
+              <Plus className={account ? undefined : "max-sm:hidden"} />
+              <span className={account ? "max-sm:sr-only" : undefined}>
                 {/* The shorter label keeps a visitor's header on one line on the narrowest phones. */}
-                List<span className={user ? undefined : "max-[359px]:hidden"}> your</span> SaaS
+                List<span className={account ? undefined : "max-[359px]:hidden"}> your</span> SaaS
               </span>
             </Link>
           </Button>
+          {account && <AccountMenu account={account} />}
         </div>
       </div>
       <div className="flex items-center gap-2 border-t px-2.5 py-1.5 md:hidden">

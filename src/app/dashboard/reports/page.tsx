@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { Badge } from "@/components/badge";
-import { BackLink } from "@/components/back-link";
 import { Contact } from "@/components/legal";
 import { EmptyState, Notice, PageHeader, Shell } from "@/components/shell";
 import { formatDate } from "@/lib/domain";
@@ -35,9 +34,7 @@ export default async function YourReports({
 
   return (
     <Shell size="medium">
-      <BackLink href="/dashboard">Dashboard</BackLink>
       <PageHeader
-        className="mt-4"
         title="Your reports"
         description="Reports you sent about products, profiles and messages, and what happened to them."
       />

@@ -5,6 +5,7 @@ import { FeedbackButton } from "@/components/feedback-button";
 import { PageViews } from "@/components/page-views";
 import { SiteFooter, SiteHeader } from "@/components/site-chrome";
 import { VercelAnalytics } from "@/components/vercel-analytics";
+import { accountMenu } from "@/lib/account-menu";
 import { SITE_DESCRIPTION, SITE_NAME, siteUrl } from "@/lib/seo";
 import { currentUser, unreadMessageCount } from "@/lib/supabase/server";
 import { themeScript } from "@/lib/theme";
@@ -38,7 +39,9 @@ export default async function RootLayout({ children }: { children: React.ReactNo
     // Set by the proxy together with the Content Security Policy.
     headers().then((list) => list.get("x-nonce") ?? undefined),
   ]);
-  const unread = user ? await unreadMessageCount() : 0;
+  const [account, unread] = user
+    ? await Promise.all([accountMenu(), unreadMessageCount()])
+    : [null, 0];
   return (
     <html lang="en" className={`${sans.variable} ${mono.variable}`} suppressHydrationWarning>
       <head>
@@ -56,7 +59,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         >
           Skip to content
         </a>
-        <SiteHeader user={user} unread={unread} />
+        <SiteHeader account={account} unread={unread} />
         <main id="main" className="flex-1">
           {children}
         </main>

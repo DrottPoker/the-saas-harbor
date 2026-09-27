@@ -8,6 +8,7 @@ A focused, responsive home for independent SaaS: public maker profiles, product 
 - Sign-in with Google and GitHub, each when it is turned on in Supabase Auth (see [Sign-in with Google and GitHub](#sign-in-with-google-and-github)). An account created through either chooses its username and accepts the Terms of Service before anything else opens.
 - Personal maker profiles laid out like product pages: photo, headline, location, key figures across the maker's products, About, products, experience, skills, and links to a website, LinkedIn, GitHub and X.
 - Multiple SaaS profiles per maker, with a logo, pitch, description, category, website and tech stack.
+- An account menu at the top right of the header, with the user's photo and name: their public profile, Edit profile, Email settings, Your reports once they have sent one, the admin panel for admins, and Sign out. The dashboard is only for the user's products.
 - Revenue verified through a read-only key to the product's payment provider (Stripe, Paddle, Polar, Dodo Payments, Creem, Chargebee, Whop or RevenueCat, one per product): MRR and paying customers are read from the provider, never typed in, and re-verified every hour.
 - Optional domain verification: a founder adds a DNS TXT record with a code for the product to the website's domain, and the product page's details then show the domain as Verified instead of Not verified. The record is looked up again every day; after three days without it, or when the website moves to another domain, the mark goes.
 - Verified MRR, paying customers and launch date, each with an independent public-sharing choice. Products without a connected provider are listed but not ranked.
@@ -20,8 +21,8 @@ A focused, responsive home for independent SaaS: public maker profiles, product 
 - A badge makers embed on their own site (`/saas/<slug>/badge.svg`, light or dark), which shows the verified MRR while it is shared and links to the product page. The product editor gives the HTML and Markdown to paste.
 - Demo products while the directory is new: until 12 real products share verified MRR, the leaderboard, Browse and New arrivals fill their first page with made-up products after the real ones. On the leaderboard they sit under a Demo MRR column without a rank or tag; cards and their own pages carry a Demo tag. They are never ranked or called verified, have their own pages under `/demo` that search engines skip, and disappear as real products join. `DEMO_PRODUCTS=off` hides them at once.
 - Private messages between makers: Send message on maker profiles and product pages, live delivery and unread counts, blocking, and limits against spam.
-- Email notifications: one email per unread conversation, which names the sender but never contains the message, a note to admins about open reports, and emails to makers about decisions on their products or account and to reporters about the outcome. Makers choose under Dashboard → Email settings.
-- Reports and moderation: signed-in makers report a product, a profile or a message they received, and follow the outcome under Dashboard → Your reports. An admin panel at `/admin` lists reports, products, accounts and every decision. Admins hide products and suspend accounts with a reason and an explanation the maker sees in their dashboard. An account lists at most 20 products and adds at most 5 a day.
+- Email notifications: one email per unread conversation, which names the sender but never contains the message, a note to admins about open reports, and emails to makers about decisions on their products or account and to reporters about the outcome. Makers choose under Email settings in the account menu.
+- Reports and moderation: signed-in makers report a product, a profile or a message they received, and follow the outcome under Your reports in the account menu. An admin panel at `/admin` lists reports, products, accounts and every decision. Admins hide products and suspend accounts with a reason and an explanation the maker sees in their dashboard. An account lists at most 20 products and adds at most 5 a day.
 - Deletion by the maker: a single product, confirmed by typing its name, or the whole account, confirmed with the password, or for an account that signs in only with Google or GitHub, by signing in with it again. Everything that belongs to it goes, including images, provider keys and verification history, and for the account also the sign-in records.
 - A home page for founders: a compact header invites every SaaS to list for free, verified or not, with a button straight to sign-up and a short list of what a listing gives; the leaderboard follows at once. A new account lands on the product form once its email is confirmed.
 - A followed link to the product's website while its revenue is verified, which also shows founders the visits we send them.
@@ -84,7 +85,7 @@ The app sends its own emails through SMTP, separately from the Auth emails:
 - New reports: an email to each admin, at most one an hour, with the number of open reports.
 - Decisions: hiding or restoring a product, and suspending or restoring an account, email the maker with the reason and the explanation. Closing a report emails the reporter the outcome. These are always sent.
 
-Makers turn message emails off, and admins report emails, under Dashboard → Email settings. The database queues each email together with what it is about, and the app sends what is due right after the action and whenever `POST /api/email/send` is called with `Authorization: Bearer $CRON_SECRET` (see ARCHITECTURE).
+Makers turn message emails off, and admins report emails, under Email settings in the account menu. The database queues each email together with what it is about, and the app sends what is due right after the action and whenever `POST /api/email/send` is called with `Authorization: Bearer $CRON_SECRET` (see ARCHITECTURE).
 
 `npm run dev` points `SMTP_HOST` and `SMTP_PORT` in `.env.local` at Mailpit's SMTP port (55325), so notifications land in Mailpit next to the Auth emails. Message emails wait five minutes; `npm run email:send` sends whatever is due through the running dev server, as the production scheduler will. To send them to real inboxes, set `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS` and `EMAIL_FROM` in `.env.local`, which `npm run dev` then keeps; for Gmail, `smtp.gmail.com`, port 587, your address as user and sender, and an app password. The demo accounts' `.test` addresses cannot receive email, so their notifications then bounce. The browser tests always use Mailpit.
 
@@ -127,7 +128,7 @@ Demo accounts from `npm run db:seed` are `<name>@demo.harbor.test` (for example 
 
 ### Admins
 
-Admins review reports in the admin panel at `/admin`, which is reached from the dashboard. Everyone else gets a 404 there. Admin rights are rows in `private.admins`, which the app cannot write, so they are granted outside it:
+Admins review reports in the admin panel at `/admin`, which is reached from the account menu, where the number of open reports is shown. Everyone else gets a 404 there. Admin rights are rows in `private.admins`, which the app cannot write, so they are granted outside it:
 
 ```powershell
 npm run admin -- grant you@example.com    # the account must exist
@@ -135,7 +136,7 @@ npm run admin -- revoke you@example.com
 npm run admin -- list
 ```
 
-The script works on the local stack only. On a production database, run `select public.set_admin('you@example.com', true);` as the database owner, for example in the SQL editor, or call the same function with the service role. Admins cannot be suspended, so remove the rights first. Admins get an email about new reports, makers about decisions, and reporters about the outcome (see Notification emails); makers also see decisions in their dashboard, and reporters under Dashboard → Your reports.
+The script works on the local stack only. On a production database, run `select public.set_admin('you@example.com', true);` as the database owner, for example in the SQL editor, or call the same function with the service role. Admins cannot be suspended, so remove the rights first. Admins get an email about new reports, makers about decisions, and reporters about the outcome (see Notification emails); makers also see decisions in their dashboard, and reporters under Your reports.
 
 ## Verification
 

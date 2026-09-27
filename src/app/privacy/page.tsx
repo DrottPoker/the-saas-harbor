@@ -346,8 +346,15 @@ export default function Privacy() {
 
         <Section id="rights" title="Your rights">
           <p>
-            You can see and change your profile and products at any time in your dashboard, follow
-            the reports you sent under{" "}
+            You can see and change your profile at any time under{" "}
+            <Link className={link} href="/dashboard/profile">
+              Edit profile
+            </Link>{" "}
+            and your products in your{" "}
+            <Link className={link} href="/dashboard">
+              dashboard
+            </Link>
+            , follow the reports you sent under{" "}
             <Link className={link} href="/dashboard/reports">
               Your reports
             </Link>
