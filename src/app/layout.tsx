@@ -33,7 +33,8 @@ export const metadata: Metadata = {
   twitter: { card: "summary_large_image" },
 };
 export const dynamic = "force-dynamic";
-export default async function RootLayout({ children }: { children: React.ReactNode }) {
+// `modal` is a dialog opened by a link inside the site, such as sign-in (`src/app/@modal`).
+export default async function RootLayout({ children, modal }: LayoutProps<"/">) {
   const [user, nonce] = await Promise.all([
     currentUser(),
     // Set by the proxy together with the Content Security Policy.
@@ -64,6 +65,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           {children}
         </main>
         <SiteFooter />
+        {modal}
         <FeedbackButton />
         <PageViews />
         {/* Vercel sets VERCEL_ENV; local servers, tests and previews measure nothing. */}

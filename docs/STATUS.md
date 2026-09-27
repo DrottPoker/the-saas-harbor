@@ -8,6 +8,12 @@ The first release includes accounts, email confirmation and recovery, public mak
 
 Makers can message each other privately (see Messages below), and report products, profiles and messages to the admins, who decide in an admin panel (see Reports and moderation below). They get emails about unread messages and about decisions (see Email notifications below). Other forms of connection, such as following or contact lists, are not implemented.
 
+## Sign-in in a dialog 2026-09-27
+
+At the owner's request, signing in or up no longer leaves the page: Sign in and List your SaaS in the header, Send message and the other links to `/auth` open the same forms in a dialog over the page, with the address changing to `/auth` so the back button closes it. Switching between sign-in, sign-up and password reset stays in the dialog, and Escape, the close button or a click beside it returns to the page. Signing in continues where it did before (the dashboard, or the page in `next`). A direct visit, a reload and the links in confirmation and reset emails still show the full `/auth` page. The home page title now sets its site name itself, since the new dialog slot made the root title template apply to it and doubled the name.
+
+Checked at 390 and 1100 px in both themes: opening from the header, switching to sign-up, closing with Escape, and a direct visit to `/auth`. `npm run check` (332 unit tests), `npm run build` and `npm run test:e2e` (17 browser tests, now also opening, switching and closing the dialog with an Axe scan while it is open, and signing in through it from Send message) pass.
+
 ## Product page layout and a new revenue chart 2026-09-27
 
 At the owner's request:

@@ -213,6 +213,18 @@ test("anonymous navigation, private route protection and responsive empty state"
   await expect(
     page.getByRole("banner").getByRole("link", { name: "List your SaaS" }),
   ).toHaveAttribute("href", "/auth?mode=signup");
+  // Links inside the site open sign-in in a dialog over the page; switching forms keeps one
+  // history entry, so closing it returns to the page.
+  await page.getByRole("banner").getByRole("link", { name: "Sign in" }).click();
+  await expect(page.getByRole("dialog", { name: "Sign in" })).toBeVisible();
+  await expect(page).toHaveURL(/\/auth$/);
+  await expectAccessible(page);
+  await page.getByRole("dialog").getByRole("link", { name: "Create one" }).click();
+  await expect(page.getByRole("dialog", { name: "Create your account" })).toBeVisible();
+  await expect(page).toHaveURL("/auth?mode=signup");
+  await page.keyboard.press("Escape");
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+  await expect(page).toHaveURL("/");
   await page.goto("/dashboard/saas/new");
   await expect(page).toHaveURL("/auth?mode=signup");
   await expect(page.getByRole("heading", { name: "Create your account" })).toBeVisible();

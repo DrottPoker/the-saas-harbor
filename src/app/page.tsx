@@ -18,8 +18,9 @@ export async function generateMetadata({ searchParams }: Props): Promise<Metadat
     },
     firstValues(await searchParams),
   );
-  // The root layout's title template covers only the pages below it, so this page adds the name.
-  return { ...metadata, title: `${metadata.title} | ${SITE_NAME}` };
+  // An absolute title adds the name itself, whether or not the root layout's template applies to
+  // this page (it does since the @modal slot sits beside it).
+  return { ...metadata, title: { absolute: `${metadata.title} | ${SITE_NAME}` } };
 }
 
 export default async function Home({ searchParams }: Props) {

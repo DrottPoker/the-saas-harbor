@@ -311,7 +311,9 @@ export function AuthForm({
           wrong.
         </p>
         <Button asChild variant="outline" className="h-10 w-full">
-          <Link href="/auth">Go to sign in</Link>
+          <Link href="/auth" replace>
+            Go to sign in
+          </Link>
         </Button>
       </section>
     );
@@ -385,6 +387,7 @@ export function AuthForm({
                   <Link
                     className="-my-1.5 py-1.5 text-[13px] leading-none text-muted-foreground hover:text-foreground"
                     href="/auth?mode=reset"
+                    replace
                   >
                     Forgot password?
                   </Link>
@@ -414,6 +417,7 @@ export function AuthForm({
               <Link
                 className="font-medium text-foreground hover:underline"
                 href="/auth?mode=signup"
+                replace
               >
                 Create one
               </Link>
@@ -421,7 +425,7 @@ export function AuthForm({
           ) : signup && !choosing ? (
             <>
               Already have an account?{" "}
-              <Link className="font-medium text-foreground hover:underline" href="/auth">
+              <Link className="font-medium text-foreground hover:underline" href="/auth" replace>
                 Sign in
               </Link>
             </>
@@ -434,7 +438,7 @@ export function AuthForm({
               Back
             </button>
           ) : (
-            <Link className="font-medium text-foreground hover:underline" href="/auth">
+            <Link className="font-medium text-foreground hover:underline" href="/auth" replace>
               Back to sign in
             </Link>
           )}
