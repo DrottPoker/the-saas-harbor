@@ -41,15 +41,13 @@ async function signedInRecently(
   return signedInWithin(data?.claims.amr, method, seconds);
 }
 
-// What is wrong with the email address, password and, for sign-up, the Terms of Service box.
-async function detailsProblem(mode: string, email: string, password: string, form: FormData) {
+// What is wrong with the email address and password.
+async function detailsProblem(mode: string, email: string, password: string) {
   if (mode !== "update" && !z.email().safeParse(email).success)
     return "Enter a valid email address.";
   const minimum = mode === "login" ? 1 : PASSWORD_MIN_LENGTH;
   if (mode !== "reset" && (password.length < minimum || password.length > PASSWORD_MAX_LENGTH))
     return `Use a password between ${PASSWORD_MIN_LENGTH} and ${PASSWORD_MAX_LENGTH} characters.`;
-  if (mode === "signup" && form.get("terms") !== "on")
-    return "Tick the box to accept the Terms of Service.";
   if (mode === "signup" && !(await addressAcceptsMail(email)))
     return "This email address cannot receive email. Check it for typos.";
   return null;
@@ -76,7 +74,6 @@ export async function checkSignupDetails(
     "signup",
     value(form, "email").trim(),
     value(form, "password"),
-    form,
   );
   return problem ? { error: problem } : { success: "details" };
 }
@@ -88,8 +85,11 @@ export async function authenticate(
 ): Promise<ActionState> {
   const email = value(form, "email").trim();
   const password = value(form, "password");
-  const problem = await detailsProblem(mode, email, password, form);
+  const problem = await detailsProblem(mode, email, password);
   if (problem) return { error: problem };
+  // Asked for with the username, in the second step of sign-up.
+  if (mode === "signup" && form.get("terms") !== "on")
+    return { error: "Tick the box to accept the Terms of Service." };
   const client = await serverClient();
   const origin = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3001";
   // Both emails link to the confirm page, which verifies the token in whichever browser opens it.

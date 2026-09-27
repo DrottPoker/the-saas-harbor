@@ -495,27 +495,28 @@ test("registration, email confirmation, profile and SaaS editing, storage, priva
   await page.goto("/auth?mode=signup");
   await page.getByLabel("Email address").fill(email);
   await page.getByLabel("Password", { exact: true }).fill(password);
-  // The Terms of Service box is required, and the server refuses a sign-up without it too.
+  // The Terms of Service box comes with the username, not before.
   const terms = page.getByLabel(/agree to the Terms of Service/);
+  await expect(terms).toHaveCount(0);
+  await page.getByRole("button", { name: "Continue" }).click();
+  // Then the username and the Terms are asked for, in the same place, and the account is created.
+  const username = page.getByLabel("Username");
+  await expect(username).toBeFocused();
+  await username.fill("admin");
+  // The box is required, and the server refuses a sign-up without it too.
   await expect(terms).toHaveAttribute("required", "");
   await terms.evaluate((box) => box.removeAttribute("required"));
   await page.getByRole("button", { name: "Create account" }).click();
   await expect(
     page.getByRole("alert").filter({ hasText: "Tick the box to accept the Terms of Service." }),
   ).toBeVisible();
-  await page.getByLabel("Password", { exact: true }).fill(password);
   await terms.check();
   await page.getByRole("button", { name: "Create account" }).click();
-  // Then only the username is asked for, in the same place, and the account is created with it.
-  const username = page.getByLabel("Username");
-  await expect(username).toBeFocused();
-  await username.fill("admin");
-  await page.getByRole("button", { name: "Continue" }).click();
   await expect(
     page.getByRole("alert").filter({ hasText: "That username is reserved." }),
   ).toBeVisible();
   await username.fill(`@Tester-${run}`);
-  await page.getByRole("button", { name: "Continue" }).click();
+  await page.getByRole("button", { name: "Create account" }).click();
   // The form gives way to what to do next, naming the address the link went to.
   const sent = page.getByRole("heading", { name: "Check your inbox" });
   await expect(sent).toBeFocused();

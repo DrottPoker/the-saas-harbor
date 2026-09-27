@@ -239,8 +239,8 @@ const authCopy = {
 const USERNAME_HINT =
   "Shown as @username and used as your profile address. You can change it later.";
 
-// Sign-up has two steps: the email address, password and terms, which the server checks first,
-// then only the username, after which the account is created. Both steps stay in one form, so the
+// Sign-up has two steps: the email address and password, which the server checks first, then the
+// username and the Terms of Service, after which the account is created. Both steps stay in one form, so the
 // hidden first step is sent along with the username; it is submitted from onSubmit rather than
 // the action prop, so React does not reset the password when the username is refused.
 export function AuthForm({
@@ -344,9 +344,13 @@ export function AuthForm({
       >
         {mode === "login" && next && <input type="hidden" name="next" value={next} />}
         {choosing && (
-          <Field name="username" label="Username" hint={USERNAME_HINT}>
-            <UsernameInput ref={username} defaultValue={state.values?.username} />
-          </Field>
+          <>
+            <Field name="username" label="Username" hint={USERNAME_HINT}>
+              <UsernameInput ref={username} defaultValue={state.values?.username} />
+            </Field>
+            {/* Required here and checked again by the server, which records the version. */}
+            <TermsCheckbox defaultChecked={state.values?.terms === "on"} />
+          </>
         )}
         <div className={cn("grid gap-5", choosing && "hidden")}>
           {mode !== "update" && (
@@ -395,14 +399,10 @@ export function AuthForm({
               />
             </Field>
           )}
-          {signup && (
-            // Required here and checked again by the server, which records the accepted version.
-            <TermsCheckbox defaultChecked={state.values?.terms === "on"} />
-          )}
         </div>
         <Feedback state={signup && !choosing ? details : state} />
         <Submit className="h-10 w-full" pending={signup ? checking || creating : undefined}>
-          {choosing ? "Continue" : authCopy[mode]}
+          {signup && !choosing ? "Continue" : authCopy[mode]}
         </Submit>
         <p className="text-center text-sm text-muted-foreground">
           {mode === "login" ? (

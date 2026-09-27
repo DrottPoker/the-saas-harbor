@@ -8,6 +8,10 @@ The first release includes accounts, email confirmation and recovery, public mak
 
 Makers can message each other privately (see Messages below), and report products, profiles and messages to the admins, who decide in an admin panel (see Reports and moderation below). They get emails about unread messages and about decisions (see Email notifications below). Other forms of connection, such as following or contact lists, are not implemented.
 
+## Terms box with the username 2026-09-27
+
+At the project owner's request, the Terms of Service box moved from the first step of sign-up to the second: the email address and password come first, with Continue, then the username and the Terms box, with Create account. Someone who clicked Continue with Google or GitHub on the sign-up page used to see the box there and again when choosing a username; now every way to sign up shows it once, next to the username.
+
 ## Sign-in with GitHub 2026-09-27
 
 At the project owner's request, GitHub is a second sign-in provider next to Google. Everything built for Google now serves any provider in `OAUTH_PROVIDERS` (`src/lib/auth.ts`): a Continue with GitHub button under Google's, with GitHub's mark in the text color, the same username and Terms step, confirming account deletion by signing in with GitHub again, and the same cleanup after seven days. The routes moved from `/auth/google` to `/auth/oauth/<provider>`. A GitHub account without a verified email address gets its own message instead of the general failure. The privacy policy lists what GitHub sends (account ID, username, email address, name, picture address). No migration was needed: the database already accepts any provider.
