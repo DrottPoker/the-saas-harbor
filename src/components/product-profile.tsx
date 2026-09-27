@@ -92,8 +92,8 @@ export function ProductProfile({
   );
 
   return (
-    <Shell size="medium">
-      <nav aria-label="Breadcrumb" className="mb-8 text-sm text-muted-foreground">
+    <Shell className="pt-6 sm:pt-8">
+      <nav aria-label="Breadcrumb" className="mb-4 text-sm text-muted-foreground">
         <Link href="/discover" className="hover:text-foreground">
           Browse
         </Link>
@@ -211,15 +211,16 @@ export function ProductProfile({
         </p>
       )}
 
-      {history && (
-        <RevenueHistory
-          history={history}
-          description={demo ? "Made-up figures for the last 12 months." : undefined}
-        />
-      )}
-
-      <div className="mt-12 grid gap-10 lg:grid-cols-[minmax(0,1fr)_17rem] lg:gap-14">
-        <div className="grid content-start gap-10">
+      {/* The details sit beside the chart and the description, so the chart keeps a readable
+          width on wide screens. */}
+      <div className="mt-8 grid gap-8 lg:grid-cols-[minmax(0,1fr)_18rem]">
+        <div className="grid min-w-0 content-start gap-10">
+          {history && (
+            <RevenueHistory
+              history={history}
+              description={demo ? "Made-up figures for the last 12 months." : undefined}
+            />
+          )}
           <section>
             <h2 className="text-lg font-semibold">About {name}</h2>
             <p className="mt-3 leading-7 whitespace-pre-wrap text-foreground/85 [overflow-wrap:anywhere]">

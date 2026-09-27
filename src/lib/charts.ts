@@ -143,6 +143,26 @@ export function mrrChartModel(history: MrrPoint[]): MrrChartModel {
 }
 
 /**
+ * The periods a revenue chart offers, as month counts: 3, 6 and 12 months where the history is
+ * longer, and always the whole history, which is last and chosen first.
+ */
+export function chartPeriods(months: number) {
+  return [...[3, 6, 12].filter((n) => n < months), months].map((n) => ({
+    months: n,
+    label: n < months ? (n === 12 ? "1Y" : `${n}M`) : months === 12 ? "1Y" : "All",
+    /** For screen readers, after the label. */
+    long: n < months || months === 12 ? `last ${n} months` : `all ${n} months`,
+  }));
+}
+
+/** The change from the first to the last value in percent, or null when it cannot be told. */
+export function changePct(history: MrrPoint[]) {
+  const [first, last] = [history[0], history.at(-1)];
+  if (!first || !last || history.length < 2 || first.cents <= 0) return null;
+  return ((last.cents - first.cents) / first.cents) * 100;
+}
+
+/**
  * Polyline points for a sparkline in a `width` × `height` box. The vertical range runs from the
  * lowest value to the highest, but always spans at least 30% of the highest, so the shape of real
  * growth shows while small wobbles stay small.

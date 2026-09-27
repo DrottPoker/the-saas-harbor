@@ -1,8 +1,24 @@
 "use client";
 
-import { useId, useRef, useState, type KeyboardEvent, type PointerEvent } from "react";
+import {
+  useId,
+  useRef,
+  useState,
+  type KeyboardEvent,
+  type PointerEvent,
+  type ReactNode,
+} from "react";
 import type { MrrChartModel } from "@/lib/charts";
 import { cn } from "@/lib/utils";
+
+/** One choice of period: its button label, its chart and its change, all made on the server. */
+export type ChartPeriod = {
+  label: string;
+  /** The button's name for screen readers, starting with the label. */
+  name: string;
+  model: MrrChartModel;
+  change: ReactNode;
+};
 
 // The plot is laid out in percentages, so it renders on the server at any width with no
 // measuring. Paths use a 1000-unit box stretched to the plot with non-scaling strokes; dots and
@@ -17,19 +33,35 @@ function Dot({ x, y }: { x: number; y: number }) {
   return (
     <span
       aria-hidden="true"
-      className="absolute size-2 -translate-1/2 rounded-full bg-chart-1 ring-2 ring-surface"
+      className="absolute size-2.5 -translate-1/2 rounded-full bg-chart-1 ring-3 ring-surface"
       style={{ left: `${x * 100}%`, top: `${y * 100}%` }}
     />
   );
 }
 
-export function MrrChart({ model }: { model: MrrChartModel }) {
+/**
+ * The MRR chart: the latest month-end figure and its change over the chosen period at the top,
+ * where pointing at or stepping through a month shows that month instead, and the plot below.
+ */
+export function MrrChart({
+  title,
+  titleId,
+  periods,
+}: {
+  title: string;
+  titleId: string;
+  periods: ChartPeriod[];
+}) {
+  // The whole history is last, and shown first.
+  const [period, setPeriod] = useState(periods.length - 1);
+  const { model, change } = periods[period]!;
   const { points, ticks, summary } = model;
   const last = points.length - 1;
   const [active, setActive] = useState<number | null>(null);
   const plot = useRef<HTMLDivElement>(null);
   const summaryId = useId();
-  const end = points[last];
+  const gradientId = useId();
+  const end = points[last]!;
   const shown = active == null ? null : points[active];
 
   function pick(event: PointerEvent) {
@@ -52,129 +84,153 @@ export function MrrChart({ model }: { model: MrrChartModel }) {
     setActive(Math.min(last, Math.max(0, next)));
   }
 
-  // The end label sits on the side of the dot away from the incoming line and the plot edges.
-  const previous = points[last - 1];
-  const endBelow = end.y < 0.25 || (end.y <= 0.8 && previous !== undefined && previous.y < end.y);
-
   return (
-    <div
-      tabIndex={0}
-      role="group"
-      aria-label="MRR at month end. Use the arrow keys to read each month."
-      aria-describedby={summaryId}
-      onKeyDown={step}
-      onFocus={() => setActive((current) => current ?? last)}
-      onBlur={() => setActive(null)}
-      className="relative h-56 touch-pan-y rounded-md select-none sm:h-64"
-    >
-      <p id={summaryId} className="sr-only">
-        {summary}
-      </p>
-      <p aria-live="polite" className="sr-only">
-        {shown ? `${shown.label}: ${shown.value}` : ""}
-      </p>
-
-      {/* Y axis labels, aligned to the gridlines. */}
-      <div aria-hidden="true" className="absolute top-6 bottom-8 left-0 w-11">
-        {ticks.map((tick) => (
-          <span
-            key={tick.y}
-            className="absolute right-0 -translate-y-1/2 text-xs text-muted-foreground tabular-nums"
-            style={{ top: `${tick.y * 100}%` }}
+    <>
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div className="min-w-0">
+          <h2 id={titleId} className="text-sm text-muted-foreground">
+            {title}
+          </h2>
+          <p className="mt-1 flex flex-wrap items-baseline gap-x-3 gap-y-1">
+            <span className="text-3xl font-semibold tracking-tight text-foreground tabular-nums">
+              {(shown ?? end).value}
+            </span>
+            <span className="text-sm text-muted-foreground">
+              {shown ? shown.label : (change ?? end.label)}
+            </span>
+          </p>
+        </div>
+        {periods.length > 1 && (
+          <div
+            role="group"
+            aria-label="Chart period"
+            className="flex rounded-lg border bg-subtle p-0.5"
           >
-            {tick.label}
-          </span>
-        ))}
-      </div>
-
-      <div
-        ref={plot}
-        onPointerMove={pick}
-        onPointerDown={pick}
-        onPointerLeave={() => setActive(null)}
-        className="absolute top-6 right-3 bottom-8 left-14"
-      >
-        {ticks.map((tick) => (
-          <div
-            key={tick.y}
-            aria-hidden="true"
-            className="absolute inset-x-0 border-t"
-            style={{ top: `${tick.y * 100}%` }}
-          />
-        ))}
-        <svg
-          aria-hidden="true"
-          viewBox={`0 0 ${VIEW} ${VIEW}`}
-          preserveAspectRatio="none"
-          className="absolute inset-0 size-full overflow-visible"
-        >
-          <path
-            d={`${pathFor(points)}L${end.x * VIEW},${VIEW}L${points[0].x * VIEW},${VIEW}Z`}
-            className="fill-chart-1"
-            fillOpacity={0.1}
-          />
-          <path
-            d={pathFor(points)}
-            fill="none"
-            className="stroke-chart-1"
-            strokeWidth={2}
-            strokeLinejoin="round"
-            strokeLinecap="round"
-            vectorEffect="non-scaling-stroke"
-          />
-        </svg>
-
-        {shown && (
-          <div
-            aria-hidden="true"
-            className="absolute inset-y-0 w-px -translate-x-1/2 bg-border-strong"
-            style={{ left: `${shown.x * 100}%` }}
-          />
-        )}
-        <Dot x={end.x} y={end.y} />
-        {shown && active !== last && <Dot x={shown.x} y={shown.y} />}
-        <span
-          aria-hidden="true"
-          className={cn(
-            "absolute text-xs font-medium whitespace-nowrap text-foreground tabular-nums",
-            endBelow
-              ? "translate-x-[calc(-100%_+_4px)] translate-y-2.5"
-              : "translate-x-[calc(-100%_+_4px)] translate-y-[calc(-100%_-_10px)]",
-            shown && "opacity-0",
-          )}
-          style={{ left: `${end.x * 100}%`, top: `${end.y * 100}%` }}
-        >
-          {end.value}
-        </span>
-
-        {shown && (
-          <div
-            aria-hidden="true"
-            className={cn(
-              "pointer-events-none absolute top-0 z-10 rounded-md border bg-surface px-2.5 py-1.5 whitespace-nowrap shadow-sm",
-              shown.x > 0.5 ? "-translate-x-[calc(100%_+_10px)]" : "translate-x-2.5",
-            )}
-            style={{ left: `${shown.x * 100}%` }}
-          >
-            <div className="text-sm font-semibold text-foreground tabular-nums">{shown.value}</div>
-            <div className="text-xs text-muted-foreground">{shown.label}</div>
+            {periods.map((option, index) => (
+              <button
+                key={option.label}
+                type="button"
+                aria-label={option.name}
+                aria-pressed={index === period}
+                onClick={() => {
+                  setPeriod(index);
+                  setActive(null);
+                }}
+                className="rounded-md px-2.5 py-1 font-mono text-xs font-medium text-muted-foreground transition-colors hover:text-foreground aria-pressed:bg-surface aria-pressed:text-foreground aria-pressed:shadow-control"
+              >
+                {option.label}
+              </button>
+            ))}
           </div>
         )}
       </div>
 
-      {/* X axis labels; narrow screens show every other month, always keeping the latest. */}
-      <div aria-hidden="true" className="absolute right-3 bottom-0 left-14 h-5">
-        {points.map((point) => (
-          <span
-            key={point.month}
-            className="absolute top-0 -translate-x-1/2 text-xs whitespace-nowrap text-muted-foreground"
-            style={{ left: `${point.x * 100}%` }}
+      <div
+        tabIndex={0}
+        role="group"
+        aria-label={`${title}. Use the arrow keys to read each month.`}
+        aria-describedby={summaryId}
+        onKeyDown={step}
+        onFocus={() => setActive((current) => current ?? last)}
+        onBlur={() => setActive(null)}
+        className="relative mt-6 h-60 touch-pan-y rounded-md select-none sm:h-72"
+      >
+        <p id={summaryId} className="sr-only">
+          {summary}
+        </p>
+        <p aria-live="polite" className="sr-only">
+          {shown ? `${shown.label}: ${shown.value}` : ""}
+        </p>
+
+        {/* Y axis labels, aligned to the gridlines. */}
+        <div aria-hidden="true" className="absolute top-2 bottom-8 left-0 w-12">
+          {ticks.map((tick) => (
+            <span
+              key={tick.y}
+              className="absolute right-0 -translate-y-1/2 font-mono text-xs text-faint-foreground tabular-nums"
+              style={{ top: `${tick.y * 100}%` }}
+            >
+              {tick.label}
+            </span>
+          ))}
+        </div>
+
+        <div
+          ref={plot}
+          onPointerMove={pick}
+          onPointerDown={pick}
+          onPointerLeave={() => setActive(null)}
+          className="absolute top-2 right-3 bottom-8 left-16"
+        >
+          {ticks.map((tick) => (
+            <div
+              key={tick.y}
+              aria-hidden="true"
+              className={cn(
+                "absolute inset-x-0 border-t",
+                // The baseline is solid; the others are faint.
+                tick.y < 1 && "border-border/60",
+              )}
+              style={{ top: `${tick.y * 100}%` }}
+            />
+          ))}
+          {/* Keyed by period, so the line draws again when the period changes. */}
+          <svg
+            key={period}
+            aria-hidden="true"
+            viewBox={`0 0 ${VIEW} ${VIEW}`}
+            preserveAspectRatio="none"
+            className="absolute inset-0 size-full overflow-visible"
           >
-            <span className="max-sm:hidden">{point.axisLabel}</span>
-            <span className="sm:hidden">{point.narrowLabel}</span>
-          </span>
-        ))}
+            <defs>
+              <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0" style={{ stopColor: "var(--chart-1)", stopOpacity: 0.32 }} />
+                <stop offset="1" style={{ stopColor: "var(--chart-1)", stopOpacity: 0 }} />
+              </linearGradient>
+            </defs>
+            <path
+              d={`${pathFor(points)}L${end.x * VIEW},${VIEW}L${points[0]!.x * VIEW},${VIEW}Z`}
+              fill={`url(#${gradientId})`}
+              className="animate-fade-in"
+              style={{ animationDelay: "500ms" }}
+            />
+            <path
+              d={pathFor(points)}
+              pathLength={1}
+              strokeDasharray="1 2"
+              fill="none"
+              className="animate-draw stroke-chart-1"
+              strokeWidth={2.25}
+              strokeLinejoin="round"
+              strokeLinecap="round"
+              vectorEffect="non-scaling-stroke"
+            />
+          </svg>
+
+          {shown && (
+            <div
+              aria-hidden="true"
+              className="absolute inset-y-0 w-px -translate-x-1/2 bg-border-strong"
+              style={{ left: `${shown.x * 100}%` }}
+            />
+          )}
+          <Dot x={(shown ?? end).x} y={(shown ?? end).y} />
+        </div>
+
+        {/* X axis labels; narrow screens show every other month, always keeping the latest. */}
+        <div aria-hidden="true" className="absolute right-3 bottom-0 left-16 h-5">
+          {points.map((point) => (
+            <span
+              key={point.month}
+              className="absolute top-0 -translate-x-1/2 text-xs whitespace-nowrap text-faint-foreground"
+              style={{ left: `${point.x * 100}%` }}
+            >
+              <span className="max-sm:hidden">{point.axisLabel}</span>
+              <span className="sm:hidden">{point.narrowLabel}</span>
+            </span>
+          ))}
+        </div>
       </div>
-    </div>
+    </>
   );
 }

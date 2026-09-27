@@ -108,6 +108,7 @@ export default async function Stats() {
       {history.length > 1 && (
         <RevenueHistory
           history={history}
+          className="mt-10"
           title="Combined MRR at month end"
           description="The MRR of the products ranked today, added up at each month end. Reconstructed from paid invoices and converted to USD at today's rates."
         />

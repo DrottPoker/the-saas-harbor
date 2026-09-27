@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 import {
   compactUsd,
   monthLabel,
+  changePct,
+  chartPeriods,
   mrrChartModel,
   niceScale,
   parseHistory,
@@ -125,4 +127,26 @@ describe("sparkline", () => {
       x: 100,
       y: 20,
     }));
+
+  it("offers shorter periods than the history, and the whole history last", () => {
+    expect(chartPeriods(12)).toEqual([
+      { months: 3, label: "3M", long: "last 3 months" },
+      { months: 6, label: "6M", long: "last 6 months" },
+      { months: 12, label: "1Y", long: "last 12 months" },
+    ]);
+    expect(chartPeriods(5)).toEqual([
+      { months: 3, label: "3M", long: "last 3 months" },
+      { months: 5, label: "All", long: "all 5 months" },
+    ]);
+    expect(chartPeriods(20).map((p) => p.label)).toEqual(["3M", "6M", "1Y", "All"]);
+    expect(chartPeriods(2)).toEqual([{ months: 2, label: "All", long: "all 2 months" }]);
+  });
+
+  it("gives the change over a period only when it starts above zero", () => {
+    const at = (cents: number[]) => cents.map((c, i) => ({ month: `2026-0${i + 1}`, cents: c }));
+    expect(changePct(at([1000, 1500]))).toBe(50);
+    expect(changePct(at([2000, 1000]))).toBe(-50);
+    expect(changePct(at([0, 1000]))).toBeNull();
+    expect(changePct(at([1000]))).toBeNull();
+  });
 });

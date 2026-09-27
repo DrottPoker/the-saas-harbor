@@ -8,6 +8,16 @@ The first release includes accounts, email confirmation and recovery, public mak
 
 Makers can message each other privately (see Messages below), and report products, profiles and messages to the admins, who decide in an admin panel (see Reports and moderation below). They get emails about unread messages and about decisions (see Email notifications below). Other forms of connection, such as following or contact lists, are not implemented.
 
+## Product page layout and a new revenue chart 2026-09-27
+
+At the owner's request:
+
+- Less space above the product page: the breadcrumb sits closer to the header, and the card follows it closely.
+- The founder card, the details and the page views now sit on the right directly under the product card, beside the chart and the description, so the chart no longer spans the whole page. The page uses the wide layout.
+- The revenue chart takes after TrustMRR's: the latest month-end MRR large at the top with its change over the period, which shows the month under the pointer instead while pointing; buttons for 3M, 6M and 1Y (or All for longer histories); an area that fades downwards; amounts on the axis in Geist Mono; and a line that draws itself again when the period changes. The tooltip and the label at the end of the line are gone, since the figure at the top does their work. `/stats` uses the same chart.
+
+Checked at 390, 1100 and 1440 px in both themes, including pointing at a month and changing the period. `npm run check` (332 unit tests), `npm run build` and `npm run test:e2e` (17 browser tests, with Axe scans in both themes, now also changing the chart period) pass.
+
 ## Product page card, and Not shared instead of Not verified 2026-09-27
 
 At the owner's request, chosen from a clickable mockup, the product page opens with one card: the logo, the name with a Verified revenue label while MRR is verified and shared and a Domain verified label, the tagline, the founder and category, Visit website as the main button with Send message beside it (it was in the sidebar before), and the three key figures along the card's foot. Products without a logo show their initial in the blue of the logo's sea (`--initial`, `--initial-bg`) instead of grey, on cards and in the leaderboard too.

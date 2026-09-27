@@ -945,6 +945,15 @@ test("registration, email confirmation, profile and SaaS editing, storage, priva
   await expect(months).toHaveCount(12);
   await expect(months.first().getByRole("cell")).toHaveText("$29");
   await expect(months.last().getByRole("cell")).toHaveText("$54");
+  // The chart offers shorter periods; the table keeps every month.
+  const threeMonths = page.getByRole("button", { name: "3M, last 3 months" });
+  await threeMonths.click();
+  await expect(threeMonths).toHaveAttribute("aria-pressed", "true");
+  await expect(page.getByRole("button", { name: "1Y, last 12 months" })).toHaveAttribute(
+    "aria-pressed",
+    "false",
+  );
+  await expect(months).toHaveCount(12);
   await page.setViewportSize({ width: 390, height: 844 });
   await expectNoHorizontalScroll(page);
   await page.setViewportSize({ width: 1280, height: 720 });
