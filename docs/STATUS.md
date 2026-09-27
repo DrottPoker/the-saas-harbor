@@ -10,7 +10,7 @@ Makers can message each other privately (see Messages below), and report product
 
 ## More precise site statistics 2026-09-27
 
-At the project owner's request, after a review of how precise the statistics are, these were fixed (migration `20260927120000_analytics_precision.sql`):
+At the project owner's request, after a review of how precise the statistics are, these were fixed (migration `20260927120000_analytics_precision.sql`, applied to production on 2026-09-27, before the code; the live code keeps working, since the new argument is optional and `track_engagement` stays):
 
 - System versions. Browsers freeze parts of the user agent, so every Chrome on Android was recorded as Android 10, Windows 11 as Windows 10, every Mac as macOS 10 and, since iOS 26, iPhones in Safari as iOS 18. Those versions are now unknown unless the browser tells them: Chromium browsers send `platformVersion` through client hints (Windows 11 is 13 and up), and Safari on iOS gets the system version from its own. iPads asking for desktop pages count as iOS tablets instead of Macs. In-app browsers get the app's name (Google app, X app, Reddit app, Facebook app and others, or iOS or Android in-app browser) instead of "Other" with a WebKit build number.
 - Page time. It is counted from when the page was first shown, not from when React hydrated it, and reported with a random key the page makes itself, so it is no longer lost when the page is left before the server answered, after a change of network or after midnight UTC. A visit where no page's time is known has an unknown length instead of 0 seconds: averages leave it out, and the Visits card shows it as Length unknown.
@@ -31,7 +31,7 @@ Vercel Web Analytics listed accounts.google.com and github.com as referring site
 
 At the project owner's request, the profile is no longer on the dashboard. The signed-in header shows the user's photo and name at the top right (the photo alone below 1280 px, where the header has no room for the name), and opens a menu with their name and @username, Your profile, Edit profile, Email settings, Your reports once they have sent a report, Admin panel for admins with the number of open reports, and Sign out. Sign out is therefore in the same place on every screen size, instead of in the header on wide screens and at the bottom of the dashboard on phones. An account that signed in through Google or GitHub but has not chosen a username yet gets Choose your username instead. The dashboard now holds only the user's products (and a notice if the account is suspended), and Edit profile, Email settings and Your reports no longer lead back to it. The addresses stay under `/dashboard`, so links in emails keep working.
 
-The Terms of Service still say that reporters see the outcome under Dashboard → Your reports. They are versioned by date and recorded at sign-up, so the wording waits for the next real change to the terms.
+At the owner's request, the Terms of Service and the privacy policy no longer name places in the interface (such as Dashboard → Your reports or Profile → Delete account), which go out of date when the interface changes; they say what users can do and are told instead. Nothing changed in substance. The terms have a new version date, 2026-09-27, so the version recorded at sign-up still names the exact text that was accepted.
 
 ## More payment providers 2026-09-27
 
