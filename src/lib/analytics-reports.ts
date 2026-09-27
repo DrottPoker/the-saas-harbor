@@ -272,6 +272,15 @@ export function percentChange(current: number | null, previous: number | null) {
   return ((current - previous) / previous) * 100;
 }
 
+/**
+ * The change of a rate in percentage points, such as 10 for a bounce rate from 40% to 50%, or null
+ * when there is nothing to compare.
+ */
+export function pointChange(current: number | null, previous: number | null) {
+  if (current === null || previous === null) return null;
+  return current - previous;
+}
+
 // Bucket starts are local times without an offset; they are read and shown as UTC so no second
 // time zone shift happens in the browser.
 function localDate(start: string) {
@@ -378,6 +387,9 @@ export const durationGroups: Record<string, string> = {
   "3-10m": "3 to 10 minutes",
   "10-30m": "10 to 30 minutes",
   "30m+": "30 minutes or more",
+  // No page of the visit has a known time: one page whose browser never reported how long it was
+  // visible.
+  unknown: "Length unknown",
 };
 
 export const WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"] as const;

@@ -1988,22 +1988,27 @@ test("visits are counted without cookies, and admins see them under Analytics", 
     return { context, page, beacon };
   };
 
-  // A visit from a campaign link: the page view gets an id, the time on the page is reported when
-  // the visitor moves on through the site's own navigation, and a link to another site is counted.
+  // A visit from a campaign link: the page view has a random key of the page's own, the time on
+  // the page comes with the next page view when the visitor moves on through the site's own
+  // navigation, and a link to another site is counted.
   const first = await visit(chrome);
   let sent = first.beacon("pageview");
   await first.page.goto(`/about?utm_source=e2e-${run}&utm_campaign=launch-${run}&token=secret`);
   const view = await sent;
-  expect(view.status()).toBe(200);
-  const viewId = (await view.json()).id;
-  expect(typeof viewId).toBe("number");
+  expect(view.status()).toBe(204);
+  const viewKey = view.request().postDataJSON().key;
+  expect(viewKey).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/);
   await first.page.waitForTimeout(1500);
-  const time = first.beacon("engagement");
   sent = first.beacon("pageview");
   await first.page.getByRole("contentinfo").getByRole("link", { name: "Privacy" }).click();
   await expect(first.page).toHaveURL("/privacy");
-  expect((await time).status()).toBe(204);
-  expect((await sent).status()).toBe(200);
+  const next = await sent;
+  expect(next.status()).toBe(204);
+  const { previous, landing } = next.request().postDataJSON();
+  expect(previous.key).toBe(viewKey);
+  expect(previous.ms).toBeGreaterThanOrEqual(1000);
+  // The tab's first address, whose campaign tags count if a later page starts a new visit.
+  expect(landing).toContain(`utm_source=e2e-${run}`);
   const click = first.beacon("outbound");
   await first.page.evaluate((target) => {
     const link = document.createElement("a");
@@ -2022,7 +2027,7 @@ test("visits are counted without cookies, and admins see them under Analytics", 
   const second = await visit(firefox);
   sent = second.beacon("pageview");
   await second.page.goto("/stats", { referer: `https://www.news-${run}.example/thread` });
-  expect((await sent).status()).toBe(200);
+  expect((await sent).status()).toBe(204);
   await second.context.close();
 
   // A view of a product's page counts for the product. Only its founder sees the count, on the
@@ -2067,19 +2072,19 @@ test("visits are counted without cookies, and admins see them under Analytics", 
   const third = await visit(chrome);
   sent = viewed(third.page);
   await third.page.goto(viewedPath);
-  expect((await sent).status()).toBe(200);
+  expect((await sent).status()).toBe(204);
   await expect(viewCounts(third.page)).toHaveCount(0);
   await third.context.close();
   const founder = await visit(`${firefox} Founder`);
   await login(founder.page, founderEmail, founderSecret);
   sent = viewed(founder.page);
   await founder.page.goto(viewedPath);
-  expect((await sent).status()).toBe(200);
+  expect((await sent).status()).toBe(204);
   await expect(viewCounts(founder.page).getByRole("definition")).toHaveText(["1", "1", "1"]);
   // The founder's view above was recorded for the site, but not for the product.
   sent = viewed(founder.page);
   await founder.page.reload();
-  expect((await sent).status()).toBe(200);
+  expect((await sent).status()).toBe(204);
   await expect(viewCounts(founder.page).getByRole("definition")).toHaveText(["1", "1", "1"]);
   await founder.context.close();
 
@@ -2106,15 +2111,24 @@ test("visits are counted without cookies, and admins see them under Analytics", 
       )
     ).status(),
   ).toBe(204);
-  // Page time for a page view is only accepted from the visitor who made it.
+  // Page time comes only with the key the page gave its page view, which no one else knows. Page
+  // time by id, as the first scripts sent it, is refused.
   expect(
     (
       await post(
         { Origin: baseURL, "User-Agent": `${firefox} Other` },
-        { type: "engagement", id: viewId, ms: 3_000_000 },
+        { type: "engagement", key: randomUUID(), ms: 3_000_000 },
       )
     ).status(),
   ).toBe(204);
+  expect(
+    (
+      await post(
+        { Origin: baseURL, "User-Agent": chrome },
+        { type: "engagement", id: 1, ms: 3_000_000 },
+      )
+    ).status(),
+  ).toBe(400);
 
   // A signed-in admin is not counted, on the site or in the panel.
   const reader = await visit(chrome);
@@ -2150,7 +2164,7 @@ test("visits are counted without cookies, and admins see them under Analytics", 
   expect(paths).toEqual(expect.arrayContaining(["/about", "/privacy", "/stats"]));
   for (const left of [`/users/bot-${run}`, `/users/admin-${run}`, `/users/evil-${run}`])
     expect(paths).not.toContain(left);
-  // The visible time was reported, and the other visitor's report was refused.
+  // The visible time was reported, and the report with a made-up key changed nothing.
   const aboutTime = pages.find((row) => row.value === "/about")?.time_on_page ?? 0;
   expect(aboutTime).toBeGreaterThan(0);
   expect(aboutTime).toBeLessThan(60);

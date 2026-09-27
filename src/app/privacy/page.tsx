@@ -203,15 +203,20 @@ export default function Privacy() {
             stores the page, the linking site or app, the campaign tags, your country and city,
             which it looks up from your IP address, your browser&apos;s language, and the type and
             major version of your device&apos;s browser and operating system, in our database at
-            Supabase. It also stores how long each page was visible, which your browser reports when
-            you leave or hide the page, and which links to other sites you click, such as a
-            product&apos;s website, without their query. Pages you view within 30 minutes of each
-            other count as one visit. To tell visitors apart, it combines your IP address and your
-            browser&apos;s user agent with a random value that changes every day and is then
-            deleted, and keeps only the resulting code. Your IP address is not stored, and the code
-            cannot be traced back to you, recognised the next day or connected to your account.
-            Admins see only totals, such as visitors per day and the most visited pages. Page views
-            and link clicks are deleted after 25 months.
+            Supabase. Browsers that offer client hints, such as Chrome, tell the system version
+            directly, and the page checks whether a Mac has a touch screen, which only an iPad has;
+            only the major version and the device type are kept. It also stores how long each page
+            was visible, which your browser reports when you leave or hide the page and when you
+            open the next one. For that, each page view gets a random key that only the open page
+            knows; the key is deleted within two days. It also stores which links to other sites you
+            click, such as a product&apos;s website, without their query. Pages count as one visit
+            until 30 minutes pass without you opening or looking at a page of the site. To tell
+            visitors apart, it combines your IP address and your browser&apos;s user agent with a
+            random value that changes every day and is then deleted, and keeps only the resulting
+            code. Your IP address is not stored, and the code cannot be traced back to you,
+            recognised the next day or connected to your account. Admins see only totals, such as
+            visitors per day and the most visited pages. Page views and link clicks are deleted
+            after 25 months.
           </p>
           <p>
             <strong className="font-medium text-foreground">Views of a product&apos;s page.</strong>{" "}

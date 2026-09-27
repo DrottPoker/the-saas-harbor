@@ -2,7 +2,7 @@
 -- the periods, and every admin report. Runs in a rolled-back transaction, from no page views.
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(47);
+select plan(54);
 
 delete from private.page_views;
 delete from private.outbound_clicks;
@@ -79,6 +79,63 @@ select results_eq(
      from private.outbound_clicks $$,
   $$ values ('/saas/x'::text, 'https://example.com/pricing'::text, 'example.com'::text, true) $$,
   'a link click keeps its page, its target and the visit');
+
+-- Page time by the key the page gave its page view, from any address: only that page knows it.
+set local role anon;
+select throws_ok(
+  $$ select public.track_page_time('7d4f1c7e-0000-4000-8000-000000000001', 1000) $$,
+  '42501', null, 'visitors cannot report page time directly');
+reset role;
+set local role service_role;
+insert into ids select 'keyed', public.track_page_view('203.0.113.20', 'Browser K', '/pricing',
+  null, null, null, null, null, null, null, null, null, 'mobile', 'Safari', '26', 'iOS', '26',
+  p_key => '7d4f1c7e-0000-4000-8000-000000000001');
+select is(public.track_page_time('7d4f1c7e-0000-4000-8000-000000000001', 42000), true,
+  'the page reports its time by its key');
+select is(public.track_page_time('7d4f1c7e-0000-4000-8000-000000000002', 42000), false,
+  'another key reports nothing');
+insert into ids select 'reused', public.track_page_view('203.0.113.21', 'Browser L', '/pricing',
+  null, null, null, null, null, null, null, null, null, 'mobile', 'Safari', '26', 'iOS', '26',
+  p_key => '7d4f1c7e-0000-4000-8000-000000000001');
+reset role;
+select results_eq(
+  $$ select v.engaged_ms, v.key from private.page_views v join ids on ids.id = v.id
+     where ids.name in ('keyed', 'reused') order by v.id $$,
+  $$ values (42000, '7d4f1c7e-0000-4000-8000-000000000001'::uuid), (null::integer, null::uuid) $$,
+  'page time is kept by key, and a key is not given twice');
+update private.page_views set created_at = now() - interval '2 days'
+where id = (select id from ids where name = 'keyed');
+set local role service_role;
+select is(public.track_page_time('7d4f1c7e-0000-4000-8000-000000000001', 50000), false,
+  'page time is taken for a day');
+reset role;
+
+-- A visit goes on while its visitor reads: the time a page was visible counts as activity.
+set local role service_role;
+insert into ids select 'reading', public.track_page_view('203.0.113.30', 'Browser R', '/',
+  'reddit.com', null, null, null, null, null, null, null, null, 'mobile', 'Chrome', '140',
+  'Android', '15');
+insert into ids select 'away', public.track_page_view('203.0.113.31', 'Browser W', '/',
+  'reddit.com', null, null, null, null, null, null, null, null, 'mobile', 'Chrome', '140',
+  'Android', '15');
+reset role;
+update private.page_views set created_at = now() - interval '40 minutes', engaged_ms = 2100000
+where id = (select id from ids where name = 'reading');
+update private.page_views set created_at = now() - interval '40 minutes', engaged_ms = 300000
+where id = (select id from ids where name = 'away');
+set local role service_role;
+insert into ids select 'read on', public.track_page_view('203.0.113.30', 'Browser R', '/stats',
+  'reddit.com', null, null, null, null, null, null, null, null, 'mobile', 'Chrome', '140',
+  'Android', '15');
+insert into ids select 'back', public.track_page_view('203.0.113.31', 'Browser W', '/stats',
+  'reddit.com', null, null, null, null, null, null, null, null, 'mobile', 'Chrome', '140',
+  'Android', '15');
+reset role;
+select results_eq(
+  $$ select ids.name, v.entry, v.referrer from private.page_views v join ids on ids.id = v.id
+     where ids.name in ('read on', 'back') order by ids.name $$,
+  $$ values ('back'::text, true, 'reddit.com'::text), ('read on', false, null) $$,
+  'a visit goes on while a page is read, and a page after 30 idle minutes starts a new one');
 
 -- Channels and source names.
 select results_eq(
@@ -186,8 +243,8 @@ select set_config('request.jwt.claim.sub', 'e6000000-0000-4000-8000-000000000002
 create temp table overview as select public.admin_analytics_overview('24h', 'UTC') as r;
 select is((select r->'totals' from overview),
   '{"visitors": 3, "visits": 3, "page_views": 5, "views_per_visit": 1.67, "bounce_rate": 66.7,
-    "visit_duration": 111.7}'::jsonb,
-  'totals: page time from reports, else the next page; bounces are one-page visits');
+    "visit_duration": 167.5}'::jsonb,
+  'totals: page time from reports, else the next page; unknown lengths are not averaged');
 select is((select r->'previous'->>'visitors' from overview), '1', 'the day before has its own totals');
 select is((select jsonb_array_length(r->'series') from overview), 24, '24 hours, by hour');
 select is((select jsonb_array_length(r->'previous_series') from overview), 24,
@@ -207,8 +264,8 @@ select is((select r->'rows' from b where d = 'entry_page'),
   '[{"value": "/", "detail": null, "visitors": 2, "visits": 2, "bounce_rate": 50.0,
      "visit_duration": 167.5},
     {"value": "/stats", "detail": null, "visitors": 1, "visits": 1, "bounce_rate": 100.0,
-     "visit_duration": 0.0}]'::jsonb,
-  'entry pages: the visits they started');
+     "visit_duration": null}]'::jsonb,
+  'entry pages: the visits they started, with an unknown length where no time is known');
 select is((select r->'rows' from b where d = 'exit_page'),
   '[{"value": "/", "visitors": 1, "exits": 1, "exit_rate": 50.0},
     {"value": "/about", "visitors": 1, "exits": 1, "exit_rate": 100.0},
@@ -248,10 +305,11 @@ select is(public.admin_analytics_behavior('24h', 'UTC') - 'range',
   '{"visits": 3, "time_on_page": 83.8,
     "pages": [{"key": "1", "visits": 2}, {"key": "2", "visits": 0}, {"key": "3-5", "visits": 1},
       {"key": "6-10", "visits": 0}, {"key": "11+", "visits": 0}],
-    "durations": [{"key": "0-10s", "visits": 2}, {"key": "10-30s", "visits": 0},
+    "durations": [{"key": "0-10s", "visits": 1}, {"key": "10-30s", "visits": 0},
       {"key": "30-60s", "visits": 0}, {"key": "1-3m", "visits": 0}, {"key": "3-10m", "visits": 1},
-      {"key": "10-30m", "visits": 0}, {"key": "30m+", "visits": 0}]}'::jsonb,
-  'visits by pages and by length');
+      {"key": "10-30m", "visits": 0}, {"key": "30m+", "visits": 0},
+      {"key": "unknown", "visits": 1}]}'::jsonb,
+  'visits by pages and by length, unknown lengths on their own');
 
 create temp table platform as select public.admin_analytics_platform('24h', 'UTC') as r;
 select ok((select (r->'totals'->>'sign_ups')::integer >= 2 from platform),
@@ -282,6 +340,10 @@ select ok(
   (select command like '%private.outbound_clicks%25 months%' from cron.job
    where jobname = 'harbor-analytics-retention'),
   'link clicks are deleted after 25 months too');
+select ok(
+  (select command like '%set key = null%1 day%' from cron.job
+   where jobname = 'harbor-analytics-retention'),
+  'page view keys are cleared after a day');
 
 select * from finish();
 rollback;

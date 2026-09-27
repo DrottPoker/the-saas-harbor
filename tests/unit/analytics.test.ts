@@ -1,3 +1,4 @@
+import { userAgent } from "next/server";
 import { describe, expect, it } from "vitest";
 import {
   beaconSchema,
@@ -14,7 +15,9 @@ import {
   pageView,
   referrerHost,
   systemName,
+  technology,
   vercelEvent,
+  type SystemHints,
 } from "../../src/lib/analytics";
 
 describe("analytics", () => {
@@ -246,9 +249,20 @@ describe("analytics", () => {
     });
     // The first version of the script sent page views without a type.
     expect(beaconSchema.parse({ path: "/" })).toEqual({ type: "pageview", path: "/" });
-    expect(beaconSchema.parse({ type: "engagement", id: 12, ms: 3400 })).toEqual({
+    const key = "0f6f3a52-4b1e-4c7a-9d2e-7a1b2c3d4e5f";
+    const view = {
+      type: "pageview",
+      key,
+      path: "/stats",
+      referrer: "https://www.reddit.com/",
+      landing: "/?utm_source=reddit",
+      previous: { key, ms: 42000 },
+      system: { platform: "Windows", version: "19.0.0", ipad: false },
+    };
+    expect(beaconSchema.parse(view)).toEqual(view);
+    expect(beaconSchema.parse({ type: "engagement", key, ms: 3400 })).toEqual({
       type: "engagement",
-      id: 12,
+      key,
       ms: 3400,
     });
     expect(
@@ -257,12 +271,101 @@ describe("analytics", () => {
     for (const other of [
       { path: 1 },
       { path: `/${"a".repeat(2000)}` },
-      { type: "engagement", id: -1, ms: 10 },
-      { type: "engagement", id: 1, ms: 1.5 },
+      { type: "pageview", path: "/", key: "12" },
+      { type: "pageview", path: "/", system: { version: "x".repeat(41) } },
+      // Page time is reported by the page view's key, which the first scripts did not have.
+      { type: "engagement", id: 12, ms: 10 },
+      { type: "engagement", key, ms: -1 },
+      { type: "engagement", key, ms: 1.5 },
       { type: "outbound", path: "/" },
       { type: "click", path: "/" },
       null,
     ])
       expect(beaconSchema.safeParse(other).success).toBe(false);
+  });
+
+  it("tells device, browser and system versions the user agent no longer shows", () => {
+    const tech = (agent: string, hints?: SystemHints) =>
+      technology(agent, userAgent({ headers: new Headers({ "user-agent": agent }) }), hints);
+    const chrome = "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0";
+    const androidChrome = `Mozilla/5.0 (Linux; Android 10; K) ${chrome} Mobile Safari/537.36`;
+    const windowsChrome = `Mozilla/5.0 (Windows NT 10.0; Win64; x64) ${chrome} Safari/537.36`;
+    const macChrome = `Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) ${chrome} Safari/537.36`;
+    const safari = (os: string, version: string) =>
+      `Mozilla/5.0 (${os}) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/${version} Safari/605.1.15`;
+    const iphone = (os: string, rest: string) =>
+      `Mozilla/5.0 (iPhone; CPU iPhone OS ${os} like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) ${rest}`;
+
+    // Frozen versions are unknown without hints, and hints tell them.
+    expect(tech(androidChrome)).toEqual({
+      device: "mobile",
+      browser: "Chrome",
+      browserVersion: "140",
+      os: "Android",
+      osVersion: null,
+    });
+    expect(tech(androidChrome, { platform: "Android", version: "15.0.0" }).osVersion).toBe("15");
+    expect(tech(windowsChrome).osVersion).toBeNull();
+    expect(tech(windowsChrome, { platform: "Windows", version: "19.0.0" }).osVersion).toBe("11");
+    expect(tech(windowsChrome, { platform: "Windows", version: "10.0.0" }).osVersion).toBe("10");
+    expect(tech(windowsChrome, { platform: "Windows", version: "0.3.0" }).osVersion).toBeNull();
+    expect(tech(macChrome).osVersion).toBeNull();
+    expect(tech(macChrome, { platform: "macOS", version: "26.0.1" }).osVersion).toBe("26");
+    // Hints for another system than the user agent's are not used.
+    expect(tech(macChrome, { platform: "Windows", version: "19.0.0" }).osVersion).toBeNull();
+    expect(tech(safari("Macintosh; Intel Mac OS X 10_15_7", "26.0")).osVersion).toBeNull();
+    expect(
+      tech("Mozilla/5.0 (Windows NT 6.1; Win64; x64; rv:115.0) Gecko/20100101 Firefox/115.0")
+        .osVersion,
+    ).toBe("7");
+    expect(
+      tech("Mozilla/5.0 (Android 14; Mobile; rv:143.0) Gecko/143.0 Firefox/143.0").osVersion,
+    ).toBe("14");
+    expect(
+      tech(`Mozilla/5.0 (X11; CrOS x86_64 14541.0.0) ${chrome} Safari/537.36`, {
+        platform: "Chrome OS",
+        version: "16328.55.0",
+      }),
+    ).toMatchObject({ os: "ChromeOS", osVersion: "140" });
+
+    // Safari on an iPhone says iOS 18.6 since iOS 26; its own version is the system's.
+    expect(tech(iphone("18_6", "Version/26.0 Mobile/15E148 Safari/604.1"))).toEqual({
+      device: "mobile",
+      browser: "Safari",
+      browserVersion: "26",
+      os: "iOS",
+      osVersion: "26",
+    });
+    expect(tech(iphone("18_5", "Version/18.5 Mobile/15E148 Safari/604.1")).osVersion).toBe("18");
+    // An iPad asking for desktop pages presents itself as a Mac.
+    expect(tech(safari("Macintosh; Intel Mac OS X 10_15_7", "18.5"), { ipad: true })).toEqual({
+      device: "tablet",
+      browser: "Safari",
+      browserVersion: "18",
+      os: "iOS",
+      osVersion: "18",
+    });
+
+    // In-app browsers get the app's name and no version; a frozen system version is unknown.
+    expect(tech(iphone("18_5", "Mobile/15E148 Twitter for iPhone/10.80"))).toMatchObject({
+      browser: "X app",
+      browserVersion: null,
+      osVersion: "18",
+    });
+    expect(tech(iphone("18_6", "GSA/380.0.1 Mobile/15E148 Safari/604.1"))).toMatchObject({
+      browser: "Google app",
+      osVersion: null,
+    });
+    expect(tech(iphone("18_5", "Mobile/15E148")).browser).toBe("iOS in-app browser");
+    expect(
+      tech(
+        "Mozilla/5.0 (Linux; Android 14; Pixel 8 Build/AP2A; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/140.0.7339.80 Mobile Safari/537.36",
+      ),
+    ).toMatchObject({ browser: "Android in-app browser", os: "Android", osVersion: "14" });
+    expect(
+      tech(
+        "Mozilla/5.0 (Linux; Android 14; SM-S918B Build/UP1A; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/140.0.7339.80 Mobile Safari/537.36 Reddit/Version 2025.30.0/Build 1234567/Android 14",
+      ).browser,
+    ).toBe("Reddit app");
   });
 });

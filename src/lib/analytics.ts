@@ -26,10 +26,25 @@ export function vercelEvent<T extends { url: string }>(event: T): T | null {
 
 // Our own statistics.
 
+const pageTime = z.object({
+  // A random key the page gave its page view, which only that page knows.
+  key: z.uuid(),
+  ms: z.number().int().min(0).max(86_400_000),
+});
+
+/** What the user agent no longer tells: client hints from Chromium browsers, and iPads as Macs. */
+const systemSchema = z.object({
+  platform: z.string().max(40).optional(),
+  version: z.string().max(40).optional(),
+  ipad: z.boolean().optional(),
+});
+export type SystemHints = z.infer<typeof systemSchema>;
+
 /**
- * What the browser sends: each page it shows, with the referrer on a page load; how long a page
- * was visible, by the id its page view got; and clicks on links to other sites. A beacon without a
- * type is a page view, as the first version of the script sent them.
+ * What the browser sends: each page it shows, with its key, the tab's referrer, the tab's first
+ * address (for a page that starts a new visit without a page load), the time of the page before and
+ * the system hints; how long a page was visible, by its key; and clicks on links to other sites. A
+ * beacon without a type is a page view, as the first version of the script sent them.
  */
 export const beaconSchema = z.preprocess(
   (value) =>
@@ -39,14 +54,14 @@ export const beaconSchema = z.preprocess(
   z.discriminatedUnion("type", [
     z.object({
       type: z.literal("pageview"),
+      key: z.uuid().optional(),
       path: z.string().max(2000),
       referrer: z.string().max(2000).nullish(),
+      landing: z.string().max(2000).nullish(),
+      previous: pageTime.optional(),
+      system: systemSchema.optional(),
     }),
-    z.object({
-      type: z.literal("engagement"),
-      id: z.number().int().positive(),
-      ms: z.number().int().min(0).max(86_400_000),
-    }),
+    pageTime.extend({ type: z.literal("engagement") }),
     z.object({
       type: z.literal("outbound"),
       path: z.string().max(2000),
@@ -215,3 +230,85 @@ function named(value: string | undefined, names: [RegExp, string][]) {
 }
 export const browserName = (value: string | undefined) => named(value, BROWSERS);
 export const systemName = (value: string | undefined) => named(value, SYSTEMS);
+
+// Apps that open links in a browser of their own, by what they add to the user agent.
+const IN_APP: [RegExp, string][] = [
+  [/\bGSA\//, "Google app"],
+  [/\bFBAN\/|\bFBAV\/|\bFB_IAB\//, "Facebook app"],
+  [/\bInstagram\b/, "Instagram app"],
+  [/\bTwitter for iPhone\b|\bTwitterAndroid\b/, "X app"],
+  [/\bLinkedInApp\b/, "LinkedIn app"],
+  [/\bReddit\//, "Reddit app"],
+  [/\bmusical_ly\b|\bBytedanceWebview\b/, "TikTok app"],
+  [/\bSnapchat\b/, "Snapchat app"],
+];
+
+/** The in-app browser a user agent belongs to, or null for a browser of its own. */
+function inAppBrowser(agent: string, parsedName: string | undefined) {
+  const app = IN_APP.find(([pattern]) => pattern.test(agent))?.[1];
+  if (app) return app;
+  // ua-parser's names for an app's web view without a mark of its own.
+  if (parsedName === "WebKit") return "iOS in-app browser";
+  if (parsedName === "Chrome WebView") return "Android in-app browser";
+  return null;
+}
+
+/** The parts of Next.js's userAgent() that the statistics read. */
+export type ParsedAgent = {
+  browser: { name?: string; version?: string };
+  os: { name?: string; version?: string };
+  device: { type?: string };
+};
+
+/** The system version that client hints give for the system the user agent names. */
+function hintedVersion(os: string, hints: SystemHints | undefined) {
+  const major = hints?.version?.match(/^(\d{1,4})(?:\.|$)/)?.[1];
+  if (!major) return undefined;
+  const platform = hints?.platform;
+  // Windows 11 reports 13 or higher; 1 to 12 are Windows 10, 0 is older, which the user agent tells.
+  if (os === "Windows" && platform === "Windows") {
+    const n = Number(major);
+    return n >= 13 ? "11" : n >= 1 ? "10" : undefined;
+  }
+  if ((os === "macOS" && platform === "macOS") || (os === "Android" && platform === "Android"))
+    return String(Number(major));
+  // ChromeOS reports a build number and Linux its kernel; neither is the version people know.
+  return undefined;
+}
+
+/**
+ * Device, browser and system with their major versions, from the user agent, what ua-parser made
+ * of it, and the hints the browser sent. Browsers freeze parts of the user agent, so a version
+ * that could belong to many is left unknown unless a hint tells it:
+ * - Chrome and Samsung Internet on Android say Android 10 (and model K) on every device.
+ * - Windows 11 says Windows NT 10.0, like Windows 10.
+ * - Every browser on a Mac says macOS 10.15, whatever the version.
+ * - Since iOS 26, Safari and web views say iOS 18.6 (or 18.7). Safari comes with the system, so
+ *   its own version is the system's.
+ * An iPad presents itself as a Mac unless its touch screen gives it away. In-app browsers get the
+ * app's name and no version.
+ */
+export function technology(agent: string, parsed: ParsedAgent, hints?: SystemHints) {
+  let device = deviceType(parsed.device.type);
+  let os = systemName(parsed.os.name);
+  let osVersion = majorVersion(parsed.os.version);
+  const app = inAppBrowser(agent, parsed.browser.name);
+  const browser = app ?? browserName(parsed.browser.name);
+  const browserVersion = app ? null : majorVersion(parsed.browser.version);
+
+  const ipad = hints?.ipad === true && os === "macOS";
+  if (ipad) {
+    device = "tablet";
+    os = "iOS";
+  }
+  if (os === "Android" && /\bAndroid 10; K\)/.test(agent)) osVersion = null;
+  if (os === "Windows" && /\bWindows NT 10\.0\b/.test(agent)) osVersion = null;
+  if (/\bMac OS X 10[._]15(?!\d)/.test(agent)) osVersion = null;
+  if (os === "iOS") {
+    if (browser === "Safari") osVersion = browserVersion;
+    else if (/\bOS 18_[67](?!\d)/.test(agent)) osVersion = null;
+  }
+  if (os === "ChromeOS") osVersion = browser === "Chrome" ? browserVersion : null;
+  osVersion = hintedVersion(os, hints) ?? osVersion;
+  return { device, browser, browserVersion, os, osVersion };
+}

@@ -18,6 +18,7 @@ import {
   formatRatio,
   pageGroups,
   percentChange,
+  pointChange,
   previousLabel,
   rangeLabel,
   type Behavior,
@@ -84,17 +85,24 @@ function useTimeZone() {
 
 type CardProps = { tz: string; range: Range; onRange: (range: Range) => void };
 
+/** The change from the period before: in percent, or for a rate in percentage points. */
 function change(
   current: number | null,
   previous: number | null | undefined,
   range: Range,
-  lowerIsBetter = false,
+  { lowerIsBetter = false, rate = false } = {},
 ) {
-  const pct = previous === undefined ? null : percentChange(current, previous);
-  if (pct === null) return null;
+  const delta =
+    previous === undefined
+      ? null
+      : rate
+        ? pointChange(current, previous)
+        : percentChange(current, previous);
+  if (delta === null) return null;
   return (
     <Growth
-      pct={pct}
+      pct={delta}
+      points={rate}
       lowerIsBetter={lowerIsBetter}
       period={{ short: null, long: `compared with ${previousLabel(range)}` }}
     />
@@ -127,6 +135,8 @@ const SITE_METRICS: {
   format: (value: number) => string;
   whole: boolean;
   lowerIsBetter?: boolean;
+  /** A percentage, whose change is in percentage points. */
+  rate?: boolean;
 }[] = [
   { key: "visitors", label: "Visitors", format: formatCount, whole: true },
   { key: "visits", label: "Visits", format: formatCount, whole: true },
@@ -138,6 +148,7 @@ const SITE_METRICS: {
     format: (v) => formatPercent(v),
     whole: false,
     lowerIsBetter: true,
+    rate: true,
   },
   { key: "visit_duration", label: "Visit length", format: (v) => formatDuration(v), whole: false },
 ];
@@ -171,7 +182,7 @@ function OverviewCard({ tz, range, onRange }: CardProps) {
                   key={item.key}
                   label={item.label}
                   value={value === null ? "-" : item.format(value)}
-                  detail={change(value, data.previous?.[item.key], data.range, item.lowerIsBetter)}
+                  detail={change(value, data.previous?.[item.key], data.range, item)}
                   pressed={metric === item.key}
                   onPress={() => setMetric(item.key)}
                 />
@@ -542,7 +553,9 @@ function PlatformCard({ tz, range, onRange }: CardProps) {
             <Stat
               label="Reports"
               value={formatCount(data.totals.reports)}
-              detail={change(data.totals.reports, data.previous?.reports, data.range, true)}
+              detail={change(data.totals.reports, data.previous?.reports, data.range, {
+                lowerIsBetter: true,
+              })}
             />
             <Stat
               label="Feedback"
@@ -556,6 +569,7 @@ function PlatformCard({ tz, range, onRange }: CardProps) {
                 data.totals.conversion_rate,
                 data.previous?.conversion_rate,
                 data.range,
+                { rate: true },
               )}
             />
           </div>

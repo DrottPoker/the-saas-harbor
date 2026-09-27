@@ -1307,6 +1307,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      track_page_time: {
+        Args: { p_engaged_ms: number; p_key: string }
+        Returns: boolean
+      }
       track_page_view: {
         Args: {
           p_browser: string
@@ -1315,6 +1319,7 @@ export type Database = {
           p_country: string
           p_device: string
           p_ip: string
+          p_key?: string
           p_language: string
           p_os: string
           p_os_version: string

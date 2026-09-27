@@ -13,6 +13,7 @@ import {
   languageName,
   overviewSchema,
   percentChange,
+  pointChange,
   previousLabel,
   rangeLabel,
   reportRequestSchema,
@@ -97,6 +98,11 @@ describe("analytics reports", () => {
     expect(percentChange(50, 100)).toBe(-50);
     expect(percentChange(5, 0)).toBeNull();
     expect(percentChange(null, 5)).toBeNull();
+    // A bounce rate from 40% to 50% rose by 10 points, not 25%.
+    expect(pointChange(50, 40)).toBe(10);
+    expect(pointChange(5, 0)).toBe(5);
+    expect(pointChange(null, 40)).toBeNull();
+    expect(pointChange(40, null)).toBeNull();
   });
 
   it("labels local bucket starts without shifting them", () => {
