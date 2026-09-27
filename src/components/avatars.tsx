@@ -28,8 +28,11 @@ function Picture({
   decorative = true,
   className,
   initials,
+  initialsClassName,
 }: Props & {
   initials: string;
+  /** Colors for the initials, when there is no image. */
+  initialsClassName?: string;
 }) {
   const url = imageUrl(path);
   const [pixels, classes] = sizes[size];
@@ -38,6 +41,7 @@ function Picture({
       className={cn(
         "inline-grid shrink-0 place-items-center overflow-hidden border bg-muted font-semibold text-muted-foreground",
         classes,
+        !mark && !url && initialsClassName,
         className,
       )}
     >
@@ -64,6 +68,7 @@ export function ProductLogo(props: Props) {
     <Picture
       {...props}
       initials={props.name.trim().charAt(0).toUpperCase()}
+      initialsClassName="bg-initial-bg text-initial"
       className={cn("rounded-[22%]", props.className)}
     />
   );

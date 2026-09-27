@@ -24,7 +24,6 @@ export type RevenueConnection = Omit<
 // Columns owners may read; the encrypted key is never granted.
 export const CONNECTION_COLUMNS =
   "saas_id, owner_id, provider, key_hint, livemode, status, last_error, connected_at, last_synced_at";
-export type RevenueStatus = "unverified" | "stale" | "private" | "verified";
 export const PAGE_SIZE = 12;
 /** PostgREST's answer to a page that starts past the last row. It means an empty page. */
 export const PAST_LAST_PAGE = "PGRST103";

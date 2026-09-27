@@ -8,6 +8,14 @@ The first release includes accounts, email confirmation and recovery, public mak
 
 Makers can message each other privately (see Messages below), and report products, profiles and messages to the admins, who decide in an admin panel (see Reports and moderation below). They get emails about unread messages and about decisions (see Email notifications below). Other forms of connection, such as following or contact lists, are not implemented.
 
+## Product page card, and Not shared instead of Not verified 2026-09-27
+
+At the owner's request, chosen from a clickable mockup, the product page opens with one card: the logo, the name with a Verified revenue label while MRR is verified and shared and a Domain verified label, the tagline, the founder and category, Visit website as the main button with Send message beside it (it was in the sidebar before), and the three key figures along the card's foot. Products without a logo show their initial in the blue of the logo's sea (`--initial`, `--initial-bg`) instead of grey, on cards and in the leaderboard too.
+
+Also at the owner's request, visitors are no longer told that a product has not verified its revenue, or that a verification is out of date. Every missing figure reads Not shared on the product page, MRR not shared on cards, and not shared in the Markdown, exactly as when a founder keeps revenue private, and the verification line appears only while MRR is verified and shared, so a private product no longer shows it either. Founders still see their own status in the dashboard, and a domain may still read Not verified. AGENTS.md now has this as a rule.
+
+Checked at 390 and 1100 px in both themes, for a verified demo product and an unverified product. `npm run check` (330 unit tests), `npm run build` and `npm run test:e2e` (17 browser tests, with Axe scans in both themes) pass.
+
 ## Drawn sparklines and a grouped footer 2026-09-27
 
 At the owner's request, after the deployment of the look below was checked on the live site in both themes:

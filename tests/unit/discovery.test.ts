@@ -273,9 +273,16 @@ describe("markdown", () => {
     expect(text).toContain("- Monthly recurring revenue: not shared");
     expect(text).not.toContain("MRR at month end");
     expect(text).not.toContain("$");
-    expect(
-      productMarkdown(listing({ revenue_status: "unverified", mrr_cents: null })),
-    ).not.toContain("Last verified");
+    expect(text).not.toContain("Verified with");
+    // An unverified product reads the same as a private one.
+    for (const revenue_status of ["unverified", "stale"]) {
+      const other = productMarkdown(listing({ revenue_status, mrr_cents: null, customers: null }));
+      expect(other).toContain("- Monthly recurring revenue: not shared");
+      expect(other).not.toContain("Last verified");
+      // The domain may still read not verified; the revenue section may not.
+      const revenue = other.split("## Revenue")[1].split("\n## ")[0];
+      expect(revenue).not.toMatch(/verif|out of date/i);
+    }
   });
 
   it("keeps a product name from breaking the page", () => {

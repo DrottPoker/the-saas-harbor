@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { BadgeCheck } from "lucide-react";
 import { parseHistory } from "@/lib/charts";
-import { PAGE_SIZE, type Listing, type RevenueStatus } from "@/lib/data";
+import { PAGE_SIZE, type Listing } from "@/lib/data";
 import { formatDate, formatUsd } from "@/lib/domain";
 import { cn } from "@/lib/utils";
 import { ProductLogo } from "./avatars";
@@ -127,13 +127,6 @@ export function Leaderboard({
   );
 }
 
-const revenueCopy: Record<RevenueStatus, string> = {
-  verified: "",
-  private: "MRR private",
-  stale: "Verification out of date",
-  unverified: "Not verified",
-};
-
 function RevenueLabel({ item }: { item: Listing }) {
   // A demo figure is shown plainly, never with the verified mark.
   if (item.demo && item.mrr_cents != null)
@@ -142,15 +135,15 @@ function RevenueLabel({ item }: { item: Listing }) {
         {formatUsd(item.mrr_cents)} <span className="font-normal text-muted-foreground">MRR</span>
       </span>
     );
-  const status = (item.revenue_status ?? "unverified") as RevenueStatus;
-  if (status === "verified" && item.mrr_cents != null)
+  if (item.revenue_status === "verified" && item.mrr_cents != null)
     return (
       <span className="flex shrink-0 items-center gap-1 font-medium tabular-nums">
         <BadgeCheck aria-label="Verified" className="size-3.5 text-brand" />
         {formatUsd(item.mrr_cents)} <span className="font-normal text-muted-foreground">MRR</span>
       </span>
     );
-  return <span className="shrink-0 text-muted-foreground">{revenueCopy[status]}</span>;
+  // Visitors are not told whether a product is unverified or keeps its revenue private.
+  return <span className="shrink-0 text-muted-foreground">MRR not shared</span>;
 }
 
 // A demo product never joined, so New arrivals shows when it launched instead.

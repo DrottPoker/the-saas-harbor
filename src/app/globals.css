@@ -62,6 +62,9 @@
   --elevation-card: 0 1px 2px rgb(11 30 60 / 0.04), 0 3px 10px -4px rgb(11 30 60 / 0.08);
   --elevation-raised: 0 2px 4px -1px rgb(11 30 60 / 0.06), 0 12px 28px -10px rgb(11 30 60 / 0.18);
   --elevation-float: 0 4px 12px -4px rgb(11 30 60 / 0.12), 0 18px 40px -12px rgb(11 30 60 / 0.22);
+  /* A product's initial when it has no logo, in the blue of the logo's sea. */
+  --initial: #185a92;
+  --initial-bg: #d2dce1;
   /* The lighthouse beam on the home page, at its brightest. */
   --beam: rgb(236 140 24 / 0.3);
 
@@ -109,6 +112,8 @@
       inset 0 1px 0 rgb(255 255 255 / 0.05), 0 4px 12px -2px rgb(2 6 14 / 0.5),
       0 20px 44px -12px rgb(2 6 14 / 0.9);
     --beam: rgb(247 178 70 / 0.17);
+    --initial: #9dbbe0;
+    --initial-bg: #1b3047;
   }
 }
 
@@ -143,6 +148,8 @@
   --color-ring: var(--accent);
   --color-chart-1: var(--chart-1);
   --color-chart-muted: var(--chart-muted);
+  --color-initial: var(--initial);
+  --color-initial-bg: var(--initial-bg);
   --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-geist-mono), ui-monospace, monospace;
   --radius-md: 8px;

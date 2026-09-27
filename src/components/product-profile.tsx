@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { ArrowUpRight, BadgeCheck } from "lucide-react";
 import { parseHistory } from "@/lib/charts";
-import type { Listing, PageViewCounts, RevenueStatus } from "@/lib/data";
+import type { Listing, PageViewCounts } from "@/lib/data";
 import { categorySlug, formatDate, formatUsd } from "@/lib/domain";
 import { providerName } from "@/lib/revenue/catalog";
 import { websiteRel } from "@/lib/seo";
@@ -24,14 +24,6 @@ function hostname(url: string | null) {
     return null;
   }
 }
-
-// Why a revenue figure is missing, for visitors.
-const missingRevenue: Record<RevenueStatus, string> = {
-  verified: "Not shared",
-  private: "Not shared",
-  stale: "Verification out of date",
-  unverified: "Not verified",
-};
 
 /** How often the page was viewed, shown to the founder only. */
 function ViewCounts({ views }: { views: PageViewCounts }) {
@@ -79,7 +71,8 @@ export function ProductProfile({
   const demo = item.demo;
   const name = item.name ?? "SaaS";
   const site = hostname(item.website);
-  const status = (item.revenue_status ?? "unverified") as RevenueStatus;
+  // Public reads carry only figures that are verified and shared; the rest read Not shared.
+  const verified = item.revenue_status === "verified" && item.mrr_cents != null;
   const history = parseHistory(item.mrr_history);
   // Category pages list real products only, so demo products link to the filtered Browse list.
   const categoryHref = demo
@@ -120,83 +113,103 @@ export function ProductProfile({
         <span className="text-foreground [overflow-wrap:anywhere]">{name}</span>
       </nav>
 
-      <header className="flex flex-col gap-5 sm:flex-row sm:items-start">
-        <ProductLogo
-          path={item.logo_path}
-          name={name}
-          size="xl"
-          mark={demo && <DemoLogo logo={demo.logo} />}
-        />
-        <div className="min-w-0 flex-1">
-          {demo ? (
-            <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+      {/* Name, status, actions and key figures in one card. Visitors are never told that
+          revenue is unverified: a figure without a current verification reads Not shared, like
+          one the founder keeps private. */}
+      <header className="overflow-hidden rounded-xl border bg-surface shadow-card">
+        <div className="flex flex-col gap-5 p-5 sm:flex-row sm:items-start sm:p-6">
+          <ProductLogo
+            path={item.logo_path}
+            name={name}
+            size="lg"
+            mark={demo && <DemoLogo logo={demo.logo} />}
+          />
+          <div className="min-w-0 flex-1">
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
               {title}
-              <Badge>Demo</Badge>
+              {demo && <Badge>Demo</Badge>}
+              {verified && (
+                <Badge tone="accent" className="gap-1">
+                  <BadgeCheck aria-hidden="true" className="size-3.5" />
+                  Verified revenue
+                </Badge>
+              )}
+              {!demo && item.verified_domain && (
+                <Badge className="gap-1">
+                  <BadgeCheck aria-hidden="true" className="size-3.5 text-brand" />
+                  Domain verified
+                </Badge>
+              )}
             </div>
-          ) : (
-            title
-          )}
-          <p className="mt-1.5 text-lg text-muted-foreground [overflow-wrap:anywhere]">
-            {item.tagline}
-          </p>
-          <p className="mt-3 text-sm text-muted-foreground">
-            <Link href={categoryHref} className="hover:text-foreground">
-              {item.category}
-            </Link>
-            <span aria-hidden="true" className="mx-2">
-              ·
-            </span>
-            by{" "}
-            {demo ? (
-              <span className="text-foreground">{item.owner_name}</span>
-            ) : (
-              <Link href={`/users/${item.owner_slug}`} className="text-foreground hover:underline">
-                {item.owner_name}
+            <p className="mt-1.5 text-lg text-muted-foreground [overflow-wrap:anywhere]">
+              {item.tagline}
+            </p>
+            <p className="mt-3 text-sm text-muted-foreground">
+              by{" "}
+              {demo ? (
+                <span className="text-foreground">{item.owner_name}</span>
+              ) : (
+                <Link
+                  href={`/users/${item.owner_slug}`}
+                  className="text-foreground hover:underline"
+                >
+                  {item.owner_name}
+                </Link>
+              )}
+              <span aria-hidden="true" className="mx-2">
+                ·
+              </span>
+              <Link href={categoryHref} className="hover:text-foreground">
+                {item.category}
               </Link>
-            )}
-          </p>
+            </p>
+          </div>
+          {(item.website || item.owner_id) && (
+            <div className="flex gap-2 sm:w-44 sm:flex-col">
+              {item.website && (
+                <Button asChild className="max-sm:flex-1">
+                  <a href={item.website} target="_blank" rel={websiteRel(item.revenue_status)}>
+                    Visit website
+                    <ArrowUpRight />
+                  </a>
+                </Button>
+              )}
+              {item.owner_id && (
+                <SendMessageButton
+                  makerId={item.owner_id}
+                  viewerId={viewerId}
+                  className="max-sm:flex-1"
+                />
+              )}
+            </div>
+          )}
         </div>
-        {item.website && (
-          <Button asChild variant="outline" className="self-start">
-            <a href={item.website} target="_blank" rel={websiteRel(item.revenue_status)}>
-              Visit website
-              <ArrowUpRight />
-            </a>
-          </Button>
-        )}
+        <dl className="grid divide-y border-t bg-subtle sm:grid-cols-3 sm:divide-x sm:divide-y-0">
+          <Metric
+            label="Monthly recurring revenue"
+            value={item.mrr_cents == null ? null : formatUsd(item.mrr_cents)}
+            detail={item.mrr_growth_pct != null && <Growth pct={item.mrr_growth_pct} />}
+          />
+          <Metric
+            label="Paying customers"
+            value={item.customers?.toLocaleString("en-US") ?? null}
+          />
+          <Metric label="Launched" value={item.launched_on ? formatDate(item.launched_on) : null} />
+        </dl>
       </header>
-
-      <dl className="mt-10 grid divide-y rounded-xl border bg-surface shadow-card sm:grid-cols-3 sm:divide-x sm:divide-y-0">
-        <Metric
-          label="Monthly recurring revenue"
-          value={item.mrr_cents == null ? null : formatUsd(item.mrr_cents)}
-          empty={missingRevenue[status]}
-          detail={item.mrr_growth_pct != null && <Growth pct={item.mrr_growth_pct} />}
-        />
-        <Metric
-          label="Paying customers"
-          value={item.customers?.toLocaleString("en-US") ?? null}
-          empty={missingRevenue[status]}
-        />
-        <Metric label="Launched" value={item.launched_on ? formatDate(item.launched_on) : null} />
-      </dl>
-      <p className="mt-3 flex items-center gap-1.5 text-[13px] text-muted-foreground">
-        {demo ? (
-          status === "unverified" ? (
-            "A demo of a product whose founder has not connected a payment provider, so it shows no revenue."
-          ) : (
+      {(verified || (demo && item.mrr_cents != null)) && (
+        <p className="mt-3 flex items-center gap-1.5 px-1 text-[13px] text-muted-foreground">
+          {demo ? (
             "Demo figures, made up for this example and not verified."
-          )
-        ) : status === "unverified" ? (
-          "Revenue has not been verified. The founder has not connected a payment provider."
-        ) : (
-          <>
-            <BadgeCheck aria-hidden="true" className="size-4 shrink-0 text-brand" />
-            Verified with {providerName(item.provider)} through a read-only key. Last verified{" "}
-            {formatDate(item.verified_at)}.{!item.livemode && " Test mode data."}
-          </>
-        )}
-      </p>
+          ) : (
+            <>
+              <BadgeCheck aria-hidden="true" className="size-4 shrink-0 text-brand" />
+              Verified with {providerName(item.provider)} through a read-only key. Last verified{" "}
+              {formatDate(item.verified_at)}.{!item.livemode && " Test mode data."}
+            </>
+          )}
+        </p>
+      )}
 
       {history && (
         <RevenueHistory
@@ -228,14 +241,6 @@ export function ProductProfile({
               >
                 {maker}
               </Link>
-            )}
-            {item.owner_id && (
-              <SendMessageButton
-                makerId={item.owner_id}
-                viewerId={viewerId}
-                size="sm"
-                className="mt-4 w-full"
-              />
             )}
           </div>
           <dl className="grid gap-3 rounded-xl border bg-surface p-5 text-sm shadow-card">

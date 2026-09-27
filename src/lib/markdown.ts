@@ -2,7 +2,7 @@
 // HTML pages show. Text makers wrote is escaped, so it cannot add headings, links or other
 // structure, and every file says which parts makers wrote.
 import { monthLabel, parseHistory, wholeUsd } from "./charts";
-import type { CategoryCount, Listing, Profile, RevenueStatus } from "./data";
+import type { CategoryCount, Listing, Profile } from "./data";
 import { categorySlug, formatDate, formatUsd } from "./domain";
 import { providerList, providerName } from "./revenue/catalog";
 import { rolePeriod, sortRoles, type ProfileExperience } from "./profile";
@@ -41,18 +41,11 @@ function autolink(url: string) {
 const MAKER_TEXT =
   "Names, descriptions and profile text are written by the users who list them. Revenue figures are read from each product's payment provider through a read-only connection and cannot be typed in.";
 
-const revenueMissing: Record<RevenueStatus, string> = {
-  verified: "not shared",
-  private: "not shared",
-  stale: "verification out of date",
-  unverified: "not verified",
-};
-
+// Readers are not told whether a product is unverified or keeps its revenue private.
 function mrrText(item: Listing) {
-  const status = (item.revenue_status ?? "unverified") as RevenueStatus;
-  return status === "verified" && item.mrr_cents != null
+  return item.revenue_status === "verified" && item.mrr_cents != null
     ? `${formatUsd(item.mrr_cents)} verified MRR`
-    : `MRR ${revenueMissing[status]}`;
+    : "MRR not shared";
 }
 
 function growthText(pct: number) {
@@ -77,9 +70,8 @@ function techStackLines(stack: readonly string[] | null | undefined) {
 
 export function productMarkdown(item: Listing) {
   const base = siteUrl();
-  const status = (item.revenue_status ?? "unverified") as RevenueStatus;
   const category = item.category ?? "Other";
-  const verified = status === "verified" && item.mrr_cents != null;
+  const verified = item.revenue_status === "verified" && item.mrr_cents != null;
   const history = verified ? parseHistory(item.mrr_history) : null;
   const lines = [
     `# ${inline(item.name)}`,
@@ -104,19 +96,19 @@ export function productMarkdown(item: Listing) {
     "",
     verified
       ? `- Monthly recurring revenue: ${formatUsd(item.mrr_cents!)}`
-      : `- Monthly recurring revenue: ${revenueMissing[status]}`,
+      : "- Monthly recurring revenue: not shared",
     ...(verified && item.mrr_growth_pct != null
       ? [`- Change over 30 days: ${growthText(item.mrr_growth_pct)}`]
       : []),
     ...(item.customers != null
       ? [`- Paying customers: ${item.customers.toLocaleString("en-US")}`]
       : []),
-    ...(status === "unverified"
-      ? []
-      : [
+    ...(verified
+      ? [
           `- Verified with: ${providerName(item.provider)}`,
           `- Last verified: ${formatDate(item.verified_at)}${item.livemode === false ? " (test mode data)" : ""}`,
-        ]),
+        ]
+      : []),
     ...(history
       ? [
           "",

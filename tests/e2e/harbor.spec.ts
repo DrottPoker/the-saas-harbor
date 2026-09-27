@@ -846,7 +846,9 @@ test("registration, email confirmation, profile and SaaS editing, storage, priva
     `<loc>${origin}/tech/nextjs</loc>`,
   );
   await page.goto(productPath);
-  await expect(page.getByText(/Verified with Stripe through a read-only key/)).toBeVisible();
+  // Private figures read Not shared, and visitors are not told whether revenue was verified.
+  await expect(page.getByText(/Verified with Stripe/)).toHaveCount(0);
+  await expect(page.getByText("Verified revenue")).toHaveCount(0);
   await expect(page.getByText("Not shared", { exact: true })).toHaveCount(3);
   // Visible text only: the page source also carries framework references like "$104".
   expect(await page.locator("main").innerText()).not.toContain("$104");
@@ -2521,7 +2523,9 @@ test("founders verify revenue through Paddle, Polar and Dodo Payments", async ({
   await expect(revenue.getByText("Connected to Paddle")).toBeVisible();
   await expect(revenue.getByText("$182.50", { exact: true })).toBeVisible();
   await page.goto(`/saas/providers-${run}`);
-  await expect(page.getByText(/Verified with Paddle through a read-only key/)).toBeVisible();
+  // MRR is not shared, so visitors see Not shared and no verification details.
+  await expect(page.getByText(/Verified with Paddle/)).toHaveCount(0);
+  await expect(page.getByText("Not shared", { exact: true }).first()).toBeVisible();
 
   // Polar: a new token switches the provider.
   await page.goto(`/dashboard/saas/${id}`);
@@ -2644,7 +2648,9 @@ test("founders verify revenue through Creem, Chargebee, Whop and RevenueCat", as
   await expect(revenue.getByText("$150", { exact: true })).toBeVisible();
   await expect(revenue.getByText("42", { exact: true })).toBeVisible();
   await page.goto(`/saas/more-providers-${run}`);
-  await expect(page.getByText(/Verified with RevenueCat through a read-only key/)).toBeVisible();
+  // MRR is not shared, so visitors see Not shared and no verification details.
+  await expect(page.getByText(/Verified with RevenueCat/)).toHaveCount(0);
+  await expect(page.getByText("Not shared", { exact: true }).first()).toBeVisible();
 
   const { data: connection } = await admin
     .from("revenue_connections")
