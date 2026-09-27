@@ -1103,6 +1103,10 @@ export type Database = {
         }
         Returns: Json
       }
+      admin_analytics_funnel: {
+        Args: { p_range: string; p_tz: string }
+        Returns: Json
+      }
       admin_analytics_heatmap: {
         Args: { p_range: string; p_tz: string }
         Returns: Json

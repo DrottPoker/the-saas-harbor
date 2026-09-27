@@ -16,6 +16,7 @@ import {
   formatDuration,
   formatPercent,
   formatRatio,
+  funnelRows,
   pageGroups,
   percentChange,
   pointChange,
@@ -24,6 +25,7 @@ import {
   type Behavior,
   type Breakdown,
   type Dimension,
+  type Funnel,
   type Heatmap,
   type Live,
   type Overview,
@@ -38,6 +40,7 @@ import { ColumnChart } from "./column-chart";
 import { PeriodControl, TabPanel, Tabs } from "./controls";
 import { HeatmapChart } from "./heatmap";
 import { TimeChart, type ChartPoint } from "./time-chart";
+import { FunnelTable } from "./funnel-table";
 import { useReport } from "./use-report";
 
 const CARDS = [
@@ -50,6 +53,7 @@ const CARDS = [
   "behavior",
   "outbound",
   "platform",
+  "funnel",
 ] as const;
 type Card = (typeof CARDS)[number];
 type Ranges = Record<Card, Range>;
@@ -588,6 +592,55 @@ function PlatformCard({ tz, range, onRange }: CardProps) {
   );
 }
 
+// The funnel: how far the accounts created in the period have come.
+
+function FunnelCard({ tz, range, onRange }: CardProps) {
+  const report = useReport<Funnel>({ report: "funnel", range, tz });
+  const data = report.data;
+  const signUps = data?.current.steps[0].accounts ?? 0;
+  return (
+    <AnalyticsCard
+      id="funnel"
+      title="Funnel"
+      description="The accounts created in the period, and how far each has come since."
+      range={range}
+      onRange={onRange}
+      loading={report.loading}
+      error={report.error}
+      onRetry={report.retry}
+      ready={!!data}
+      placeholder="h-72"
+      className="lg:col-span-2"
+    >
+      {data && (
+        <div className="grid gap-4">
+          <p className="text-sm text-muted-foreground">
+            {formatCount(data.current.visitors)}{" "}
+            {data.current.visitors === 1 ? "visitor" : "visitors"} came, and{" "}
+            <span className="font-medium text-foreground">
+              {formatCount(signUps)} {signUps === 1 ? "account was" : "accounts were"} created
+            </span>
+            {data.current.visitors > 0 &&
+              `: ${formatRatio((100 * signUps) / data.current.visitors)} per 100 visitors`}
+            .
+          </p>
+          {signUps > 0 ? (
+            <FunnelTable
+              {...funnelRows(data)}
+              caption={`Funnel, ${rangeLabel(data.range).toLowerCase()}`}
+              compared={previousLabel(data.range)}
+            />
+          ) : (
+            <p className="py-6 text-center text-sm text-muted-foreground">
+              No accounts were created in this period.
+            </p>
+          )}
+        </div>
+      )}
+    </AnalyticsCard>
+  );
+}
+
 /**
  * The Analytics page: every card has its own period, and the row above sets all of them at once.
  * Reports load in the browser, in the viewer's time zone, so a new period never reloads the page
@@ -703,6 +756,7 @@ export function AnalyticsDashboard() {
           {...card("outbound")}
         />
         <PlatformCard {...card("platform")} />
+        <FunnelCard {...card("funnel")} />
       </div>
     </>
   );

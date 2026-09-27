@@ -2316,6 +2316,16 @@ test("visits are counted without cookies, and admins see them under Analytics", 
     card("Links to other sites").getByRole("link", { name: new RegExp(`example-${run}`) }),
   ).toHaveAttribute("href", `https://example-${run}.test/pricing`);
   await expect(card("Right now").getByText(/in the last 5 minutes/)).toBeVisible();
+  // The funnel follows the accounts created in the period, among them this test's own.
+  const funnel = card("Funnel").getByRole("table", { name: "Funnel, last 24 hours" });
+  await expect(funnel.getByRole("rowheader")).toHaveText([
+    "Signed up",
+    "Confirmed their email",
+    "Listed a product",
+    "Verified revenue",
+    "On the leaderboard",
+  ]);
+  await expect(card("Funnel").getByText(/\d+ accounts? (was|were) created/)).toBeVisible();
 
   // The chart reads with the keyboard and as a table.
   const chart = card("Overview").getByRole("group", { name: /^Visitors, last 24 hours/ });

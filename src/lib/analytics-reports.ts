@@ -1,5 +1,6 @@
 // The admin panel's Analytics reports: periods, what each report returns, and how figures read.
-// The database computes them (public.admin_analytics_*, migration 20260926070000); the route
+// The database computes them (public.admin_analytics_*, migrations 20260926070000 and
+// 20260927150000 for the funnel); the route
 // /admin/analytics/data validates them here. Pure, so it is unit-tested.
 import { z } from "zod";
 
@@ -62,6 +63,7 @@ export const REPORTS = [
   "behavior",
   "live",
   "platform",
+  "funnel",
 ] as const;
 export type Report = (typeof REPORTS)[number];
 
@@ -80,7 +82,7 @@ export function isTimeZone(value: string) {
 export const reportRequestSchema = z.discriminatedUnion("report", [
   z.object({ report: z.literal("live") }),
   z.object({
-    report: z.enum(["overview", "heatmap", "behavior", "platform"]),
+    report: z.enum(["overview", "heatmap", "behavior", "platform", "funnel"]),
     range: z.enum(RANGE_VALUES),
     tz: z.string().refine(isTimeZone),
   }),
@@ -227,6 +229,83 @@ export type Platform = z.infer<typeof platformSchema>;
 export type PlatformMetric = keyof z.infer<typeof platformPoint> &
   keyof z.infer<typeof platformTotals>;
 
+// The funnel: the accounts created in a period and how far they have come since, each step
+// counting the accounts that also took the steps before it.
+export const FUNNEL_STEPS = {
+  signed_up: "Signed up",
+  confirmed: "Confirmed their email",
+  product: "Listed a product",
+  verified: "Verified revenue",
+  ranked: "On the leaderboard",
+} as const;
+export type FunnelStep = keyof typeof FUNNEL_STEPS;
+const FUNNEL_KEYS = Object.keys(FUNNEL_STEPS) as [FunnelStep, ...FunnelStep[]];
+
+const funnelPeriod = z.object({
+  visitors: count,
+  steps: z
+    .array(z.object({ key: z.enum(FUNNEL_KEYS), accounts: count, median_seconds: figure }))
+    .refine(
+      (steps) =>
+        steps.length === FUNNEL_KEYS.length &&
+        steps.every((step, i) => step.key === FUNNEL_KEYS[i]),
+    ),
+});
+export const funnelSchema = z.object({
+  range: z.enum(RANGE_VALUES),
+  from: localTime,
+  current: funnelPeriod,
+  previous: funnelPeriod.nullable(),
+});
+export type Funnel = z.infer<typeof funnelSchema>;
+
+export type FunnelRow = {
+  key: FunnelStep;
+  label: string;
+  accounts: number;
+  /** Percent of the accounts that signed up, null without sign-ups. */
+  ofSignUps: number | null;
+  /** The same in the period before, when there is one to compare. */
+  previousOfSignUps: number | null | undefined;
+  /** Percent of the step before; null for the first step or when the step before has none. */
+  fromBefore: number | null;
+  medianSeconds: number | null;
+};
+
+/** The funnel's rows, and the step before which the largest share of accounts stopped. */
+export function funnelRows(report: Funnel) {
+  const share = (accounts: number, base: number) => (base > 0 ? (100 * accounts) / base : null);
+  const { steps } = report.current;
+  const previous = report.previous?.steps;
+  const rows: FunnelRow[] = steps.map((step, i) => ({
+    key: step.key,
+    label: FUNNEL_STEPS[step.key],
+    accounts: step.accounts,
+    ofSignUps: share(step.accounts, steps[0].accounts),
+    previousOfSignUps: previous ? share(previous[i].accounts, previous[0].accounts) : undefined,
+    fromBefore: i === 0 ? null : share(step.accounts, steps[i - 1].accounts),
+    medianSeconds: step.median_seconds,
+  }));
+  // The step that kept the smallest share of the accounts that reached the step before it.
+  const drop = rows
+    .slice(1)
+    .filter((row) => row.fromBefore !== null && row.fromBefore < 100)
+    .reduce<FunnelRow | null>(
+      (lowest, row) => (!lowest || row.fromBefore! < lowest.fromBefore! ? row : lowest),
+      null,
+    );
+  return { rows, drop };
+}
+
+/** How long a step took: 45 min, 5 h or 3 days. */
+export function formatWait(seconds: number | null) {
+  if (seconds === null) return "-";
+  if (seconds < 60) return "Under 1 min";
+  if (seconds < 3600) return `${Math.round(seconds / 60)} min`;
+  if (seconds < 48 * 3600) return `${Math.round(seconds / 3600)} h`;
+  return `${Math.round(seconds / 86400)} days`;
+}
+
 export const reportSchemas = {
   overview: overviewSchema,
   breakdown: breakdownSchema,
@@ -234,6 +313,7 @@ export const reportSchemas = {
   behavior: behaviorSchema,
   live: liveSchema,
   platform: platformSchema,
+  funnel: funnelSchema,
 } as const;
 
 // How figures read.

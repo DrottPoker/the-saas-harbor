@@ -8,6 +8,9 @@ import {
   formatDuration,
   formatPercent,
   formatRatio,
+  formatWait,
+  funnelRows,
+  funnelSchema,
   isTimeZone,
   labelIndices,
   languageName,
@@ -145,5 +148,68 @@ describe("analytics reports", () => {
     expect(labelIndices(3, 7)).toEqual([0, 1, 2]);
     expect(labelIndices(30, 4)).toEqual([0, 10, 19, 29]);
     expect(labelIndices(24, 7)).toEqual([0, 4, 8, 12, 15, 19, 23]);
+  });
+});
+
+describe("the funnel", () => {
+  const steps = (counts: number[]) =>
+    (["signed_up", "confirmed", "product", "verified", "ranked"] as const).map((key, i) => ({
+      key,
+      accounts: counts[i],
+      median_seconds: i === 0 || i === 4 ? null : 3600 * i,
+    }));
+  const report = funnelSchema.parse({
+    range: "30d",
+    from: "2026-08-29T00:00",
+    current: { visitors: 400, steps: steps([20, 16, 8, 4, 3]) },
+    previous: { visitors: 300, steps: steps([10, 8, 5, 1, 1]) },
+  });
+
+  it("reads each step as a share of the sign-ups and of the step before", () => {
+    const { rows } = funnelRows(report);
+    expect(rows.map((row) => [row.label, row.accounts, row.ofSignUps, row.fromBefore])).toEqual([
+      ["Signed up", 20, 100, null],
+      ["Confirmed their email", 16, 80, 80],
+      ["Listed a product", 8, 40, 50],
+      ["Verified revenue", 4, 20, 50],
+      ["On the leaderboard", 3, 15, 75],
+    ]);
+    expect(rows.map((row) => row.previousOfSignUps)).toEqual([100, 80, 50, 10, 10]);
+  });
+  it("names the step that kept the smallest share, the first of equals", () =>
+    expect(funnelRows(report).drop?.key).toBe("product"));
+  it("has nothing to compare without a period before, and no drop without one", () => {
+    const alone = { ...report, previous: null };
+    expect(funnelRows(alone).rows[1].previousOfSignUps).toBeUndefined();
+    const empty = funnelSchema.parse({
+      ...report,
+      current: { visitors: 0, steps: steps([0, 0, 0, 0, 0]) },
+    });
+    expect(funnelRows(empty).rows[1].ofSignUps).toBeNull();
+    expect(funnelRows(empty).drop).toBeNull();
+    const whole = funnelSchema.parse({
+      ...report,
+      current: { visitors: 5, steps: steps([2, 2, 2, 2, 2]) },
+    });
+    expect(funnelRows(whole).drop).toBeNull();
+  });
+  it("accepts only the five steps in order", () => {
+    const swapped = steps([1, 1, 1, 1, 1]);
+    [swapped[1], swapped[2]] = [swapped[2], swapped[1]];
+    expect(
+      funnelSchema.safeParse({ ...report, current: { visitors: 1, steps: swapped } }).success,
+    ).toBe(false);
+    expect(
+      funnelSchema.safeParse({ ...report, current: { visitors: 1, steps: swapped.slice(1) } })
+        .success,
+    ).toBe(false);
+  });
+  it("reads waits in minutes, hours or days", () => {
+    expect(formatWait(null)).toBe("-");
+    expect(formatWait(20)).toBe("Under 1 min");
+    expect(formatWait(45 * 60)).toBe("45 min");
+    expect(formatWait(5 * 3600)).toBe("5 h");
+    expect(formatWait(47 * 3600)).toBe("47 h");
+    expect(formatWait(3 * 86400)).toBe("3 days");
   });
 });

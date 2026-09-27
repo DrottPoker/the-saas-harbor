@@ -8,6 +8,16 @@ The first release includes accounts, email confirmation and recovery, public mak
 
 Makers can message each other privately (see Messages below), and report products, profiles and messages to the admins, who decide in an admin panel (see Reports and moderation below). They get emails about unread messages and about decisions (see Email notifications below). Other forms of connection, such as following or contact lists, are not implemented.
 
+## A funnel in the admin panel 2026-09-27
+
+At the owner's request, to see where new users stop: the Analytics page has a Funnel card, with its own period like the other cards. It follows the accounts created in the period and how far each has come since: Signed up, Confirmed their email, Listed a product, Verified revenue and On the leaderboard (MRR shared and verified in the last seven days, today). For each step it shows the number of accounts, the share of the sign-ups with its change from the period before in percentage points, the share of the step before, and the median time from sign-up. Above it stand the visitors of the period and sign-ups per 100 visitors, and below it the step with the largest drop, in words. Each step counts only the accounts that took every step before it, so the funnel always narrows, and recent accounts have had less time, which the card says. No new data is stored: it reads accounts, products and verification history as they are now, so deleted accounts and products are gone from it (migration `20260927150000_funnel.sql`).
+
+The same migration corrects the platform card's Ranked products and Verified MRR, ranked: the report runs as the database owner, which row security does not limit, so it counted hidden products and the products of suspended founders too. Both now count the leaderboard as visitors see it.
+
+pgTAP covers the steps and their nesting, the median times, the period an account belongs to, an empty period, admin rights, the periods and the ranked count without a hidden product. Unit tests cover the shares, the change, the largest drop and the times. The browser test reads the card's steps and runs its Axe scans in every period and both themes. The card was checked at 390 and 1440 px in both themes.
+
+Not built: linking a step to the accounts that stopped there, and which sources bring accounts that go on (accounts are never linked to visits, as the privacy policy promises).
+
 ## Milestone emails with a card to share 2026-09-27
 
 At the owner's request, to bring more founders to the site through what listed products share: when a product's MRR passes an amount, or the product reaches the top of the leaderboard, its founder gets one email with a card to share.
