@@ -452,7 +452,7 @@ test("demo products fill the lists without a rank, until real products take thei
 
 test("theme menu persists light and dark, and system follows the OS", async ({ page }) => {
   const light = "rgb(246, 245, 241)";
-  const dark = "rgb(27, 31, 36)";
+  const dark = "rgb(14, 21, 32)";
   await page.emulateMedia({ colorScheme: "light" });
   await page.goto("/");
   expect(await pageBackground(page)).toBe(light);
@@ -867,7 +867,7 @@ test("registration, email confirmation, profile and SaaS editing, storage, priva
   await expect(page).toHaveURL(/saved=/);
   // Shared MRR reaches the badge, and the editor gives the code to embed it in either theme.
   expect((await badge(`${productPath}/badge.svg`)).body).toContain(">$104</text>");
-  expect((await badge(`${productPath}/badge.svg?theme=dark`)).body).toContain('fill="#22272d"');
+  expect((await badge(`${productPath}/badge.svg?theme=dark`)).body).toContain('fill="#141c28"');
   // Shared MRR reaches the Markdown versions, llms.txt and the category page. The local database
   // may rank other products above this one, so the lists are checked where it fits on them.
   expect(await (await page.request.get(`${productPath}.md`)).text()).toContain(

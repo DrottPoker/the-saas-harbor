@@ -11,7 +11,7 @@ export function Panel({
   children: React.ReactNode;
 }) {
   return (
-    <section aria-labelledby={id} className="rounded-xl border bg-surface p-5">
+    <section aria-labelledby={id} className="rounded-xl border bg-surface p-5 shadow-card">
       <h2 id={id} className="font-semibold">
         {title}
       </h2>

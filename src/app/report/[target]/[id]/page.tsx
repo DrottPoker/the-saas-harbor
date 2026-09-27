@@ -106,7 +106,7 @@ export default async function Report({ params }: Props) {
         description="Tell us what is wrong. An admin reviews every report."
       />
       <div className="grid grid-cols-[minmax(0,1fr)] gap-8 pt-8">
-        <div className="rounded-xl border bg-surface p-5">{found.preview}</div>
+        <div className="rounded-xl border bg-surface p-5 shadow-card">{found.preview}</div>
         {found.own ? <Notice>{found.ownCopy}</Notice> : <ReportForm target={target} id={id} />}
       </div>
     </Shell>

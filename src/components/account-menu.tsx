@@ -33,7 +33,7 @@ export function AccountMenu({ account }: { account: AccountMenuData }) {
         <DropdownMenu.Content
           align="end"
           sideOffset={6}
-          className="z-50 w-64 max-w-[calc(100vw-1rem)] rounded-lg border bg-surface p-1 text-foreground shadow-lg shadow-black/10"
+          className="z-50 w-64 max-w-[calc(100vw-1rem)] rounded-lg border bg-surface p-1 text-foreground shadow-float"
         >
           <DropdownMenu.Label className="flex items-center gap-3 px-2 py-2">
             <PersonAvatar path={avatarPath} name={name} />

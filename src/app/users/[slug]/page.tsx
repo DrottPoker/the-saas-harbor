@@ -99,7 +99,7 @@ export default async function Maker({ params, searchParams }: Props) {
         )}
       </header>
 
-      <dl className="mt-10 grid divide-y rounded-xl border bg-surface sm:grid-cols-3 sm:divide-x sm:divide-y-0">
+      <dl className="mt-10 grid divide-y rounded-xl border bg-surface shadow-card sm:grid-cols-3 sm:divide-x sm:divide-y-0">
         <Metric label="Products" value={String(totals.products)} />
         <Metric
           label="Verified MRR"

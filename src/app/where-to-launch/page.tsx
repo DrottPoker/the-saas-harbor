@@ -32,7 +32,7 @@ function Place({ place }: { place: LaunchPlace }) {
   return (
     <article
       aria-labelledby={`place-${place.id}`}
-      className="rounded-xl border bg-surface p-5 leading-7"
+      className="rounded-xl border bg-surface p-5 leading-7 shadow-card"
     >
       <h3 id={`place-${place.id}`} className="font-semibold">
         {place.internal ? (

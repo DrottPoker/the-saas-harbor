@@ -8,6 +8,16 @@ The first release includes accounts, email confirmation and recovery, public mak
 
 Makers can message each other privately (see Messages below), and report products, profiles and messages to the admins, who decide in an admin panel (see Reports and moderation below). They get emails about unread messages and about decisions (see Email notifications below). Other forms of connection, such as following or contact lists, are not implemented.
 
+## Depth, a navy dark theme and the lighthouse beam 2026-09-27
+
+At the project owner's request, who found the interface clean but flat, the look gained depth and more of the logo, with the layout unchanged. The owner chose the direction from a clickable mockup, and asked that it look designed rather than generated, so it avoids the usual signs: no gradient text, glowing buttons, blurred blobs or glass cards.
+
+- Depth. Five shadow tokens in `globals.css` (`shadow-control`, `shadow-button`, `shadow-card`, `shadow-raised`, `shadow-float`) give fields, buttons, cards, hovered link cards and menus their own heights. Every card, table and panel on the site uses `shadow-card`; product and category cards rise to `shadow-raised` on hover. Light shadows are tinted with the logo's navy, and dark surfaces also catch a faint light edge on top.
+- Navy dark theme. The dark theme is the logo's deep navy (`#0e1520`, cards `#141c28`) instead of graphite. Every text color keeps or improves its contrast: body text 14.3:1, muted text 7.4:1 and faint text 5.6:1 on cards. The badge's dark theme follows the new surface.
+- The lighthouse beam. The home page's hero is crossed by the light of the lighthouse in the logo, a soft amber wedge that starts at the logo's lantern in the header, fades in once and sweeps slowly (`src/components/lighthouse-beam.tsx`). It is plain CSS with no JavaScript, lies behind the content, is faint enough to keep text contrast, and stays still with reduced motion.
+
+Checked at 390, 800, 1100 and 1440 px in both themes, without sideways scrolling. `npm run check` (330 unit tests), `npm run build` and `npm run test:e2e` (17 browser tests, with Axe scans in both themes) pass.
+
 ## More precise site statistics 2026-09-27
 
 At the project owner's request, after a review of how precise the statistics are, these were fixed (migration `20260927120000_analytics_precision.sql`, applied to production on 2026-09-27, before the code; the live code keeps working, since the new argument is optional and `track_engagement` stays):

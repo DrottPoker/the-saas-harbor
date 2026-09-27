@@ -319,7 +319,7 @@ function Connected({
   const provider = isProviderId(connection.provider) ? connection.provider : "stripe";
   return (
     <div className="grid gap-4">
-      <div className="rounded-xl border bg-surface">
+      <div className="rounded-xl border bg-surface shadow-card">
         <div className="flex items-start gap-3 p-5">
           {ok ? (
             <CircleCheck className="mt-0.5 size-5 shrink-0 text-success" />

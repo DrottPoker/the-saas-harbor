@@ -286,7 +286,10 @@ export function AuthForm({
   // Once the account is created, the form gives way to what to do next.
   if (sent)
     return (
-      <section aria-labelledby="sent-title" className="grid gap-4 rounded-xl border bg-surface p-6">
+      <section
+        aria-labelledby="sent-title"
+        className="grid gap-4 rounded-xl border bg-surface p-6 shadow-card"
+      >
         <MailCheck aria-hidden="true" className="size-8 text-brand" />
         <h2
           id="sent-title"
@@ -574,7 +577,7 @@ function TechStackField({ stack }: { stack: string[] }) {
           <details
             key={group}
             open={items.some((tech) => chosen.has(tech.slug))}
-            className="group rounded-lg border bg-surface"
+            className="group rounded-lg border bg-surface shadow-control"
           >
             <summary className="cursor-pointer rounded-lg px-4 py-2.5 text-sm font-medium select-none hover:bg-subtle">
               {group}

@@ -29,7 +29,7 @@ export function FeedbackForm({ from }: { from: string | null }) {
     return (
       <section
         aria-labelledby="feedback-sent"
-        className="grid gap-4 rounded-xl border bg-surface p-6"
+        className="grid gap-4 rounded-xl border bg-surface p-6 shadow-card"
       >
         <MessageSquareHeart aria-hidden="true" className="size-8 text-brand" />
         <h2
@@ -58,7 +58,7 @@ export function FeedbackForm({ from }: { from: string | null }) {
         {FEEDBACK_KINDS.map((kind) => (
           <label
             key={kind}
-            className="flex cursor-pointer items-start gap-3 rounded-lg border bg-surface px-4 py-3 transition-colors hover:border-border-strong has-checked:border-brand"
+            className="flex cursor-pointer items-start gap-3 rounded-lg border bg-surface px-4 py-3 shadow-control transition-colors hover:border-border-strong has-checked:border-brand"
           >
             <input
               type="radio"

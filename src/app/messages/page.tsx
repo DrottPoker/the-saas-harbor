@@ -34,7 +34,10 @@ export default async function Inbox() {
           Open a user&apos;s profile and choose Send message to start a conversation.
         </EmptyState>
       ) : (
-        <ul aria-label="Conversations" className="divide-y rounded-xl border bg-surface">
+        <ul
+          aria-label="Conversations"
+          className="divide-y rounded-xl border bg-surface shadow-card"
+        >
           {conversations.map((conversation) => {
             const unread = conversation.unread ?? 0;
             return (

@@ -41,7 +41,7 @@ function ViewCounts({ views }: { views: PageViewCounts }) {
     ["All time", views.all_time],
   ] as const;
   return (
-    <section aria-labelledby="page-views" className="rounded-xl border bg-surface p-5">
+    <section aria-labelledby="page-views" className="rounded-xl border bg-surface p-5 shadow-card">
       <h2 id="page-views" className="text-sm text-muted-foreground">
         Page views
       </h2>
@@ -166,7 +166,7 @@ export function ProductProfile({
         )}
       </header>
 
-      <dl className="mt-10 grid divide-y rounded-xl border bg-surface sm:grid-cols-3 sm:divide-x sm:divide-y-0">
+      <dl className="mt-10 grid divide-y rounded-xl border bg-surface shadow-card sm:grid-cols-3 sm:divide-x sm:divide-y-0">
         <Metric
           label="Monthly recurring revenue"
           value={item.mrr_cents == null ? null : formatUsd(item.mrr_cents)}
@@ -217,7 +217,7 @@ export function ProductProfile({
         </div>
         <aside className="grid content-start gap-4">
           {views && <ViewCounts views={views} />}
-          <div className="rounded-xl border bg-surface p-5">
+          <div className="rounded-xl border bg-surface p-5 shadow-card">
             <h2 className="text-sm text-muted-foreground">Founder</h2>
             {demo ? (
               <div className="mt-3 flex items-center gap-3">{maker}</div>
@@ -238,7 +238,7 @@ export function ProductProfile({
               />
             )}
           </div>
-          <dl className="grid gap-3 rounded-xl border bg-surface p-5 text-sm">
+          <dl className="grid gap-3 rounded-xl border bg-surface p-5 text-sm shadow-card">
             <div className="flex justify-between gap-4">
               <dt className="text-muted-foreground">Category</dt>
               <dd className="text-right">{item.category}</dd>

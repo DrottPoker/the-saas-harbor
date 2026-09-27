@@ -37,7 +37,7 @@ function Panel({
   children: React.ReactNode;
 }) {
   return (
-    <section aria-labelledby={id} className="rounded-xl border bg-surface p-5">
+    <section aria-labelledby={id} className="rounded-xl border bg-surface p-5 shadow-card">
       <h2 id={id} className="font-semibold">
         {title}
       </h2>
@@ -50,7 +50,7 @@ function Panel({
 const cell = "py-2 text-right tabular-nums";
 
 function Figures({ stats }: { stats: DirectoryStats }) {
-  const tile = "rounded-xl border bg-surface";
+  const tile = "rounded-xl border bg-surface shadow-card";
   return (
     <dl className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
       <Metric className={tile} label="Verified MRR, combined" value={formatUsd(stats.mrr_cents)} />
@@ -247,7 +247,7 @@ export default async function Stats() {
           <p className="mt-1 mb-4 text-sm text-muted-foreground">
             The largest change over 30 days among products with at least $1,000 MRR.
           </p>
-          <ol className="divide-y rounded-xl border bg-surface">
+          <ol className="divide-y rounded-xl border bg-surface shadow-card">
             {stats.fastest.map((item) => (
               <li key={item.slug}>
                 <Link

@@ -188,7 +188,7 @@ export function Conversation({
         role="log"
         aria-label={`Messages with ${other.name}`}
         tabIndex={0}
-        className="max-h-[min(60vh,40rem)] min-h-56 overflow-y-auto rounded-xl border bg-surface p-4 sm:p-5"
+        className="max-h-[min(60vh,40rem)] min-h-56 overflow-y-auto rounded-xl border bg-surface p-4 shadow-card sm:p-5"
       >
         {hasEarlier && (
           <div className="mb-4 text-center">

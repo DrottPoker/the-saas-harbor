@@ -16,7 +16,7 @@ export function FeedbackButton() {
   return (
     <Link
       href={feedbackHref(path)}
-      className="fixed right-5 bottom-5 z-30 hidden items-center gap-1.5 rounded-full border bg-surface px-3.5 py-2 text-sm font-medium text-foreground shadow-lg shadow-black/10 transition-colors hover:border-border-strong sm:inline-flex"
+      className="fixed right-5 bottom-5 z-30 hidden items-center gap-1.5 rounded-full border bg-surface px-3.5 py-2 text-sm font-medium text-foreground shadow-float transition-colors hover:border-border-strong sm:inline-flex"
     >
       <MessageSquarePlus aria-hidden="true" className="size-4 text-brand" />
       Feedback

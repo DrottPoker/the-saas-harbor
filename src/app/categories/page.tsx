@@ -30,7 +30,7 @@ export default async function Categories() {
             <li key={category}>
               <Link
                 href={`/categories/${categorySlug(category)}`}
-                className="flex h-full flex-col gap-1 rounded-xl border bg-surface p-5 transition-colors hover:border-border-strong"
+                className="flex h-full flex-col gap-1 rounded-xl border bg-surface p-5 shadow-card transition-[border-color,box-shadow] hover:border-border-strong hover:shadow-raised"
               >
                 <span className="font-medium">{category}</span>
                 <span className="text-sm text-muted-foreground">

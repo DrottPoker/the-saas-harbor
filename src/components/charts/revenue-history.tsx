@@ -15,7 +15,10 @@ export function RevenueHistory({
   const model = mrrChartModel(history);
   const months = history.length;
   return (
-    <section aria-labelledby="revenue-history" className="mt-10 rounded-xl border bg-surface p-5">
+    <section
+      aria-labelledby="revenue-history"
+      className="mt-10 rounded-xl border bg-surface p-5 shadow-card"
+    >
       <h2 id="revenue-history" className="font-semibold">
         {title}
       </h2>

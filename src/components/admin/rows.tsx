@@ -38,7 +38,7 @@ export function ReportList({
   showMaker?: boolean;
 }) {
   return (
-    <ul aria-label={label} className="divide-y rounded-xl border bg-surface">
+    <ul aria-label={label} className="divide-y rounded-xl border bg-surface shadow-card">
       {reports.map((report) => {
         const status = isReportStatus(report.status) ? report.status : "open";
         // A profile report's title is already the maker's name.
@@ -91,7 +91,7 @@ export function ProductList({
   showMaker?: boolean;
 }) {
   return (
-    <ul aria-label="Products" className="divide-y rounded-xl border bg-surface">
+    <ul aria-label="Products" className="divide-y rounded-xl border bg-surface shadow-card">
       {products.map((product) => {
         const reports = openReports.get(product.id) ?? 0;
         return (
@@ -138,7 +138,7 @@ export type AdminAccount = {
 
 export function AccountList({ accounts }: { accounts: AdminAccount[] }) {
   return (
-    <ul aria-label="Accounts" className="divide-y rounded-xl border bg-surface">
+    <ul aria-label="Accounts" className="divide-y rounded-xl border bg-surface shadow-card">
       {accounts.map((account) => (
         <li key={account.id}>
           <Link href={`/admin/accounts/${account.id}`} className={row}>
@@ -188,7 +188,7 @@ export function LogList({
   label?: string;
 }) {
   return (
-    <ol aria-label={label} className="divide-y rounded-xl border bg-surface">
+    <ol aria-label={label} className="divide-y rounded-xl border bg-surface shadow-card">
       {entries.map((entry) => (
         <li key={entry.id}>
           <Link href={entryHref(entry)} className={row}>

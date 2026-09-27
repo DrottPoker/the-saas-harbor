@@ -31,7 +31,7 @@ export function FeedbackList({
   label?: string;
 }) {
   return (
-    <ul aria-label={label} className="divide-y rounded-xl border bg-surface">
+    <ul aria-label={label} className="divide-y rounded-xl border bg-surface shadow-card">
       {items.map((item) => {
         const kind = isKind(item.kind) ? item.kind : "other";
         return (

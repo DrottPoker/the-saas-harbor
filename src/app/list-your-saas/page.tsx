@@ -142,7 +142,7 @@ export default async function ListYourSaas() {
       {actions}
       <section
         aria-labelledby="dofollow"
-        className="mt-8 rounded-xl border bg-surface p-5 leading-7"
+        className="mt-8 rounded-xl border bg-surface p-5 leading-7 shadow-card"
       >
         <h2 id="dofollow" className="font-semibold">
           A free dofollow link, earned with verified revenue

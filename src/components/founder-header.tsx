@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ArrowRight, Check } from "lucide-react";
 import { currentUser } from "@/lib/supabase/server";
+import { LighthouseBeam } from "./lighthouse-beam";
 import { Button } from "./ui/button";
 
 const gains = [
@@ -19,6 +20,7 @@ export async function FounderHeader() {
   const start = (await currentUser()) ? "/dashboard/saas/new" : "/auth?mode=signup";
   return (
     <div className="grid gap-6 pb-10 lg:grid-cols-[minmax(0,1fr)_20rem] lg:items-center lg:gap-12">
+      <LighthouseBeam />
       <div>
         <h1 className="text-4xl font-semibold tracking-tight sm:text-5xl">
           Get your SaaS seen.
@@ -42,7 +44,10 @@ export async function FounderHeader() {
           </Link>
         </div>
       </div>
-      <section aria-labelledby="listing-gains" className="rounded-xl border bg-surface p-5">
+      <section
+        aria-labelledby="listing-gains"
+        className="rounded-xl border bg-surface p-5 shadow-card"
+      >
         <h2 id="listing-gains" className="font-semibold">
           Free for every SaaS
         </h2>

@@ -91,7 +91,10 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
             Add a product to list it in the directory. Revenue stays private unless you share it.
           </EmptyState>
         ) : (
-          <ul aria-labelledby="products" className="divide-y rounded-xl border bg-surface">
+          <ul
+            aria-labelledby="products"
+            className="divide-y rounded-xl border bg-surface shadow-card"
+          >
             {products.map((product) => (
               <li key={product.id} className="flex items-center gap-4 p-4">
                 <ProductLogo path={product.logo_path} name={product.name} />

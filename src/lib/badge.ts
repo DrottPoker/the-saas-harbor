@@ -16,10 +16,10 @@ const THEMES: Record<BadgeTheme, Record<"surface" | "border" | "text" | "muted",
     muted: "#585c61",
   },
   dark: {
-    surface: "#22272d",
-    border: "#343a42",
-    text: "#e8eaed",
-    muted: "#a3a9b2",
+    surface: "#141c28",
+    border: "#263243",
+    text: "#e6ebf1",
+    muted: "#9eacbe",
   },
 };
 

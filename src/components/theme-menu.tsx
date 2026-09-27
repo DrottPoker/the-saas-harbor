@@ -54,7 +54,7 @@ export function ThemeMenu({ className }: { className?: string }) {
         <DropdownMenu.Content
           align="end"
           sideOffset={6}
-          className="z-50 min-w-36 rounded-lg border bg-surface p-1 text-foreground shadow-lg shadow-black/10"
+          className="z-50 min-w-36 rounded-lg border bg-surface p-1 text-foreground shadow-float"
         >
           <DropdownMenu.RadioGroup
             value={theme}

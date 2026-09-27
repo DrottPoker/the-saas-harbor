@@ -41,7 +41,7 @@ export function ProfileDetails({ profile }: { profile: Profile }) {
   ].filter((link) => link.href);
   if (!links.length) return null;
   return (
-    <dl className="grid gap-3 rounded-xl border bg-surface p-5 text-sm">
+    <dl className="grid gap-3 rounded-xl border bg-surface p-5 text-sm shadow-card">
       {links.map(({ label, href, text, Icon }) => (
         <div key={label} className="flex justify-between gap-4">
           <dt className="flex shrink-0 items-center gap-2 text-muted-foreground">
@@ -66,7 +66,7 @@ export function ProfileDetails({ profile }: { profile: Profile }) {
 
 export function RoleList({ roles }: { roles: ProfileExperience[] }) {
   return (
-    <ol className="divide-y rounded-xl border bg-surface">
+    <ol className="divide-y rounded-xl border bg-surface shadow-card">
       {sortRoles(roles).map((role) => (
         <li key={role.id} className="flex gap-4 p-5">
           <span
@@ -93,7 +93,7 @@ export function RoleList({ roles }: { roles: ProfileExperience[] }) {
 
 export function Skills({ skills }: { skills: string[] }) {
   return (
-    <section aria-labelledby="skills" className="rounded-xl border bg-surface p-5">
+    <section aria-labelledby="skills" className="rounded-xl border bg-surface p-5 shadow-card">
       <h2 id="skills" className="text-sm text-muted-foreground">
         Skills
       </h2>

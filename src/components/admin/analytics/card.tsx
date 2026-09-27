@@ -40,7 +40,7 @@ export function AnalyticsCard({
   return (
     <section
       aria-labelledby={`${id}-title`}
-      className={cn("min-w-0 rounded-xl border bg-surface p-4 sm:p-5", className)}
+      className={cn("min-w-0 rounded-xl border bg-surface p-4 shadow-card sm:p-5", className)}
     >
       <div className="flex flex-wrap items-start justify-between gap-3 sm:flex-nowrap">
         <div className="min-w-0">

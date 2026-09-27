@@ -22,7 +22,7 @@ export function ReportForm({ target, id }: { target: ReportTarget; id: string })
         {REASONS.map((reason) => (
           <label
             key={reason}
-            className="flex cursor-pointer items-start gap-3 rounded-lg border bg-surface px-4 py-3 transition-colors hover:border-border-strong has-checked:border-brand"
+            className="flex cursor-pointer items-start gap-3 rounded-lg border bg-surface px-4 py-3 shadow-control transition-colors hover:border-border-strong has-checked:border-brand"
           >
             <input
               type="radio"

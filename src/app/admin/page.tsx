@@ -6,7 +6,7 @@ import { EmptyState, PageHeader } from "@/components/shell";
 import { profileNames, requireAdmin } from "@/lib/admin";
 
 // Labels may wrap on phones, so the figures keep to the bottom and line up.
-const card = "flex flex-col justify-between rounded-xl border bg-surface";
+const card = "flex flex-col justify-between rounded-xl border bg-surface shadow-card";
 
 function SectionHeading({ id, title, href }: { id: string; title: string; href: string }) {
   return (

@@ -48,7 +48,10 @@ export default async function YourReports({
           To report a product, a profile or a message you received, choose Report next to it.
         </EmptyState>
       ) : (
-        <ul aria-label="Reports you sent" className="divide-y rounded-xl border bg-surface">
+        <ul
+          aria-label="Reports you sent"
+          className="divide-y rounded-xl border bg-surface shadow-card"
+        >
           {reports.map((report) => {
             const status = isReportStatus(report.status) ? report.status : "open";
             return (

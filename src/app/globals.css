@@ -16,7 +16,7 @@
   }
 }
 
-/* Light is warm paper rather than pure white; dark is graphite rather than black. */
+/* Light is warm paper rather than pure white; dark is the deep navy of the logo rather than black. */
 :root {
   color-scheme: light;
   --background: #f6f5f1;
@@ -50,22 +50,33 @@
   /* Chart marks, validated for lightness, chroma and contrast on --surface. */
   --chart-1: #008f82;
   --chart-muted: #80858b;
+  /*
+   * Elevation, tinted with the logo's navy. Controls sit just above the page, cards a step
+   * higher, a hovered link card higher still, and menus float.
+   */
+  --elevation-control: 0 1px 2px rgb(11 30 60 / 0.06);
+  --elevation-button: inset 0 1px 0 rgb(255 255 255 / 0.12), 0 1px 2px rgb(11 30 60 / 0.2);
+  --elevation-card: 0 1px 2px rgb(11 30 60 / 0.04), 0 3px 10px -4px rgb(11 30 60 / 0.08);
+  --elevation-raised: 0 2px 4px -1px rgb(11 30 60 / 0.06), 0 12px 28px -10px rgb(11 30 60 / 0.18);
+  --elevation-float: 0 4px 12px -4px rgb(11 30 60 / 0.12), 0 18px 40px -12px rgb(11 30 60 / 0.22);
+  /* The lighthouse beam on the home page, at its brightest. */
+  --beam: rgb(247 165 49 / 0.16);
 
   @variant dark {
     color-scheme: dark;
-    --background: #1b1f24;
-    --surface: #22272d;
-    --subtle: #272c33;
-    --muted: #2e343c;
-    --border: #343a42;
-    --border-strong: #464d57;
-    --foreground: #e8eaed;
-    --muted-foreground: #a3a9b2;
-    --faint-foreground: #8d939c;
-    --primary: #e8eaed;
-    --primary-foreground: #1b1f24;
+    --background: #0e1520;
+    --surface: #141c28;
+    --subtle: #18212e;
+    --muted: #1f2937;
+    --border: #263243;
+    --border-strong: #37465b;
+    --foreground: #e6ebf1;
+    --muted-foreground: #9eacbe;
+    --faint-foreground: #8595a9;
+    --primary: #e6ebf1;
+    --primary-foreground: #0e1520;
     --accent: #4cc2b6;
-    --accent-soft: #183a38;
+    --accent-soft: #11323a;
     --logo-ink: #dbe4ef;
     --logo-sea-from: #9dbbe0;
     --logo-sea-to: #3d8bd6;
@@ -73,15 +84,28 @@
     --logo-rise-to: #14909f;
     --logo-light: #f7b246;
     --destructive: #f07067;
-    --destructive-foreground: #1b1f24;
-    --success-bg: #14291f;
-    --success-border: #235238;
+    --destructive-foreground: #0e1520;
+    --success-bg: #10261f;
+    --success-border: #1f4a37;
     --success-foreground: #7fd1a3;
-    --error-bg: #2e1a19;
-    --error-border: #5c2c28;
+    --error-bg: #2a1a1e;
+    --error-border: #582c2e;
     --error-foreground: #f2a39b;
     --chart-1: #2fa89c;
-    --chart-muted: #737a84;
+    --chart-muted: #6f7e92;
+    /* Shadows barely show on navy, so raised surfaces also catch light on their top edge. */
+    --elevation-control: 0 1px 2px rgb(2 6 14 / 0.35);
+    --elevation-button: inset 0 1px 0 rgb(255 255 255 / 0.5), 0 1px 2px rgb(2 6 14 / 0.45);
+    --elevation-card:
+      inset 0 1px 0 rgb(255 255 255 / 0.04), 0 1px 2px rgb(2 6 14 / 0.4),
+      0 8px 24px -12px rgb(2 6 14 / 0.7);
+    --elevation-raised:
+      inset 0 1px 0 rgb(255 255 255 / 0.06), 0 2px 4px rgb(2 6 14 / 0.45),
+      0 16px 32px -12px rgb(2 6 14 / 0.85);
+    --elevation-float:
+      inset 0 1px 0 rgb(255 255 255 / 0.05), 0 4px 12px -2px rgb(2 6 14 / 0.5),
+      0 20px 44px -12px rgb(2 6 14 / 0.9);
+    --beam: rgb(247 178 70 / 0.17);
   }
 }
 
@@ -121,6 +145,30 @@
   --radius-md: 8px;
   --radius-lg: 10px;
   --radius-xl: 14px;
+  --shadow-control: var(--elevation-control);
+  --shadow-button: var(--elevation-button);
+  --shadow-card: var(--elevation-card);
+  --shadow-raised: var(--elevation-raised);
+  --shadow-float: var(--elevation-float);
+}
+
+/* The beam fades in once, then sweeps slowly. Reduced motion leaves it still, pointing ahead. */
+@theme {
+  --animate-beam: beam-on 2.4s ease-out 0.3s both, beam-sweep 22s ease-in-out 0s infinite alternate;
+
+  @keyframes beam-on {
+    from {
+      opacity: 0;
+    }
+  }
+  @keyframes beam-sweep {
+    from {
+      rotate: -9deg;
+    }
+    to {
+      rotate: 9deg;
+    }
+  }
 }
 
 @layer base {

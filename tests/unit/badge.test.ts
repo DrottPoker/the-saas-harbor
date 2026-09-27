@@ -18,7 +18,7 @@ describe("badge", () => {
 
   it("uses the theme's colors", () => {
     expect(badgeSvg({ mrrCents: 0, theme: "light" })).toContain('fill="#fbfaf8"');
-    expect(badgeSvg({ mrrCents: 0, theme: "dark" })).toContain('fill="#22272d"');
+    expect(badgeSvg({ mrrCents: 0, theme: "dark" })).toContain('fill="#141c28"');
     expect(badgeTheme("dark")).toBe("dark");
     expect(badgeTheme("<script>")).toBe("light");
     expect(badgeTheme(null)).toBe("light");

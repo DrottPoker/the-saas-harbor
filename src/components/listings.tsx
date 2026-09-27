@@ -45,7 +45,7 @@ export function Leaderboard({
 }) {
   const List = demo ? "ul" : "ol";
   return (
-    <div className="overflow-hidden rounded-xl border bg-surface">
+    <div className="overflow-hidden rounded-xl border bg-surface shadow-card">
       <div
         aria-hidden="true"
         className={cn(
@@ -164,7 +164,7 @@ export function ListingCard({ item, meta }: { item: Listing; meta: "maker" | "jo
   return (
     <Link
       href={href(item)}
-      className="flex flex-col rounded-xl border bg-surface p-5 transition-colors hover:border-border-strong"
+      className="flex flex-col rounded-xl border bg-surface p-5 shadow-card transition-[border-color,box-shadow] hover:border-border-strong hover:shadow-raised"
     >
       <div className="flex items-center gap-3">
         <Logo item={item} />
