@@ -8,6 +8,15 @@ The first release includes accounts, email confirmation and recovery, public mak
 
 Makers can message each other privately (see Messages below), and report products, profiles and messages to the admins, who decide in an admin panel (see Reports and moderation below). They get emails about unread messages and about decisions (see Email notifications below). Other forms of connection, such as following or contact lists, are not implemented.
 
+## Drawn sparklines and a grouped footer 2026-09-27
+
+At the owner's request, after the deployment of the look below was checked on the live site in both themes:
+
+- The leaderboard's sparklines draw themselves once when the page loads, row after row, and then show their end dot (`src/components/charts/sparkline.tsx`). Plain CSS on the line's dash offset; with reduced motion they are simply drawn.
+- The footer's links are grouped under Explore, Get listed and About, in three columns beside the logo on wide screens and two on phones, with the note on revenue verification below a line.
+
+Checked at 390 and 1100 px in both themes. `npm run check` (330 unit tests), `npm run build` and `npm run test:e2e` (17 browser tests, with Axe scans in both themes) pass.
+
 ## Depth, a navy dark theme and the lighthouse beam 2026-09-27
 
 At the project owner's request, who found the interface clean but flat, the look gained depth and more of the logo, with the layout unchanged. The owner chose the direction from a clickable mockup, and asked that it look designed rather than generated, so it avoids the usual signs: no gradient text, glowing buttons, blurred blobs or glass cards.

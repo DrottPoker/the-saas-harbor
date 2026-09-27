@@ -155,9 +155,27 @@
   --shadow-float: var(--elevation-float);
 }
 
-/* The beam fades in once, then sweeps slowly. Reduced motion leaves it still, pointing ahead. */
+/*
+ * The beam fades in once, then sweeps slowly. Sparklines draw once, row after row, and then show
+ * their end dot. Reduced motion shows all of them still: the beam pointing ahead, lines drawn.
+ */
 @theme {
   --animate-beam: beam-on 2.4s ease-out 0.3s both, beam-sweep 12s ease-in-out 0s infinite alternate;
+  /* Their delays are set on each line, since they differ by row. */
+  --animate-draw: draw 1.1s cubic-bezier(0.3, 0.7, 0.2, 1) both;
+  --animate-dot-in: dot-in 0.35s ease-out both;
+
+  @keyframes draw {
+    from {
+      stroke-dashoffset: 1.05;
+    }
+  }
+  @keyframes dot-in {
+    from {
+      opacity: 0;
+      scale: 0.4;
+    }
+  }
 
   @keyframes beam-on {
     from {

@@ -61,7 +61,7 @@ export function Leaderboard({
         <span className="text-right">{demo ? "Launched" : "Verified"}</span>
       </div>
       <List className="divide-y" aria-labelledby={labelledBy}>
-        {items.map((item) => {
+        {items.map((item, index) => {
           const history = parseHistory(item.mrr_history);
           return (
             <li key={item.id}>
@@ -105,7 +105,7 @@ export function Leaderboard({
                   {item.category}
                 </span>
                 <span className="hidden lg:block">
-                  {history && history.length > 1 && <Sparkline history={history} />}
+                  {history && history.length > 1 && <Sparkline history={history} order={index} />}
                 </span>
                 <span className="flex flex-col items-end">
                   <span className="sr-only">{item.demo ? "Demo MRR " : "MRR "}</span>
