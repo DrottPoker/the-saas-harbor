@@ -272,7 +272,7 @@ describe("restricted keys", () => {
 });
 
 describe("restricted key creation link", () => {
-  it("opens Stripe's form with the name and exactly the four read permissions", () => {
+  it("opens Stripe's form with the name and exactly the read permissions it needs", () => {
     const url = new URL(stripeKeyCreationUrl("The SaaS Harbor"));
     expect(url.origin + url.pathname).toBe("https://dashboard.stripe.com/apikeys/create");
     expect(url.searchParams.get("name")).toBe("The SaaS Harbor");
@@ -281,6 +281,9 @@ describe("restricted key creation link", () => {
       "rak_invoice_read",
       "rak_coupon_read",
       "rak_plan_read",
+      "rak_charge_read",
+      "rak_checkout_session_read",
+      "rak_dispute_read",
     ]);
   });
   it("asks for read access only", () =>

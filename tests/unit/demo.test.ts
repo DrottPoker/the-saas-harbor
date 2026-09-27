@@ -90,6 +90,29 @@ describe("filling a list", () => {
     );
     expect(rows.every((row) => row.mrr_cents != null)).toBe(true);
   });
+  it("fills a revenue ranking with products that share that figure, highest first", () => {
+    for (const sort of ["revenue-30d", "revenue-12m", "revenue-all"] as const) {
+      const column = {
+        "revenue-30d": "revenue_30d_cents",
+        "revenue-12m": "revenue_12m_cents",
+        "revenue-all": "revenue_total_cents",
+      }[sort] as "revenue_30d_cents" | "revenue_12m_cents" | "revenue_total_cents";
+      const figures = fill({ sort }).map((row) => row[column]);
+      expect(figures.length).toBeGreaterThan(0);
+      expect(figures.every((figure) => figure != null)).toBe(true);
+      expect(figures).toEqual([...figures].sort((a, b) => b! - a!));
+    }
+  });
+  it("has made-up revenue that grows with the window, from MRR and history", () => {
+    for (const row of all.filter((item) => item.revenue_30d_cents != null)) {
+      expect(row.revenue_30d_cents!).toBeGreaterThan(row.mrr_cents!);
+      expect(row.revenue_12m_cents!).toBeGreaterThan(row.revenue_30d_cents!);
+      expect(row.revenue_total_cents!).toBeGreaterThanOrEqual(row.revenue_12m_cents!);
+    }
+    expect(
+      all.filter((item) => item.mrr_cents == null).every((item) => item.revenue_30d_cents == null),
+    ).toBe(true);
+  });
   it("leaves only the room real products do not take", () => {
     expect(fill({ room: 3 })).toHaveLength(3);
     expect(fill({ room: 0 })).toEqual([]);

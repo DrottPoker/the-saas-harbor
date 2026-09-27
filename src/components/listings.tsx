@@ -3,6 +3,7 @@ import { BadgeCheck } from "lucide-react";
 import { parseHistory } from "@/lib/charts";
 import { PAGE_SIZE, type Listing } from "@/lib/data";
 import { formatDate, formatUsd } from "@/lib/domain";
+import { revenueWindow, type Ranking } from "@/lib/revenue-figures";
 import { cn } from "@/lib/utils";
 import { ProductLogo } from "./avatars";
 import { Badge } from "./badge";
@@ -30,20 +31,24 @@ function Logo({ item }: { item: Listing }) {
 }
 
 /**
- * The ranking. With `demo`, the same table lists demo products instead: unranked, under a Demo MRR
- * column, and with their launch date where real products show when they were verified. Their
- * pages carry the Demo tag.
+ * The ranking, by verified MRR or by revenue over a window. With `demo`, the same table lists demo
+ * products instead: unranked, under a Demo column, and with their launch date where real products
+ * show when they were verified. Their pages carry the Demo tag.
  */
 export function Leaderboard({
   items,
+  ranking = "mrr",
   demo = false,
   labelledBy,
 }: {
   items: Listing[];
+  ranking?: Ranking;
   demo?: boolean;
   labelledBy?: string;
 }) {
   const List = demo ? "ul" : "ol";
+  const span = revenueWindow(ranking);
+  const figureName = span ? `Revenue, ${span.short.toLowerCase()}` : "MRR";
   return (
     <div className="overflow-hidden rounded-xl border bg-surface shadow-card">
       <div
@@ -56,8 +61,10 @@ export function Leaderboard({
         <span>{demo ? "" : "#"}</span>
         <span>Product</span>
         <span>Category</span>
-        <span className="hidden lg:block">12 months</span>
-        <span className="text-right">{demo ? "Demo MRR" : "Verified MRR"}</span>
+        <span className="hidden lg:block">{span ? "MRR, 12 months" : "12 months"}</span>
+        <span className="text-right">
+          {demo ? `Demo ${span ? "revenue" : "MRR"}` : span ? figureName : "Verified MRR"}
+        </span>
         <span className="text-right">{demo ? "Launched" : "Verified"}</span>
       </div>
       <List className="divide-y" aria-labelledby={labelledBy}>
@@ -108,11 +115,11 @@ export function Leaderboard({
                   {history && history.length > 1 && <Sparkline history={history} order={index} />}
                 </span>
                 <span className="flex flex-col items-end">
-                  <span className="sr-only">{item.demo ? "Demo MRR " : "MRR "}</span>
+                  <span className="sr-only">{`${item.demo ? "Demo " : ""}${figureName} `}</span>
                   <span className="font-semibold tabular-nums">
-                    {formatUsd(item.mrr_cents ?? 0)}
+                    {formatUsd((span ? item[span.column] : item.mrr_cents) ?? 0)}
                   </span>
-                  {item.mrr_growth_pct != null && <Growth pct={item.mrr_growth_pct} />}
+                  {!span && item.mrr_growth_pct != null && <Growth pct={item.mrr_growth_pct} />}
                 </span>
                 <span className="hidden text-right text-sm text-muted-foreground tabular-nums md:block">
                   <span className="sr-only">{item.demo ? "Launched " : "Verified "}</span>

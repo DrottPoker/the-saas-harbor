@@ -32,6 +32,14 @@ export type ChargebeeLineItem = {
   entity_type: string;
   metered?: boolean | null;
 };
+/** A refundable credit note, which may have refunded part of an invoice in cash. */
+export type ChargebeeCreditNote = {
+  id: string;
+  reference_invoice_id?: string | null;
+  total: number;
+  amount_refunded?: number | null;
+  taxes?: { amount: number }[] | null;
+};
 export type ChargebeeLineDiscount = {
   line_item_id: string;
   discount_type: string;
@@ -45,6 +53,9 @@ export type ChargebeeInvoice = {
   price_type: string;
   currency_code: string;
   date: number;
+  total?: number | null;
+  tax?: number | null;
+  amount_paid?: number | null;
   line_items?: ChargebeeLineItem[] | null;
   line_item_discounts?: ChargebeeLineDiscount[] | null;
 };

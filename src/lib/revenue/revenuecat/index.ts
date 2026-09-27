@@ -5,6 +5,8 @@ import { ProviderRequestError } from "../http";
 import type { ProviderAdapter } from "../types";
 import { canRead, fetchChart, fetchChartOptions, otherAccessPaths } from "./client";
 import { parseRevenueCatKey } from "./key";
+import { dayOf, dayStart } from "../payments";
+import { chartPayments } from "./payments";
 import {
   chartCurrency,
   chartPoints,
@@ -17,6 +19,10 @@ import {
 
 const DAY_MS = 86_400_000;
 const date = (ms: number) => new Date(ms).toISOString().slice(0, 10);
+/** RevenueCat has no revenue from before it existed, so the charts are read from here on. */
+const FIRST_CHART_DAY = "2018-01-01";
+/** The days one chart request covers, reading the revenue chart back in time. */
+const CHART_DAYS = 366;
 
 /**
  * Refuses a key that reaches anything beyond charts, every time it is used. RevenueCat cannot
@@ -46,7 +52,8 @@ async function dailyChart(key: string, project: string, chart: string, from: num
 
 /**
  * RevenueCat: MRR and active subscriptions from its daily charts, with the MRR chart's last
- * thirteen months as the history. One project verifies one product.
+ * thirteen months as the history, and revenue from the daily revenue chart. One project verifies
+ * one product.
  */
 export const revenuecat: ProviderAdapter = {
   id: "revenuecat",
@@ -75,5 +82,31 @@ export const revenuecat: ProviderAdapter = {
       lines: history ? revenueCatServiceLines(points, currency, now) : null,
       historyNote: null,
     };
+  },
+  async payments(stored, _livemode, { since, before, maxPages }) {
+    const { account: project, key } = splitAccountKey(stored);
+    await requireChartsOnly(key, project);
+    const options = await fetchChartOptions(key, project, "revenue");
+    const resolution = dailyResolution(options);
+    if (!resolution)
+      throw new ProviderRequestError("RevenueCat does not offer the revenue chart by day.");
+    const first = Math.max(since, dayStart(FIRST_CHART_DAY));
+    let end = before ?? Math.floor(Date.now() / 1000);
+    const payments = [];
+    for (let requests = 0; end > first; requests++) {
+      if (requests >= maxPages) return { payments, complete: false, from: end };
+      const start = Math.max(first, end - CHART_DAYS * 86_400);
+      const chart = await fetchChart(key, project, "revenue", {
+        resolution,
+        start: dayOf(start),
+        end: dayOf(end - 1),
+        selectors: untaxedSelectors(options),
+      });
+      payments.push(
+        ...chartPayments(project, chartPoints(chart, /revenue/i), chartCurrency(chart), start, end),
+      );
+      end = start;
+    }
+    return { payments, complete: true };
   },
 };

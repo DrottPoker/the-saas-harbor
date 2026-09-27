@@ -2,11 +2,15 @@ import "server-only";
 import { historyWindowStart } from "../history";
 import { ProviderRequestError } from "../http";
 import type { ProviderAdapter } from "../types";
-import { fetchSubscriptions, fetchTransactions } from "./client";
+import { fetchBilledTransactions, fetchSubscriptions, fetchTransactions } from "./client";
 import { parsePaddleKey } from "./key";
 import { paddleMrr, paddleServiceLines, transactionWindowStart } from "./mrr";
+import { transactionPayments } from "./payments";
 
-/** Paddle Billing: MRR and history from subscriptions and their paid transactions. */
+/**
+ * Paddle Billing: MRR and history from subscriptions and their paid transactions, and revenue
+ * from every paid transaction.
+ */
 export const paddle: ProviderAdapter = {
   id: "paddle",
   parseKey: ({ key }, options) => parsePaddleKey(key, options),
@@ -36,5 +40,15 @@ export const paddle: ProviderAdapter = {
       lines: history && !historyNote ? paddleServiceLines(transactions) : null,
       historyNote,
     };
+  },
+  async payments(key, livemode, { since, before, maxPages }) {
+    const { items, complete } = await fetchBilledTransactions(
+      key,
+      livemode,
+      since,
+      before,
+      maxPages,
+    );
+    return { payments: transactionPayments(items), complete };
   },
 };

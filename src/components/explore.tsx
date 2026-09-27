@@ -1,8 +1,9 @@
 import Link from "next/link";
 import { Search } from "lucide-react";
-import { demoRows, listings, type Sort } from "@/lib/data";
+import { demoRows, listings, rankSort, type Sort } from "@/lib/data";
 import { categories } from "@/lib/domain";
 import { safePage } from "@/lib/params";
+import { rankingFrom, REVENUE_WINDOWS, revenueWindow, type Ranking } from "@/lib/revenue-figures";
 import { leaderboardJsonLd } from "@/lib/structured-data";
 import { techFromSlug } from "@/lib/tech";
 import { cn } from "@/lib/utils";
@@ -44,6 +45,24 @@ const intro: Record<Mode, { title: string; description: string; path: string; so
   },
 };
 
+// The leaderboard's rankings, in the order the choice shows them.
+const RANKINGS: { ranking: Ranking; label: string }[] = [
+  { ranking: "mrr", label: "MRR" },
+  ...REVENUE_WINDOWS.map(({ ranking, short }) => ({
+    ranking,
+    label: `Revenue, ${short.toLowerCase()}`,
+  })),
+];
+
+/** What the leaderboard says it ranks by. */
+function rankedDescription(ranking: Ranking) {
+  const revenue = revenueWindow(ranking);
+  if (!revenue) return intro.ranked.description;
+  const span =
+    revenue.ranking === "all" ? "since the first payment" : `in the last ${revenue.short}`;
+  return `Ranked by revenue ${span}, one-time purchases included, verified through each product's payment provider.`;
+}
+
 export async function Explore({
   mode,
   params,
@@ -52,6 +71,8 @@ export async function Explore({
   params: Record<string, string | undefined>;
 }) {
   const ranked = mode === "ranked";
+  const ranking = ranked ? rankingFrom(params.by) : "mrr";
+  const byRevenue = ranking !== "mrr";
   const category = categories.includes(params.category as (typeof categories)[number])
     ? params.category!
     : "";
@@ -59,7 +80,9 @@ export async function Explore({
   const tech = techFromSlug(params.tech ?? "");
   const page = safePage(params.page);
   const search = (params.q ?? "").slice(0, 80);
-  const { title, description, path, sort } = intro[mode];
+  const { title, path } = intro[mode];
+  const sort = ranked ? rankSort(ranking) : intro[mode].sort;
+  const description = ranked ? rankedDescription(ranking) : intro[mode].description;
   const { rows, count, error } = await listings({
     sort,
     category,
@@ -71,8 +94,9 @@ export async function Explore({
   const demo = error || tech ? [] : await demoRows({ sort, category, search, page, count });
   const meta = mode === "newest" ? "joined" : "maker";
   const filtered = !!category || !!search || !!tech || page > 1;
-  function url(nextCategory: string, nextPage = 1) {
+  function url(nextCategory: string, nextPage = 1, nextRanking = ranking) {
     const query = new URLSearchParams();
+    if (nextRanking !== "mrr") query.set("by", nextRanking);
     if (nextCategory) query.set("category", nextCategory);
     if (tech) query.set("tech", tech.slug);
     if (search) query.set("q", search);
@@ -94,6 +118,7 @@ export async function Explore({
         defaultValue={search}
         className={cn(fieldClasses, "h-9 pl-9")}
       />
+      {byRevenue && <input type="hidden" name="by" value={ranking} />}
       {category && <input type="hidden" name="category" value={category} />}
       {tech && <input type="hidden" name="tech" value={tech.slug} />}
     </form>
@@ -102,7 +127,9 @@ export async function Explore({
   return (
     <Shell>
       {/* Search engines and AI assistants read the plain leaderboard's first page as a list. */}
-      {ranked && !filtered && !!rows.length && <JsonLd data={leaderboardJsonLd(rows)} />}
+      {ranked && !byRevenue && !filtered && !!rows.length && (
+        <JsonLd data={leaderboardJsonLd(rows)} />
+      )}
       {ranked ? (
         <>
           <FounderHeader />
@@ -118,6 +145,21 @@ export async function Explore({
         <PageHeader title={title} description={description} actions={searchForm} />
       )}
 
+      {ranked && (
+        <nav aria-label="Rank by" className={cn(categoryChipRow, "items-center")}>
+          <span className="shrink-0 pr-1 text-[13px] text-muted-foreground">Rank by</span>
+          {RANKINGS.map((item) => (
+            <Link
+              key={item.ranking}
+              href={url(category, 1, item.ranking)}
+              aria-current={ranking === item.ranking ? "page" : undefined}
+              className={categoryChip}
+            >
+              {item.label}
+            </Link>
+          ))}
+        </nav>
+      )}
       <nav aria-label="Categories" className={categoryChipRow}>
         {["", ...categories].map((item) => (
           <Link
@@ -166,7 +208,7 @@ export async function Explore({
           </EmptyState>
         ) : (
           <EmptyState
-            title={ranked ? "No revenue shared yet" : "No products yet"}
+            title={ranked ? `No ${byRevenue ? "revenue" : "MRR"} shared yet` : "No products yet"}
             action={
               <Button asChild size="sm">
                 <Link href="/dashboard/saas/new">List your SaaS</Link>
@@ -174,7 +216,7 @@ export async function Explore({
             }
           >
             {ranked
-              ? "Products appear here once their founder connects a payment provider and shares verified MRR."
+              ? `Products appear here once their founder connects a payment provider and shares verified ${byRevenue ? "revenue" : "MRR"}.`
               : "Be the first to list a product."}
           </EmptyState>
         )
@@ -182,7 +224,11 @@ export async function Explore({
         <>
           {!!rows.length && (
             <>
-              {ranked ? <Leaderboard items={rows} /> : <ListingGrid items={rows} meta={meta} />}
+              {ranked ? (
+                <Leaderboard items={rows} ranking={ranking} />
+              ) : (
+                <ListingGrid items={rows} meta={meta} />
+              )}
               <ResultsFooter page={page} count={count} href={(next) => url(category, next)} />
             </>
           )}
@@ -193,7 +239,7 @@ export async function Explore({
                 Demo products
               </h2>
               {ranked ? (
-                <Leaderboard items={demo} demo labelledBy="demo-products" />
+                <Leaderboard items={demo} ranking={ranking} demo labelledBy="demo-products" />
               ) : (
                 <ListingGrid items={demo} meta={meta} />
               )}
@@ -204,9 +250,11 @@ export async function Explore({
 
       {ranked && (
         <p className="mt-8 max-w-2xl text-[13px] text-faint-foreground">
-          MRR is read from each product&apos;s subscriptions through a read-only key to its payment
-          provider and refreshed every hour. Figures older than seven days are not ranked. Equal
-          amounts are ordered by the date the product was listed.{" "}
+          {byRevenue
+            ? "Revenue is every payment a product received, one-time purchases included, after refunds and without tax. It is read through a read-only key to the product's payment provider and refreshed every day."
+            : "MRR is read from each product's subscriptions through a read-only key to its payment provider and refreshed every hour."}{" "}
+          Figures older than seven days are not ranked. Equal amounts are ordered by the date the
+          product was listed.{" "}
           <Link href="/about" className="underline underline-offset-2 hover:text-foreground">
             How the ranking works
           </Link>

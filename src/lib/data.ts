@@ -3,6 +3,7 @@ import { cache } from "react";
 import { publicClient } from "./supabase/server";
 import { demoFill, demoListings, type DemoDetails } from "./demo";
 import { categories, containsPattern } from "./domain";
+import type { Ranking } from "./revenue-figures";
 import { parseStats } from "./stats";
 import type { Database } from "./supabase/database.types";
 export type Listing = Database["public"]["Views"]["public_saas"]["Row"] & {
@@ -23,11 +24,25 @@ export type RevenueConnection = Omit<
 >;
 // Columns owners may read; the encrypted key is never granted.
 export const CONNECTION_COLUMNS =
-  "saas_id, owner_id, provider, key_hint, livemode, status, last_error, connected_at, last_synced_at";
+  "saas_id, owner_id, provider, key_hint, livemode, status, last_error, connected_at, last_synced_at, revenue_from, revenue_origin, revenue_read_at, revenue_checked_at, revenue_note";
 export const PAGE_SIZE = 12;
 /** PostgREST's answer to a page that starts past the last row. It means an empty page. */
 export const PAST_LAST_PAGE = "PGRST103";
-export type Sort = "rank" | "name" | "newest";
+/** A ranking (by MRR or by revenue over a window), A to Z, or newest first. */
+export type Sort = "rank" | "revenue-30d" | "revenue-12m" | "revenue-all" | "name" | "newest";
+
+/** The sort that ranks by a ranking. */
+export function rankSort(ranking: Ranking): Sort {
+  return ranking === "mrr" ? "rank" : `revenue-${ranking}`;
+}
+
+// The rank column of each revenue ranking in the revenue_leaderboard view.
+const REVENUE_RANKS = {
+  "revenue-30d": "rank_30d",
+  "revenue-12m": "rank_12m",
+  "revenue-all": "rank_total",
+} as const;
+
 export async function listings({
   sort = "newest",
   category = "",
@@ -54,9 +69,12 @@ export async function listings({
       count: 0,
       error: "Supabase is not configured. See the setup guide in README.md.",
     };
+  const revenueRank =
+    sort in REVENUE_RANKS ? REVENUE_RANKS[sort as keyof typeof REVENUE_RANKS] : null;
   let query = client
-    .from(sort === "rank" ? "leaderboard" : "public_saas")
+    .from(sort === "rank" ? "leaderboard" : revenueRank ? "revenue_leaderboard" : "public_saas")
     .select("*", { count: "exact" });
+  if (revenueRank) query = query.not(revenueRank, "is", null);
   if (categories.includes(category as (typeof categories)[number]))
     query = query.eq("category", category);
   const pattern = containsPattern(search);
@@ -67,14 +85,23 @@ export async function listings({
   query =
     sort === "rank"
       ? query.order("rank", { ascending: true })
-      : sort === "name"
-        ? query.order("name").order("id")
-        : query.order("created_at", { ascending: false }).order("id");
+      : revenueRank
+        ? query.order(revenueRank, { ascending: true })
+        : sort === "name"
+          ? query.order("name").order("id")
+          : query.order("created_at", { ascending: false }).order("id");
   const start = (page - 1) * PAGE_SIZE;
   const { data, error, count } = await query.range(start, start + PAGE_SIZE - 1);
   if (error?.code === PAST_LAST_PAGE) return { rows: [] as Listing[], count: 0, error: null };
+  // A revenue ranking's place is the rank of its window.
+  const rows = revenueRank
+    ? ((data ?? []) as Database["public"]["Views"]["revenue_leaderboard"]["Row"][]).map((row) => ({
+        ...row,
+        rank: row[revenueRank],
+      }))
+    : (data ?? []);
   return {
-    rows: (data ?? []) as Listing[],
+    rows: rows as Listing[],
     count: count ?? 0,
     error: error ? "Products could not be loaded. Please try again shortly." : null,
   };

@@ -629,7 +629,7 @@ export function SaasForm({
   settings?: SaasSettings | null;
 }) {
   const [state, action] = useEditorAction(saveSaas);
-  const shared = (key: "share_mrr" | "share_customers" | "share_launch") =>
+  const shared = (key: "share_mrr" | "share_revenue" | "share_customers" | "share_launch") =>
     state.values ? !!state.values[key] : settings?.[key];
   const stack = state.values ? (state.values.tech?.split("\n") ?? []) : (saas?.tech_stack ?? []);
   return (
@@ -712,13 +712,18 @@ export function SaasForm({
       </Section>
       <Section
         title="Visibility"
-        description="Revenue and customers come from your payment provider and are private unless you share them. Only shared, verified MRR is ranked."
+        description="Revenue and customers come from your payment provider and are private unless you share them. Shared MRR is ranked on the leaderboard, and shared revenue in the revenue rankings."
       >
         <div className="grid gap-2.5">
           <Share
             name="share_mrr"
             label="Show verified MRR publicly"
             checked={shared("share_mrr")}
+          />
+          <Share
+            name="share_revenue"
+            label="Show verified revenue for the last 30 days, 12 months and all time publicly"
+            checked={shared("share_revenue")}
           />
           <Share
             name="share_customers"

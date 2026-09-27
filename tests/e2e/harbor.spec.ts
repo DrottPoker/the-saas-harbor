@@ -4,6 +4,7 @@ import { createHash, randomBytes, randomUUID } from "node:crypto";
 import AxeBuilder from "@axe-core/playwright";
 import { DODO_KEYS, PADDLE_KEYS, POLAR_TOKENS } from "./fake-billing.mjs";
 import { CHARGEBEE, CREEM_KEYS, REVENUECAT, WHOP_KEYS } from "./fake-billing-extra.mjs";
+import { formatUsd } from "../../src/lib/domain";
 import { termsUpdated } from "../../src/lib/legal";
 
 const url = process.env.TEST_SUPABASE_URL!;
@@ -731,7 +732,7 @@ test("registration, email confirmation, profile and SaaS editing, storage, priva
     page.getByRole("link", { name: "Create a read-only key in Stripe" }),
   ).toHaveAttribute(
     "href",
-    "https://dashboard.stripe.com/apikeys/create?name=The+SaaS+Harbor&permissions%5B%5D=rak_subscription_read&permissions%5B%5D=rak_invoice_read&permissions%5B%5D=rak_coupon_read&permissions%5B%5D=rak_plan_read",
+    "https://dashboard.stripe.com/apikeys/create?name=The+SaaS+Harbor&permissions%5B%5D=rak_subscription_read&permissions%5B%5D=rak_invoice_read&permissions%5B%5D=rak_coupon_read&permissions%5B%5D=rak_plan_read&permissions%5B%5D=rak_charge_read&permissions%5B%5D=rak_checkout_session_read&permissions%5B%5D=rak_dispute_read",
   );
 
   // Revenue can only come from a read-only Stripe key, and the key is never echoed back.
@@ -2914,5 +2915,143 @@ test("founders verify their website's domain with a DNS record", async ({ page }
   await page.goto(productPath);
   await expect(domainStatus).toHaveText("Not verified");
   await page.request.delete(fakeDns);
+  expect(violations).toEqual([]);
+});
+
+// Revenue from every payment, one-time purchases included, beside MRR. Paddle's fixture account
+// has $30 a month without tax from 14 months ago, a $1,080 yearly charge 150 days ago, EUR 40
+// ($50) 45 days ago, a one-time $99 purchase 3 days ago and one refunded in full: $1,649 in all.
+test("founders share revenue from all payments, and visitors rank products by it", async ({
+  page,
+}) => {
+  const violations: string[] = [];
+  watchPolicy(page, violations);
+  const address = `harbor-revenue-${run}@example.test`;
+  const secret = randomBytes(24).toString("hex");
+  const { data: created, error } = await admin.auth.admin.createUser({
+    email: address,
+    password: secret,
+    email_confirm: true,
+  });
+  if (error || !created.user) throw new Error("Unable to create the revenue maker.");
+  userIds.push(created.user.id);
+  await login(page, address, secret);
+  await page.goto("/dashboard/saas/new");
+  const name = `Revenue ${run}`;
+  await fillProduct(page, name);
+  await page.getByRole("button", { name: "Add SaaS", exact: true }).click();
+  await expect(page).toHaveURL(/created=1/);
+  const id = new URL(page.url()).pathname.split("/").at(-1)!;
+  const revenue = page.locator("#revenue");
+
+  await revenue.getByRole("radio", { name: "Paddle" }).check();
+  await revenue.getByLabel("API key", { exact: true }).fill(PADDLE_KEYS.one);
+  await revenue.getByRole("button", { name: "Connect and verify" }).click();
+  await expect(revenue.getByText("Connected to Paddle")).toBeVisible();
+  // Payments are read after connecting, not while the founder waits.
+  await expect(revenue.getByText("Not read yet", { exact: true })).toHaveCount(3);
+  await expect(
+    revenue.getByText("Payments are read shortly after connecting, and then every day."),
+  ).toBeVisible();
+
+  // They are read right after, back to the first payment.
+  const DAY = 86_400_000;
+  const now = new Date();
+  const [year, month, date] = [now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()];
+  const days30 = Date.UTC(year, month, date) - 29 * DAY;
+  const lastDay = new Date(Date.UTC(year - 1, month + 1, 0)).getUTCDate();
+  const months12 = Date.UTC(year - 1, month, Math.min(date, lastDay)) + DAY;
+  const monthly = (from: number) =>
+    Array.from({ length: 14 }, (_, k) => Date.UTC(year, month - k, 1)).filter(
+      (start) => start >= from,
+    ).length * 3000;
+  const figures = {
+    days30: formatUsd(9900 + monthly(days30)),
+    months12: formatUsd(108_000 + 5000 + 9900 + monthly(months12)),
+    total: formatUsd(164_900),
+  };
+  await expect(async () => {
+    await page.reload();
+    await expect(revenue.getByText(figures.total, { exact: true })).toBeVisible({ timeout: 1000 });
+  }).toPass({ timeout: 30_000 });
+  await expect(revenue.getByText("Not read yet", { exact: true })).toHaveCount(0);
+  await expect(revenue.getByText(figures.days30, { exact: true })).toBeVisible();
+  await expect(revenue.getByText(figures.months12, { exact: true })).toBeVisible();
+  const { data: connection } = await admin
+    .from("revenue_connections")
+    .select("revenue_origin, revenue_note")
+    .eq("saas_id", id)
+    .single();
+  expect(connection).toEqual({ revenue_origin: true, revenue_note: null });
+
+  // Revenue stays private until the founder shares it.
+  const productPath = `/saas/revenue-${run}`;
+  await page.goto(productPath);
+  await expect(page.getByText("Revenue, last 30 days")).toHaveCount(0);
+  expect(await page.locator("main").innerText()).not.toContain(figures.total);
+  await page.goto(`/?by=all&q=${encodeURIComponent(name)}`);
+  await expect(page.getByRole("heading", { name: "No matching products" })).toBeVisible();
+
+  const share = "Show verified revenue for the last 30 days, 12 months and all time publicly";
+  await page.goto(`/dashboard/saas/${id}`);
+  await page.getByLabel(share).check();
+  await page.getByRole("button", { name: "Save changes" }).click();
+  await expect(page).toHaveURL(/saved=/);
+
+  // Shared revenue shows beside MRR, which stays private, with the verification.
+  await page.goto(productPath);
+  const figure = (label: string) =>
+    page.locator("dt", { hasText: label }).locator("xpath=following-sibling::dd[1]");
+  await expect(figure("Revenue, last 30 days")).toHaveText(figures.days30);
+  await expect(figure("Revenue, last 12 months")).toHaveText(figures.months12);
+  await expect(figure("Revenue, all time")).toHaveText(figures.total);
+  await expect(figure("Monthly recurring revenue")).toHaveText("Not shared");
+  await expect(page.getByText(/Verified with Paddle through a read-only key/)).toBeVisible();
+  const markdown = await (await page.request.get(`${productPath}.md`)).text();
+  expect(markdown).toContain(`- Revenue, all time: ${figures.total}`);
+  expect(markdown).toContain("- Monthly recurring revenue: not shared");
+
+  // The leaderboard ranks it by revenue, and not by MRR, which it does not share.
+  await page.goto(`/?by=all&q=${encodeURIComponent(name)}`);
+  await expect(page).toHaveTitle(/SaaS ranked by verified revenue, all time/);
+  await expect(
+    page
+      .getByRole("navigation", { name: "Rank by" })
+      .getByRole("link", { name: "Revenue, all time" }),
+  ).toHaveAttribute("aria-current", "page");
+  const row = page.getByRole("listitem").filter({ hasText: name });
+  await expect(row).toContainText(figures.total);
+  await expect(row).toContainText(/Rank \d+/);
+  for (const theme of ["dark", "light"] as const) {
+    await setThemeCookie(page, theme);
+    await page.reload();
+    await expectAccessible(page);
+  }
+  await page.goto(`/?q=${encodeURIComponent(name)}`);
+  await expect(page.getByRole("heading", { name: "No matching products" })).toBeVisible();
+  const { data: ranked } = await anon
+    .from("revenue_leaderboard")
+    .select("rank_30d, rank_12m, rank_total, revenue_total_cents, mrr_cents")
+    .eq("id", id)
+    .single();
+  expect(ranked).toMatchObject({ revenue_total_cents: 164_900, mrr_cents: null });
+  expect(ranked!.rank_total).toBeGreaterThan(0);
+
+  // Payments are read by the server alone.
+  const { error: denied } = await anon.rpc("revenue_read_state", {
+    p_saas_id: id,
+    p_from: "2026-01-01",
+  });
+  expect(denied?.code).toBe("42501");
+
+  // Unsharing takes the figures off the page and out of the rankings.
+  await page.goto(`/dashboard/saas/${id}`);
+  await page.getByLabel(share).uncheck();
+  await page.getByRole("button", { name: "Save changes" }).click();
+  await expect(page).toHaveURL(/saved=/);
+  await page.goto(productPath);
+  await expect(page.getByText("Revenue, last 30 days")).toHaveCount(0);
+  const { data: gone } = await anon.from("revenue_leaderboard").select("id").eq("id", id);
+  expect(gone).toEqual([]);
   expect(violations).toEqual([]);
 });

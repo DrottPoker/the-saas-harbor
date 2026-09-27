@@ -46,7 +46,7 @@ const guides: Record<ProviderId, Guide> = {
       href: stripeKeyCreationUrl(SITE_NAME),
       label: "Create a read-only key in Stripe",
     },
-    reads: "subscriptions and paid invoices",
+    reads: "subscriptions, invoices, charges, Checkout Sessions and disputes",
     steps: [
       "Stripe opens a new restricted key with its name and permissions filled in.",
       <>
@@ -61,7 +61,7 @@ const guides: Record<ProviderId, Guide> = {
       href: "https://vendors.paddle.com/authentication-v2",
       label: "Open Paddle's API keys",
     },
-    reads: "subscriptions and paid transactions",
+    reads: "subscriptions and transactions",
     steps: [
       <>Under Developer tools → Authentication, choose {strong("New API key")}.</>,
       <>
@@ -73,7 +73,7 @@ const guides: Record<ProviderId, Guide> = {
   },
   polar: {
     dashboard: { href: "https://polar.sh/dashboard", label: "Open the Polar dashboard" },
-    reads: "your organization, subscriptions and paid orders",
+    reads: "your organization, subscriptions and orders",
     steps: [
       <>In your organization&apos;s Settings → Developers, choose {strong("New Token")}.</>,
       <>
@@ -97,7 +97,7 @@ const guides: Record<ProviderId, Guide> = {
       href: "https://creem.io/dashboard/developers",
       label: "Open Creem's developer settings",
     },
-    reads: "products, subscriptions and paid transactions",
+    reads: "products, subscriptions and transactions",
     steps: [
       <>Under Developers → API keys, create a new key.</>,
       <>
@@ -109,7 +109,7 @@ const guides: Record<ProviderId, Guide> = {
   },
   chargebee: {
     dashboard: { href: "https://app.chargebee.com/login", label: "Sign in to Chargebee" },
-    reads: "subscriptions and paid invoices",
+    reads: "subscriptions, invoices and refunds",
     steps: [
       <>
         Open Settings → Configure Chargebee → API keys and events, and choose{" "}
@@ -124,7 +124,7 @@ const guides: Record<ProviderId, Guide> = {
   },
   whop: {
     dashboard: { href: "https://whop.com/dashboard", label: "Open the Whop dashboard" },
-    reads: "memberships, plans, promo codes and paid payments",
+    reads: "memberships, plans, promo codes and payments",
     steps: [
       <>
         Choose your business, open Developer → Account API keys and create a key with custom
@@ -139,7 +139,7 @@ const guides: Record<ProviderId, Guide> = {
   },
   revenuecat: {
     dashboard: { href: "https://app.revenuecat.com", label: "Open the RevenueCat dashboard" },
-    reads: "your project's MRR and active subscriptions charts",
+    reads: "your project's MRR, active subscriptions and revenue charts",
     steps: [
       <>
         In your project, open Project settings → API keys and choose {strong("New secret API key")}{" "}
@@ -297,6 +297,62 @@ function ConnectForm({
   );
 }
 
+/**
+ * Revenue besides MRR as the latest snapshot has it, with where reading payments stands: they are
+ * read about once a day, and a new connection's first read goes back to its first payment over a
+ * few runs.
+ */
+function RevenueFigures({
+  connection,
+  snapshot,
+}: {
+  connection: RevenueConnection;
+  snapshot: RevenueSnapshot | null;
+}) {
+  const figures = [
+    { label: "Last 30 days", cents: snapshot?.revenue_30d_cents ?? null },
+    { label: "Last 12 months", cents: snapshot?.revenue_12m_cents ?? null },
+    { label: "All time", cents: snapshot?.revenue_total_cents ?? null },
+  ];
+  const status = connection.revenue_note
+    ? connection.revenue_note
+    : !connection.revenue_read_at
+      ? "Payments are read shortly after connecting, and then every day."
+      : !connection.revenue_origin && connection.revenue_from
+        ? `Older payments are still being read. So far they go back to ${formatDate(connection.revenue_from)}.`
+        : null;
+  return (
+    <div className="border-t">
+      <p className="px-5 pt-4 text-sm font-medium">Revenue, one-time purchases included</p>
+      <dl className="grid grid-cols-3 divide-x">
+        {figures.map(({ label, cents }) => (
+          <div key={label} className="px-5 py-3">
+            <dt className="text-[13px] text-muted-foreground">{label}</dt>
+            <dd
+              className={cn(
+                "mt-1 tabular-nums",
+                cents == null ? "text-sm text-faint-foreground" : "text-lg font-semibold",
+              )}
+            >
+              {cents == null ? "Not read yet" : formatUsd(cents)}
+            </dd>
+          </div>
+        ))}
+      </dl>
+      {status && (
+        <p
+          className={cn(
+            "border-t px-5 py-3 text-[13px] [overflow-wrap:anywhere]",
+            connection.revenue_note ? "text-error" : "text-muted-foreground",
+          )}
+        >
+          {status}
+        </p>
+      )}
+    </div>
+  );
+}
+
 function Connected({
   saasId,
   connection,
@@ -366,6 +422,7 @@ function Connected({
             {noHistory[provider]}
           </p>
         )}
+        <RevenueFigures connection={connection} snapshot={snapshot} />
         <div className="flex flex-wrap items-center justify-end gap-2 border-t p-4">
           <form action={refresh}>
             <Submit className="h-8 px-3 text-[13px]">Refresh now</Submit>
@@ -415,7 +472,7 @@ export function RevenueConnectionSection({
     <div id="revenue" className="mt-2 scroll-mt-6 border-t pt-8">
       <Section
         title="Revenue verification"
-        description="MRR and paying customers are read from your payment provider with a read-only key and refreshed every hour. They cannot be typed in."
+        description="MRR and paying customers are read from your payment provider with a read-only key and refreshed every hour, and revenue from all its payments every day. They cannot be typed in."
       >
         {created && !connection && (
           <Notice tone="success">

@@ -1,5 +1,6 @@
 import "server-only";
 import { createHash } from "node:crypto";
+import { after } from "next/server";
 import { adminClient } from "@/lib/supabase/admin";
 import { providerName, type ProviderId } from "./catalog";
 import { decryptProviderKey, encryptProviderKey } from "./crypto";
@@ -8,6 +9,7 @@ import { usdRates } from "./fx";
 import { monthEnds, mrrAt } from "./history";
 import { toUsdCents } from "./money";
 import { adapter } from "./providers";
+import { readRevenue, type RevenueFigures } from "./revenue";
 import type { ParsedKey } from "./types";
 
 export type Verification = {
@@ -27,11 +29,17 @@ export type Verification = {
   historyNote: string | null;
   /** When the history was read, which a later verification may carry over; null when it was not. */
   historyAt: string | null;
+  /** Revenue from payments, read about once a day and carried over in between. */
+  revenue: RevenueFigures | null;
 };
 
 const DAY = 86_400;
 /** Hourly verifications carry over a history read less than this long ago. */
 const HISTORY_MAX_AGE_MS = 23 * 3_600_000;
+/** Revenue figures are carried over while the payments behind them are this recent. */
+const REVENUE_MAX_AGE_MS = 48 * 3_600_000;
+/** A founder's refresh reads payments again once this long has passed since the last read. */
+const REVENUE_REFRESH_MS = 3_600_000;
 /** A connection is verified again once this long has passed since its last check. */
 const SYNC_INTERVAL = "55 minutes";
 
@@ -100,6 +108,7 @@ export async function verifyRevenue(
     mrr30dAgoCents: points ? toUsdCents(points.before, rates) : null,
     historyNote: reading.historyNote,
     historyAt: history ? now.toISOString() : null,
+    revenue: null,
   };
 }
 
@@ -123,6 +132,10 @@ async function record(
     p_mrr_invoice_cents: verification.mrrInvoiceCents,
     p_mrr_30d_ago_cents: verification.mrr30dAgoCents,
     p_history_at: verification.historyAt,
+    p_revenue_30d_cents: verification.revenue?.days30Cents ?? null,
+    p_revenue_12m_cents: verification.revenue?.months12Cents ?? null,
+    p_revenue_total_cents: verification.revenue?.totalCents ?? null,
+    p_revenue_at: verification.revenue?.at ?? null,
   });
   if (error?.message.includes("already verify another SaaS"))
     throw new VerificationError(
@@ -131,12 +144,24 @@ async function record(
   if (error) throw new Error(`The verification could not be recorded: ${error.message}`);
 }
 
-// Connects a new or replacement key. The key is verified before anything is stored.
+// Connects a new or replacement key. The key is verified before anything is stored. Its payments
+// are read once the founder has the answer, marked checked first so a scheduled run skips them.
 export async function connectProvider(saasId: string, provider: ProviderId, key: ParsedKey) {
   const verification = await verifyRevenue(provider, key.key, key.livemode);
   await record(saasId, verification, {
     encrypted: encryptProviderKey(key.key, saasId),
     hint: key.hint,
+  });
+  after(async () => {
+    try {
+      await adminClient()
+        .from("revenue_connections")
+        .update({ revenue_checked_at: new Date().toISOString() })
+        .eq("saas_id", saasId);
+      await syncConnection(saasId, { scheduled: true, revenue: true });
+    } catch {
+      // Recorded on the connection; the scheduled run tries again.
+    }
   });
   return verification;
 }
@@ -147,6 +172,10 @@ type LatestSnapshot = {
   mrr_invoice_cents: number | null;
   mrr_30d_ago_cents: number | null;
   history_at: string | null;
+  revenue_30d_cents?: number | null;
+  revenue_12m_cents?: number | null;
+  revenue_total_cents?: number | null;
+  revenue_at?: string | null;
 };
 
 /**
@@ -165,10 +194,31 @@ export function historyToCarry(latest: LatestSnapshot | null, provider: string, 
   };
 }
 
+/**
+ * The revenue figures a verification that reads no payments carries over from the latest
+ * snapshot: ones read from the same provider less than two days ago, or null.
+ */
+export function revenueToCarry(
+  latest: LatestSnapshot | null,
+  provider: string,
+  now = Date.now(),
+): RevenueFigures | null {
+  if (!latest?.revenue_at || latest.provider !== provider) return null;
+  if (now - Date.parse(latest.revenue_at) >= REVENUE_MAX_AGE_MS) return null;
+  return {
+    days30Cents: latest.revenue_30d_cents ?? null,
+    months12Cents: latest.revenue_12m_cents ?? null,
+    totalCents: latest.revenue_total_cents ?? null,
+    at: latest.revenue_at,
+  };
+}
+
 async function latestSnapshot(saasId: string) {
   const { data, error } = await adminClient()
     .from("revenue_snapshots")
-    .select("provider, history, mrr_invoice_cents, mrr_30d_ago_cents, history_at")
+    .select(
+      "provider, history, mrr_invoice_cents, mrr_30d_ago_cents, history_at, revenue_30d_cents, revenue_12m_cents, revenue_total_cents, revenue_at",
+    )
     .eq("saas_id", saasId)
     .order("captured_at", { ascending: false })
     .order("seq", { ascending: false })
@@ -178,38 +228,67 @@ async function latestSnapshot(saasId: string) {
   return data;
 }
 
+/** Whether a founder's refresh reads payments too: when they were not read in the last hour. */
+export function refreshReadsPayments(checkedAt: string | null, now = Date.now()) {
+  return !checkedAt || now - Date.parse(checkedAt) >= REVENUE_REFRESH_MS;
+}
+
 // Re-verifies a stored connection. A scheduled run carries over a history read less than a day
-// ago; a maker's refresh reads everything. Failures are recorded on the connection for the owner.
-export async function syncConnection(saasId: string, { scheduled = false } = {}) {
+// ago; a maker's refresh reads everything. Payments are read when a scheduled run says they are
+// due, or on a maker's refresh when they were not read in the last hour; otherwise the latest
+// figures are carried over. Failures are recorded on the connection for the owner; a failed read
+// of payments leaves MRR verified.
+export async function syncConnection(
+  saasId: string,
+  { scheduled = false, revenue = false }: { scheduled?: boolean; revenue?: boolean } = {},
+) {
   const admin = adminClient();
   const { data: connection, error } = await admin
     .from("revenue_connections")
-    .select("provider, encrypted_key, livemode")
+    .select("provider, encrypted_key, livemode, revenue_checked_at, connected_at")
     .eq("saas_id", saasId)
     .maybeSingle();
   if (error) throw new VerificationError("The connection could not be loaded.");
   if (!connection) throw new VerificationError("No payment provider is connected.");
+  const readPayments = scheduled ? revenue : refreshReadsPayments(connection.revenue_checked_at);
+  // A scheduled run marked the payments checked when it claimed them; a refresh does so here.
+  if (readPayments && !scheduled)
+    await admin
+      .from("revenue_connections")
+      .update({ revenue_checked_at: new Date().toISOString() })
+      .eq("saas_id", saasId);
   try {
     const key = decryptProviderKey(connection.encrypted_key, saasId);
-    const carried = scheduled
-      ? historyToCarry(await latestSnapshot(saasId), connection.provider)
-      : null;
-    const read = await verifyRevenue(
-      connection.provider as ProviderId,
-      key,
-      connection.livemode,
-      new Date(),
-      { history: !carried },
-    );
+    const provider = connection.provider as ProviderId;
+    const latest = await latestSnapshot(saasId);
+    const carried = scheduled ? historyToCarry(latest, provider) : null;
+    const read = await verifyRevenue(provider, key, connection.livemode, new Date(), {
+      history: !carried,
+    });
     const verification = carried ? { ...read, ...carried } : read;
+    verification.revenue = revenueToCarry(latest, provider);
+    if (readPayments)
+      try {
+        verification.revenue = await readRevenue(saasId, provider, key, connection.livemode, {
+          allowTest: allowTestKeys(),
+        });
+      } catch (cause) {
+        await admin
+          .from("revenue_connections")
+          .update({ revenue_note: makerMessage(cause).slice(0, 500) })
+          .eq("saas_id", saasId)
+          .eq("connected_at", connection.connected_at);
+      }
     await record(saasId, verification);
     return verification;
   } catch (cause) {
+    // A failure is recorded on the connection that was read, not on a key connected since.
     const message = makerMessage(cause).slice(0, 500);
     await admin
       .from("revenue_connections")
       .update({ status: "error", last_error: message })
-      .eq("saas_id", saasId);
+      .eq("saas_id", saasId)
+      .eq("connected_at", connection.connected_at);
     throw new VerificationError(message, { cause });
   }
 }
@@ -228,7 +307,7 @@ export async function syncDueConnections({ budgetMs = 240_000 } = {}) {
   let ok = 0;
   let failed = 0;
   const claim = async () => {
-    const { data, error } = await adminClient().rpc("claim_due_connections", {
+    const { data, error } = await adminClient().rpc("claim_due_verifications", {
       p_limit: 1,
       p_interval: SYNC_INTERVAL,
     });
@@ -237,10 +316,10 @@ export async function syncDueConnections({ budgetMs = 240_000 } = {}) {
   };
   const worker = async () => {
     while (Date.now() - started < budgetMs) {
-      const id = await claim();
-      if (!id) return;
+      const due = await claim();
+      if (!due) return;
       try {
-        await syncConnection(id, { scheduled: true });
+        await syncConnection(due.saas_id, { scheduled: true, revenue: due.revenue_due });
         ok++;
       } catch {
         failed++;

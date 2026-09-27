@@ -12,6 +12,7 @@ import {
   type CreemSubscription,
   type CreemTransaction,
 } from "./mrr";
+import { transactionPayments } from "./payments";
 
 // A store sells a handful of products; these caps keep one run's lookups bounded.
 const MAX_PRODUCT_LOOKUPS = 100;
@@ -67,7 +68,10 @@ async function missingTaxTransactions(
   return transactions;
 }
 
-/** Creem: MRR from subscriptions and their products, and history from paid transactions. */
+/**
+ * Creem: MRR from subscriptions and their products, and history and revenue from paid
+ * transactions.
+ */
 export const creem: ProviderAdapter = {
   id: "creem",
   parseKey: ({ key }, options) => parseCreemKey(key, options),
@@ -93,5 +97,10 @@ export const creem: ProviderAdapter = {
       lines: transactions ? creemServiceLines(transactions, subscriptions, products) : null,
       historyNote,
     };
+  },
+  // The transaction list has no date filter and no documented order, so it is read whole.
+  async payments(key, livemode, { since, before }) {
+    const transactions = await fetchTransactions(key, livemode);
+    return { payments: transactionPayments(transactions, since, before), complete: true };
   },
 };

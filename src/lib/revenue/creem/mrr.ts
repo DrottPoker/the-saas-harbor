@@ -26,6 +26,7 @@ export type CreemTransaction = {
   amount_paid?: number | null;
   discount_amount?: number | null;
   tax_amount?: number | null;
+  refunded_amount?: number | null;
   currency: string;
   type: string;
   status: string;
@@ -75,7 +76,7 @@ export function cycleMonths(product: CreemProduct) {
 }
 
 /** Creem's timestamps, in seconds or milliseconds, as seconds. */
-function unix(value: number | null | undefined) {
+export function unix(value: number | null | undefined) {
   if (!value) return null;
   return value > 1e11 ? Math.floor(value / 1000) : value;
 }

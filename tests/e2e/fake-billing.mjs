@@ -16,6 +16,11 @@
 // Dodo Payments test key "one": $15 a month, $120 a year, and a past-due EUR 24 plan with tax
 // included, whose latest payment shows EUR 4 of tax ($25). An on-demand subscription and one in its
 // trial are not counted: MRR $50 from 3 customers, without history.
+//
+// For revenue, every transaction, order or payment counts after refunds and without tax. Paddle
+// adds a one-time purchase refunded in full ($0) to the $99 one; Polar a one-time purchase of $15
+// and one refunded in full; Dodo a one-time purchase of $30 with $5 of tax ($25), one refunded in
+// full and one lost in a dispute ($0 each).
 
 const DAY = 86_400_000;
 const iso = (ms) => new Date(ms).toISOString();
@@ -91,7 +96,10 @@ function paddleSubscriptions() {
   ];
 }
 
-function paddleTransaction(id, subscription, currency, price, period, totals) {
+function paddleTransaction(id, subscription, currency, price, period, totals, adjusted) {
+  const strings = (entries) =>
+    Object.fromEntries(Object.entries(entries).map(([k, v]) => [k, String(v)]));
+  const whole = { ...totals, grand_total: totals.total, grand_total_tax: totals.tax };
   return {
     id,
     status: "completed",
@@ -106,9 +114,11 @@ function paddleTransaction(id, subscription, currency, price, period, totals) {
           price_id: price.id,
           quantity: 1,
           proration: null,
-          totals: Object.fromEntries(Object.entries(totals).map(([k, v]) => [k, String(v)])),
+          totals: strings(totals),
         },
       ],
+      totals: strings(whole),
+      adjusted_totals: strings(adjusted ?? { total: totals.total, tax: totals.tax }),
     },
   };
 }
@@ -150,6 +160,16 @@ function paddleTransactions() {
       [now - 3 * DAY, now - 3 * DAY],
       { subtotal: 9900, discount: 0, tax: 0, total: 9900 },
     ),
+    // A one-off purchase refunded in full, which its adjusted totals show.
+    paddleTransaction(
+      "txn_refunded",
+      null,
+      "USD",
+      paddlePrice("pri_once", 5000, "USD", null),
+      [now - 8 * DAY, now - 8 * DAY],
+      { subtotal: 5000, discount: 0, tax: 1000, total: 6000 },
+      { total: 0, tax: 0 },
+    ),
   );
   return transactions;
 }
@@ -190,7 +210,12 @@ function paddle(url, request, send) {
       return error(400, "invalid_field", "Only paid transactions are expected.");
     const since = Date.parse(url.searchParams.get("billed_at[GTE]") ?? "");
     if (Number.isNaN(since)) return error(400, "invalid_time_query_parameter", "billed_at");
-    return page(paddleTransactions().filter((t) => Date.parse(t.billed_at) >= since));
+    const before = Date.parse(url.searchParams.get("billed_at[LT]") ?? "") || Infinity;
+    const billed = (t) => Date.parse(t.billed_at);
+    const listed = paddleTransactions().filter((t) => billed(t) >= since && billed(t) < before);
+    if (url.searchParams.get("order_by") === "billed_at[DESC]")
+      listed.sort((a, b) => billed(b) - billed(a));
+    return page(listed);
   }
   return error(404, "not_found", `Unknown path ${path}`);
 }
@@ -230,10 +255,10 @@ function polarSubscriptions() {
   ];
 }
 
-function polarOrder(id, subscription, currency, reason, created, amounts, items) {
+function polarOrder(id, subscription, currency, reason, created, amounts, items, status = "paid") {
   return {
     id,
-    status: "paid",
+    status,
     billing_reason: reason,
     subscription_id: subscription,
     currency,
@@ -334,6 +359,45 @@ function polarOrders() {
         },
       ],
     ),
+    // One-time purchases: one paid, one refunded in full.
+    {
+      ...polarOrder(
+        "ord_once",
+        null,
+        "usd",
+        "purchase",
+        now - 10 * DAY,
+        {
+          subtotal_amount: 1500,
+          discount_amount: 0,
+          net_amount: 1500,
+          tax_amount: 300,
+          total_amount: 1800,
+        },
+        [],
+      ),
+      product: { recurring_interval: null, recurring_interval_count: null },
+    },
+    {
+      ...polarOrder(
+        "ord_refunded",
+        null,
+        "usd",
+        "purchase",
+        now - 8 * DAY,
+        {
+          subtotal_amount: 800,
+          discount_amount: 0,
+          net_amount: 800,
+          tax_amount: 0,
+          total_amount: 800,
+          refunded_amount: 800,
+        },
+        [],
+        "refunded",
+      ),
+      product: { recurring_interval: null, recurring_interval_count: null },
+    },
   );
   return orders;
 }
@@ -357,12 +421,22 @@ function polar(url, request, send) {
   if (path === "/v1/subscriptions/")
     return page(polarSubscriptions().filter((s) => statuses.includes(s.status)));
   if (path === "/v1/orders/") {
-    if (url.searchParams.get("product_billing_type") !== "recurring")
+    const type = url.searchParams.get("product_billing_type");
+    if (type !== null && type !== "recurring")
       return send(422, { error: "RequestValidationError", detail: [] });
     const after = Date.parse(url.searchParams.get("created_after") ?? "");
-    return page(
-      polarOrders().filter((o) => statuses.includes(o.status) && Date.parse(o.created_at) > after),
+    const before = Date.parse(url.searchParams.get("created_before") ?? "") || Infinity;
+    const created = (o) => Date.parse(o.created_at);
+    const orders = polarOrders().filter(
+      (o) =>
+        statuses.includes(o.status) &&
+        created(o) > after &&
+        created(o) < before &&
+        (type === null || o.product?.recurring_interval),
     );
+    if (url.searchParams.get("sorting") === "-created_at")
+      orders.sort((a, b) => created(b) - created(a));
+    return page(orders);
   }
   return send(404, { error: "ResourceNotFound", detail: `Unknown path ${path}` });
 }
@@ -401,6 +475,43 @@ function dodoSubscriptions() {
   ];
 }
 
+// Successful payments, as the list gives them: without tax, refunds or disputes.
+function dodoPayments() {
+  const now = Date.now();
+  const payment = (id, created, total, currency, extra = {}) => ({
+    payment_id: id,
+    total_amount: total,
+    currency,
+    created_at: iso(created),
+    status: "succeeded",
+    refund_status: null,
+    dispute_status: null,
+    ...extra,
+  });
+  return [
+    ...monthStarts(6).map(([start], k) => payment(`pay_monthly_${k}`, start, 1500, "USD")),
+    payment("pay_yearly", now - 60 * DAY, 12000, "USD"),
+    payment("pay_eur", now - 20 * DAY, 2400, "EUR"),
+    payment("pay_once", now - 4 * DAY, 3000, "USD"),
+    payment("pay_refunded", now - 9 * DAY, 1000, "USD", { refund_status: "full" }),
+    payment("pay_disputed", now - 11 * DAY, 2000, "USD", { dispute_status: "dispute_lost" }),
+  ];
+}
+
+// A payment read alone, with its tax, refunds and disputes.
+function dodoPayment(id) {
+  const payment = dodoPayments().find((p) => p.payment_id === id);
+  if (!payment) return null;
+  const tax = { pay_eur: 400, pay_once: 500 }[id] ?? 0;
+  const refunds =
+    id === "pay_refunded"
+      ? [{ refund_id: "ref_1", amount: 1000, status: "succeeded", currency: "USD" }]
+      : [];
+  const disputes =
+    id === "pay_disputed" ? [{ dispute_id: "dsp_1", dispute_status: "dispute_lost" }] : [];
+  return { ...payment, tax, refunds, disputes };
+}
+
 function dodo(url, request, send) {
   const [, , env, ...rest] = url.pathname.split("/");
   const path = `/${rest.join("/")}`;
@@ -419,15 +530,28 @@ function dodo(url, request, send) {
     });
   }
   if (path === "/payments") {
-    const payments =
-      url.searchParams.get("subscription_id") === "sub_dodo_eur" &&
-      url.searchParams.get("status") === "succeeded"
-        ? [{ payment_id: "pay_eur", total_amount: 2400, currency: "EUR" }]
-        : [];
-    return send(200, { items: payments });
+    if (url.searchParams.get("status") !== "succeeded") return send(200, { items: [] });
+    if (url.searchParams.has("subscription_id"))
+      return send(200, {
+        items:
+          url.searchParams.get("subscription_id") === "sub_dodo_eur"
+            ? [{ payment_id: "pay_eur", total_amount: 2400, currency: "EUR" }]
+            : [],
+      });
+    // A page shorter than asked for is the last one.
+    const since = Date.parse(url.searchParams.get("created_at_gte") ?? "") || 0;
+    const until = Date.parse(url.searchParams.get("created_at_lte") ?? "") || Infinity;
+    const size = Math.min(Number(url.searchParams.get("page_size") ?? 10), 100);
+    const pageNumber = Number(url.searchParams.get("page_number") ?? 0);
+    const listed = dodoPayments().filter((p) => {
+      const created = Date.parse(p.created_at);
+      return created >= since && created <= until;
+    });
+    return send(200, { items: listed.slice(pageNumber * size, (pageNumber + 1) * size) });
   }
-  if (path === "/payments/pay_eur")
-    return send(200, { payment_id: "pay_eur", total_amount: 2400, tax: 400, currency: "EUR" });
+  const paymentId = path.match(/^\/payments\/([^/]+)$/)?.[1];
+  const found = paymentId && dodoPayment(paymentId);
+  if (found) return send(200, found);
   return send(404, { code: "NOT_FOUND", message: `Unknown path ${path}` });
 }
 

@@ -56,7 +56,7 @@ export function listMetadata(
     ...pageMetadata({
       title: page > 1 ? `${list.laterTitle ?? list.title}, page ${page}` : list.title,
       description: list.description,
-      path: page > 1 ? `${list.path}?page=${page}` : list.path,
+      path: page > 1 ? `${list.path}${list.path.includes("?") ? "&" : "?"}page=${page}` : list.path,
     }),
     ...(search && { robots: { index: false, follow: true } }),
   };

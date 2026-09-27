@@ -4,7 +4,15 @@ import { spawn, type ChildProcess } from "node:child_process";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { DODO_KEYS, PADDLE_KEYS, POLAR_TOKENS } from "../e2e/fake-billing.mjs";
 import { CHARGEBEE, CREEM_KEYS, REVENUECAT, WHOP_KEYS } from "../e2e/fake-billing-extra.mjs";
-import { historyToCarry, verifyRevenue } from "../../src/lib/revenue/sync";
+import { adapter } from "../../src/lib/revenue/providers";
+import {
+  historyToCarry,
+  refreshReadsPayments,
+  revenueToCarry,
+  verifyRevenue,
+} from "../../src/lib/revenue/sync";
+import type { ProviderId } from "../../src/lib/revenue/catalog";
+import type { StoredPayment } from "../../src/lib/revenue/types";
 
 const PORT = 3912;
 const base = `http://127.0.0.1:${PORT}`;
@@ -339,5 +347,211 @@ describe("hourly verification", () => {
     expect(historyToCarry(latest, "polar", now)).toBeNull();
     expect(historyToCarry({ ...latest, history_at: null }, "paddle", now)).toBeNull();
     expect(historyToCarry(null, "paddle", now)).toBeNull();
+  });
+});
+
+describe("revenue carried over", () => {
+  it("carries over figures from the same provider read less than two days ago", () => {
+    const now = Date.parse("2026-09-25T12:00:00Z");
+    const latest = {
+      provider: "paddle",
+      history: null,
+      mrr_invoice_cents: null,
+      mrr_30d_ago_cents: null,
+      history_at: null,
+      revenue_30d_cents: 1000,
+      revenue_12m_cents: null,
+      revenue_total_cents: null,
+      revenue_at: "2026-09-24T00:00:00Z",
+    };
+    expect(revenueToCarry(latest, "paddle", now)).toEqual({
+      days30Cents: 1000,
+      months12Cents: null,
+      totalCents: null,
+      at: "2026-09-24T00:00:00Z",
+    });
+    expect(revenueToCarry({ ...latest, revenue_at: "2026-09-23T11:00:00Z" }, "paddle", now)).toBe(
+      null,
+    );
+    expect(revenueToCarry(latest, "stripe", now)).toBeNull();
+    expect(revenueToCarry({ ...latest, revenue_at: null }, "paddle", now)).toBeNull();
+  });
+});
+
+describe("a founder's refresh", () => {
+  it("reads payments when they were not read in the last hour", () => {
+    const now = Date.parse("2026-09-25T12:00:00Z");
+    expect(refreshReadsPayments(null, now)).toBe(true);
+    expect(refreshReadsPayments("2026-09-25T10:59:00Z", now)).toBe(true);
+    expect(refreshReadsPayments("2026-09-25T11:30:00Z", now)).toBe(false);
+  });
+});
+
+describe("payments", () => {
+  const DAY = 86_400;
+  // The last six months, as every read lists them again.
+  async function recent(
+    provider: ProviderId,
+    key: string,
+    {
+      livemode = false,
+      maxPages = 200,
+      stored = () => null,
+    }: {
+      livemode?: boolean;
+      maxPages?: number;
+      stored?: (id: string) => StoredPayment | null;
+    } = {},
+  ) {
+    const now = Math.floor(Date.now() / 1000);
+    const read = await adapter(provider).payments(key, livemode, {
+      allowTest: true,
+      since: now - 183 * DAY,
+      before: null,
+      maxPages,
+      stored,
+    });
+    const values = Object.fromEntries(
+      read.payments.map((payment) => [
+        payment.id,
+        payment.value && {
+          currency: payment.value.currency.toLowerCase(),
+          amount: Math.round(payment.value.amount),
+        },
+      ]),
+    );
+    return { ...read, values };
+  }
+  const usd = (amount: number) => ({ currency: "usd", amount });
+  const eur = (amount: number) => ({ currency: "eur", amount });
+
+  it("reads Stripe charges after refunds and lost disputes, without tax", async () => {
+    const { complete, values } = await recent("stripe", "rk_test_harborfixture0001");
+    expect(complete).toBe(true);
+    expect(values).toMatchObject({
+      ch_monthly_0: usd(2900),
+      ch_yearly: usd(35000),
+      ch_eur: eur(4000),
+      ch_ebook: usd(1000),
+      ch_refunded: usd(0),
+      ch_partial: usd(2000),
+      ch_disputed: usd(0),
+    });
+    expect(values).not.toHaveProperty("ch_failed");
+    expect(values).not.toHaveProperty("ch_auth");
+  });
+
+  it("leaves unchanged Stripe charges unvalued and keeps a changed one's share of tax", async () => {
+    const stored = new Map([
+      ["ch_ebook", { fingerprint: "1200:0:0", amount: 1000 }],
+      // Stored while EUR 12 of it was refunded, a refund Stripe has since reversed.
+      ["ch_eur", { fingerprint: "4800:1200:0", amount: 3000 }],
+    ]);
+    const { values } = await recent("stripe", "rk_test_harborfixture0001", {
+      stored: (id) => stored.get(id) ?? null,
+    });
+    expect(values.ch_ebook).toBeNull();
+    expect(values.ch_eur).toEqual(eur(4000));
+  });
+
+  it("names the Stripe permission revenue needs", async () => {
+    await expect(recent("stripe", "rk_test_harborfixture0002")).rejects.toThrow(
+      "Revenue beyond MRR needs the Charges: Read permission on the restricted key.",
+    );
+  });
+
+  it("reads Paddle transactions after adjustments, without tax", async () => {
+    const { complete, values } = await recent("paddle", PADDLE_KEYS.one);
+    expect(complete).toBe(true);
+    expect(values).toMatchObject({
+      txn_monthly_0: usd(3000),
+      txn_yearly: usd(108000),
+      txn_eur: eur(4000),
+      txn_one_off: usd(9900),
+      txn_refunded: usd(0),
+    });
+  });
+
+  it("reads Polar orders, one-time purchases included", async () => {
+    const { complete, values } = await recent("polar", POLAR_TOKENS.one);
+    expect(complete).toBe(true);
+    expect(values).toMatchObject({
+      ord_monthly_0: usd(2500),
+      ord_yearly: usd(24000),
+      ord_eur: eur(1000),
+      ord_once: usd(1500),
+      ord_refunded: usd(0),
+    });
+  });
+
+  it("reads Dodo payments one at a time, and only those new or changed", async () => {
+    const { complete, values } = await recent("dodo", DODO_KEYS.one);
+    expect(complete).toBe(true);
+    expect(values).toMatchObject({
+      pay_monthly_0: usd(1500),
+      pay_yearly: usd(12000),
+      pay_eur: eur(2000),
+      pay_once: usd(2500),
+      pay_refunded: usd(0),
+      pay_disputed: usd(0),
+    });
+    const again = await recent("dodo", DODO_KEYS.one, {
+      stored: (id) => (id === "pay_once" ? { fingerprint: "3000::", amount: 2500 } : null),
+    });
+    expect(again.values.pay_once).toBeNull();
+  }, 30_000);
+
+  it("goes on with Dodo payments in the next run once the requests of one run are spent", async () => {
+    const { complete, from, payments } = await recent("dodo", DODO_KEYS.one, { maxPages: 4 });
+    expect(complete).toBe(false);
+    expect(from).toBeDefined();
+    expect(payments.every((payment) => payment.value && payment.at >= from!)).toBe(true);
+  }, 30_000);
+
+  it("reads Creem transactions after refunds, without tax", async () => {
+    const { complete, values } = await recent("creem", CREEM_KEYS.one);
+    expect(complete).toBe(true);
+    expect(values).toMatchObject({
+      tran_monthly_0: usd(2500),
+      tran_once: usd(5000),
+      tran_yearly: eur(10000),
+      tran_refund: eur(1000),
+      tran_chargeback: usd(0),
+    });
+  });
+
+  it("reads Chargebee invoices with a payment, less cash refunds", async () => {
+    const { complete, values } = await recent("chargebee", chargebeeKey);
+    expect(complete).toBe(true);
+    expect(values).toMatchObject({
+      "harbor-test:cb_inv_0": usd(2700),
+      "harbor-test:cb_inv_yearly": eur(5000),
+      "harbor-test:cb_inv_once": usd(2000),
+      "harbor-test:cb_inv_refunded": usd(0),
+    });
+  });
+
+  it("reads Whop payments after refunds, without tax", async () => {
+    const { complete, values } = await recent("whop", WHOP_KEYS.one);
+    expect(complete).toBe(true);
+    expect(values).toMatchObject({
+      pay_w1_0: usd(1500),
+      pay_w2: eur(6400),
+      pay_w3: usd(1500),
+      pay_w_once: usd(4000),
+      pay_w_refund: usd(0),
+    });
+  });
+
+  it("reads RevenueCat's revenue chart a day at a time", async () => {
+    const { complete, values, payments } = await recent(
+      "revenuecat",
+      revenueCatKey(REVENUECAT.keys.one),
+      { livemode: true },
+    );
+    expect(complete).toBe(true);
+    const day = new Date(Date.now() - 10 * DAY * 1000).toISOString().slice(0, 10);
+    expect(values[`projharbor1:${day}`]).toEqual(usd(500));
+    expect(payments.length).toBeGreaterThanOrEqual(183);
   });
 });

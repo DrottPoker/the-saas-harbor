@@ -4,6 +4,7 @@
 import { monthLabel, parseHistory, wholeUsd } from "./charts";
 import type { CategoryCount, Listing, Profile } from "./data";
 import { categorySlug, formatDate, formatUsd } from "./domain";
+import { REVENUE_WINDOWS, sharesRevenue } from "./revenue-figures";
 import { providerList, providerName } from "./revenue/catalog";
 import { rolePeriod, sortRoles, type ProfileExperience } from "./profile";
 import { SITE_DESCRIPTION, SITE_NAME, siteUrl } from "./seo";
@@ -72,6 +73,7 @@ export function productMarkdown(item: Listing) {
   const base = siteUrl();
   const category = item.category ?? "Other";
   const verified = item.revenue_status === "verified" && item.mrr_cents != null;
+  const revenueShared = sharesRevenue(item);
   const history = verified ? parseHistory(item.mrr_history) : null;
   const lines = [
     `# ${inline(item.name)}`,
@@ -103,7 +105,14 @@ export function productMarkdown(item: Listing) {
     ...(item.customers != null
       ? [`- Paying customers: ${item.customers.toLocaleString("en-US")}`]
       : []),
-    ...(verified
+    // Revenue besides MRR, one-time purchases included, only where it is shared.
+    ...(revenueShared
+      ? REVENUE_WINDOWS.map(({ column, label }) => {
+          const cents = item[column];
+          return `- ${label}: ${cents == null ? "not shared" : formatUsd(cents)}`;
+        })
+      : []),
+    ...(verified || revenueShared
       ? [
           `- Verified with: ${providerName(item.provider)}`,
           `- Last verified: ${formatDate(item.verified_at)}${item.livemode === false ? " (test mode data)" : ""}`,

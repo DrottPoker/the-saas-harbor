@@ -21,6 +21,20 @@ export type DodoSubscription = {
   on_demand: boolean;
 };
 export type DodoPayment = { payment_id: string; total_amount: number; tax?: number | null };
+/** A payment as the list gives it: without its tax, refunds or disputes. */
+export type DodoListedPayment = {
+  payment_id: string;
+  total_amount: number;
+  currency: string;
+  created_at: string;
+  refund_status?: string | null;
+  dispute_status?: string | null;
+};
+/** A payment as it is read alone, with its tax, refunds and disputes. */
+export type DodoPaymentDetail = DodoPayment & {
+  refunds?: { amount?: number | null; status: string }[] | null;
+  disputes?: { dispute_status: string }[] | null;
+};
 
 export const COUNTED_STATUSES = ["active", "past_due"] as const;
 const DAY = 86_400;

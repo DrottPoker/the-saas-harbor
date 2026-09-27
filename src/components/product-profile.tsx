@@ -3,6 +3,7 @@ import { ArrowUpRight, BadgeCheck } from "lucide-react";
 import { parseHistory } from "@/lib/charts";
 import type { Listing, PageViewCounts } from "@/lib/data";
 import { categorySlug, formatDate, formatUsd } from "@/lib/domain";
+import { REVENUE_WINDOWS, sharesRevenue } from "@/lib/revenue-figures";
 import { providerName } from "@/lib/revenue/catalog";
 import { websiteRel } from "@/lib/seo";
 import { PersonAvatar, ProductLogo } from "./avatars";
@@ -72,7 +73,9 @@ export function ProductProfile({
   const name = item.name ?? "SaaS";
   const site = hostname(item.website);
   // Public reads carry only figures that are verified and shared; the rest read Not shared.
-  const verified = item.revenue_status === "verified" && item.mrr_cents != null;
+  const revenueShared = sharesRevenue(item);
+  const verified =
+    (item.revenue_status === "verified" && item.mrr_cents != null) || (!demo && revenueShared);
   const history = parseHistory(item.mrr_history);
   // Category pages list real products only, so demo products link to the filtered Browse list.
   const categoryHref = demo
@@ -196,6 +199,21 @@ export function ProductProfile({
           />
           <Metric label="Launched" value={item.launched_on ? formatDate(item.launched_on) : null} />
         </dl>
+        {/* Revenue besides MRR, one-time purchases included, shows only where it is shared. */}
+        {revenueShared && (
+          <dl className="grid divide-y border-t bg-subtle sm:grid-cols-3 sm:divide-x sm:divide-y-0">
+            {REVENUE_WINDOWS.map(({ column, label }) => {
+              const cents = item[column];
+              return (
+                <Metric
+                  key={column}
+                  label={label}
+                  value={cents == null ? null : formatUsd(cents)}
+                />
+              );
+            })}
+          </dl>
+        )}
       </header>
       {(verified || (demo && item.mrr_cents != null)) && (
         <p className="mt-3 flex items-center gap-1.5 px-1 text-[13px] text-muted-foreground">

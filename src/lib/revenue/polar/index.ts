@@ -2,9 +2,10 @@ import "server-only";
 import { historyWindowStart } from "../history";
 import { ProviderRequestError } from "../http";
 import type { ProviderAdapter } from "../types";
-import { fetchOrders, fetchOrganization, fetchSubscriptions } from "./client";
+import { fetchOrders, fetchOrganization, fetchPaidOrders, fetchSubscriptions } from "./client";
 import { parsePolarToken } from "./key";
 import { meteredPrices, orderWindowStart, polarMrr, polarServiceLines } from "./mrr";
+import { orderPayments } from "./payments";
 
 /**
  * The environment a token belongs to. Sandbox and production tokens look alike, so a new token is
@@ -22,7 +23,10 @@ async function environment(key: string, livemode: boolean | null, allowTest: boo
   }
 }
 
-/** Polar: MRR from subscriptions, with tax and history from their paid orders. */
+/**
+ * Polar: MRR from subscriptions, with tax and history from their paid orders, and revenue from
+ * every paid order.
+ */
 export const polar: ProviderAdapter = {
   id: "polar",
   parseKey: ({ key }) => parsePolarToken(key),
@@ -49,5 +53,9 @@ export const polar: ProviderAdapter = {
         history && !historyNote ? polarServiceLines(orders, meteredPrices(subscriptions)) : null,
       historyNote,
     };
+  },
+  async payments(key, livemode, { since, before, maxPages }) {
+    const { items, complete } = await fetchPaidOrders(key, livemode, since, before, maxPages);
+    return { payments: orderPayments(items), complete };
   },
 };

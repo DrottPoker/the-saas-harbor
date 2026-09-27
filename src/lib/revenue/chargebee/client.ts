@@ -7,7 +7,7 @@ import {
   ProviderRequestError,
   tooMuchData,
 } from "../http";
-import type { ChargebeeInvoice, ChargebeeSubscription } from "./mrr";
+import type { ChargebeeCreditNote, ChargebeeInvoice, ChargebeeSubscription } from "./mrr";
 
 // Each Chargebee site has its own address; a test site's name ends in -test.
 function base(site: string) {
@@ -47,19 +47,32 @@ async function chargebeeGet<T>(site: string, key: string, path: string, params: 
 
 type Page<T> = { list: T[]; next_offset?: string | null };
 
-// Lists continue from the offset the previous page names.
-async function listAll<T>(site: string, key: string, path: string, params: [string, string][]) {
+// Lists continue from the offset the previous page names. `complete` is false when a list goes
+// on beyond `maxPages`.
+async function listPages<T>(
+  site: string,
+  key: string,
+  path: string,
+  params: [string, string][],
+  maxPages: number,
+) {
   const items: T[] = [];
   let offset: string | null | undefined;
-  for (let page = 0; page < MAX_PAGES; page++) {
+  for (let page = 0; page < maxPages; page++) {
     const query = new URLSearchParams([...params, ["limit", "100"]]);
     if (offset) query.set("offset", offset);
     const result = await chargebeeGet<Page<T>>(site, key, path, query);
     items.push(...result.list);
     offset = result.next_offset;
-    if (!offset) return items;
+    if (!offset) return { items, complete: true };
   }
-  throw tooMuchData("Chargebee", path);
+  return { items, complete: false };
+}
+
+async function listAll<T>(site: string, key: string, path: string, params: [string, string][]) {
+  const { items, complete } = await listPages<T>(site, key, path, params, MAX_PAGES);
+  if (!complete) throw tooMuchData("Chargebee", path);
+  return items;
 }
 
 /** Active subscriptions, which include past-due ones, and those set to cancel at term end. */
@@ -80,4 +93,41 @@ export async function fetchInvoices(site: string, key: string, since: number) {
     ["date[after]", String(since)],
   ]);
   return list.map((entry) => entry.invoice);
+}
+
+/**
+ * Invoices with a payment, one-time charges included, dated in a window: from `since`
+ * (inclusive) to `before` (exclusive), newest first.
+ */
+export async function fetchPaidInvoices(
+  site: string,
+  key: string,
+  since: number,
+  before: number | null,
+  maxPages: number,
+) {
+  const params: [string, string][] = [
+    ["amount_paid[gt]", "0"],
+    ["date[after]", String(since - 1)],
+    ["sort_by[desc]", "date"],
+  ];
+  if (before !== null) params.push(["date[before]", String(before)]);
+  const { items, complete } = await listPages<{ invoice: ChargebeeInvoice }>(
+    site,
+    key,
+    "/invoices",
+    params,
+    maxPages,
+  );
+  return { invoices: items.map((entry) => entry.invoice), complete };
+}
+
+/** Refundable credit notes dated from `since` that refunded money. */
+export async function fetchRefunds(site: string, key: string, since: number) {
+  const list = await listAll<{ credit_note: ChargebeeCreditNote }>(site, key, "/credit_notes", [
+    ["type[is]", "refundable"],
+    ["amount_refunded[gt]", "0"],
+    ["date[after]", String(since - 1)],
+  ]);
+  return list.map((entry) => entry.credit_note);
 }

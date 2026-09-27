@@ -1,6 +1,6 @@
 # The SaaS Harbor
 
-A focused, responsive home for independent SaaS: public maker profiles, product discovery, and a leaderboard of monthly recurring revenue verified through each product's payment provider: Stripe, Paddle, Polar, Dodo Payments, Creem, Chargebee, Whop or RevenueCat.
+A focused, responsive home for independent SaaS: public maker profiles, product discovery, and a leaderboard of monthly recurring revenue, or of revenue from all payments over 30 days, 12 months or all time, verified through each product's payment provider: Stripe, Paddle, Polar, Dodo Payments, Creem, Chargebee, Whop or RevenueCat.
 
 ## Included
 
@@ -9,9 +9,10 @@ A focused, responsive home for independent SaaS: public maker profiles, product 
 - Personal maker profiles laid out like product pages: photo, headline, location, key figures across the maker's products, About, products, experience, skills, and links to a website, LinkedIn, GitHub and X.
 - Multiple SaaS profiles per maker, with a logo, pitch, description, category, website and tech stack.
 - An account menu at the top right of the header, with the user's photo and name: their public profile, Edit profile, Email settings, Your reports once they have sent one, the admin panel for admins, and Sign out. The dashboard is only for the user's products.
-- Revenue verified through a read-only key to the product's payment provider (Stripe, Paddle, Polar, Dodo Payments, Creem, Chargebee, Whop or RevenueCat, one per product): MRR and paying customers are read from the provider, never typed in, and re-verified every hour.
+- Revenue verified through a read-only key to the product's payment provider (Stripe, Paddle, Polar, Dodo Payments, Creem, Chargebee, Whop or RevenueCat, one per product): MRR and paying customers are read from the provider, never typed in, and re-verified every hour. Revenue from every payment, one-time purchases included, is read every day and shown for the last 30 days, the last 12 months and all time.
 - Optional domain verification: a founder adds a DNS TXT record with a code for the product to the website's domain, and the product page's details then show the domain as Verified instead of Not verified. The record is looked up again every day; after three days without it, or when the website moves to another domain, the mark goes.
-- Verified MRR, paying customers and launch date, each with an independent public-sharing choice. Products without a connected provider are listed but not ranked.
+- Verified MRR, revenue, paying customers and launch date, each with an independent public-sharing choice. Products without a connected provider are listed but not ranked.
+- A leaderboard ranked by verified MRR, or with `?by=30d`, `12m` or `all` by revenue over that window, with a choice of ranking above the categories.
 - Private verification history, a public leaderboard, category, technology and name filters, and newest arrivals.
 - Readable addresses such as `/saas/querybird` and `/users/tomas-rivera`, with old links redirected, and sharing cards, canonical links and a sitemap for search engines and social networks.
 - Pages for search engines and AI assistants: a page per category (`/categories/<slug>`) and per technology (`/tech/<slug>`, from the tech stacks founders list, with an overview at `/tech`) with its ranked products first, structured data (JSON-LD) on product, maker, category and home pages, titles that carry shared verified MRR, `/llms.txt` with the current top 50 and how to list a product, and a Markdown version of every product and maker page at the same address with `.md` added.
@@ -95,18 +96,20 @@ Makers turn message and milestone emails off, and admins report emails, under Em
 
 In a product's editor, the maker chooses the payment provider and creates a key that can only read, following the steps shown in a box that links to the page where the key is made:
 
-| Provider      | Key                                           | Access                                                                           |
-| ------------- | --------------------------------------------- | -------------------------------------------------------------------------------- |
-| Stripe        | Restricted key, `rk_live_`                    | Read for Subscriptions, Invoices, Coupons and Prices                             |
-| Paddle        | API key, `pdl_live_apikey_`                   | Read for Subscriptions and Transactions, no expiry date                          |
-| Polar         | Organization access token, `polar_oat_`       | organizations:read, subscriptions:read and orders:read                           |
-| Dodo Payments | API key with write access turned off          | Reads only                                                                       |
-| Creem         | API key, `creem_`                             | Read scopes for products, subscriptions and transactions                         |
-| Chargebee     | Read-only API key, with the site name         | All data, or restricted to transactional data                                    |
-| Whop          | Account API key                               | member:basic:read, plan:basic:read, payment:basic:read and promo_code:basic:read |
-| RevenueCat    | V2 secret API key, `sk_`, with the project ID | Charts & metrics read only, no other access                                      |
+| Provider      | Key                                           | Access                                                                                     |
+| ------------- | --------------------------------------------- | ------------------------------------------------------------------------------------------ |
+| Stripe        | Restricted key, `rk_live_`                    | Read for Subscriptions, Invoices, Coupons, Prices, Charges, Checkout Sessions and Disputes |
+| Paddle        | API key, `pdl_live_apikey_`                   | Read for Subscriptions and Transactions, no expiry date                                    |
+| Polar         | Organization access token, `polar_oat_`       | organizations:read, subscriptions:read and orders:read                                     |
+| Dodo Payments | API key with write access turned off          | Reads only                                                                                 |
+| Creem         | API key, `creem_`                             | Read scopes for products, subscriptions and transactions                                   |
+| Chargebee     | Read-only API key, with the site name         | All data, or restricted to transactional data                                              |
+| Whop          | Account API key                               | member:basic:read, plan:basic:read, payment:basic:read and promo_code:basic:read           |
+| RevenueCat    | V2 secret API key, `sk_`, with the project ID | Charts & metrics read only, no other access                                                |
 
-Whop and RevenueCat keys are checked on every verification: Whop's permissions must all be reads, and a RevenueCat key must be refused everything outside its charts. RevenueCat gives only its own MRR chart, which differs a little from the site's definition (see ARCHITECTURE).
+Whop and RevenueCat keys are checked on every verification: Whop's permissions must all be reads, and a RevenueCat key must be refused everything outside its charts. RevenueCat gives only its own MRR chart, which differs a little from the site's definition (see ARCHITECTURE). Stripe needs Charges, Checkout Sessions and Disputes for revenue beyond MRR only: a key without them verifies MRR, and the editor names the permission that is missing.
+
+Revenue beyond MRR comes from every payment, one-time purchases included, after discounts and refunds and before tax and fees. The payments are read right after a key is connected, back to the account's first payment (a large account over a few hourly runs), then every day, and on Refresh now when they were not read in the last hour. Each payment is stored with what it earned and its day, never who paid.
 
 For Stripe, a link opens Stripe's form for a new restricted key with the name and permissions filled in. The link uses live mode; for a test account, create the key under Developers → API keys → Create restricted key in test mode with the same permissions. The key is verified first, then stored encrypted. Paid charges give the product page its chart of MRR at each of the last twelve month-ends and the leaderboard its trend line and 30-day growth; a Stripe key without Invoices access still verifies MRR, just without history, and Dodo Payments products have no history, since Dodo's payments do not say which period they cover. Locally test keys and sandboxes are accepted (`REVENUE_ALLOW_TEST_KEYS=true`: `rk_test_`, `pdl_sdbx_apikey_`, `creem_test_`, Chargebee sites ending in `-test`, and Polar, Dodo Payments and Whop test accounts), so test accounts work end to end. `npm run revenue:sync` re-verifies the connections that are due through the running dev server, as the production scheduler does: each connection about every hour, with the history and 30-day growth read once a day and carried over in between. How each provider's figures are read is in ARCHITECTURE.
 

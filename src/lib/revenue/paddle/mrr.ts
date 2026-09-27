@@ -43,7 +43,18 @@ export type PaddleTransaction = {
   billed_at: string | null;
   billing_period: PaddlePeriod | null;
   items: { price: PaddlePrice | null }[];
-  details: { line_items: PaddleLineItem[] };
+  details: {
+    line_items: PaddleLineItem[];
+    totals?: PaddleTransactionTotals | null;
+    adjusted_totals?: PaddleTransactionTotals | null;
+  };
+};
+/** A transaction's totals; the grand totals leave out what the customer paid with credit. */
+export type PaddleTransactionTotals = {
+  total: string;
+  tax: string;
+  grand_total?: string;
+  grand_total_tax?: string;
 };
 
 export const COUNTED_STATUSES = ["active", "past_due"] as const;

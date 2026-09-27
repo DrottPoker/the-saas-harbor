@@ -308,6 +308,13 @@ export type Database = {
             foreignKeyName: "moderation_log_saas_id_fkey"
             columns: ["saas_id"]
             isOneToOne: false
+            referencedRelation: "revenue_leaderboard"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "moderation_log_saas_id_fkey"
+            columns: ["saas_id"]
+            isOneToOne: false
             referencedRelation: "saas"
             referencedColumns: ["id"]
           },
@@ -469,6 +476,9 @@ export type Database = {
           mrr_history: Json | null
           owner_id: string
           provider: string | null
+          revenue_12m_cents: number | null
+          revenue_30d_cents: number | null
+          revenue_total_cents: number | null
           saas_id: string
           verified_at: string | null
         }
@@ -481,6 +491,9 @@ export type Database = {
           mrr_history?: Json | null
           owner_id: string
           provider?: string | null
+          revenue_12m_cents?: number | null
+          revenue_30d_cents?: number | null
+          revenue_total_cents?: number | null
           saas_id: string
           verified_at?: string | null
         }
@@ -493,6 +506,9 @@ export type Database = {
           mrr_history?: Json | null
           owner_id?: string
           provider?: string | null
+          revenue_12m_cents?: number | null
+          revenue_30d_cents?: number | null
+          revenue_total_cents?: number | null
           saas_id?: string
           verified_at?: string | null
         }
@@ -509,6 +525,13 @@ export type Database = {
             columns: ["saas_id", "owner_id"]
             isOneToOne: false
             referencedRelation: "public_saas"
+            referencedColumns: ["id", "owner_id"]
+          },
+          {
+            foreignKeyName: "public_metrics_saas_id_owner_id_fkey"
+            columns: ["saas_id", "owner_id"]
+            isOneToOne: false
+            referencedRelation: "revenue_leaderboard"
             referencedColumns: ["id", "owner_id"]
           },
           {
@@ -589,6 +612,13 @@ export type Database = {
             foreignKeyName: "reports_saas_id_fkey"
             columns: ["saas_id"]
             isOneToOne: false
+            referencedRelation: "revenue_leaderboard"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reports_saas_id_fkey"
+            columns: ["saas_id"]
+            isOneToOne: false
             referencedRelation: "saas"
             referencedColumns: ["id"]
           },
@@ -619,6 +649,11 @@ export type Database = {
           livemode: boolean
           owner_id: string
           provider: string
+          revenue_checked_at: string | null
+          revenue_from: string | null
+          revenue_note: string | null
+          revenue_origin: boolean
+          revenue_read_at: string | null
           saas_id: string
           status: string
         }
@@ -632,6 +667,11 @@ export type Database = {
           livemode: boolean
           owner_id: string
           provider: string
+          revenue_checked_at?: string | null
+          revenue_from?: string | null
+          revenue_note?: string | null
+          revenue_origin?: boolean
+          revenue_read_at?: string | null
           saas_id: string
           status?: string
         }
@@ -645,6 +685,11 @@ export type Database = {
           livemode?: boolean
           owner_id?: string
           provider?: string
+          revenue_checked_at?: string | null
+          revenue_from?: string | null
+          revenue_note?: string | null
+          revenue_origin?: boolean
+          revenue_read_at?: string | null
           saas_id?: string
           status?: string
         }
@@ -661,6 +706,13 @@ export type Database = {
             columns: ["saas_id", "owner_id"]
             isOneToOne: false
             referencedRelation: "public_saas"
+            referencedColumns: ["id", "owner_id"]
+          },
+          {
+            foreignKeyName: "revenue_connections_saas_id_owner_id_fkey"
+            columns: ["saas_id", "owner_id"]
+            isOneToOne: false
+            referencedRelation: "revenue_leaderboard"
             referencedColumns: ["id", "owner_id"]
           },
           {
@@ -687,6 +739,10 @@ export type Database = {
           mrr_invoice_cents: number | null
           owner_id: string
           provider: string
+          revenue_12m_cents: number | null
+          revenue_30d_cents: number | null
+          revenue_at: string | null
+          revenue_total_cents: number | null
           saas_id: string
           seq: number
         }
@@ -704,6 +760,10 @@ export type Database = {
           mrr_invoice_cents?: number | null
           owner_id: string
           provider: string
+          revenue_12m_cents?: number | null
+          revenue_30d_cents?: number | null
+          revenue_at?: string | null
+          revenue_total_cents?: number | null
           saas_id: string
           seq?: never
         }
@@ -721,6 +781,10 @@ export type Database = {
           mrr_invoice_cents?: number | null
           owner_id?: string
           provider?: string
+          revenue_12m_cents?: number | null
+          revenue_30d_cents?: number | null
+          revenue_at?: string | null
+          revenue_total_cents?: number | null
           saas_id?: string
           seq?: never
         }
@@ -737,6 +801,13 @@ export type Database = {
             columns: ["saas_id", "owner_id"]
             isOneToOne: false
             referencedRelation: "public_saas"
+            referencedColumns: ["id", "owner_id"]
+          },
+          {
+            foreignKeyName: "revenue_snapshots_saas_id_owner_id_fkey"
+            columns: ["saas_id", "owner_id"]
+            isOneToOne: false
+            referencedRelation: "revenue_leaderboard"
             referencedColumns: ["id", "owner_id"]
           },
           {
@@ -858,6 +929,13 @@ export type Database = {
             foreignKeyName: "saas_milestones_saas_id_fkey"
             columns: ["saas_id"]
             isOneToOne: false
+            referencedRelation: "revenue_leaderboard"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "saas_milestones_saas_id_fkey"
+            columns: ["saas_id"]
+            isOneToOne: false
             referencedRelation: "saas"
             referencedColumns: ["id"]
           },
@@ -871,6 +949,7 @@ export type Database = {
           share_customers: boolean
           share_launch: boolean
           share_mrr: boolean
+          share_revenue: boolean
           updated_at: string
         }
         Insert: {
@@ -880,6 +959,7 @@ export type Database = {
           share_customers?: boolean
           share_launch?: boolean
           share_mrr?: boolean
+          share_revenue?: boolean
           updated_at?: string
         }
         Update: {
@@ -889,6 +969,7 @@ export type Database = {
           share_customers?: boolean
           share_launch?: boolean
           share_mrr?: boolean
+          share_revenue?: boolean
           updated_at?: string
         }
         Relationships: [
@@ -904,6 +985,13 @@ export type Database = {
             columns: ["saas_id", "owner_id"]
             isOneToOne: false
             referencedRelation: "public_saas"
+            referencedColumns: ["id", "owner_id"]
+          },
+          {
+            foreignKeyName: "saas_settings_saas_id_owner_id_fkey"
+            columns: ["saas_id", "owner_id"]
+            isOneToOne: false
+            referencedRelation: "revenue_leaderboard"
             referencedColumns: ["id", "owner_id"]
           },
           {
@@ -975,7 +1063,10 @@ export type Database = {
           owner_slug: string | null
           provider: string | null
           rank: number | null
+          revenue_12m_cents: number | null
+          revenue_30d_cents: number | null
           revenue_status: string | null
+          revenue_total_cents: number | null
           slug: string | null
           tagline: string | null
           tech_stack: string[] | null
@@ -1021,7 +1112,62 @@ export type Database = {
           owner_name: string | null
           owner_slug: string | null
           provider: string | null
+          revenue_12m_cents: number | null
+          revenue_30d_cents: number | null
           revenue_status: string | null
+          revenue_total_cents: number | null
+          slug: string | null
+          tagline: string | null
+          tech_stack: string[] | null
+          updated_at: string | null
+          verified_at: string | null
+          verified_domain: string | null
+          website: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "saas_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "inbox"
+            referencedColumns: ["other_id"]
+          },
+          {
+            foreignKeyName: "saas_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      revenue_leaderboard: {
+        Row: {
+          category: string | null
+          created_at: string | null
+          customers: number | null
+          description: string | null
+          domain_verified_at: string | null
+          id: string | null
+          launched_on: string | null
+          livemode: boolean | null
+          logo_path: string | null
+          mrr_cents: number | null
+          mrr_growth_pct: number | null
+          mrr_history: Json | null
+          name: string | null
+          owner_avatar_path: string | null
+          owner_id: string | null
+          owner_name: string | null
+          owner_slug: string | null
+          provider: string | null
+          rank_12m: number | null
+          rank_30d: number | null
+          rank_total: number | null
+          revenue_12m_cents: number | null
+          revenue_30d_cents: number | null
+          revenue_status: string | null
+          revenue_total_cents: number | null
           slug: string | null
           tagline: string | null
           tech_stack: string[] | null
@@ -1197,6 +1343,13 @@ export type Database = {
           website: string
         }[]
       }
+      claim_due_verifications: {
+        Args: { p_interval: string; p_limit: number }
+        Returns: {
+          revenue_due: boolean
+          saas_id: string
+        }[]
+      }
       claim_emails: {
         Args: { p_limit: number; p_message_delay: number }
         Returns: {
@@ -1258,6 +1411,20 @@ export type Database = {
         }
         Returns: boolean
       }
+      record_revenue_payments: {
+        Args: {
+          p_days30: string
+          p_from: string
+          p_listed: string[]
+          p_months12: string
+          p_origin: boolean
+          p_payments: Json
+          p_provider: string
+          p_saas_id: string
+          p_windows: Json
+        }
+        Returns: Json
+      }
       record_revenue_verification: {
         Args: {
           p_currencies: Json
@@ -1272,6 +1439,10 @@ export type Database = {
           p_mrr_cents: number
           p_mrr_invoice_cents: number
           p_provider: string
+          p_revenue_12m_cents?: number
+          p_revenue_30d_cents?: number
+          p_revenue_at?: string
+          p_revenue_total_cents?: number
           p_saas_id: string
           p_subscription_hashes: string[]
         }
@@ -1280,6 +1451,10 @@ export type Database = {
       record_sign_in_country: {
         Args: { p_country: string }
         Returns: undefined
+      }
+      revenue_read_state: {
+        Args: { p_from: string; p_saas_id: string }
+        Returns: Json
       }
       saas_domain_verification: {
         Args: { p_saas: string }
@@ -1334,6 +1509,7 @@ export type Database = {
           p_share_customers: boolean
           p_share_launch: boolean
           p_share_mrr: boolean
+          p_share_revenue?: boolean
           p_tagline: string
           p_tech_stack?: string[]
           p_website: string

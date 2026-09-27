@@ -6,7 +6,7 @@ create extension if not exists pgtap with schema extensions;
 select plan(13);
 
 -- Existing local connections count as just checked, so only the fixtures are due.
-update public.revenue_connections set last_checked_at = now();
+update public.revenue_connections set last_checked_at = now(), revenue_checked_at = now();
 
 insert into auth.users(id) values ('d7000000-0000-4000-8000-000000000001');
 insert into public.profiles(id, name) values ('d7000000-0000-4000-8000-000000000001', 'Hourly Maker');
@@ -71,22 +71,23 @@ select public.record_revenue_verification('d7100000-0000-4000-8000-000000000002'
   'v1:three', 'rk_live_…thr3', true, 100, 1, '{"usd": 100}', null, array[repeat('2', 64)], null,
   null, null, null);
 set local role postgres;
+-- Payments were read recently, so only MRR is due here; revenue.test.sql covers payments.
 update public.revenue_connections set last_synced_at = now() - interval '3 hours',
-  last_checked_at = null
+  last_checked_at = null, revenue_checked_at = now() - interval '1 hour'
 where saas_id = 'd7100000-0000-4000-8000-000000000001';
 update public.revenue_connections set last_synced_at = now() - interval '2 hours',
-  last_checked_at = now() - interval '90 minutes'
+  last_checked_at = now() - interval '90 minutes', revenue_checked_at = now() - interval '1 hour'
 where saas_id = 'd7100000-0000-4000-8000-000000000002';
 set local role service_role;
 select results_eq(
-  $$ select * from public.claim_due_connections(1, interval '55 minutes') $$,
-  $$ values ('d7100000-0000-4000-8000-000000000001'::uuid) $$,
+  $$ select * from public.claim_due_verifications(1, interval '55 minutes') $$,
+  $$ values ('d7100000-0000-4000-8000-000000000001'::uuid, false) $$,
   'the connection verified longest ago comes first, up to the limit');
 select results_eq(
-  $$ select * from public.claim_due_connections(10, interval '55 minutes') $$,
-  $$ values ('d7100000-0000-4000-8000-000000000002'::uuid) $$,
+  $$ select * from public.claim_due_verifications(10, interval '55 minutes') $$,
+  $$ values ('d7100000-0000-4000-8000-000000000002'::uuid, false) $$,
   'a claimed connection is not claimed again');
-select is_empty($$ select * from public.claim_due_connections(10, interval '55 minutes') $$,
+select is_empty($$ select * from public.claim_due_verifications(10, interval '55 minutes') $$,
   'nothing is due until an hour has passed');
 set local role postgres;
 select ok((select last_checked_at > now() - interval '1 minute' from public.revenue_connections
@@ -95,12 +96,12 @@ select ok((select last_checked_at > now() - interval '1 minute' from public.reve
 update public.revenue_connections set last_synced_at = now(), last_checked_at = null
 where saas_id = 'd7100000-0000-4000-8000-000000000002';
 set local role service_role;
-select is_empty($$ select * from public.claim_due_connections(10, interval '55 minutes') $$,
+select is_empty($$ select * from public.claim_due_verifications(10, interval '55 minutes') $$,
   'a connection verified within the hour is not due');
 
 set local role authenticated;
 select set_config('request.jwt.claim.sub', 'd7000000-0000-4000-8000-000000000001', true);
-select throws_ok($$ select public.claim_due_connections(10, interval '1 minute') $$, '42501', null,
+select throws_ok($$ select public.claim_due_verifications(10, interval '1 minute') $$, '42501', null,
   'makers cannot claim connections');
 select throws_ok(
   $$ select public.record_revenue_verification('d7100000-0000-4000-8000-000000000001', 'stripe',

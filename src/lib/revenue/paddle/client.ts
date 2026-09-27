@@ -54,25 +54,39 @@ async function paddleGet<T>(key: string, livemode: boolean, path: string, params
 }
 
 // Lists follow Paddle's cursor. The next page is built here from its `after` value rather than
-// followed as a link, so requests only ever go to Paddle's own address.
-async function listAll<T>(
+// followed as a link, so requests only ever go to Paddle's own address. `complete` is false when
+// the list goes on beyond `maxPages`.
+async function listPages<T>(
   key: string,
   livemode: boolean,
   path: string,
   params: Record<string, string>,
+  maxPages: number,
 ) {
   const items: T[] = [];
   let after: string | null = null;
-  for (let page = 0; page < MAX_PAGES; page++) {
+  for (let page = 0; page < maxPages; page++) {
     const query = new URLSearchParams(params);
     if (after) query.set("after", after);
     const result: Page<T> = await paddleGet<Page<T>>(key, livemode, path, query);
     items.push(...result.data);
     const next = result.meta.pagination?.next;
     after = next ? new URL(next).searchParams.get("after") : null;
-    if (!result.meta.pagination?.has_more || !after || !result.data.length) return items;
+    if (!result.meta.pagination?.has_more || !after || !result.data.length)
+      return { items, complete: true };
   }
-  throw tooMuchData("Paddle", path);
+  return { items, complete: false };
+}
+
+async function listAll<T>(
+  key: string,
+  livemode: boolean,
+  path: string,
+  params: Record<string, string>,
+) {
+  const { items, complete } = await listPages<T>(key, livemode, path, params, MAX_PAGES);
+  if (!complete) throw tooMuchData("Paddle", path);
+  return items;
 }
 
 /** Active and past-due subscriptions. Permission: Subscriptions, read. */
@@ -91,4 +105,25 @@ export function fetchTransactions(key: string, livemode: boolean, since: number)
     order_by: "billed_at[ASC]",
     per_page: "30",
   });
+}
+
+/**
+ * Completed transactions billed in a window, newest first, one-time purchases included.
+ * Permission: Transactions, read.
+ */
+export function fetchBilledTransactions(
+  key: string,
+  livemode: boolean,
+  since: number,
+  before: number | null,
+  maxPages: number,
+) {
+  const params: Record<string, string> = {
+    status: "paid,completed",
+    "billed_at[GTE]": new Date(since * 1000).toISOString(),
+    order_by: "billed_at[DESC]",
+    per_page: "30",
+  };
+  if (before !== null) params["billed_at[LT]"] = new Date(before * 1000).toISOString();
+  return listPages<PaddleTransaction>(key, livemode, "/transactions", params, maxPages);
 }

@@ -7,7 +7,7 @@ import {
   ProviderRequestError,
   tooMuchData,
 } from "../http";
-import type { DodoPayment, DodoSubscription } from "./mrr";
+import type { DodoListedPayment, DodoPayment, DodoPaymentDetail, DodoSubscription } from "./mrr";
 
 // Dodo Payments has one address per environment, and a key works in its own only.
 const ORIGINS = { live: "https://live.dodopayments.com", test: "https://test.dodopayments.com" };
@@ -104,6 +104,41 @@ export async function fetchLatestPayment(key: string, livemode: boolean, subscri
     key,
     livemode,
     `/payments/${encodeURIComponent(first.payment_id)}`,
+    new URLSearchParams(),
+  );
+}
+
+/**
+ * One page of the successful payments created in a window: from `since` (inclusive) to `before`
+ * (exclusive). Dodo does not say how the list is sorted, so a window is always read whole.
+ */
+export function fetchPaymentPage(
+  key: string,
+  livemode: boolean,
+  since: number,
+  before: number,
+  page: number,
+) {
+  return dodoGet<{ items: DodoListedPayment[] }>(
+    key,
+    livemode,
+    "/payments",
+    new URLSearchParams({
+      status: "succeeded",
+      created_at_gte: new Date(since * 1000).toISOString(),
+      created_at_lte: new Date((before - 1) * 1000).toISOString(),
+      page_size: "100",
+      page_number: String(page),
+    }),
+  );
+}
+
+/** One payment with its tax, refunds and disputes. */
+export function fetchPayment(key: string, livemode: boolean, id: string) {
+  return dodoGet<DodoPaymentDetail>(
+    key,
+    livemode,
+    `/payments/${encodeURIComponent(id)}`,
     new URLSearchParams(),
   );
 }

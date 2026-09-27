@@ -56,24 +56,37 @@ async function whopGet<T>(key: string, livemode: boolean, path: string, params: 
 
 type Page<T> = { data: T[]; page_info: { end_cursor: string | null; has_next_page: boolean } };
 
-// Lists follow the cursor of the previous page.
+// Lists follow the cursor of the previous page. `complete` is false when a list goes on beyond
+// `maxPages`.
+async function listPages<T>(
+  key: string,
+  livemode: boolean,
+  path: string,
+  params: [string, string][],
+  maxPages: number,
+) {
+  const items: T[] = [];
+  let after: string | null = null;
+  for (let page = 0; page < maxPages; page++) {
+    const query = new URLSearchParams([...params, ["first", "100"]]);
+    if (after) query.set("after", after);
+    const result: Page<T> = await whopGet<Page<T>>(key, livemode, path, query);
+    items.push(...result.data);
+    after = result.page_info.end_cursor;
+    if (!result.page_info.has_next_page || !after) return { items, complete: true };
+  }
+  return { items, complete: false };
+}
+
 async function listAll<T>(
   key: string,
   livemode: boolean,
   path: string,
   params: [string, string][],
 ) {
-  const items: T[] = [];
-  let after: string | null = null;
-  for (let page = 0; page < MAX_PAGES; page++) {
-    const query = new URLSearchParams([...params, ["first", "100"]]);
-    if (after) query.set("after", after);
-    const result: Page<T> = await whopGet<Page<T>>(key, livemode, path, query);
-    items.push(...result.data);
-    after = result.page_info.end_cursor;
-    if (!result.page_info.has_next_page || !after) return items;
-  }
-  throw tooMuchData("Whop", path);
+  const { items, complete } = await listPages<T>(key, livemode, path, params, MAX_PAGES);
+  if (!complete) throw tooMuchData("Whop", path);
+  return items;
 }
 
 /**
@@ -143,4 +156,27 @@ export function fetchPromo(key: string, livemode: boolean, id: string) {
     `/promo_codes/${encodeURIComponent(id)}`,
     new URLSearchParams(),
   );
+}
+
+/**
+ * Paid payments created in a window, newest first, one-time purchases included. Permission:
+ * payment:basic:read.
+ */
+export function fetchPaymentWindow(
+  key: string,
+  livemode: boolean,
+  accountId: string,
+  since: number,
+  before: number | null,
+  maxPages: number,
+) {
+  const params: [string, string][] = [
+    ["account_id", accountId],
+    ["status", "paid"],
+    ["created_after", new Date(since * 1000).toISOString()],
+    ["order", "created_at"],
+    ["direction", "desc"],
+  ];
+  if (before !== null) params.push(["created_before", new Date(before * 1000).toISOString()]);
+  return listPages<WhopPayment>(key, livemode, "/payments", params, maxPages);
 }

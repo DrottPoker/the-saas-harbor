@@ -6,6 +6,7 @@ import type { ProviderAdapter } from "../types";
 import {
   fetchAccount,
   fetchMemberships,
+  fetchPaymentWindow,
   fetchPayments,
   fetchPermissions,
   fetchPlan,
@@ -20,6 +21,7 @@ import {
   type WhopPlan,
   type WhopPromo,
 } from "./mrr";
+import { whopPayments } from "./payments";
 
 // A business sells a handful of plans; this caps the plan and promo code lookups of one run.
 const MAX_LOOKUPS = 100;
@@ -69,7 +71,10 @@ async function lookUp<T>(ids: Iterable<string>, read: (id: string) => Promise<T>
   return found;
 }
 
-/** Whop: MRR from memberships, their plans and payments, and history from paid payments. */
+/**
+ * Whop: MRR from memberships, their plans and payments, and history and revenue from paid
+ * payments.
+ */
 export const whop: ProviderAdapter = {
   id: "whop",
   parseKey: ({ key }) => parseWhopKey(key),
@@ -127,5 +132,18 @@ export const whop: ProviderAdapter = {
       lines,
       historyNote,
     };
+  },
+  async payments(key, livemode, { since, before, maxPages }) {
+    const account = await fetchAccount(key, livemode);
+    await requireReadOnly(key, livemode, account);
+    const { items, complete } = await fetchPaymentWindow(
+      key,
+      livemode,
+      account,
+      since,
+      before,
+      maxPages,
+    );
+    return { payments: whopPayments(items), complete };
   },
 };

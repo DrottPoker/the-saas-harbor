@@ -58,20 +58,34 @@ async function polarGet<T>(key: string, livemode: boolean, path: string, params:
 
 type Page<T> = { items: T[]; pagination: { max_page: number } };
 
+/** Pages of a list; `complete` is false when it goes on beyond `maxPages`. */
+async function listPages<T>(
+  key: string,
+  livemode: boolean,
+  path: string,
+  params: [string, string][],
+  maxPages: number,
+) {
+  const items: T[] = [];
+  for (let page = 1; page <= maxPages; page++) {
+    const query = new URLSearchParams([...params, ["limit", "100"], ["page", String(page)]]);
+    const result = await polarGet<Page<T>>(key, livemode, path, query);
+    items.push(...result.items);
+    if (page >= result.pagination.max_page || !result.items.length)
+      return { items, complete: true };
+  }
+  return { items, complete: false };
+}
+
 async function listAll<T>(
   key: string,
   livemode: boolean,
   path: string,
   params: [string, string][],
 ) {
-  const items: T[] = [];
-  for (let page = 1; page <= MAX_PAGES; page++) {
-    const query = new URLSearchParams([...params, ["limit", "100"], ["page", String(page)]]);
-    const result = await polarGet<Page<T>>(key, livemode, path, query);
-    items.push(...result.items);
-    if (page >= result.pagination.max_page || !result.items.length) return items;
-  }
-  throw tooMuchData("Polar", path);
+  const { items, complete } = await listPages<T>(key, livemode, path, params, MAX_PAGES);
+  if (!complete) throw tooMuchData("Polar", path);
+  return items;
 }
 
 /** The token's organization, which also tells whether the token works. Scope: organizations:read. */
@@ -101,4 +115,26 @@ export function fetchOrders(key: string, livemode: boolean, since: number) {
     ["status", "partially_refunded"],
     ["created_after", new Date(since * 1000).toISOString()],
   ]);
+}
+
+/**
+ * Orders created in a window, newest first, one-time purchases included, with those refunded
+ * since, which then earned nothing. Scope: orders:read.
+ */
+export function fetchPaidOrders(
+  key: string,
+  livemode: boolean,
+  since: number,
+  before: number | null,
+  maxPages: number,
+) {
+  const params: [string, string][] = [
+    ["status", "paid"],
+    ["status", "partially_refunded"],
+    ["status", "refunded"],
+    ["created_after", new Date(since * 1000).toISOString()],
+    ["sorting", "-created_at"],
+  ];
+  if (before !== null) params.push(["created_before", new Date(before * 1000).toISOString()]);
+  return listPages<PolarOrder>(key, livemode, "/v1/orders/", params, maxPages);
 }

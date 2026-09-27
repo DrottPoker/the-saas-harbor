@@ -40,8 +40,8 @@ select results_eq(
   $$ select relation, privileges from pgtap_table_privileges where role = 'anon' order by 1 $$,
   $$ values ('category_counts'::text, 'SELECT'::text), ('leaderboard', 'SELECT'),
     ('profile_experience', 'SELECT'), ('profiles', 'SELECT'), ('public_metrics', 'SELECT'),
-    ('public_saas', 'SELECT'), ('saas', 'SELECT'), ('saas_milestones', 'SELECT'),
-    ('tech_counts', 'SELECT') $$,
+    ('public_saas', 'SELECT'), ('revenue_leaderboard', 'SELECT'), ('saas', 'SELECT'),
+    ('saas_milestones', 'SELECT'), ('tech_counts', 'SELECT') $$,
   'visitors only read listings, products and profiles');
 select results_eq(
   $$ select relation, privileges from pgtap_table_privileges where role = 'authenticated' order by 1 $$,
@@ -52,7 +52,7 @@ select results_eq(
     ('messages', 'SELECT'), ('moderation_log', 'SELECT'), ('notification_settings', 'SELECT'),
     ('profile_experience', 'DELETE,INSERT,SELECT'), ('profiles', 'SELECT'),
     ('public_metrics', 'SELECT'), ('public_saas', 'SELECT'), ('reports', 'SELECT'),
-    ('revenue_snapshots', 'SELECT'), ('saas', 'DELETE,SELECT'), ('saas_milestones', 'SELECT'),
+    ('revenue_leaderboard', 'SELECT'), ('revenue_snapshots', 'SELECT'), ('saas', 'DELETE,SELECT'), ('saas_milestones', 'SELECT'),
     ('saas_settings', 'INSERT,SELECT,UPDATE'), ('tech_counts', 'SELECT') $$,
   'makers hold only the table privileges the app uses');
 select is_empty($$ select * from pgtap_column_privileges where role = 'anon' $$,
@@ -63,7 +63,7 @@ select results_eq(
   $$ values ('conversation_reads'::text, 'UPDATE'::text, 'read_at'::text),
     ('profiles', 'INSERT', 'avatar_path,bio,github_url,headline,id,linkedin_url,location,name,skills,social_url,website,x_url'),
     ('profiles', 'UPDATE', 'avatar_path,bio,github_url,headline,linkedin_url,location,name,skills,social_url,updated_at,website,x_url'),
-    ('revenue_connections', 'SELECT', 'connected_at,key_hint,last_error,last_synced_at,livemode,owner_id,provider,saas_id,status'),
+    ('revenue_connections', 'SELECT', 'connected_at,key_hint,last_error,last_synced_at,livemode,owner_id,provider,revenue_checked_at,revenue_from,revenue_note,revenue_origin,revenue_read_at,saas_id,status'),
     ('saas', 'INSERT', 'category,description,id,logo_path,name,owner_id,tagline,tech_stack,website'),
     ('saas', 'UPDATE', 'category,description,logo_path,name,tagline,tech_stack,updated_at,website') $$,
   'makers write only the columns they edit, and never read a stored key');

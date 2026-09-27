@@ -50,6 +50,9 @@ function listing(overrides: Partial<Listing> = {}): Listing {
     tech_stack: ["postgresql", "go", "gone-now"],
     verified_domain: null,
     domain_verified_at: null,
+    revenue_30d_cents: null,
+    revenue_12m_cents: null,
+    revenue_total_cents: null,
     rank: 1,
     ...overrides,
   };
@@ -236,6 +239,25 @@ describe("markdown", () => {
     expect(text).toContain("- Paying customers: 37");
     expect(text).toContain("| August 2026 | $4,100 |");
     expect(text).toContain("written by the users who list them");
+  });
+
+  it("adds revenue besides MRR where the founder shares it", () => {
+    expect(productMarkdown(listing())).not.toContain("Revenue, last 30 days");
+    const text = productMarkdown(
+      listing({
+        revenue_status: "private",
+        mrr_cents: null,
+        mrr_growth_pct: null,
+        revenue_30d_cents: 510_000,
+        revenue_12m_cents: 4_800_000,
+        revenue_total_cents: null,
+      }),
+    );
+    expect(text).toContain("- Monthly recurring revenue: not shared");
+    expect(text).toContain("- Revenue, last 30 days: $5,100");
+    expect(text).toContain("- Revenue, last 12 months: $48,000");
+    expect(text).toContain("- Revenue, all time: not shared");
+    expect(text).toContain("- Verified with: Stripe");
   });
 
   it("says when the founder verified the website's domain", () => {

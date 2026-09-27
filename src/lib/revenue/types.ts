@@ -26,9 +26,47 @@ export type ReadOptions = { allowTest: boolean; now: Date; history: boolean };
 /** What a maker pasted: the key, and the site or project it belongs to where one is asked for. */
 export type KeyInput = { key: string; account: string };
 
+/**
+ * A paid payment as a provider lists it. The fingerprint changes whenever what the payment earned
+ * could have, such as after a refund. `value` is what it earned, in minor units after discounts
+ * and refunds and without tax, or null for a payment left unvalued because it is unchanged.
+ */
+export type ListedPayment = {
+  id: string;
+  /** When it was paid, in Unix seconds. */
+  at: number;
+  fingerprint: string;
+  value: { currency: string; amount: number } | null;
+};
+
+/**
+ * Payments of a window; `complete` when the read reached the window's start. An unfinished read
+ * covers the window from `from` (Unix seconds, the start of a day) where it says so, or else from
+ * the day after its oldest payment, as a list read newest first does.
+ */
+export type PaymentRead = { payments: ListedPayment[]; complete: boolean; from?: number };
+
+/** A payment as stored: its fingerprint, and what it earned in minor units. */
+export type StoredPayment = { fingerprint: string; amount: number };
+
+/**
+ * A window of payments: paid from `since` (inclusive) to `before` (exclusive, or up to now), read
+ * for at most `maxPages` pages. `stored` gives a payment of the last six months as stored, so a
+ * provider whose valuation costs requests can skip unchanged payments, or scale a changed one.
+ */
+export type PaymentOptions = {
+  allowTest: boolean;
+  since: number;
+  before: number | null;
+  maxPages: number;
+  stored: (id: string) => StoredPayment | null;
+};
+
 export type ProviderAdapter = {
   id: ProviderId;
   parseKey(input: KeyInput, options: { allowTest: boolean }): ParsedKey;
   /** Reads the account. With `livemode` null, the adapter finds the key's environment. */
   read(key: string, livemode: boolean | null, options: ReadOptions): Promise<ProviderReading>;
+  /** Reads the paid payments of a window, subscriptions and one-time purchases alike. */
+  payments(key: string, livemode: boolean, options: PaymentOptions): Promise<PaymentRead>;
 };

@@ -4,6 +4,12 @@ import { COUNTED_STATUSES } from "./mrr";
 import { VerificationError } from "../errors";
 import { apiBase, MAX_PAGES, ProviderRequestError } from "../http";
 import { linePriceId, type StripeInvoice, type StripeInvoiceLine } from "./history";
+import type {
+  StripeCharge,
+  StripeCheckoutSession,
+  StripeDispute,
+  StripePaidInvoice,
+} from "./payments";
 
 // Every request pins the API version, because responses otherwise follow each account's own
 // default version and field shapes differ between versions.
@@ -70,6 +76,62 @@ async function listAll<T extends { id: string }>(
     path,
     true,
   );
+}
+
+/**
+ * One window of a list, newest first, for at most `maxPages` pages; `complete` when the list
+ * ended within them.
+ */
+async function listWindow<T extends { id: string }>(
+  key: string,
+  path: string,
+  params: [string, string][],
+  maxPages: number,
+) {
+  const items: T[] = [];
+  let startingAfter: string | undefined;
+  for (let page = 0; page < maxPages; page++) {
+    const pageParams: [string, string][] = [...params, ["limit", "100"]];
+    if (startingAfter) pageParams.push(["starting_after", startingAfter]);
+    const list = await stripeGet<List<T>>(key, path, pageParams);
+    items.push(...list.data);
+    if (!list.has_more || list.data.length === 0) return { items, complete: true };
+    startingAfter = list.data.at(-1)!.id;
+  }
+  return { items, complete: false };
+}
+
+function created(since: number, before: number | null): [string, string][] {
+  const range: [string, string][] = [["created[gte]", String(since)]];
+  if (before !== null) range.push(["created[lt]", String(before)]);
+  return range;
+}
+
+/** Charges created in a window, newest first. Permission: Charges, read. */
+export function fetchCharges(key: string, since: number, before: number | null, maxPages: number) {
+  return listWindow<StripeCharge>(key, "/v1/charges", created(since, before), maxPages);
+}
+
+/** The disputes of one charge. Permission: Disputes, read. */
+export async function fetchDisputes(key: string, charge: string) {
+  return listAll<StripeDispute>(key, "/v1/disputes", [["charge", charge]]);
+}
+
+/** Paid invoices created in a window, with the payments that paid them. Permission: Invoices. */
+export function fetchInvoicePayments(key: string, since: number, before: number) {
+  return listAll<StripePaidInvoice>(key, "/v1/invoices", [
+    ["status", "paid"],
+    ...created(since, before),
+    ["expand[]", "data.payments"],
+  ]);
+}
+
+/** Completed Checkout Sessions created in a window. Permission: Checkout Sessions, read. */
+export function fetchCheckoutSessions(key: string, since: number, before: number) {
+  return listAll<StripeCheckoutSession>(key, "/v1/checkout/sessions", [
+    ["status", "complete"],
+    ...created(since, before),
+  ]);
 }
 
 export type StripeAccountData = {

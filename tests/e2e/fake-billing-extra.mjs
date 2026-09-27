@@ -22,6 +22,12 @@
 // RevenueCat key "one" on project "projharbor1": the MRR chart without tax shows $100 until this
 // month and $150 since, with 42 active subscriptions: MRR $150 from 42 subscriptions, $100 at
 // every month-end and thirty days ago. Key "wide" can also read customers and is refused.
+//
+// For revenue, every paid transaction, invoice or payment counts after refunds and without tax.
+// Creem adds a one-time payment of EUR 24.20 with EUR 4.20 of VAT, half refunded (EUR 10), and one
+// charged back ($0). Chargebee adds a one-time $20 invoice and one refunded in full through a
+// credit note ($0). Whop adds a one-time $40 payment and one refunded in full ($0). RevenueCat's
+// revenue chart without tax shows $5 a day for the last 400 days.
 
 const DAY = 86_400_000;
 const iso = (ms) => new Date(ms).toISOString();
@@ -68,6 +74,7 @@ const creemYearly = {
 
 // Timestamps in milliseconds, as Creem's examples show them.
 function creemTransactions() {
+  const now = Date.now();
   const transaction = (id, subscription, currency, start, end, paid, tax, extra = {}) => ({
     id,
     object: "transaction",
@@ -96,6 +103,16 @@ function creemTransactions() {
     transaction("tran_once", null, "USD", start, start, 5000, 0, { type: "payment" }),
     transaction("tran_yearly", "sub_creem_yearly", "EUR", start, end.getTime(), 12000, 2000, {
       customer: "cust_2",
+    }),
+    transaction("tran_refund", null, "EUR", now - 6 * DAY, now - 6 * DAY, 2420, 420, {
+      type: "payment",
+      status: "partialRefund",
+      refunded_amount: 1210,
+    }),
+    transaction("tran_chargeback", null, "USD", now - 7 * DAY, now - 7 * DAY, 3000, 0, {
+      type: "payment",
+      status: "chargedBack",
+      refunded_amount: 3000,
     }),
   ];
 }
@@ -226,6 +243,8 @@ function chargebeeInvoices() {
       lines.push(
         line("li_setup", "cb_monthly", start, start, 3000, { entity_type: "charge_item_price" }),
       );
+    const lineTotal = lines.reduce((sum, item) => sum + item.amount, 0);
+    const total = lineTotal - discounts.reduce((sum, item) => sum + item.discount_amount, 0);
     return {
       id: `cb_inv_${k}`,
       status: "paid",
@@ -233,6 +252,9 @@ function chargebeeInvoices() {
       price_type: "tax_exclusive",
       currency_code: "USD",
       date: seconds(start),
+      total,
+      tax: 0,
+      amount_paid: total,
       line_items: lines,
       line_item_discounts: discounts,
     };
@@ -247,10 +269,49 @@ function chargebeeInvoices() {
     price_type: "tax_inclusive",
     currency_code: "EUR",
     date: seconds(start),
+    total: 6000,
+    tax: 1000,
+    amount_paid: 6000,
     line_items: [line("li_yearly", "cb_yearly", start, end.getTime(), 6000, { tax_amount: 1000 })],
     line_item_discounts: [],
   });
+  const oneTime = (id, date, total, tax) => ({
+    id,
+    status: "paid",
+    recurring: false,
+    price_type: "tax_exclusive",
+    currency_code: "USD",
+    date: seconds(date),
+    total,
+    tax,
+    amount_paid: total,
+    line_items: [
+      line(`li_${id}`, null, date, date, total - tax, {
+        entity_type: "charge_item_price",
+        tax_amount: tax,
+      }),
+    ],
+    line_item_discounts: [],
+  });
+  invoices.push(
+    oneTime("cb_inv_once", Date.now() - 7 * DAY, 2000, 0),
+    oneTime("cb_inv_refunded", Date.now() - 9 * DAY, 1200, 200),
+  );
   return invoices;
+}
+
+function chargebeeCreditNotes() {
+  return [
+    {
+      id: "cb_cn_1",
+      type: "refundable",
+      reference_invoice_id: "cb_inv_refunded",
+      date: seconds(Date.now() - 8 * DAY),
+      total: 1200,
+      amount_refunded: 1200,
+      taxes: [{ name: "VAT", amount: 200 }],
+    },
+  ];
 }
 
 function chargebee(url, request, send) {
@@ -285,13 +346,29 @@ function chargebee(url, request, send) {
     );
   }
   if (path === "/invoices") {
-    if (url.searchParams.get("status[is]") !== "paid")
+    const paid = url.searchParams.get("amount_paid[gt]") === "0";
+    if (!paid && url.searchParams.get("status[is]") !== "paid")
       return send(400, { api_error_code: "invalid_request", message: "Only paid invoices." });
+    const recurring = url.searchParams.get("recurring[is]");
+    const after = Number(url.searchParams.get("date[after]"));
+    const before = Number(url.searchParams.get("date[before]") ?? Infinity);
+    const invoices = chargebeeInvoices().filter(
+      (invoice) =>
+        invoice.date > after &&
+        invoice.date < before &&
+        (recurring === null || String(invoice.recurring) === recurring),
+    );
+    if (url.searchParams.get("sort_by[desc]") === "date") invoices.sort((a, b) => b.date - a.date);
+    return page(invoices.map((invoice) => ({ invoice })));
+  }
+  if (path === "/credit_notes") {
+    if (url.searchParams.get("type[is]") !== "refundable")
+      return send(400, { api_error_code: "invalid_request", message: "Only refunds." });
     const after = Number(url.searchParams.get("date[after]"));
     return page(
-      chargebeeInvoices()
-        .filter((invoice) => invoice.date > after)
-        .map((invoice) => ({ invoice })),
+      chargebeeCreditNotes()
+        .filter((note) => note.date > after)
+        .map((credit_note) => ({ credit_note })),
     );
   }
   return send(404, { api_error_code: "resource_not_found", message: `Unknown path ${path}` });
@@ -413,6 +490,12 @@ function whopPayments() {
       money("15.00"),
       null,
     ),
+    payment("pay_w_once", null, null, "one_time", now - 7 * DAY, money("40.00"), null),
+    payment("pay_w_refund", null, null, "one_time", now - 9 * DAY, money("20.00"), null, {
+      substatus: "refunded",
+      refunded_amount: money("20.00"),
+      tax_refunded_amount: money("0.00"),
+    }),
   ];
 }
 
@@ -455,11 +538,15 @@ function whop(url, request, send) {
   if (path === "/memberships") return page(whopMemberships()[url.searchParams.get("status")] ?? []);
   if (path === "/payments") {
     const after = Date.parse(url.searchParams.get("created_after") ?? "");
-    return page(
-      whopPayments().filter(
-        (p) => p.status === url.searchParams.get("status") && Date.parse(p.created_at) > after,
-      ),
+    const before = Date.parse(url.searchParams.get("created_before") ?? "") || Infinity;
+    const created = (p) => Date.parse(p.created_at);
+    const payments = whopPayments().filter(
+      (p) =>
+        p.status === url.searchParams.get("status") && created(p) > after && created(p) < before,
     );
+    if (url.searchParams.get("direction") === "desc")
+      payments.sort((a, b) => created(b) - created(a));
+    return page(payments);
   }
   const plan = path.match(/^\/plans\/(.+)$/)?.[1];
   if (plan && whopPlans[plan]) return send(200, whopPlans[plan]);
@@ -490,15 +577,28 @@ function revenueCatChart(chart, start, end) {
   const [[thisMonth]] = monthStarts(1);
   const change = Math.floor(Math.max(Date.now() - 20 * DAY, thisMonth) / DAY) * DAY;
   const values = [];
+  const first = Date.now() - 400 * DAY;
+  const value = (day) => {
+    if (chart === "mrr") return day >= change ? 150 : 100;
+    if (chart === "revenue") return day >= first ? 5 : 0;
+    return 42;
+  };
   for (let day = Date.parse(start); day <= Date.parse(end); day += DAY)
-    values.push([seconds(day), chart === "mrr" ? (day >= change ? 150 : 100) : 42]);
+    values.push(chart === "revenue" ? [seconds(day), value(day), 1] : [seconds(day), value(day)]);
+  const names = { mrr: "MRR", revenue: "Revenue", actives: "Active Subscriptions" };
   return {
     object: "chart_data",
-    category: chart === "mrr" ? "revenue" : "subscription",
-    display_name: chart === "mrr" ? "MRR" : "Active Subscriptions",
+    category: chart === "actives" ? "subscription" : "revenue",
+    display_name: names[chart],
     resolution: "day",
     yaxis_currency: "USD",
-    measures: [{ display_name: chart === "mrr" ? "MRR" : "Actives", unit: "$" }],
+    measures:
+      chart === "revenue"
+        ? [
+            { display_name: "Revenue", unit: "$" },
+            { display_name: "Transactions", unit: "#" },
+          ]
+        : [{ display_name: chart === "mrr" ? "MRR" : "Actives", unit: "$" }],
     values,
   };
 }
@@ -519,7 +619,7 @@ function revenueCat(url, request, send) {
     return key === REVENUECAT.keys.wide ? send(200, { object: "list", items: [] }) : denied();
   if (!path.startsWith(`${project}/charts/`)) return denied();
   const [chart, options] = path.slice(`${project}/charts/`.length).split("/");
-  if (!["mrr", "actives"].includes(chart))
+  if (!["mrr", "actives", "revenue"].includes(chart))
     return send(404, { object: "error", type: "resource_missing", message: "Unknown chart." });
   if (options === "options")
     return send(200, {
@@ -528,7 +628,7 @@ function revenueCat(url, request, send) {
       segments: [],
       filters: [],
       user_selectors:
-        chart === "mrr"
+        chart !== "actives"
           ? {
               revenue_type: {
                 default: "revenue",
@@ -544,7 +644,7 @@ function revenueCat(url, request, send) {
   const selectors = JSON.parse(url.searchParams.get("selectors") ?? "{}");
   if (url.searchParams.get("resolution") !== "0" || url.searchParams.get("currency") !== "USD")
     return send(400, { object: "error", type: "parameter_error", message: "Ask for USD by day." });
-  if (chart === "mrr" && selectors.revenue_type !== "revenue_net_of_taxes")
+  if (chart !== "actives" && selectors.revenue_type !== "revenue_net_of_taxes")
     return send(400, {
       object: "error",
       type: "parameter_error",

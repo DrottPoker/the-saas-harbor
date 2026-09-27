@@ -47,6 +47,7 @@ export type PolarOrder = {
   net_amount: number;
   tax_amount: number;
   total_amount: number;
+  refunded_amount?: number | null;
   created_at: string;
   items: PolarOrderItem[];
   product: {

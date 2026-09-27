@@ -307,11 +307,41 @@ export function demoHistory(product: { slug: string; mrr: number; start: number 
   return points;
 }
 
+/**
+ * Made-up revenue besides MRR: the last 30 days a little above MRR for one-time sales, the last 12
+ * months the sum of the month-ends, and all time as much again for every year before, fading
+ * toward the launch. Counted from the start of the month, so it stays the same all month, as the
+ * history does.
+ */
+export function demoRevenue(
+  product: { slug: string; launched: string | null },
+  history: { mrr_cents: number }[],
+  mrrCents: number,
+  now: Date,
+) {
+  const extra = 1.04 + 0.08 * unit(`${product.slug}:once`);
+  const year = history.reduce((sum, point) => sum + point.mrr_cents, 0);
+  const month = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1);
+  const launched = product.launched ? Date.parse(product.launched) : month;
+  const earlierYears = Math.max(0, (month - launched) / (365.25 * 86_400_000) - 1);
+  // Whole dollars, like the made-up MRR.
+  const dollars = (cents: number) => Math.round(cents / 100) * 100;
+  return {
+    revenue_30d_cents: dollars(mrrCents * extra),
+    revenue_12m_cents: dollars(year * extra),
+    revenue_total_cents: dollars(year * extra * (1 + earlierYears * 0.6)),
+  };
+}
+
 function toListing(product: DemoProduct, now: Date): Listing {
   const shared = product.verified !== false && product.mrr != null;
   const history = shared ? demoHistory({ ...product, mrr: product.mrr! }, now) : null;
   const mrrCents = shared ? product.mrr! * 100 : null;
   const lastMonth = history?.at(-1)?.mrr_cents;
+  const revenue =
+    history && mrrCents != null
+      ? demoRevenue(product, history, mrrCents, now)
+      : { revenue_30d_cents: null, revenue_12m_cents: null, revenue_total_cents: null };
   return {
     id: `demo-${product.slug}`,
     slug: product.slug,
@@ -344,6 +374,7 @@ function toListing(product: DemoProduct, now: Date): Listing {
       mrrCents != null && lastMonth
         ? Math.round(((mrrCents - lastMonth) / lastMonth) * 1000) / 10
         : null,
+    ...revenue,
     rank: null,
     demo: { headline: product.maker.headline, logo: product.logo },
   };
@@ -354,16 +385,29 @@ export function demoListings(now = new Date()) {
   return products.map((product) => toListing(product, now));
 }
 
+// The figure each ranking orders by, which a demo product needs to be in it.
+const RANKED: Partial<Record<Sort, keyof Listing>> = {
+  rank: "mrr_cents",
+  "revenue-30d": "revenue_30d_cents",
+  "revenue-12m": "revenue_12m_cents",
+  "revenue-all": "revenue_total_cents",
+};
+const figure = (item: Listing, sort: Sort) => item[RANKED[sort]!] as number;
+const byFigure = (sort: Sort) => (a: Listing, b: Listing) => figure(b, sort) - figure(a, sort);
+
 const order: Record<Sort, (a: Listing, b: Listing) => number> = {
-  rank: (a, b) => b.mrr_cents! - a.mrr_cents!,
+  rank: byFigure("rank"),
+  "revenue-30d": byFigure("revenue-30d"),
+  "revenue-12m": byFigure("revenue-12m"),
+  "revenue-all": byFigure("revenue-all"),
   name: (a, b) => a.name!.localeCompare(b.name!, "en"),
   newest: (a, b) => (b.launched_on ?? "").localeCompare(a.launched_on ?? ""),
 };
 
 /**
  * The demo products a list shows after its real ones: those that match its filters, on a first
- * page only, and no more than `room`, the places real products leave free on that page. The
- * leaderboard takes only those that share MRR.
+ * page only, and no more than `room`, the places real products leave free on that page. A
+ * ranking takes only those that share its figure.
  */
 export function demoFill(
   items: Listing[],
@@ -382,7 +426,7 @@ export function demoFill(
       (item) =>
         (!category || item.category === category) &&
         (!term || item.name!.toLowerCase().includes(term)) &&
-        (sort !== "rank" || item.mrr_cents != null),
+        (!RANKED[sort] || item[RANKED[sort]] != null),
     )
     .sort(order[sort])
     .slice(0, room);

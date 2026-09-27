@@ -3,11 +3,15 @@ import { splitAccountKey } from "../account-key";
 import { historyWindowStart } from "../history";
 import { ProviderRequestError } from "../http";
 import type { ProviderAdapter } from "../types";
-import { fetchInvoices, fetchSubscriptions } from "./client";
+import { fetchInvoices, fetchPaidInvoices, fetchRefunds, fetchSubscriptions } from "./client";
 import { parseChargebeeKey } from "./key";
 import { chargebeeMrr, chargebeeServiceLines, invoiceWindowStart } from "./mrr";
+import { invoicePayments, refundedByInvoice } from "./payments";
 
-/** Chargebee: MRR and history from paid invoices, for the subscriptions that are active. */
+/**
+ * Chargebee: MRR and history from paid invoices, for the subscriptions that are active, and
+ * revenue from every invoice with a payment, less cash refunds.
+ */
 export const chargebee: ProviderAdapter = {
   id: "chargebee",
   parseKey: (input, options) => parseChargebeeKey(input, options),
@@ -34,5 +38,12 @@ export const chargebee: ProviderAdapter = {
       lines: history && !historyNote ? chargebeeServiceLines(invoices) : null,
       historyNote,
     };
+  },
+  async payments(stored, _livemode, { since, before, maxPages }) {
+    const { account: site, key } = splitAccountKey(stored);
+    const { invoices, complete } = await fetchPaidInvoices(site, key, since, before, maxPages);
+    // Refunds come after the invoice they refund, so they are read from the window's start on.
+    const refunds = invoices.length ? await fetchRefunds(site, key, since) : [];
+    return { payments: invoicePayments(site, invoices, refundedByInvoice(refunds)), complete };
   },
 };

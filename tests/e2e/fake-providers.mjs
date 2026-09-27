@@ -9,6 +9,11 @@
 // Account "two" shares a subscription with "one", so connecting both must be refused. Its key has
 // no invoice permission, so it verifies MRR without history. Account "three" charges EUR 36 on a
 // multi-currency price whose default is USD 50, so MRR is $45; its key cannot read invoices.
+// Account "one" also has charges for revenue: one per invoice (the EUR invoice adds EUR 8 of VAT,
+// so it earns EUR 40), a one-time Checkout purchase of $12 with $2 of tax ($10), a one-time
+// payment refunded in full ($0), one partly refunded ($20 of $30), one lost in a dispute ($0),
+// and a failed and an uncaptured one, which do not count. Keys "two" and "three" cannot read
+// charges.
 import { createServer } from "node:http";
 import { handleBilling } from "./fake-billing.mjs";
 import { handleExtraBilling } from "./fake-billing-extra.mjs";
@@ -140,6 +145,9 @@ function fixtureInvoices() {
     invoices.push({
       id: `in_monthly_${k}`,
       created: start,
+      currency: "usd",
+      total: 2900,
+      total_excluding_tax: 2900,
       lines: { data: lines, has_more: false },
     });
   }
@@ -148,6 +156,9 @@ function fixtureInvoices() {
   invoices.push({
     id: "in_yearly",
     created: yearlyStart,
+    currency: "usd",
+    total: 35000,
+    total_excluding_tax: 35000,
     lines: {
       data: [
         line("il_yearly", "price_yearly", 60000, "usd", yearlyStart, yearlyStart + 365 * DAY, {
@@ -174,6 +185,9 @@ function fixtureInvoices() {
   invoices.push({
     id: "in_eur",
     created: eurStart,
+    currency: "eur",
+    total: 4800,
+    total_excluding_tax: 4000,
     lines: {
       data: [
         line("il_eur", "price_eur", 4000, "eur", eurStart, unix(Date.UTC(y, m + 1, 1)), {
@@ -184,6 +198,70 @@ function fixtureInvoices() {
     },
   });
   return invoices;
+}
+
+function fixtureCharges() {
+  const now = unix(Date.now());
+  const charge = (id, created, amount, currency, extra = {}) => ({
+    id,
+    object: "charge",
+    amount,
+    amount_captured: amount,
+    amount_refunded: 0,
+    captured: true,
+    currency,
+    created,
+    disputed: false,
+    status: "succeeded",
+    payment_intent: `pi_${id.slice(3)}`,
+    ...extra,
+  });
+  const charges = fixtureInvoices().map((invoice) =>
+    charge(`ch_${invoice.id.slice(3)}`, invoice.created + 60, invoice.total, invoice.currency),
+  );
+  charges.push(
+    charge("ch_ebook", now - 3 * DAY, 1200, "usd"),
+    charge("ch_refunded", now - 10 * DAY, 5000, "usd", { amount_refunded: 5000 }),
+    charge("ch_partial", now - 12 * DAY, 3000, "usd", {
+      amount_refunded: 1000,
+      payment_intent: null,
+    }),
+    charge("ch_disputed", now - 15 * DAY, 2000, "usd", { disputed: true }),
+    charge("ch_failed", now - 5 * DAY, 4000, "usd", {
+      status: "failed",
+      captured: false,
+      amount_captured: 0,
+    }),
+    charge("ch_auth", now - 6 * DAY, 4000, "usd", { captured: false, amount_captured: 0 }),
+  );
+  return charges.sort((a, b) => b.created - a.created);
+}
+const checkoutSessions = () => [
+  {
+    id: "cs_ebook",
+    object: "checkout.session",
+    created: unix(Date.now()) - 3 * DAY - 300,
+    payment_intent: "pi_ebook",
+    payment_status: "paid",
+    status: "complete",
+    amount_total: 1200,
+    total_details: { amount_discount: 0, amount_shipping: 0, amount_tax: 200 },
+  },
+];
+const disputes = {
+  ch_disputed: [{ id: "dp_lost", charge: "ch_disputed", amount: 2000, status: "lost" }],
+};
+
+/** A list page in Stripe's shape: newest first, after `starting_after`, at most `limit` long. */
+function listPage(url, items) {
+  const since = Number(url.searchParams.get("created[gte]") ?? 0);
+  const before = Number(url.searchParams.get("created[lt]") ?? Infinity);
+  const inWindow = items.filter((item) => item.created >= since && item.created < before);
+  const after = url.searchParams.get("starting_after");
+  const start = after ? inWindow.findIndex((item) => item.id === after) + 1 : 0;
+  const limit = Number(url.searchParams.get("limit") ?? 10);
+  const data = inWindow.slice(start, start + limit);
+  return { object: "list", has_more: start + limit < inWindow.length, data };
 }
 
 const coupons = {
@@ -244,6 +322,27 @@ createServer((request, response) => {
       ...(expanded ? { currency_options: currencyOptions[priceId] ?? {} } : {}),
     });
   }
+  if (
+    ["/v1/charges", "/v1/disputes", "/v1/checkout/sessions"].includes(url.pathname) &&
+    key !== "rk_test_harborfixture0001"
+  )
+    return send(
+      response,
+      403,
+      stripeError("The provided key does not have the required permissions for this endpoint."),
+    );
+  if (url.pathname === "/v1/charges") return send(response, 200, listPage(url, fixtureCharges()));
+  if (url.pathname === "/v1/disputes")
+    return send(response, 200, {
+      object: "list",
+      has_more: false,
+      data: disputes[url.searchParams.get("charge")] ?? [],
+    });
+  if (url.pathname === "/v1/checkout/sessions") {
+    if (url.searchParams.get("status") !== "complete")
+      return send(response, 400, stripeError("Only complete sessions are expected."));
+    return send(response, 200, listPage(url, checkoutSessions()));
+  }
   if (url.pathname.startsWith("/v1/invoices") || url.pathname.startsWith("/v1/prices/")) {
     if (key !== "rk_test_harborfixture0001")
       return send(
@@ -256,10 +355,31 @@ createServer((request, response) => {
       if (url.searchParams.get("status") !== "paid")
         return send(response, 400, stripeError("Only paid invoices are expected."));
       const since = Number(url.searchParams.get("created[gte]"));
+      const before = Number(url.searchParams.get("created[lt]") ?? Infinity);
+      const payments = url.searchParams.getAll("expand[]").includes("data.payments");
       const data = invoices
-        .filter((invoice) => invoice.created >= since)
+        .filter((invoice) => invoice.created >= since && invoice.created < before)
         // The second lines page is only served by the lines endpoint.
-        .map((invoice) => ({ ...invoice, more: undefined }));
+        .map((invoice) => ({
+          ...invoice,
+          more: undefined,
+          ...(payments
+            ? {
+                payments: {
+                  object: "list",
+                  has_more: false,
+                  data: [
+                    {
+                      payment: {
+                        type: "payment_intent",
+                        payment_intent: `pi_${invoice.id.slice(3)}`,
+                      },
+                    },
+                  ],
+                },
+              }
+            : {}),
+        }));
       return send(response, 200, { object: "list", has_more: false, data });
     }
     const lines = url.pathname.match(new RegExp("^/v1/invoices/([^/]+)/lines$"));

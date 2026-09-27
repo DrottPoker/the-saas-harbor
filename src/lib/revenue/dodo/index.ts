@@ -1,12 +1,23 @@
 import "server-only";
 import { ProviderRequestError } from "../http";
-import type { ProviderAdapter } from "../types";
-import { fetchBrands, fetchLatestPayment, fetchSubscriptions } from "./client";
+import { dayOf, dayStart } from "../payments";
+import type { ListedPayment, PaymentOptions, ProviderAdapter } from "../types";
+import {
+  fetchBrands,
+  fetchLatestPayment,
+  fetchPayment,
+  fetchPaymentPage,
+  fetchSubscriptions,
+} from "./client";
 import { parseDodoKey } from "./key";
-import { dodoMrr, taxIncludedSubscriptions, untaxedShare } from "./mrr";
+import { dodoMrr, taxIncludedSubscriptions, untaxedShare, type DodoListedPayment } from "./mrr";
+import { dodoEarned, dodoFingerprint } from "./payments";
 
 // Each tax-inclusive subscription costs two requests, and Dodo allows 240 a minute per business.
 const MAX_TAX_LOOKUPS = 200;
+const DAY = 86_400;
+/** Payments are listed a month at a time, each month whole, since the list's order is unknown. */
+const SLICE = 30 * DAY;
 
 /** The environment of a new key: live first, then test where test keys are allowed. */
 async function environment(key: string, livemode: boolean | null, allowTest: boolean) {
@@ -22,8 +33,63 @@ async function environment(key: string, livemode: boolean | null, allowTest: boo
 }
 
 /**
- * Dodo Payments: MRR from subscriptions. Payments do not say which period they cover, so there
- * is no history.
+ * Payments from `before` back to `since`, a month at a time, each request counted against
+ * `maxPages`. A payment is valued with a request of its own unless it is stored unchanged. A read
+ * that runs out of requests covers the days from the newest one it could not value.
+ */
+async function readPayments(
+  key: string,
+  livemode: boolean,
+  { since, before, maxPages, stored }: PaymentOptions,
+) {
+  let requests = 0;
+  const payments: ListedPayment[] = [];
+  let end = before ?? Math.floor(Date.now() / 1000);
+  while (end > since) {
+    const start = Math.max(since, end - SLICE);
+    const listed: DodoListedPayment[] = [];
+    for (let page = 0; ; page++) {
+      if (requests++ >= maxPages) return { payments, complete: false, from: end };
+      const { items } = await fetchPaymentPage(key, livemode, start, end, page);
+      listed.push(...items);
+      if (items.length < 100) break;
+    }
+    const newestFirst = listed
+      .map((payment) => ({ payment, at: Math.floor(Date.parse(payment.created_at) / 1000) }))
+      .filter(({ at }) => Number.isFinite(at))
+      .sort((a, b) => b.at - a.at);
+    for (const { payment, at } of newestFirst) {
+      const fingerprint = dodoFingerprint(payment);
+      if (stored(payment.payment_id)?.fingerprint === fingerprint) {
+        payments.push({ id: payment.payment_id, at, fingerprint, value: null });
+        continue;
+      }
+      if (requests++ >= maxPages) {
+        // The days after this payment's are complete; its own day is left for the next read.
+        const from = dayStart(dayOf(at)) + DAY;
+        return { payments: payments.filter((listed) => listed.at >= from), complete: false, from };
+      }
+      const detail = await fetchPayment(key, livemode, payment.payment_id);
+      payments.push({
+        id: payment.payment_id,
+        at,
+        fingerprint,
+        value: { currency: payment.currency, amount: dodoEarned(detail) },
+      });
+    }
+    end = start;
+    // After a month without payments, one request tells whether any came before it at all.
+    if (!listed.length && end > since) {
+      if (requests++ >= maxPages) return { payments, complete: false, from: end };
+      if (!(await fetchPaymentPage(key, livemode, since, end, 0)).items.length) break;
+    }
+  }
+  return { payments, complete: true };
+}
+
+/**
+ * Dodo Payments: MRR from subscriptions, and revenue from successful payments. Payments do not
+ * say which period they cover, so there is no history.
  */
 export const dodo: ProviderAdapter = {
   id: "dodo",
@@ -54,4 +120,5 @@ export const dodo: ProviderAdapter = {
         : null,
     };
   },
+  payments: readPayments,
 };

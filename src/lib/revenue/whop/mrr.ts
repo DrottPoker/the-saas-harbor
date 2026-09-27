@@ -38,6 +38,8 @@ export type WhopPayment = {
   created_at: string;
   total: WhopMoney;
   tax_amount: WhopMoney;
+  refunded_amount?: WhopMoney;
+  tax_refunded_amount?: WhopMoney;
 };
 export type WhopPromo = {
   id: string;

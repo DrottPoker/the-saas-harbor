@@ -4,13 +4,19 @@ import { VerificationError } from "../errors";
 
 export type RestrictedKey = { key: string; livemode: boolean; hint: string };
 
-/** The read permissions verification needs: the dashboard's resource names and Stripe's ids. */
+/**
+ * The read permissions verification needs: the dashboard's resource names and Stripe's ids. MRR
+ * needs the first four; revenue from all payments needs the last three as well.
+ */
 export const STRIPE_KEY_PERMISSIONS = [
   { resource: "Subscriptions", id: "rak_subscription_read" },
   { resource: "Invoices", id: "rak_invoice_read" },
   { resource: "Coupons", id: "rak_coupon_read" },
   // Prices still use the permission id of the older Plans.
   { resource: "Prices", id: "rak_plan_read" },
+  { resource: "Charges", id: "rak_charge_read" },
+  { resource: "Checkout Sessions", id: "rak_checkout_session_read" },
+  { resource: "Disputes", id: "rak_dispute_read" },
 ] as const;
 
 /**

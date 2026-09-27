@@ -86,6 +86,10 @@ export type Database = Omit<GeneratedDatabase, "public"> & {
           | "p_mrr_invoice_cents"
           | "p_mrr_30d_ago_cents"
           | "p_history_at"
+          | "p_revenue_30d_cents"
+          | "p_revenue_12m_cents"
+          | "p_revenue_total_cents"
+          | "p_revenue_at"
         >;
         Returns: undefined;
       };
