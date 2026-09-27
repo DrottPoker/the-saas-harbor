@@ -1,3 +1,4 @@
+import { cookies } from "next/headers";
 import { notFound, redirect } from "next/navigation";
 import { z } from "zod";
 import { SaasForm } from "@/components/forms";
@@ -11,6 +12,11 @@ import { RevenueConnectionSection } from "@/components/revenue-connection";
 import { CONNECTION_COLUMNS, type RevenueConnection } from "@/lib/data";
 import { RECORD_LABEL, recordName, recordValue, websiteDomain } from "@/lib/domain-verification";
 import { PRODUCT_LIMIT } from "@/lib/moderation";
+import {
+  decodeGumroadResult,
+  GUMROAD_RESULT_COOKIE,
+  gumroadClient,
+} from "@/lib/revenue/gumroad/oauth";
 import { currentUser, requireUser } from "@/lib/supabase/server";
 import { firstValues, type SearchParams } from "@/lib/params";
 import { siteUrl } from "@/lib/seo";
@@ -78,6 +84,12 @@ export default async function EditSaas({ params, searchParams }: Props) {
   if (!saas.data) notFound();
   const domain = websiteDomain(saas.data.website);
   const token = verification.data?.token;
+  const query = firstValues(await searchParams);
+  // Connecting Gumroad returns here with the outcome in a cookie, for this product only.
+  const gumroad =
+    query.gumroad === "1"
+      ? decodeGumroadResult((await cookies()).get(GUMROAD_RESULT_COOKIE)?.value)
+      : null;
   return (
     <Shell size="medium">
       <BackLink href="/dashboard">Dashboard</BackLink>
@@ -101,7 +113,9 @@ export default async function EditSaas({ params, searchParams }: Props) {
           saasId={id}
           connection={connection.data as RevenueConnection | null}
           snapshot={connection.data ? snapshot.data : null}
-          created={firstValues(await searchParams).created === "1"}
+          created={query.created === "1"}
+          oauthReady={gumroadClient() ? ["gumroad"] : []}
+          oauthResult={gumroad?.saasId === id ? gumroad : null}
         />
         <DomainVerification
           saasId={id}

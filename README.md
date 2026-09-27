@@ -1,6 +1,6 @@
 # The SaaS Harbor
 
-A focused, responsive home for independent SaaS: public maker profiles, product discovery, and a leaderboard of monthly recurring revenue, or of revenue from all payments over 30 days, 12 months or all time, verified through each product's payment provider: Stripe, Paddle, Polar, Dodo Payments, Creem, Chargebee, Whop or RevenueCat.
+A focused, responsive home for independent SaaS: public maker profiles, product discovery, and a leaderboard of monthly recurring revenue, or of revenue from all payments over 30 days, 12 months or all time, verified through each product's payment provider: Stripe, Paddle, Polar, Dodo Payments, Creem, Chargebee, Whop, RevenueCat or Gumroad.
 
 ## Included
 
@@ -9,7 +9,7 @@ A focused, responsive home for independent SaaS: public maker profiles, product 
 - Personal maker profiles laid out like product pages: photo, headline, location, key figures across the maker's products, About, products, experience, skills, and links to a website, LinkedIn, GitHub and X.
 - Multiple SaaS profiles per maker, with a logo, pitch, description, category, website and tech stack.
 - An account menu at the top right of the header, with the user's photo and name: their public profile, Edit profile, Email settings, Your reports once they have sent one, the admin panel for admins, and Sign out. The dashboard is only for the user's products.
-- Revenue verified through a read-only key to the product's payment provider (Stripe, Paddle, Polar, Dodo Payments, Creem, Chargebee, Whop or RevenueCat, one per product): MRR and paying customers are read from the provider, never typed in, and re-verified every hour. Revenue from every payment, one-time purchases included, is read every day and shown for the last 30 days, the last 12 months and all time.
+- Revenue verified through a read-only key to the product's payment provider (Stripe, Paddle, Polar, Dodo Payments, Creem, Chargebee, Whop, RevenueCat or Gumroad, one per product): MRR and paying customers are read from the provider, never typed in, and re-verified every hour. Revenue from every payment, one-time purchases included, is read every day and shown for the last 30 days, the last 12 months and all time.
 - Optional domain verification: a founder adds a DNS TXT record with a code for the product to the website's domain, and the product page's details then show the domain as Verified instead of Not verified. The record is looked up again every day; after three days without it, or when the website moves to another domain, the mark goes.
 - Verified MRR, revenue, paying customers and launch date, each with an independent public-sharing choice. Products without a connected provider are listed but not ranked.
 - A leaderboard ranked by verified MRR, or with `?by=30d`, `12m` or `all` by revenue over that window, with a choice of ranking above the categories.
@@ -35,7 +35,7 @@ A focused, responsive home for independent SaaS: public maker profiles, product 
 - Supabase RLS, owner checks in Server Actions, owner-scoped image uploads, and a Content Security Policy with a fresh nonce per request.
 - Light and dark themes.
 
-Sales, escrow, company profiles and payment providers other than Stripe, Paddle, Polar, Dodo Payments, Creem, Chargebee, Whop and RevenueCat are outside this release. Lemon Squeezy (its keys always have full access), Superwall (its MRR can only be read with a POST request) and Mollie (its subscriptions carry no tax) were left out on purpose.
+Sales, escrow, company profiles and payment providers other than Stripe, Paddle, Polar, Dodo Payments, Creem, Chargebee, Whop, RevenueCat and Gumroad are outside this release. Lemon Squeezy (its keys always have full access), Superwall (its MRR can only be read with a POST request) and Mollie (its subscriptions carry no tax) were left out on purpose.
 
 ## Run locally
 
@@ -96,16 +96,19 @@ Makers turn message and milestone emails off, and admins report emails, under Em
 
 In a product's editor, the maker chooses the payment provider and creates a key that can only read, following the steps shown in a box that links to the page where the key is made:
 
-| Provider      | Key                                           | Access                                                                                     |
-| ------------- | --------------------------------------------- | ------------------------------------------------------------------------------------------ |
-| Stripe        | Restricted key, `rk_live_`                    | Read for Subscriptions, Invoices, Coupons, Prices, Charges, Checkout Sessions and Disputes |
-| Paddle        | API key, `pdl_live_apikey_`                   | Read for Subscriptions and Transactions, no expiry date                                    |
-| Polar         | Organization access token, `polar_oat_`       | organizations:read, subscriptions:read and orders:read                                     |
-| Dodo Payments | API key with write access turned off          | Reads only                                                                                 |
-| Creem         | API key, `creem_`                             | Read scopes for products, subscriptions and transactions                                   |
-| Chargebee     | Read-only API key, with the site name         | All data, or restricted to transactional data                                              |
-| Whop          | Account API key                               | member:basic:read, plan:basic:read, payment:basic:read and promo_code:basic:read           |
-| RevenueCat    | V2 secret API key, `sk_`, with the project ID | Charts & metrics read only, no other access                                                |
+| Provider      | Key                                                    | Access                                                                                     |
+| ------------- | ------------------------------------------------------ | ------------------------------------------------------------------------------------------ |
+| Stripe        | Restricted key, `rk_live_`                             | Read for Subscriptions, Invoices, Coupons, Prices, Charges, Checkout Sessions and Disputes |
+| Paddle        | API key, `pdl_live_apikey_`                            | Read for Subscriptions and Transactions, no expiry date                                    |
+| Polar         | Organization access token, `polar_oat_`                | organizations:read, subscriptions:read and orders:read                                     |
+| Dodo Payments | API key with write access turned off                   | Reads only                                                                                 |
+| Creem         | API key, `creem_`                                      | Read scopes for products, subscriptions and transactions                                   |
+| Chargebee     | Read-only API key, with the site name                  | All data, or restricted to transactional data                                              |
+| Whop          | Account API key                                        | member:basic:read, plan:basic:read, payment:basic:read and promo_code:basic:read           |
+| RevenueCat    | V2 secret API key, `sk_`, with the project ID          | Charts & metrics read only, no other access                                                |
+| Gumroad       | No key: the founder approves access on Gumroad (OAuth) | View sales (`view_sales`) only                                                             |
+
+Gumroad's own access tokens can do anything on the account, so the editor has no key field for it: Connect with Gumroad sends the founder to Gumroad to approve read access to their sales, and Gumroad sends them back with a code that the server exchanges for a token that can only view sales. A pasted token is refused. The site's OAuth application with Gumroad needs `GUMROAD_CLIENT_ID` and `GUMROAD_CLIENT_SECRET`; without them the editor says Gumroad is not set up. Create it on Gumroad under Settings → Advanced → Applications, with `https://thesaasharbor.com/api/gumroad/callback` as the redirect URI, and `http://localhost:3001/api/gumroad/callback` on its own line to try it locally (then open the app at `localhost:3001`, not `127.0.0.1`, so the session cookie comes back with the founder).
 
 Whop and RevenueCat keys are checked on every verification: Whop's permissions must all be reads, and a RevenueCat key must be refused everything outside its charts. RevenueCat gives only its own MRR chart, which differs a little from the site's definition (see ARCHITECTURE). Stripe needs Charges, Checkout Sessions and Disputes for revenue beyond MRR only: a key without them verifies MRR, and the editor names the permission that is missing.
 
@@ -119,17 +122,18 @@ A product's domain is verified from the Domain section of its editor: add the TX
 
 Demo accounts from `npm run db:seed` are `<name>@demo.harbor.test` (for example `lena@demo.harbor.test`) with the password `harbor-demo-password`; `admin@demo.harbor.test` opens the admin panel, where a spam message, a product and a profile wait for review. Their products carry verified test-mode snapshots, with a generated 12-month history, and placeholder keys, so "Refresh now" on a demo product fails the way a revoked key would. Re-running the seed replaces earlier demo accounts, `npm run db:seed -- --remove` removes them with everything in them, and `npm run db:reset` rebuilds the database from the migrations without any data. Seeded products are ordinary listings in the local database, so they count as real products and take the places of the built-in demo products, which live only in code (see ARCHITECTURE). The ports 55320-55329 keep this stack clear of other local Supabase projects on the default 543xx ports. `npm run db:stop` stops the stack and keeps the data.
 
-| Variable                               | Meaning                                                                                                         |
-| -------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
-| `NEXT_PUBLIC_SUPABASE_URL`             | Supabase API URL, locally `http://127.0.0.1:55321`                                                              |
-| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Public publishable key, never a secret or service-role key                                                      |
-| `NEXT_PUBLIC_SITE_URL`                 | Public origin for email links, canonical links, the sitemap and sharing images; locally `http://localhost:3001` |
-| `LOCAL_MAILPIT_URL`                    | Local development only: shows the local inbox link on sign-in pages                                             |
-| `SMTP_HOST`, `SMTP_PORT`               | SMTP server for notification emails; port 465 uses TLS, others must offer STARTTLS unless the host is local     |
-| `SMTP_USER`, `SMTP_PASS`               | SMTP sign-in, when the server needs it                                                                          |
-| `EMAIL_FROM`                           | Sender of notification emails, such as `The SaaS Harbor <notifications@example.com>`; without it none are sent  |
-| `MESSAGE_EMAIL_DELAY_SECONDS`          | How long a message email waits for the recipient to read the message first; default 300                         |
-| `DEMO_PRODUCTS`                        | `off` hides the demo products at once; by default they show until 12 real products share verified MRR           |
+| Variable                                     | Meaning                                                                                                         |
+| -------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| `NEXT_PUBLIC_SUPABASE_URL`                   | Supabase API URL, locally `http://127.0.0.1:55321`                                                              |
+| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`       | Public publishable key, never a secret or service-role key                                                      |
+| `NEXT_PUBLIC_SITE_URL`                       | Public origin for email links, canonical links, the sitemap and sharing images; locally `http://localhost:3001` |
+| `LOCAL_MAILPIT_URL`                          | Local development only: shows the local inbox link on sign-in pages                                             |
+| `SMTP_HOST`, `SMTP_PORT`                     | SMTP server for notification emails; port 465 uses TLS, others must offer STARTTLS unless the host is local     |
+| `SMTP_USER`, `SMTP_PASS`                     | SMTP sign-in, when the server needs it                                                                          |
+| `EMAIL_FROM`                                 | Sender of notification emails, such as `The SaaS Harbor <notifications@example.com>`; without it none are sent  |
+| `MESSAGE_EMAIL_DELAY_SECONDS`                | How long a message email waits for the recipient to read the message first; default 300                         |
+| `DEMO_PRODUCTS`                              | `off` hides the demo products at once; by default they show until 12 real products share verified MRR           |
+| `GUMROAD_CLIENT_ID`, `GUMROAD_CLIENT_SECRET` | The site's OAuth application with Gumroad (see Revenue verification); without them Gumroad cannot be connected  |
 
 ### Admins
 
@@ -193,17 +197,18 @@ Production runs on three services, all in the EU where they allow it:
 
 **Vercel environment variables** (Production only; previews must not reach the production database):
 
-| Variable                               | Value                                                                           |
-| -------------------------------------- | ------------------------------------------------------------------------------- |
-| `NEXT_PUBLIC_SUPABASE_URL`             | `https://vgwgeennghaqpvfsqewq.supabase.co`                                      |
-| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | The publishable key, Supabase dashboard → Project Settings → API Keys           |
-| `SUPABASE_SECRET_KEY`                  | A secret key from the same page, created for Vercel (mark as Sensitive)         |
-| `NEXT_PUBLIC_SITE_URL`                 | `https://thesaasharbor.com`                                                     |
-| `STRIPE_KEY_ENCRYPTION_KEY`            | New for production: 32 random bytes, base64 (see below); keep a copy in a vault |
-| `CRON_SECRET`                          | New for production: at least 32 random characters (see below)                   |
-| `SMTP_HOST`, `SMTP_PORT`               | `smtp.resend.com`, `465`                                                        |
-| `SMTP_USER`, `SMTP_PASS`               | `resend`, the Resend API key for Vercel                                         |
-| `EMAIL_FROM`                           | `The SaaS Harbor <notifications@thesaasharbor.com>`                             |
+| Variable                                     | Value                                                                                          |
+| -------------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| `NEXT_PUBLIC_SUPABASE_URL`                   | `https://vgwgeennghaqpvfsqewq.supabase.co`                                                     |
+| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`       | The publishable key, Supabase dashboard → Project Settings → API Keys                          |
+| `SUPABASE_SECRET_KEY`                        | A secret key from the same page, created for Vercel (mark as Sensitive)                        |
+| `NEXT_PUBLIC_SITE_URL`                       | `https://thesaasharbor.com`                                                                    |
+| `STRIPE_KEY_ENCRYPTION_KEY`                  | New for production: 32 random bytes, base64 (see below); keep a copy in a vault                |
+| `CRON_SECRET`                                | New for production: at least 32 random characters (see below)                                  |
+| `SMTP_HOST`, `SMTP_PORT`                     | `smtp.resend.com`, `465`                                                                       |
+| `SMTP_USER`, `SMTP_PASS`                     | `resend`, the Resend API key for Vercel                                                        |
+| `EMAIL_FROM`                                 | `The SaaS Harbor <notifications@thesaasharbor.com>`                                            |
+| `GUMROAD_CLIENT_ID`, `GUMROAD_CLIENT_SECRET` | From the OAuth application on Gumroad (see Revenue verification); mark the secret as Sensitive |
 
 Leave `REVENUE_ALLOW_TEST_KEYS`, `LOCAL_MAILPIT_URL` and the `*_API_BASE` overrides unset. Generate each secret in your own terminal with `node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"` and paste it straight into Vercel. Losing `STRIPE_KEY_ENCRYPTION_KEY` makes every stored provider key unreadable.
 

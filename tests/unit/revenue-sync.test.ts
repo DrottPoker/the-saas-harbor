@@ -4,6 +4,12 @@ import { spawn, type ChildProcess } from "node:child_process";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { DODO_KEYS, PADDLE_KEYS, POLAR_TOKENS } from "../e2e/fake-billing.mjs";
 import { CHARGEBEE, CREEM_KEYS, REVENUECAT, WHOP_KEYS } from "../e2e/fake-billing-extra.mjs";
+import { GUMROAD } from "../e2e/fake-gumroad.mjs";
+import {
+  exchangeGumroadCode,
+  gumroadAuthorizeUrl,
+  newGumroadFlow,
+} from "../../src/lib/revenue/gumroad/oauth";
 import { adapter } from "../../src/lib/revenue/providers";
 import {
   historyToCarry,
@@ -36,6 +42,8 @@ beforeAll(async () => {
   process.env.CHARGEBEE_API_BASE = `${base}/chargebee`;
   process.env.WHOP_API_BASE = `${base}/whop`;
   process.env.REVENUECAT_API_BASE = `${base}/revenuecat`;
+  process.env.GUMROAD_API_BASE = `${base}/gumroad`;
+  process.env.GUMROAD_OAUTH_BASE = `${base}/gumroad`;
   process.env.FX_API_BASE = base;
   process.env.REVENUE_ALLOW_TEST_KEYS = "true";
   for (let attempt = 0; attempt < 50; attempt++) {
@@ -553,5 +561,70 @@ describe("payments", () => {
     const day = new Date(Date.now() - 10 * DAY * 1000).toISOString().slice(0, 10);
     expect(values[`projharbor1:${day}`]).toEqual(usd(500));
     expect(payments.length).toBeGreaterThanOrEqual(183);
+  });
+});
+
+describe("Gumroad", () => {
+  it("connects through OAuth with a code that only the PKCE verifier redeems", async () => {
+    const flow = newGumroadFlow("saas-1", "user-1");
+    const approve = async () => {
+      const response = await fetch(gumroadAuthorizeUrl(GUMROAD.clientId, flow), {
+        redirect: "manual",
+      });
+      const back = new URL(response.headers.get("location")!);
+      expect(back.pathname).toBe("/api/gumroad/callback");
+      expect(back.searchParams.get("state")).toBe(flow.state);
+      return back.searchParams.get("code")!;
+    };
+    const app = { id: GUMROAD.clientId, secret: "secret" };
+    await expect(exchangeGumroadCode(app, await approve(), "wrong-verifier")).rejects.toThrow(
+      "Gumroad did not complete the connection. Try again.",
+    );
+    expect(await exchangeGumroadCode(app, await approve(), flow.verifier)).toEqual({
+      token: GUMROAD.tokens.one,
+      hint: `…${GUMROAD.tokens.one.slice(-4)}`,
+    });
+  });
+
+  it("reads MRR from memberships and their latest charges, with history", async () => {
+    const result = await verifyRevenue("gumroad", GUMROAD.tokens.one, true);
+    expect(result).toMatchObject({
+      provider: "gumroad",
+      livemode: true,
+      mrrCents: 5000,
+      customers: 3,
+      skippedItems: 1,
+      historyNote: null,
+    });
+    expect(result.history).toHaveLength(12);
+    const light = await verifyRevenue("gumroad", GUMROAD.tokens.one, true, new Date(), {
+      history: false,
+    });
+    expect(light).toMatchObject({ mrrCents: 5000, customers: 3, history: null });
+  });
+
+  it("refuses a token that can do more than read sales", async () => {
+    await expect(verifyRevenue("gumroad", GUMROAD.tokens.wide, true)).rejects.toThrow(
+      "The Gumroad connection can do more than read sales, or cannot read them. Connect Gumroad again.",
+    );
+  });
+
+  it("never takes a pasted token", () => {
+    expect(() =>
+      adapter("gumroad").parseKey({ key: GUMROAD.tokens.one, account: "" }, { allowTest: true }),
+    ).toThrow("Connect Gumroad with the Connect with Gumroad button.");
+  });
+
+  it("reads revenue from the daily sales summary", async () => {
+    const read = await adapter("gumroad").payments(GUMROAD.tokens.one, true, {
+      allowTest: true,
+      since: 0,
+      before: null,
+      maxPages: 200,
+      stored: () => null,
+    });
+    expect(read.complete).toBe(true);
+    expect(read.payments.every((payment) => payment.id.startsWith(`${GUMROAD.user}:`))).toBe(true);
+    expect(read.payments.reduce((sum, payment) => sum + payment.value!.amount, 0)).toBe(59_200);
   });
 });

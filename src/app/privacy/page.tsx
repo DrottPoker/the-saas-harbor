@@ -59,12 +59,12 @@ export default function Privacy() {
             </li>
             <li>
               <strong className="font-medium text-foreground">Revenue verification.</strong> Which
-              payment provider you connect ({providerList("or")}), the key you provide and the
-              account details it needs, stored encrypted, and the results of verification, such as
-              monthly recurring revenue, paying customers, totals per currency, revenue history and
-              revenue over time. For each payment we store what it earned, its currency and the day
-              it was paid, without who paid it. One-way hashes of subscription, payment or project
-              IDs stop one account from verifying two products.
+              payment provider you connect ({providerList("or")}), the key you provide or the access
+              you grant, and the account details it needs, stored encrypted, and the results of
+              verification, such as monthly recurring revenue, paying customers, totals per
+              currency, revenue history and revenue over time. For each payment we store what it
+              earned, its currency and the day it was paid, without who paid it. One-way hashes of
+              subscription, payment or project IDs stop one account from verifying two products.
             </li>
             <li>
               <strong className="font-medium text-foreground">Milestones.</strong> The MRR amounts
@@ -111,11 +111,11 @@ export default function Privacy() {
         <Section id="revenue" title="What we read from your payment provider">
           <p>
             With the key you provide, our server reads what it needs to verify revenue from the
-            account you connect, such as subscriptions, invoices, payments, transactions, refunds,
-            disputes, prices, discounts and plans, depending on the provider. These records can
-            include details about your customers, such as names, email addresses and countries. We
-            use the records to calculate the figures described above, and do not store your
-            customers&apos; details.
+            account you connect, such as subscriptions, invoices, payments, transactions, sales,
+            refunds, disputes, products, prices, discounts and plans, depending on the provider.
+            These records can include details about your customers, such as names, email addresses
+            and countries. We use the records to calculate the figures described above, and do not
+            store your customers&apos; details.
           </p>
           <p>
             Disconnecting deletes the stored key. Earlier verification results stay in your private

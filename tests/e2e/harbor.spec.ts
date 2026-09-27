@@ -3055,3 +3055,75 @@ test("founders share revenue from all payments, and visitors rank products by it
   expect(gone).toEqual([]);
   expect(violations).toEqual([]);
 });
+
+// Gumroad's own tokens can change the account, so founders connect it by approving read access to
+// their sales on Gumroad (the fake server approves at once). Its fixture account has $50 of MRR
+// from 3 customers, one subscriber not counted, and $592 of revenue in all.
+test("founders connect Gumroad by approving read access to their sales", async ({ page }) => {
+  const violations: string[] = [];
+  watchPolicy(page, violations);
+  const address = `harbor-gumroad-${run}@example.test`;
+  const secret = randomBytes(24).toString("hex");
+  const { data: created, error } = await admin.auth.admin.createUser({
+    email: address,
+    password: secret,
+    email_confirm: true,
+  });
+  if (error || !created.user) throw new Error("Unable to create the Gumroad maker.");
+  userIds.push(created.user.id);
+  await login(page, address, secret);
+  await page.goto("/dashboard/saas/new");
+  await fillProduct(page, `Gumroad ${run}`);
+  await page.getByRole("button", { name: "Add SaaS", exact: true }).click();
+  await expect(page).toHaveURL(/created=1/);
+  const id = new URL(page.url()).pathname.split("/").at(-1)!;
+  const revenue = page.locator("#revenue");
+
+  // There is no token to paste, only access to approve.
+  await revenue.getByRole("radio", { name: "Gumroad" }).check();
+  await expect(revenue.getByText(/That is the only access asked for/)).toBeVisible();
+  await expect(revenue.locator("input:not([type=radio])")).toHaveCount(0);
+  for (const theme of ["dark", "light"] as const) {
+    await setThemeCookie(page, theme);
+    await page.reload();
+    await revenue.getByRole("radio", { name: "Gumroad" }).check();
+    await expectAccessible(page);
+  }
+  await revenue.getByRole("link", { name: "Connect with Gumroad" }).click();
+  await expect(page).toHaveURL(new RegExp(`/dashboard/saas/${id}\\?gumroad=1`));
+  await expect(
+    revenue.getByText(
+      "Gumroad connected. Verified MRR: $50 from 3 paying customers. 1 subscriber without a recent charge was not counted.",
+    ),
+  ).toBeVisible();
+  await expect(revenue.getByText("Connected to Gumroad")).toBeVisible();
+  const { data: stored } = await admin
+    .from("revenue_connections")
+    .select("provider, key_hint, livemode, encrypted_key")
+    .eq("saas_id", id)
+    .single();
+  expect(stored).toMatchObject({ provider: "gumroad", key_hint: "…0001", livemode: true });
+  expect(stored!.encrypted_key).not.toContain("harborfixture");
+
+  // The payments are read right after, back to the first sale.
+  await expect(async () => {
+    await page.reload();
+    await expect(revenue.getByText("$592", { exact: true })).toBeVisible({ timeout: 1000 });
+  }).toPass({ timeout: 30_000 });
+
+  // The outcome shows only on the way back from Gumroad.
+  await page.goto(`/dashboard/saas/${id}`);
+  await expect(revenue.getByText(/^Gumroad connected\./)).toHaveCount(0);
+
+  // Another product, or a return without a connection in progress, leads to the dashboard.
+  await page.goto(`/api/gumroad/connect?saas=${randomUUID()}`);
+  await expect(page).toHaveURL(/\/dashboard$/);
+  await page.goto("/api/gumroad/callback?code=forged&state=forged");
+  await expect(page).toHaveURL(/\/dashboard$/);
+  const { count } = await admin
+    .from("revenue_snapshots")
+    .select("id", { count: "exact", head: true })
+    .eq("saas_id", id);
+  expect(count).toBe(1);
+  expect(violations).toEqual([]);
+});

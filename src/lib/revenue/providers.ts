@@ -3,6 +3,7 @@ import type { ProviderId } from "./catalog";
 import { chargebee } from "./chargebee";
 import { creem } from "./creem";
 import { dodo } from "./dodo";
+import { gumroad } from "./gumroad";
 import { paddle } from "./paddle";
 import { polar } from "./polar";
 import { revenuecat } from "./revenuecat";
@@ -19,6 +20,7 @@ const ADAPTERS: Record<ProviderId, ProviderAdapter> = {
   chargebee,
   whop,
   revenuecat,
+  gumroad,
 };
 
 /** How to validate a provider's keys and read its accounts. */

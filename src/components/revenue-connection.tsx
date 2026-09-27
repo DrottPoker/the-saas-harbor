@@ -11,6 +11,7 @@ import {
 import { formatDate, formatUsd, type ActionState } from "@/lib/domain";
 import type { RevenueConnection, RevenueSnapshot } from "@/lib/data";
 import {
+  connectsWithOAuth,
   isProviderId,
   PROVIDER_IDS,
   PROVIDERS,
@@ -152,6 +153,21 @@ const guides: Record<ProviderId, Guide> = {
       "Copy the key, which starts with sk_, and the project ID, which follows /projects/ in the address of any page in your project.",
     ],
   },
+  gumroad: {
+    dashboard: {
+      href: "https://gumroad.com/settings/authorized_applications",
+      label: "See the apps connected to your Gumroad account",
+    },
+    reads: "your products, memberships and sales",
+    steps: [
+      <>Choose {strong("Connect with Gumroad")} below, and sign in to Gumroad if it asks.</>,
+      <>
+        Approve {strong("View your sales")}. That is the only access asked for: it cannot change
+        products, refund sales or email your customers.
+      </>,
+      "Gumroad sends you back here, and the revenue is verified.",
+    ],
+  },
 };
 
 // Where to make the key, with the steps: the dashboard link opens in a new tab.
@@ -189,6 +205,7 @@ const noHistory: Record<ProviderId, string> = {
     "No revenue history: the Chargebee site has more invoices than one verification reads.",
   whop: "No revenue history: the Whop account has more payments or plans than one verification reads.",
   revenuecat: "No revenue history yet. Refresh to read RevenueCat's MRR chart.",
+  gumroad: "No revenue history: the Gumroad account has more sales than one verification reads.",
 };
 
 // Outside the key form, so the reset after each submission leaves the choice as it was.
@@ -231,14 +248,60 @@ function ProviderChoice({
   );
 }
 
+/**
+ * Connecting a provider that asks the founder to approve access instead of pasting a key: a link
+ * to the start of the OAuth flow, which is a plain navigation.
+ */
+function OAuthConnect({
+  saasId,
+  provider,
+  replace,
+  ready,
+}: {
+  saasId: string;
+  provider: ProviderId;
+  replace: boolean;
+  ready: boolean;
+}) {
+  const { name } = PROVIDERS[provider];
+  const guide = guides[provider];
+  return (
+    <div className="grid gap-4">
+      <KeyGuide guide={guide} />
+      {ready ? (
+        <Actions>
+          <Button asChild>
+            {/* A plain link: a prefetch must never start a connection. */}
+            <a href={`/api/${provider}/connect?saas=${saasId}`}>
+              {replace ? `Connect another ${name} account` : `Connect with ${name}`}
+            </a>
+          </Button>
+        </Actions>
+      ) : (
+        <Notice>{name} is not set up on this server yet.</Notice>
+      )}
+      <p className="text-[13px] text-muted-foreground">
+        The access {name} grants is encrypted and only used to read {guide.reads}. You can remove it
+        in {name} at any time.{" "}
+        <Link href="/privacy#revenue" className="font-medium text-foreground underline">
+          How we handle payment provider data
+        </Link>
+      </p>
+    </div>
+  );
+}
+
 function ConnectForm({
   saasId,
   replace,
   initial = "stripe",
+  oauthReady,
 }: {
   saasId: string;
   replace: boolean;
   initial?: ProviderId;
+  /** The providers connected through OAuth that this server is set up for. */
+  oauthReady: ProviderId[];
 }) {
   const [provider, setProvider] = useState<ProviderId>(initial);
   const [state, action] = useEditorAction(connectProviderAction.bind(null, saasId, provider));
@@ -246,6 +309,18 @@ function ConnectForm({
   const { name, keyLabel, newKeyLabel, placeholder } = PROVIDERS[provider];
   const account = providerAccount(provider);
   const guide = guides[provider];
+  if (connectsWithOAuth(provider))
+    return (
+      <div className="grid gap-4">
+        <ProviderChoice name={group} value={provider} onChange={setProvider} />
+        <OAuthConnect
+          saasId={saasId}
+          provider={provider}
+          replace={replace}
+          ready={oauthReady.includes(provider)}
+        />
+      </div>
+    );
   return (
     <div className="grid gap-4">
       <ProviderChoice name={group} value={provider} onChange={setProvider} />
@@ -357,10 +432,12 @@ function Connected({
   saasId,
   connection,
   snapshot,
+  oauthReady,
 }: {
   saasId: string;
   connection: RevenueConnection;
   snapshot: RevenueSnapshot | null;
+  oauthReady: ProviderId[];
 }) {
   const [refreshState, refresh] = useActionState<ActionState>(
     refreshRevenueAction.bind(null, saasId),
@@ -450,7 +527,7 @@ function Connected({
           Replace the key or change the provider
         </summary>
         <div className="pt-4">
-          <ConnectForm saasId={saasId} replace initial={provider} />
+          <ConnectForm saasId={saasId} replace initial={provider} oauthReady={oauthReady} />
         </div>
       </details>
     </div>
@@ -462,11 +539,17 @@ export function RevenueConnectionSection({
   connection,
   snapshot,
   created,
+  oauthReady,
+  oauthResult,
 }: {
   saasId: string;
   connection: RevenueConnection | null;
   snapshot: RevenueSnapshot | null;
   created: boolean;
+  /** The providers connected through OAuth that this server is set up for. */
+  oauthReady: ProviderId[];
+  /** How connecting through OAuth just went, in words for the founder. */
+  oauthResult: { tone: "success" | "error"; text: string } | null;
 }) {
   return (
     <div id="revenue" className="mt-2 scroll-mt-6 border-t pt-8">
@@ -479,10 +562,16 @@ export function RevenueConnectionSection({
             Product added. Connect your payment provider to verify its revenue.
           </Notice>
         )}
+        {oauthResult && <Notice tone={oauthResult.tone}>{oauthResult.text}</Notice>}
         {connection ? (
-          <Connected saasId={saasId} connection={connection} snapshot={snapshot} />
+          <Connected
+            saasId={saasId}
+            connection={connection}
+            snapshot={snapshot}
+            oauthReady={oauthReady}
+          />
         ) : (
-          <ConnectForm saasId={saasId} replace={false} />
+          <ConnectForm saasId={saasId} replace={false} oauthReady={oauthReady} />
         )}
       </Section>
     </div>

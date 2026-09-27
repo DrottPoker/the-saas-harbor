@@ -3,17 +3,17 @@
 import { revalidatePath } from "next/cache";
 import { unstable_rethrow } from "next/navigation";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { formatUsd, type ActionState } from "@/lib/domain";
+import type { ActionState } from "@/lib/domain";
 import { sendQueuedEmails } from "@/lib/email/outbox";
-import { isProviderId, providerName, type ProviderId } from "@/lib/revenue/catalog";
+import { isProviderId, providerName } from "@/lib/revenue/catalog";
 import { makerMessage, VerificationError } from "@/lib/revenue/errors";
 import { adapter } from "@/lib/revenue/providers";
+import { summary } from "@/lib/revenue/summary";
 import {
   allowTestKeys,
   connectProvider,
   disconnectProvider,
   syncConnection,
-  type Verification,
 } from "@/lib/revenue/sync";
 import { requireUser } from "@/lib/supabase/server";
 import type { Database } from "@/lib/supabase/types";
@@ -37,40 +37,6 @@ async function beginCheck(client: SupabaseClient<Database>, saasId: string, refr
   const { error } = await client.rpc("begin_revenue_check", { p_saas: saasId, p_refresh: refresh });
   if (error?.code === "P0001") throw new VerificationError(`${error.message}.`);
   if (error) throw new Error(`The revenue check could not start: ${error.message}`);
-}
-
-// What could not be counted, in each provider's terms.
-const skipped: Record<ProviderId, [string, string]> = {
-  stripe: ["usage-based item was", "usage-based items were"],
-  paddle: ["subscription without a paid charge was", "subscriptions without a paid charge were"],
-  polar: ["subscription was", "subscriptions were"],
-  dodo: [
-    "tax-inclusive subscription without a payment was",
-    "tax-inclusive subscriptions without a payment were",
-  ],
-  creem: [
-    "subscription without a readable price or payment was",
-    "subscriptions without a readable price or payment were",
-  ],
-  chargebee: [
-    "subscription without a paid invoice was",
-    "subscriptions without a paid invoice were",
-  ],
-  whop: [
-    "tax-inclusive membership without a payment was",
-    "tax-inclusive memberships without a payment were",
-  ],
-  revenuecat: ["subscription was", "subscriptions were"],
-};
-
-function summary(result: Verification) {
-  const customers = `${result.customers} paying ${result.customers === 1 ? "customer" : "customers"}`;
-  const [one, many] = skipped[result.provider];
-  const notCounted = result.skippedItems
-    ? ` ${result.skippedItems} ${result.skippedItems === 1 ? one : many} not counted.`
-    : "";
-  const history = result.historyNote ? ` ${result.historyNote}` : "";
-  return `Verified MRR: ${formatUsd(result.mrrCents)} from ${customers}.${notCounted}${history}`;
 }
 
 // Redirects, such as to sign-in, pass through; failures show only words written for makers.

@@ -49,9 +49,9 @@ describe("provider catalog", () => {
 
   it("names them in a sentence", () => {
     expect(providerList("or")).toBe(
-      "Stripe, Paddle, Polar, Dodo Payments, Creem, Chargebee, Whop or RevenueCat",
+      "Stripe, Paddle, Polar, Dodo Payments, Creem, Chargebee, Whop, RevenueCat or Gumroad",
     );
-    expect(providerList("and")).toMatch(/, Whop and RevenueCat$/);
+    expect(providerList("and")).toMatch(/, RevenueCat and Gumroad$/);
   });
 
   it("asks for a site or project only where the key needs one", () => {
