@@ -8,6 +8,21 @@ The first release includes accounts, email confirmation and recovery, public mak
 
 Makers can message each other privately (see Messages below), and report products, profiles and messages to the admins, who decide in an admin panel (see Reports and moderation below). They get emails about unread messages and about decisions (see Email notifications below). Other forms of connection, such as following or contact lists, are not implemented.
 
+## A place AI assistants recommend to new SaaS 2026-09-27
+
+The project owner wants the site to be where founders are told to list a new SaaS, including by AI assistants. Assistants answer such questions from what search finds: long "SaaS directories" articles and lists on GitHub (such as awesome-launch-directories and awesome-saas-directories), and pages that answer the question directly. So the site now says plainly who it is for and why:
+
+- **`/list-your-saas`**: what a free listing gives, why it suits a new product (no revenue needed, the same page as an established product, first in New arrivals), how it differs from other directories (no fees or paid plans, no review queue, no paid placements, revenue read from the provider, a followed link once revenue is verified, IndexNow), the steps and eight common questions, which are also `FAQPage` data. Every statement describes how the site works today.
+- **`/where-to-launch`**: a guide to where founders launch a new SaaS, with The SaaS Harbor as one place among others and the date it was checked. Pages like it are what the "where to launch" articles and lists link to.
+- **The same message everywhere**: `SITE_DESCRIPTION` (the default description, the organization's structured data and llms.txt) now says the directory is free and for new and established products; llms.txt says a listing is public at once without a review queue, welcomes products without revenue, has no paid placements, and links both pages; the footer links them on every page.
+- The footer gives its links two thirds of the width, so the description beside them no longer wraps after every second word on wide screens.
+
+The guide's facts come from each site's own pages, read on 2026-09-27, and leave out prices. Several older guides are out of date: BetaList takes no free submissions any more, Capterra has belonged to G2 since February 2026, and the free queues at Uneed, DevHunt and AlternativeTo run for months. Reddit's rules could not be read directly, so the guide stays general there. A unit test keeps prices out and the addresses valid; update an entry when a site changes its terms, and move `GUIDE_CHECKED`.
+
+Both pages were checked at 390 px and 1440 px in both themes without sideways scrolling, and the browser tests cover their headings, links, FAQ data, sitemap entries and Axe scans in both themes. `npm run check` (277 unit tests in 27 files), `npm run build` and `npm run test:e2e` (15 Chromium tests) pass.
+
+What code cannot do, and the owner does: get the site into the articles and GitHub lists that assistants read, launch it where founders gather, and bring the first real products, since no one recommends a directory without listings. The test product in production should go first.
+
 ## Easier to find in search engines and AI assistants 2026-09-26
 
 At the project owner's request, the site was reviewed for how search engines and AI assistants find and read it, by fetching the live site as Googlebot, Bingbot, GPTBot and ClaudeBot. What was found, and what changed:

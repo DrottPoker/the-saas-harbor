@@ -69,6 +69,67 @@ export function siteJsonLd(): JsonLd {
   };
 }
 
+/** A page of questions and answers, exactly as the page shows them. */
+export function faqJsonLd(path: string, name: string, questions: FaqItem[]): JsonLd {
+  return {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    url: `${siteUrl()}${path}`,
+    name,
+    isPartOf: isPartOf(),
+    mainEntity: questions.map(({ question, answer }) => ({
+      "@type": "Question",
+      name: question,
+      acceptedAnswer: { "@type": "Answer", text: answer },
+    })),
+  };
+}
+
+export type FaqItem = { question: string; answer: string };
+
+/** A guide written by the site, and the places it describes. Internal addresses are paths. */
+export function guideJsonLd({
+  path,
+  headline,
+  description,
+  published,
+  modified,
+  places,
+}: {
+  path: string;
+  headline: string;
+  description: string;
+  published: string;
+  modified: string;
+  places: { name: string; url: string; internal?: boolean }[];
+}): JsonLd {
+  const url = `${siteUrl()}${path}`;
+  const organization = {
+    "@type": "Organization",
+    "@id": organizationId(),
+    name: SITE_NAME,
+    url: `${siteUrl()}/`,
+  };
+  return {
+    "@context": "https://schema.org",
+    "@type": "Article",
+    headline,
+    description,
+    url,
+    mainEntityOfPage: url,
+    datePublished: published,
+    dateModified: modified,
+    author: organization,
+    publisher: { ...organization, logo: { "@type": "ImageObject", url: `${siteUrl()}/logo.png` } },
+    isPartOf: isPartOf(),
+    mentions: places.map((place) => ({
+      "@type": "WebSite",
+      name: place.name,
+      url: place.internal ? `${siteUrl()}${place.url}` : place.url,
+    })),
+  };
+}
+
 /** The first page of the leaderboard on the home page, in rank order. */
 export function leaderboardJsonLd(ranked: Listing[]): JsonLd {
   return {

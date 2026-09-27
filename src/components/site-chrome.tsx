@@ -64,14 +64,18 @@ export function SiteHeader({ user, unread }: { user: User | null; unread: number
 export function SiteFooter() {
   return (
     <footer className="mt-24 border-t">
-      <div className="mx-auto grid max-w-6xl gap-8 px-4 py-10 sm:grid-cols-[1fr_auto] sm:px-6">
+      {/* The links get two thirds, so the description beside them keeps a readable width. */}
+      <div className="mx-auto grid max-w-6xl gap-8 px-4 py-10 sm:grid-cols-[minmax(0,1fr)_minmax(0,2fr)] sm:px-6">
         <div>
           <Brand />
           <p className="mt-3 max-w-sm text-sm text-muted-foreground">
-            A public directory of independent SaaS products and the people who build them.
+            A free directory of independent SaaS products and the people who build them.
           </p>
         </div>
-        <nav aria-label="Footer" className="flex flex-wrap gap-x-6 gap-y-2 sm:justify-end">
+        <nav
+          aria-label="Footer"
+          className="flex flex-wrap content-start gap-x-6 gap-y-2 sm:justify-end"
+        >
           {sections.map(([href, label]) => (
             <Link key={href} className={quietLink} href={href}>
               {label}
@@ -88,6 +92,12 @@ export function SiteFooter() {
           </Link>
           <Link className={quietLink} href="/about">
             How it works
+          </Link>
+          <Link className={quietLink} href="/list-your-saas">
+            List your SaaS
+          </Link>
+          <Link className={quietLink} href="/where-to-launch">
+            Where to launch
           </Link>
           <Link className={quietLink} href="/privacy">
             Privacy

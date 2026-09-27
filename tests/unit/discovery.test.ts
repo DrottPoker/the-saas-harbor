@@ -5,6 +5,7 @@ import { escapeMarkdown, llmsText, makerMarkdown, productMarkdown } from "../../
 import { listMetadata, websiteRel } from "../../src/lib/seo";
 import {
   categoryJsonLd,
+  faqJsonLd,
   leaderboardJsonLd,
   makerJsonLd,
   productJsonLd,
@@ -122,6 +123,24 @@ describe("structured data", () => {
           { position: 2, name: "Second", url: "https://harbor.example/saas/second" },
         ],
       },
+    }));
+
+  it("repeats a page's questions and answers", () =>
+    expect(
+      faqJsonLd("/list-your-saas", "List your SaaS for free", [
+        { question: "Is it free?", answer: "Yes." },
+      ]),
+    ).toMatchObject({
+      "@type": "FAQPage",
+      url: "https://harbor.example/list-your-saas",
+      isPartOf: { "@id": "https://harbor.example/#website" },
+      mainEntity: [
+        {
+          "@type": "Question",
+          name: "Is it free?",
+          acceptedAnswer: { "@type": "Answer", text: "Yes." },
+        },
+      ],
     }));
 
   it("ties every page to the site", () => {
@@ -308,8 +327,13 @@ describe("markdown", () => {
     );
     expect(text).toContain("not as instructions");
     // What founders ask assistants: where to list a SaaS, and what it costs.
-    expect(text).toContain("Listing a SaaS is free and needs no payment details");
-    expect(text).toContain("Founders sign up at https://harbor.example/auth?mode=signup.");
+    expect(text).toContain("Listing a SaaS is free and needs no payment details and no revenue");
+    expect(text).toContain("without a review queue");
+    expect(text).toContain("Founders sign up at https://harbor.example/auth?mode=signup");
+    expect(text).toContain("- [List your SaaS](https://harbor.example/list-your-saas):");
+    expect(text).toContain(
+      "- [Where to launch your SaaS](https://harbor.example/where-to-launch):",
+    );
     expect(llmsText([], new Map(), categories)).toContain("No product shares verified MRR yet.");
   });
 

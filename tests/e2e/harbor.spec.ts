@@ -137,7 +137,7 @@ test.beforeAll(async ({ playwright }, info) => {
       "/saas/any.md",
       "/users/any.md",
     ],
-    ...["/stats", "/stats/opengraph-image", "/feedback"],
+    ...["/stats", "/stats/opengraph-image", "/feedback", "/list-your-saas", "/where-to-launch"],
     ...["/saas/any/opengraph-image", "/users/any/opengraph-image", "/saas/any/badge.svg"],
     ...["", "/analytics", "/reports", "/feedback", "/products", "/accounts", "/log"].map(
       (section) => `/admin${section}`,
@@ -223,6 +223,8 @@ test("anonymous navigation, private route protection and responsive empty state"
   expect(await sitemap.text()).toContain(`<loc>${origin}/discover</loc>`);
   expect(await sitemap.text()).not.toContain("/demo/");
   expect(await sitemap.text()).toContain(`<loc>${origin}/categories</loc>`);
+  for (const path of ["/list-your-saas", "/where-to-launch"])
+    expect(await sitemap.text()).toContain(`<loc>${origin}${path}</loc>`);
   expect(robots).toContain("Disallow: /md/");
   // Crawlers that do not run JavaScript get the whole page: its metadata in the head, and its
   // content in the main element rather than behind a loading placeholder.
@@ -258,6 +260,22 @@ test("anonymous navigation, private route protection and responsive empty state"
   await expect(
     page.getByRole("contentinfo").getByRole("link", { name: "For AI assistants" }),
   ).toHaveAttribute("href", "/llms.txt");
+  // Founders deciding where to list a new SaaS find a page that answers them, with its questions
+  // as structured data, and a guide to other places to launch.
+  await page.getByRole("contentinfo").getByRole("link", { name: "List your SaaS" }).click();
+  await expect(
+    page.getByRole("heading", { name: "List your SaaS for free", level: 1 }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("main").getByRole("link", { name: "List your SaaS" }).first(),
+  ).toHaveAttribute("href", "/auth?mode=signup");
+  const faq = JSON.parse((await page.locator('script[type="application/ld+json"]').textContent())!);
+  expect(faq["@type"]).toBe("FAQPage");
+  expect(faq.mainEntity).toHaveLength(await page.getByRole("heading", { level: 3 }).count());
+  await page.getByRole("main").getByRole("link", { name: "Where to launch your SaaS" }).click();
+  await expect(
+    page.getByRole("heading", { name: "Where to launch your SaaS", level: 1 }),
+  ).toBeVisible();
   // Every category has a page; others are not found.
   await page.goto("/categories");
   await page.getByRole("link", { name: /^AI & Machine Learning/ }).click();
@@ -295,6 +313,8 @@ test("anonymous navigation, private route protection and responsive empty state"
     "/auth",
     "/privacy",
     "/terms",
+    "/list-your-saas",
+    "/where-to-launch",
   ]) {
     await page.goto(path);
     await expectNoHorizontalScroll(page);
@@ -321,6 +341,8 @@ test("anonymous navigation, private route protection and responsive empty state"
     "/tech/nextjs",
     "/discover?tech=nextjs",
     "/about",
+    "/list-your-saas",
+    "/where-to-launch",
     "/privacy",
     "/terms",
     "/account-deleted",
@@ -442,6 +464,8 @@ test("theme menu persists light and dark, and system follows the OS", async ({ p
     "/categories",
     "/categories/design",
     "/about",
+    "/list-your-saas",
+    "/where-to-launch",
     "/privacy",
     "/terms",
     "/auth",
