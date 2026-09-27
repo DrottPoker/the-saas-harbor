@@ -31,7 +31,7 @@ const differences = [
   "No review queue: your page is public as soon as you save it.",
   "No paid placements: the leaderboard is ordered by verified MRR, and equal amounts by the date the product was listed.",
   "Revenue is read from your payment provider through a read-only key, never typed in.",
-  "The link to your website is followed by search engines (dofollow) once your revenue is verified, whether you share the figures or not. It cannot be bought.",
+  "The link to your website is followed by search engines (dofollow) once your revenue is verified, whether you share the figures or not. It is free.",
   "Search engines hear about your page at once: it joins the sitemap, and Bing and the other search engines that take IndexNow notices are told when you save it.",
 ];
 
@@ -71,7 +71,7 @@ const questions: FaqItem[] = [
   {
     question: "Is the link to my website dofollow?",
     answer:
-      "Yes, once your revenue is verified, whether you share the figures or not, and for free: the followed link cannot be bought here. Without verified revenue the link is marked nofollow.",
+      "Yes, and for free, once your revenue is verified, whether you share the figures or not. Without verified revenue the link is marked nofollow.",
   },
   {
     question: "How many products can I list?",
@@ -148,10 +148,10 @@ export default async function ListYourSaas() {
           A free dofollow link, earned with verified revenue
         </h2>
         <p className="mt-1 text-foreground/85">
-          Many directories sell a followed link to your site. Here it cannot be bought: connect
-          Stripe, Paddle, Polar or Dodo Payments with a read-only key, and the link from your
-          product page is followed by search engines while your revenue stays verified. Your figures
-          can stay private.
+          Many directories charge for a followed link to your site. Here it is free: connect Stripe,
+          Paddle, Polar or Dodo Payments with a read-only key, and the link from your product page
+          is followed by search engines while your revenue stays verified. Your figures can stay
+          private.
         </p>
       </section>
       <div className="mt-10 grid gap-10 border-t pt-10">

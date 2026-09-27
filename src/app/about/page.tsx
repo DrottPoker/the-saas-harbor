@@ -31,7 +31,7 @@ const sections = [
   {
     title: "Links to your website",
     body: [
-      "Each product page links to the product's website. While the product's revenue is verified, whether its figures are shared or private, the link is not marked nofollow, so search engines can follow it and count it for your site. Without verified revenue the link is marked nofollow. A followed link cannot be bought.",
+      "Each product page links to the product's website. While the product's revenue is verified, whether its figures are shared or private, the link is not marked nofollow, so search engines can follow it and count it for your site. Without verified revenue the link is marked nofollow. The followed link is free.",
       "Visitors who follow the link show up in your own analytics as coming from The SaaS Harbor.",
     ],
   },

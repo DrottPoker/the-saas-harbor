@@ -147,7 +147,7 @@ const directories: LaunchGroup = {
       summary:
         "A free directory of independent SaaS, with a leaderboard of MRR verified through Stripe, Paddle, Polar or Dodo Payments.",
       how: "You create an account and add your product, which is public as soon as you save it, with no review queue. Connecting a payment provider is optional and ranks the product by verified MRR.",
-      cost: "Free, with no paid plans. The dofollow link comes with verified revenue and cannot be bought.",
+      cost: "Free, with no paid plans. The dofollow link is free and comes with verified revenue.",
       bestFor: "Any SaaS, new or established, including products without revenue yet.",
       tip: "Verify your revenue once you have it: the link to your website is then followed by search engines, even if you keep the figures private.",
     },
