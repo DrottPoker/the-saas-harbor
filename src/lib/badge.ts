@@ -10,10 +10,10 @@ export type BadgeTheme = "light" | "dark";
 
 const THEMES: Record<BadgeTheme, Record<"surface" | "border" | "text" | "muted", string>> = {
   light: {
-    surface: "#fbfaf8",
-    border: "#e0ded7",
+    surface: "#f0eee9",
+    border: "#cfccc3",
     text: "#1a1b1e",
-    muted: "#585c61",
+    muted: "#4f5358",
   },
   dark: {
     surface: "#141c28",

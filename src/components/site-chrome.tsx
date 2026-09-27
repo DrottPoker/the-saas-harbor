@@ -22,7 +22,7 @@ export function SiteHeader({
   unread: number;
 }) {
   return (
-    <header className="sticky top-0 z-40 border-b bg-background/80 backdrop-blur-md">
+    <header className="border-b">
       <div className="mx-auto flex h-14 max-w-6xl items-center gap-3 px-4 sm:gap-6 sm:px-6">
         <Brand compact={!!account} />
         <Navigation className="hidden md:flex" />

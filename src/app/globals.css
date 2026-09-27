@@ -16,22 +16,25 @@
   }
 }
 
-/* Light is warm paper rather than pure white; dark is the deep navy of the logo rather than black. */
+/*
+ * Light is warm paper, dimmed so it never glares; dark is the deep navy of the logo. Neither is
+ * pure white or black.
+ */
 :root {
   color-scheme: light;
-  --background: #f6f5f1;
-  --surface: #fbfaf8;
-  --subtle: #f0efea;
-  --muted: #e9e8e2;
-  --border: #e0ded7;
-  --border-strong: #cdcac1;
+  --background: #e8e6df;
+  --surface: #f0eee9;
+  --subtle: #e2e0d9;
+  --muted: #dad8d0;
+  --border: #cfccc3;
+  --border-strong: #b9b5aa;
   --foreground: #1a1b1e;
-  --muted-foreground: #585c61;
-  --faint-foreground: #676b70;
+  --muted-foreground: #4f5358;
+  --faint-foreground: #5a5e63;
   --primary: #1a1b1e;
-  --primary-foreground: #fbfaf8;
-  --accent: #0f6e6a;
-  --accent-soft: #e2efec;
+  --primary-foreground: #f0eee9;
+  --accent: #0d6561;
+  --accent-soft: #d3e4df;
   /* The logo, also in src/lib/logo.ts for images that cannot read this file. */
   --logo-ink: #0b2a55;
   --logo-sea-from: #0b2a55;
@@ -39,17 +42,17 @@
   --logo-rise-from: #72d8b2;
   --logo-rise-to: #0b6385;
   --logo-light: #f7a531;
-  --destructive: #b42318;
-  --destructive-foreground: #fbfaf8;
-  --success-bg: #eaf6ef;
-  --success-border: #b9dfc8;
-  --success-foreground: #0b6a3f;
-  --error-bg: #fcefed;
-  --error-border: #f0c4be;
-  --error-foreground: #a3261b;
+  --destructive: #a8200f;
+  --destructive-foreground: #f0eee9;
+  --success-bg: #dbede1;
+  --success-border: #a6cfb6;
+  --success-foreground: #0a5f38;
+  --error-bg: #f3dfdb;
+  --error-border: #e2b2ab;
+  --error-foreground: #982218;
   /* Chart marks, validated for lightness, chroma and contrast on --surface. */
-  --chart-1: #008f82;
-  --chart-muted: #80858b;
+  --chart-1: #007e73;
+  --chart-muted: #767a80;
   /*
    * Elevation, tinted with the logo's navy. Controls sit just above the page, cards a step
    * higher, a hovered link card higher still, and menus float.
@@ -60,7 +63,7 @@
   --elevation-raised: 0 2px 4px -1px rgb(11 30 60 / 0.06), 0 12px 28px -10px rgb(11 30 60 / 0.18);
   --elevation-float: 0 4px 12px -4px rgb(11 30 60 / 0.12), 0 18px 40px -12px rgb(11 30 60 / 0.22);
   /* The lighthouse beam on the home page, at its brightest. */
-  --beam: rgb(247 165 49 / 0.16);
+  --beam: rgb(236 140 24 / 0.3);
 
   @variant dark {
     color-scheme: dark;
@@ -154,7 +157,7 @@
 
 /* The beam fades in once, then sweeps slowly. Reduced motion leaves it still, pointing ahead. */
 @theme {
-  --animate-beam: beam-on 2.4s ease-out 0.3s both, beam-sweep 22s ease-in-out 0s infinite alternate;
+  --animate-beam: beam-on 2.4s ease-out 0.3s both, beam-sweep 12s ease-in-out 0s infinite alternate;
 
   @keyframes beam-on {
     from {

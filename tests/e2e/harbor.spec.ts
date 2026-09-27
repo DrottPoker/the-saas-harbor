@@ -451,7 +451,7 @@ test("demo products fill the lists without a rank, until real products take thei
 });
 
 test("theme menu persists light and dark, and system follows the OS", async ({ page }) => {
-  const light = "rgb(246, 245, 241)";
+  const light = "rgb(232, 230, 223)";
   const dark = "rgb(14, 21, 32)";
   await page.emulateMedia({ colorScheme: "light" });
   await page.goto("/");

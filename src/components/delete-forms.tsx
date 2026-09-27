@@ -21,7 +21,7 @@ function DeleteSection({
   children: React.ReactNode;
 }) {
   return (
-    <div id={id} className="mt-10 scroll-mt-24 border-t pt-8">
+    <div id={id} className="mt-10 scroll-mt-6 border-t pt-8">
       <Section title={title} description={description}>
         {children}
       </Section>

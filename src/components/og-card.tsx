@@ -9,11 +9,11 @@ import { PROVIDER_IDS } from "@/lib/revenue/catalog";
 export const OG_SIZE = { width: 1200, height: 630 };
 
 const colors = {
-  background: "#f6f5f1",
-  muted: "#e9e8e2",
-  border: "#e0ded7",
+  background: "#e8e6df",
+  muted: "#dad8d0",
+  border: "#cfccc3",
   foreground: "#1a1b1e",
-  mutedForeground: "#585c61",
+  mutedForeground: "#4f5358",
 };
 
 export function OgMark({ size }: { size: number }) {

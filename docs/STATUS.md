@@ -18,6 +18,15 @@ At the project owner's request, who found the interface clean but flat, the look
 
 Checked at 390, 800, 1100 and 1440 px in both themes, without sideways scrolling. `npm run check` (330 unit tests), `npm run build` and `npm run test:e2e` (17 browser tests, with Axe scans in both themes) pass.
 
+After a first look the owner asked for four changes, made the same day:
+
+- The beam sweeps faster, 12 seconds each way instead of 22.
+- The header scrolls away with the page instead of staying on top, and has no background of its own, so the beam shows from the lantern on instead of being cut off under the header. Anchors such as the privacy policy's sections now keep a small margin above them instead of room for a fixed header.
+- The light theme glared. The page is now a dimmer warm paper (`#e8e6df`, cards `#f0eee9`), about five L* points darker, and every text and accent color was darkened to match, keeping or improving its contrast (faint text 5.6:1 on cards). The sharing images and the light badge follow it.
+- The beam was hard to see on paper, so the light theme's beam is a deeper amber at a higher strength.
+
+Checked again at 390, 800 and 1440 px in both themes, including that the header scrolls away. `npm run check` (330 unit tests), `npm run build` and `npm run test:e2e` (17 browser tests, with Axe scans in both themes) pass.
+
 ## More precise site statistics 2026-09-27
 
 At the project owner's request, after a review of how precise the statistics are, these were fixed (migration `20260927120000_analytics_precision.sql`, applied to production on 2026-09-27, before the code; the live code keeps working, since the new argument is optional and `track_engagement` stays):

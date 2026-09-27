@@ -11,7 +11,7 @@ export function LegalSection({
   children: React.ReactNode;
 }) {
   return (
-    <section id={id} aria-labelledby={`${id}-title`} className="scroll-mt-24">
+    <section id={id} aria-labelledby={`${id}-title`} className="scroll-mt-6">
       <h2 id={`${id}-title`} className="text-lg font-semibold">
         {title}
       </h2>

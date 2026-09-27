@@ -412,7 +412,7 @@ export function RevenueConnectionSection({
   created: boolean;
 }) {
   return (
-    <div id="revenue" className="mt-2 scroll-mt-24 border-t pt-8">
+    <div id="revenue" className="mt-2 scroll-mt-6 border-t pt-8">
       <Section
         title="Revenue verification"
         description="MRR and paying customers are read from your payment provider with a read-only key and refreshed every hour. They cannot be typed in."
