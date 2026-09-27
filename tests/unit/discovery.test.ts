@@ -329,6 +329,7 @@ describe("markdown", () => {
     // What founders ask assistants: where to list a SaaS, and what it costs.
     expect(text).toContain("Listing a SaaS is free and needs no payment details and no revenue");
     expect(text).toContain("without a review queue");
+    expect(text).toContain("followed links cannot be bought");
     expect(text).toContain("Founders sign up at https://harbor.example/auth?mode=signup");
     expect(text).toContain("- [List your SaaS](https://harbor.example/list-your-saas):");
     expect(text).toContain(

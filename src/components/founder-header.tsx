@@ -5,7 +5,7 @@ import { Button } from "./ui/button";
 
 const gains = [
   "A public page for your product",
-  "A link to your website",
+  "A dofollow link to your website once you verify revenue",
   "Page views and messages from other founders",
   "A place on the leaderboard, if you connect your revenue",
 ];

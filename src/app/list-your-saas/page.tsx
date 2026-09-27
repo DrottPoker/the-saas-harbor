@@ -13,7 +13,7 @@ import { currentUser } from "@/lib/supabase/server";
 export const metadata = pageMetadata({
   title: "List your SaaS for free",
   description:
-    "Submit your SaaS to The SaaS Harbor for free: a public page, a link to your site and no review queue. New products without revenue are welcome.",
+    "Submit your SaaS for free: a public page, no review queue, and a dofollow link once your revenue is verified. New products without revenue are welcome.",
   path: "/list-your-saas",
 });
 
@@ -31,7 +31,7 @@ const differences = [
   "No review queue: your page is public as soon as you save it.",
   "No paid placements: the leaderboard is ordered by verified MRR, and equal amounts by the date the product was listed.",
   "Revenue is read from your payment provider through a read-only key, never typed in.",
-  "The link to your website is followed by search engines once your revenue is verified, whether you share the figures or not.",
+  "The link to your website is followed by search engines (dofollow) once your revenue is verified, whether you share the figures or not. It cannot be bought.",
   "Search engines hear about your page at once: it joins the sitemap, and Bing and the other search engines that take IndexNow notices are told when you save it.",
 ];
 
@@ -71,7 +71,7 @@ const questions: FaqItem[] = [
   {
     question: "Is the link to my website dofollow?",
     answer:
-      "Search engines follow the link while your revenue is verified, whether you share the figures or not. Without verified revenue the link is marked nofollow.",
+      "Yes, once your revenue is verified, whether you share the figures or not, and for free: the followed link cannot be bought here. Without verified revenue the link is marked nofollow.",
   },
   {
     question: "How many products can I list?",
@@ -140,6 +140,20 @@ export default async function ListYourSaas() {
         description="The SaaS Harbor welcomes new products from day one. A listing is free, public as soon as you save it, and needs no revenue and no payment details."
       />
       {actions}
+      <section
+        aria-labelledby="dofollow"
+        className="mt-8 rounded-xl border bg-surface p-5 leading-7"
+      >
+        <h2 id="dofollow" className="font-semibold">
+          A free dofollow link, earned with verified revenue
+        </h2>
+        <p className="mt-1 text-foreground/85">
+          Many directories sell a followed link to your site. Here it cannot be bought: connect
+          Stripe, Paddle, Polar or Dodo Payments with a read-only key, and the link from your
+          product page is followed by search engines while your revenue stays verified. Your figures
+          can stay private.
+        </p>
+      </section>
       <div className="mt-10 grid gap-10 border-t pt-10">
         <Section id="gains" title="What a listing gives">
           <Checks items={gains} />
