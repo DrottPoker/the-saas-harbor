@@ -33,6 +33,8 @@ import {
   type PlatformMetric,
   type Range,
   type SiteMetric,
+  type SourceDimension,
+  type Sources,
 } from "@/lib/analytics-reports";
 import { AnalyticsCard, Stat } from "./card";
 import { BreakdownTable } from "./breakdown-table";
@@ -41,6 +43,7 @@ import { PeriodControl, TabPanel, Tabs } from "./controls";
 import { HeatmapChart } from "./heatmap";
 import { TimeChart, type ChartPoint } from "./time-chart";
 import { FunnelTable } from "./funnel-table";
+import { SourcesTable } from "./sources-table";
 import { useReport } from "./use-report";
 
 const CARDS = [
@@ -54,6 +57,7 @@ const CARDS = [
   "outbound",
   "platform",
   "funnel",
+  "accountSources",
 ] as const;
 type Card = (typeof CARDS)[number];
 type Ranges = Record<Card, Range>;
@@ -629,6 +633,8 @@ function FunnelCard({ tz, range, onRange }: CardProps) {
               {...funnelRows(data)}
               caption={`Funnel, ${rangeLabel(data.range).toLowerCase()}`}
               compared={previousLabel(data.range)}
+              range={data.range}
+              tz={tz}
             />
           ) : (
             <p className="py-6 text-center text-sm text-muted-foreground">
@@ -637,6 +643,53 @@ function FunnelCard({ tz, range, onRange }: CardProps) {
           )}
         </div>
       )}
+    </AnalyticsCard>
+  );
+}
+
+// The funnel by source: which channels, sources, campaigns and first pages bring accounts that go on.
+
+const SOURCE_TABS: { value: SourceDimension; label: string }[] = [
+  { value: "channel", label: "Channels" },
+  { value: "source", label: "Sources" },
+  { value: "campaign", label: "Campaigns" },
+  { value: "entry_page", label: "First pages" },
+];
+
+function SourcesCard({ tz, range, onRange }: CardProps) {
+  const [dimension, setDimension] = useState<SourceDimension>("channel");
+  const report = useReport<Sources>({ report: "sources", range, tz, dimension });
+  const data = report.data;
+  const label = SOURCE_TABS.find((tab) => tab.value === dimension)!.label;
+  return (
+    <AnalyticsCard
+      id="sources-of-accounts"
+      title="Where accounts come from"
+      description="The accounts created in the period by the visit that led to them, and how far they have come."
+      range={range}
+      onRange={onRange}
+      loading={report.loading}
+      error={report.error}
+      onRetry={report.retry}
+      ready={!!data}
+      placeholder="h-72"
+      className="lg:col-span-2"
+    >
+      <Tabs
+        id="sources-of-accounts"
+        label="Where accounts come from"
+        value={dimension}
+        options={SOURCE_TABS}
+        onChange={setDimension}
+      />
+      <TabPanel id="sources-of-accounts" value={dimension}>
+        {data && (
+          <SourcesTable
+            report={data}
+            caption={`Accounts by ${label.toLowerCase()}, ${rangeLabel(data.range).toLowerCase()}`}
+          />
+        )}
+      </TabPanel>
     </AnalyticsCard>
   );
 }
@@ -757,6 +810,7 @@ export function AnalyticsDashboard() {
         />
         <PlatformCard {...card("platform")} />
         <FunnelCard {...card("funnel")} />
+        <SourcesCard {...card("accountSources")} />
       </div>
     </>
   );

@@ -1,5 +1,6 @@
 import { cookies } from "next/headers";
 import { NextResponse, type NextRequest } from "next/server";
+import { recordAccountSource } from "@/lib/account-source";
 import { decodeOAuthFlow, OAUTH_FLOW_COOKIE, oauthFailure } from "@/lib/auth";
 import {
   hasFinishedSignup,
@@ -36,6 +37,9 @@ export async function GET(request: NextRequest) {
     return to(`/auth?error=account${provider}`);
   }
   await recordSignInCountry(client);
+  // An account made by this sign-in keeps the source of the visit that led to it.
+  if (Date.parse(data.user.created_at) > Date.now() - 60 * 60 * 1000)
+    await recordAccountSource(data.user.id);
   if (!(await hasFinishedSignup(client, data.user)))
     return to(flow.next ? `/auth/finish?next=${encodeURIComponent(flow.next)}` : "/auth/finish");
   return to(flow.next ?? (await startPage(client, data.user.id)));

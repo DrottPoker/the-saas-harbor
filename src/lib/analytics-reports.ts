@@ -64,6 +64,7 @@ export const REPORTS = [
   "live",
   "platform",
   "funnel",
+  "sources",
 ] as const;
 export type Report = (typeof REPORTS)[number];
 
@@ -85,6 +86,12 @@ export const reportRequestSchema = z.discriminatedUnion("report", [
     report: z.enum(["overview", "heatmap", "behavior", "platform", "funnel"]),
     range: z.enum(RANGE_VALUES),
     tz: z.string().refine(isTimeZone),
+  }),
+  z.object({
+    report: z.literal("sources"),
+    range: z.enum(RANGE_VALUES),
+    tz: z.string().refine(isTimeZone),
+    dimension: z.enum(["channel", "source", "campaign", "entry_page"]),
   }),
   z.object({
     report: z.literal("breakdown"),
@@ -297,6 +304,51 @@ export function funnelRows(report: Funnel) {
   return { rows, drop };
 }
 
+/** The accounts that stopped at a step: whose last step it is. */
+export function stoppedAt(rows: FunnelRow[], index: number) {
+  return rows[index].accounts - (rows[index + 1]?.accounts ?? 0);
+}
+
+/** The Accounts page listing the accounts of a funnel period whose last step is `step`. */
+export function stoppedHref(step: FunnelStep, range: Range, tz: string) {
+  return `/admin/accounts?${new URLSearchParams({ stopped: step, range, tz })}`;
+}
+
+// The funnel by where the accounts came from: the visit that led to each account.
+export const SOURCE_DIMENSIONS = {
+  channel: "Channel",
+  source: "Source",
+  campaign: "Campaign",
+  entry_page: "First page",
+} as const;
+export type SourceDimension = keyof typeof SOURCE_DIMENSIONS;
+
+const sourceRow = z.object({
+  known: z.boolean(),
+  value: z.string().nullable(),
+  accounts: count,
+  confirmed: count,
+  product: count,
+  verified: count,
+  ranked: count,
+});
+export type SourceRow = z.infer<typeof sourceRow>;
+export const sourcesSchema = z.object({
+  range: z.enum(RANGE_VALUES),
+  dimension: z.enum(["channel", "source", "campaign", "entry_page"]),
+  accounts: count,
+  known: count,
+  rows: z.array(sourceRow),
+});
+export type Sources = z.infer<typeof sourcesSchema>;
+
+/** What a row of the funnel by source is called on screen. */
+export function sourceLabel(dimension: SourceDimension, row: Pick<SourceRow, "known" | "value">) {
+  if (!row.known) return "Not recorded";
+  if (row.value !== null) return row.value;
+  return dimension === "campaign" ? "No campaign tag" : "Direct or unknown";
+}
+
 /** How long a step took: 45 min, 5 h or 3 days. */
 export function formatWait(seconds: number | null) {
   if (seconds === null) return "-";
@@ -314,6 +366,7 @@ export const reportSchemas = {
   live: liveSchema,
   platform: platformSchema,
   funnel: funnelSchema,
+  sources: sourcesSchema,
 } as const;
 
 // How figures read.

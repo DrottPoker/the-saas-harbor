@@ -4,6 +4,7 @@ import { redirect, RedirectType } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { deleteAccount, deleteSignedInAccount } from "@/lib/account";
+import { recordAccountSource } from "@/lib/account-source";
 import { confirmationMethod, PROVIDER_NAMES, signedInWithin } from "@/lib/auth";
 import { parseSkills } from "@/lib/profile";
 import {
@@ -117,6 +118,8 @@ export async function authenticate(
             ? "Email limit reached. Please wait before trying again."
             : "Registration could not be completed. Try again or sign in if you already have an account.",
       };
+    // An address that already has an account gets a made-up user, which the database ignores.
+    if (data.user) await recordAccountSource(data.user.id);
     if (!data.session)
       return {
         success: "Check your email and open the link to confirm your account.",

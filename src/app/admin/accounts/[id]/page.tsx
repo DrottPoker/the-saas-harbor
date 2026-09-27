@@ -110,6 +110,23 @@ export default async function AdminAccount({ params, searchParams }: Props) {
                   ),
                 ],
                 ["Email confirmed", account.data.email_confirmed_at ? "Yes" : "No"],
+                [
+                  // The visit that led to the account, matched when it was made.
+                  "Came from",
+                  account.data.source_channel ? (
+                    [
+                      account.data.source_name
+                        ? `${account.data.source_channel}: ${account.data.source_name}`
+                        : account.data.source_channel,
+                      account.data.source_campaign && `campaign ${account.data.source_campaign}`,
+                      `first page ${account.data.source_entry_path}`,
+                    ]
+                      .filter(Boolean)
+                      .join(" · ")
+                  ) : (
+                    <span className="text-muted-foreground">Not recorded</span>
+                  ),
+                ],
                 ["Reports sent", String(sent.count ?? 0)],
                 [
                   "Public profile",

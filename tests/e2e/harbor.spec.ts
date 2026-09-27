@@ -2105,6 +2105,26 @@ test("visits are counted without cookies, and admins see them under Analytics", 
   expect((await sent).status()).toBe(204);
   await second.context.close();
 
+  // A visitor from a campaign creates an account, which keeps where that visit came from.
+  const joiningEmail = `harbor-joining-${run}@example.test`;
+  const joining = await visit(`${chrome} Joining`);
+  sent = joining.beacon("pageview");
+  await joining.page.goto(`/list-your-saas?utm_source=signup-${run}&utm_campaign=signup-${run}`);
+  expect((await sent).status()).toBe(204);
+  await joining.page.goto("/auth?mode=signup");
+  await joining.page.getByLabel("Email address").fill(joiningEmail);
+  await joining.page.getByLabel("Password", { exact: true }).fill(randomBytes(24).toString("hex"));
+  await joining.page.getByRole("button", { name: "Continue" }).click();
+  await joining.page.getByLabel("Username").fill(`joining-${run}`);
+  await joining.page.getByLabel(/agree to the Terms of Service/).check();
+  await joining.page.getByRole("button", { name: "Create account" }).click();
+  await expect(joining.page.getByRole("heading", { name: "Check your inbox" })).toBeVisible();
+  await joining.context.close();
+  const { data: joined } = await admin.auth.admin.listUsers({ perPage: 1000 });
+  const joiningId = joined.users.find((user) => user.email === joiningEmail)?.id;
+  if (!joiningId) throw new Error("The joining account was not created.");
+  userIds.push(joiningId);
+
   // A view of a product's page counts for the product. Only its founder sees the count, on the
   // page, and their own views do not add to it.
   const founderEmail = `harbor-views-${run}@example.test`;
@@ -2326,6 +2346,34 @@ test("visits are counted without cookies, and admins see them under Analytics", 
     "On the leaderboard",
   ]);
   await expect(card("Funnel").getByText(/\d+ accounts? (was|were) created/)).toBeVisible();
+  // The accounts by where they came from: the campaign of the account created above.
+  const origins = card("Where accounts come from");
+  await origins.getByRole("tab", { name: "Campaigns" }).click();
+  await expect(
+    origins.getByRole("table").getByRole("rowheader", { name: `signup-${run}` }),
+  ).toBeVisible();
+  // A step links to the accounts that stopped there, which admins can write to, and an account
+  // shows where it came from.
+  await funnel.getByRole("link", { name: /stopped at Signed up/ }).click();
+  await expect(adminPage).toHaveURL(/\/admin\/accounts\?stopped=signed_up&range=24h&tz=/);
+  await expect(adminPage.getByRole("heading", { name: "Stopped at Signed up" })).toBeVisible();
+  await expect(adminPage.getByRole("link", { name: /^Write to / })).toHaveAttribute(
+    "href",
+    new RegExp(`^mailto:\\?bcc=.*${encodeURIComponent(joiningEmail)}`),
+  );
+  await expectAccessible(adminPage);
+  await adminPage
+    .getByRole("list", { name: "Accounts" })
+    .getByRole("link")
+    .filter({ hasText: joiningEmail })
+    .click();
+  await expect(
+    adminPage.getByText(
+      `Referral: signup-${run} · campaign signup-${run} · first page /list-your-saas`,
+    ),
+  ).toBeVisible();
+  await expectAccessible(adminPage);
+  await adminPage.goto("/admin/analytics");
 
   // The chart reads with the keyboard and as a table.
   const chart = card("Overview").getByRole("group", { name: /^Visitors, last 24 hours/ });

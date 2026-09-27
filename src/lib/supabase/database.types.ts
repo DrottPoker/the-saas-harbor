@@ -1068,6 +1068,11 @@ export type Database = {
           id: string
           is_admin: boolean
           last_sign_in_at: string
+          source_campaign: string
+          source_channel: string
+          source_entry_path: string
+          source_name: string
+          source_visit_at: string
         }[]
       }
       admin_accounts: {
@@ -1120,9 +1125,29 @@ export type Database = {
         Args: { p_range: string; p_tz: string }
         Returns: Json
       }
+      admin_analytics_sources: {
+        Args: { p_dimension: string; p_range: string; p_tz: string }
+        Returns: Json
+      }
       admin_dismiss_report: {
         Args: { p_note: string; p_report: string }
         Returns: undefined
+      }
+      admin_funnel_accounts: {
+        Args: { p_range: string; p_step: string; p_tz: string }
+        Returns: {
+          avatar_path: string
+          created_at: string
+          email: string
+          headline: string
+          id: string
+          is_admin: boolean
+          last_sign_in_at: string
+          name: string
+          open_reports: number
+          products: number
+          suspended_at: string
+        }[]
       }
       admin_hide_saas: {
         Args: {
@@ -1203,6 +1228,10 @@ export type Database = {
       mark_conversation_read: {
         Args: { p_conversation: string; p_read_at: string }
         Returns: undefined
+      }
+      record_account_source: {
+        Args: { p_ip: string; p_user: string; p_user_agent: string }
+        Returns: boolean
       }
       record_domain_check: {
         Args: {

@@ -21,6 +21,10 @@ import {
   rangeLabel,
   reportRequestSchema,
   reportUrl,
+  sourceLabel,
+  sourcesSchema,
+  stoppedAt,
+  stoppedHref,
 } from "../../src/lib/analytics-reports";
 
 describe("analytics reports", () => {
@@ -211,5 +215,69 @@ describe("the funnel", () => {
     expect(formatWait(5 * 3600)).toBe("5 h");
     expect(formatWait(47 * 3600)).toBe("47 h");
     expect(formatWait(3 * 86400)).toBe("3 days");
+  });
+});
+
+describe("the accounts behind the funnel", () => {
+  it("count the accounts whose last step each step is", () => {
+    const rows = [5, 4, 2, 1, 1].map((accounts) => ({ accounts })) as Parameters<
+      typeof stoppedAt
+    >[0];
+    expect(rows.map((_, index) => stoppedAt(rows, index))).toEqual([1, 2, 1, 0, 1]);
+  });
+  it("link to the Accounts page for the same period", () =>
+    expect(stoppedHref("product", "30d", "Europe/Stockholm")).toBe(
+      "/admin/accounts?stopped=product&range=30d&tz=Europe%2FStockholm",
+    ));
+  it("group by where they came from, with accounts without a source apart", () => {
+    const report = sourcesSchema.parse({
+      range: "7d",
+      dimension: "campaign",
+      accounts: 3,
+      known: 2,
+      rows: [
+        {
+          known: true,
+          value: "launch",
+          accounts: 1,
+          confirmed: 1,
+          product: 1,
+          verified: 0,
+          ranked: 0,
+        },
+        { known: true, value: null, accounts: 1, confirmed: 1, product: 0, verified: 0, ranked: 0 },
+        {
+          known: false,
+          value: null,
+          accounts: 1,
+          confirmed: 0,
+          product: 0,
+          verified: 0,
+          ranked: 0,
+        },
+      ],
+    });
+    expect(report.rows.map((row) => sourceLabel(report.dimension, row))).toEqual([
+      "launch",
+      "No campaign tag",
+      "Not recorded",
+    ]);
+    expect(sourceLabel("channel", { known: true, value: null })).toBe("Direct or unknown");
+    expect(
+      reportRequestSchema.safeParse({
+        report: "sources",
+        range: "7d",
+        tz: "UTC",
+        dimension: "country",
+      }).success,
+    ).toBe(false);
+    expect(
+      reportRequestSchema.safeParse({
+        report: "sources",
+        range: "7d",
+        tz: "UTC",
+        dimension: "entry_page",
+      }).success,
+    ).toBe(true);
   });
 });

@@ -4,7 +4,7 @@ import { supabaseConfig } from "./config";
 import type { Database } from "./types";
 
 // Privileged client for trusted server work only: revenue verification, the results of domain
-// checks, the email outbox and the site statistics. It bypasses RLS, so it is never used for
+// checks, the email outbox and the site statistics, with the source of new accounts. It bypasses RLS, so it is never used for
 // anything a maker controls directly.
 export function adminClient() {
   const config = supabaseConfig();

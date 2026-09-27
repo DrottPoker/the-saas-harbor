@@ -106,8 +106,19 @@ export default function Privacy() {
             </li>
             <li>
               <strong className="font-medium text-foreground">Visits.</strong> Page views, the time
-              pages were visible and clicks on links to other sites, for the site statistics, which
-              are not linked to you or your account (see Site statistics).
+              pages were visible and clicks on links to other sites, for the site statistics (see
+              Site statistics). They are kept apart from your account.
+            </li>
+            <li>
+              <strong className="font-medium text-foreground">How you found the site.</strong> When
+              you create an account, we keep with it where the visit that led to it came from: the
+              site or app that linked to it, its campaign tags, the first page of that visit and
+              when the visit began.
+            </li>
+            <li>
+              <strong className="font-medium text-foreground">How you use the service.</strong> What
+              follows from the data above, such as when you confirmed your email address, listed a
+              product and verified revenue, and where you stopped.
             </li>
             <li>
               <strong className="font-medium text-foreground">Preferences.</strong> Whether you
@@ -189,6 +200,17 @@ export default function Privacy() {
               and to show founders how often their products&apos; pages were viewed, through the
               site statistics below (our legitimate interests, Article 6(1)(f)).
             </li>
+            <li>
+              To understand how people find and use the service, where they get stuck and which ways
+              of finding it bring users who go on to list and verify products, and to improve the
+              service from that, both in totals and for single accounts (our legitimate interests,
+              Article 6(1)(f)).
+            </li>
+            <li>
+              To write to you about your account, your products and the service, for example to help
+              you finish a listing or to ask what stopped you (our legitimate interests, Article
+              6(1)(f)). You can ask us to stop at any time by replying or writing to {contact}.
+            </li>
           </List>
           <p>We do not sell data or show ads, and we do not follow you across other sites.</p>
         </Section>
@@ -216,10 +238,12 @@ export default function Privacy() {
             until 30 minutes pass without you opening or looking at a page of the site. To tell
             visitors apart, it combines your IP address and your browser&apos;s user agent with a
             random value that changes every day and is then deleted, and keeps only the resulting
-            code. Your IP address is not stored, and the code cannot be traced back to you,
-            recognised the next day or connected to your account. Admins see only totals, such as
-            visitors per day and the most visited pages. Page views and link clicks are deleted
-            after 25 months.
+            code. Your IP address is not stored, and the code cannot be recognised the next day.
+            When you create an account, the server uses the same code to find your visits that day
+            and copies where the visit that led to the account came from to your account (see What
+            we store). Admins see the statistics as totals, such as visitors per day and the most
+            visited pages, and see how a single account found the site. Page views and link clicks
+            are deleted after 25 months.
           </p>
           <p>
             <strong className="font-medium text-foreground">Views of a product&apos;s page.</strong>{" "}
@@ -270,12 +294,13 @@ export default function Privacy() {
             </li>
             <li>
               <strong className="font-medium text-foreground">Admins:</strong> the people the
-              operator appoints to review reports. They see your email address, when you joined and
-              last signed in and from which country, reports about you or by you, the decisions
-              about your account, and the feedback you send, with your name. The site statistics
-              show admins only totals, never who visited. An admin sees a private message only when
-              one of the two users reports it, and then only a copy of that message. A user who is
-              reported never learns who reported them.
+              operator appoints to run and moderate the site. They see your email address, when you
+              joined and last signed in and from which country, how you found the site, how far you
+              have come with the service, reports about you or by you, the decisions about your
+              account, and the feedback you send, with your name. Apart from how you found the site,
+              the site statistics show admins only totals, never who visited. An admin sees a
+              private message only when one of the two users reports it, and then only a copy of
+              that message. A user who is reported never learns who reported them.
             </li>
             <li>
               <strong className="font-medium text-foreground">Service providers:</strong> our
@@ -336,10 +361,11 @@ export default function Privacy() {
             Feedback is kept until you delete your account.
           </p>
           <p>
-            Page views and link clicks for the site statistics are kept for 25 months. They are not
-            linked to your account, so deleting it does not remove them, and nothing in them points
-            to you. A product&apos;s daily view counts are kept as long as the product and deleted
-            with it or with your account.
+            Page views and link clicks for the site statistics are kept for 25 months. They are kept
+            apart from your account, so deleting it does not remove them, and nothing in them points
+            to you. How you found the site is kept with your account and deleted with it. A
+            product&apos;s daily view counts are kept as long as the product and deleted with it or
+            with your account.
           </p>
           <p>
             Information that was public may already have been copied by others, such as search

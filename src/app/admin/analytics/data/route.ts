@@ -21,6 +21,12 @@ function call(
       return client.rpc("admin_analytics_platform", { p_range: request.range, p_tz: request.tz });
     case "funnel":
       return client.rpc("admin_analytics_funnel", { p_range: request.range, p_tz: request.tz });
+    case "sources":
+      return client.rpc("admin_analytics_sources", {
+        p_range: request.range,
+        p_tz: request.tz,
+        p_dimension: request.dimension,
+      });
     case "breakdown":
       return client.rpc("admin_analytics_breakdown", {
         p_range: request.range,
