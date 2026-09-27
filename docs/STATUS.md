@@ -31,7 +31,7 @@ Vercel Web Analytics listed accounts.google.com and github.com as referring site
 
 At the project owner's request, the profile is no longer on the dashboard. The signed-in header shows the user's photo and name at the top right (the photo alone below 1280 px, where the header has no room for the name), and opens a menu with their name and @username, Your profile, Edit profile, Email settings, Your reports once they have sent a report, Admin panel for admins with the number of open reports, and Sign out. Sign out is therefore in the same place on every screen size, instead of in the header on wide screens and at the bottom of the dashboard on phones. An account that signed in through Google or GitHub but has not chosen a username yet gets Choose your username instead. The dashboard now holds only the user's products (and a notice if the account is suspended), and Edit profile, Email settings and Your reports no longer lead back to it. The addresses stay under `/dashboard`, so links in emails keep working.
 
-The Terms of Service still say that reporters see the outcome under Dashboard → Your reports. They are versioned by date and recorded at sign-up, so the wording waits for the next real change to the terms.
+At the owner's request, the Terms of Service and the privacy policy no longer name places in the interface (such as Dashboard → Your reports or Profile → Delete account), which go out of date when the interface changes; they say what users can do and are told instead. Nothing changed in substance. The terms have a new version date, 2026-09-27, so the version recorded at sign-up still names the exact text that was accepted.
 
 ## More payment providers 2026-09-27
 

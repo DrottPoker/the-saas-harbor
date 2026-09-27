@@ -47,13 +47,7 @@ export default function Terms() {
               Keep your password to yourself. You are responsible for everything that is done with
               your account.
             </li>
-            <li>
-              You can delete your account at any time under{" "}
-              <Link className={legalLink} href="/dashboard/profile#delete-account">
-                Profile → Delete account
-              </Link>
-              .
-            </li>
+            <li>You can delete your account yourself at any time.</li>
           </LegalList>
         </LegalSection>
 
@@ -137,8 +131,8 @@ export default function Terms() {
 
         <LegalSection id="moderation" title="Reports and moderation">
           <p>
-            Signed-in users can report a product, a profile or a message they received with the
-            Report link next to it. Anyone else can write to <Contact />.
+            Signed-in users can report a product, a profile or a message they received. Anyone else
+            can write to <Contact />.
           </p>
           <p>
             Admins appointed by the operator review every report themselves. Nothing is decided
@@ -156,10 +150,10 @@ export default function Terms() {
             </li>
           </LegalList>
           <p>
-            The user concerned sees the decision, the reason and an explanation in their dashboard,
-            but not who reported. Reporters see the outcome of their reports under Dashboard → Your
-            reports. Admins may also act on problems they find without a report, and we may remove
-            content or suspend accounts at our own discretion to protect the site, its users or us.
+            The user concerned is told the decision, the reason and an explanation, but not who
+            reported. Reporters are told the outcome of their reports. Admins may also act on
+            problems they find without a report, and we may remove content or suspend accounts at
+            our own discretion to protect the site, its users or us.
           </p>
           <p>
             If you disagree with a decision, write to <Contact /> and say why. We will look at the

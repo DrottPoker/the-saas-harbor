@@ -1,10 +1,4 @@
-import Link from "next/link";
-import {
-  Contact,
-  LegalList as List,
-  LegalSection as Section,
-  legalLink as link,
-} from "@/components/legal";
+import { Contact, LegalList as List, LegalSection as Section } from "@/components/legal";
 import { Notice, PageHeader, Shell } from "@/components/shell";
 import { legalDate, operator, privacyUpdated } from "@/lib/legal";
 import { providerList } from "@/lib/revenue/catalog";
@@ -351,27 +345,8 @@ export default function Privacy() {
 
         <Section id="rights" title="Your rights">
           <p>
-            You can see and change your profile at any time under{" "}
-            <Link className={link} href="/dashboard/profile">
-              Edit profile
-            </Link>{" "}
-            and your products in your{" "}
-            <Link className={link} href="/dashboard">
-              dashboard
-            </Link>
-            , follow the reports you sent under{" "}
-            <Link className={link} href="/dashboard/reports">
-              Your reports
-            </Link>
-            , choose which emails you get under{" "}
-            <Link className={link} href="/dashboard/settings">
-              Email settings
-            </Link>
-            , delete a product at the bottom of its editor, and delete your account yourself under{" "}
-            <Link className={link} href="/dashboard/profile#delete-account">
-              Profile → Delete account
-            </Link>
-            .
+            You can see and change your profile and products, choose which emails you get, follow
+            the reports you sent, and delete a product or your whole account yourself at any time.
           </p>
           <p>
             Under the GDPR you also have the right to access your data, have it corrected, erased or
