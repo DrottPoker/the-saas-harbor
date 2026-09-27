@@ -4,6 +4,7 @@ import { JsonLd } from "@/components/json-ld";
 import { PageHeader, Shell } from "@/components/shell";
 import { Button } from "@/components/ui/button";
 import { DAILY_PRODUCT_LIMIT, PRODUCT_LIMIT } from "@/lib/moderation";
+import { providerList } from "@/lib/revenue/catalog";
 import { pageMetadata } from "@/lib/seo";
 import { faqJsonLd, type FaqItem } from "@/lib/structured-data";
 import { currentUser } from "@/lib/supabase/server";
@@ -38,7 +39,7 @@ const differences = [
 const steps = [
   "Create an account with your email address and a username.",
   "Add your product: name, tagline, description, category, website, logo and tech stack. It is public when you save it.",
-  "If you like, connect Stripe, Paddle, Polar or Dodo Payments with a read-only key to verify your MRR, and choose what to share.",
+  `If you like, connect ${providerList("or")} with a read-only key to verify your MRR, and choose what to share.`,
   "If you like, verify your domain with a DNS record and add the badge to your site.",
 ];
 
@@ -65,8 +66,7 @@ const questions: FaqItem[] = [
   },
   {
     question: "Which payment providers can verify revenue?",
-    answer:
-      "Stripe, Paddle, Polar and Dodo Payments, one per product, through a key that can only read. Revenue is verified again every hour.",
+    answer: `${providerList("and")}, one per product, through a key that can only read. Revenue is verified again every hour.`,
   },
   {
     question: "Is the link to my website dofollow?",
@@ -148,10 +148,9 @@ export default async function ListYourSaas() {
           A free dofollow link, earned with verified revenue
         </h2>
         <p className="mt-1 text-foreground/85">
-          Many directories charge for a followed link to your site. Here it is free: connect Stripe,
-          Paddle, Polar or Dodo Payments with a read-only key, and the link from your product page
-          is followed by search engines while your revenue stays verified. Your figures can stay
-          private.
+          Many directories charge for a followed link to your site. Here it is free: connect your
+          payment provider with a read-only key, and the link from your product page is followed by
+          search engines while your revenue stays verified. Your figures can stay private.
         </p>
       </section>
       <div className="mt-10 grid gap-10 border-t pt-10">

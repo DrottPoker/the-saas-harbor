@@ -23,9 +23,12 @@ export type ProviderReading = {
 /** `history` false reads what MRR needs only, and returns no lines and no note. */
 export type ReadOptions = { allowTest: boolean; now: Date; history: boolean };
 
+/** What a maker pasted: the key, and the site or project it belongs to where one is asked for. */
+export type KeyInput = { key: string; account: string };
+
 export type ProviderAdapter = {
   id: ProviderId;
-  parseKey(input: string, options: { allowTest: boolean }): ParsedKey;
+  parseKey(input: KeyInput, options: { allowTest: boolean }): ParsedKey;
   /** Reads the account. With `livemode` null, the adapter finds the key's environment. */
   read(key: string, livemode: boolean | null, options: ReadOptions): Promise<ProviderReading>;
 };

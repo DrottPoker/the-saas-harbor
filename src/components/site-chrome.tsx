@@ -2,6 +2,7 @@ import Link from "next/link";
 import { LayoutDashboard, Plus } from "lucide-react";
 import type { User } from "@supabase/supabase-js";
 import { signOut } from "@/app/actions";
+import { providerList } from "@/lib/revenue/catalog";
 import { Brand } from "./logo";
 import { MessagesLink } from "./messages/messages-link";
 import { Navigation } from "./navigation";
@@ -113,8 +114,8 @@ export function SiteFooter() {
           </Link>
         </nav>
         <p className="text-[13px] text-faint-foreground sm:col-span-2">
-          Revenue is verified through read-only connections to Stripe, Paddle, Polar and Dodo
-          Payments, and refreshed every hour.
+          Revenue is verified through read-only connections to {providerList("and")}, and refreshed
+          every hour.
         </p>
       </div>
     </footer>

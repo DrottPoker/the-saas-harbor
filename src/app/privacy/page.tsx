@@ -7,6 +7,7 @@ import {
 } from "@/components/legal";
 import { Notice, PageHeader, Shell } from "@/components/shell";
 import { legalDate, operator, privacyUpdated } from "@/lib/legal";
+import { providerList } from "@/lib/revenue/catalog";
 import { pageMetadata } from "@/lib/seo";
 
 const description =
@@ -72,11 +73,12 @@ export default function Privacy() {
             </li>
             <li>
               <strong className="font-medium text-foreground">Revenue verification.</strong> If you
-              connect a payment provider (Stripe, Paddle, Polar or Dodo Payments): which one, the
-              read-only key you paste, stored encrypted, and the results of verification, kept as
-              one result per day, the latest of that day. That is your monthly recurring revenue,
-              the number of paying customers, totals per currency, revenue at each of the last
-              twelve month-ends, and one-way hashes of subscription IDs, which stop one account from
+              connect a payment provider ({providerList("or")}): which one, the read-only key you
+              paste, with the Chargebee site or RevenueCat project it belongs to, stored encrypted,
+              and the results of verification, kept as one result per day, the latest of that day.
+              That is your monthly recurring revenue, the number of paying customers, totals per
+              currency, revenue at each of the last twelve month-ends, and one-way hashes of
+              subscription IDs (with RevenueCat, of the project ID), which stop one account from
               verifying two products.
             </li>
             <li>
@@ -116,9 +118,14 @@ export default function Privacy() {
           <p>
             With the key you provide, our server reads from the account you connect: subscriptions,
             invoices, coupons and prices from Stripe; subscriptions and transactions from Paddle;
-            your organization, subscriptions and orders from Polar; and brands, subscriptions and
-            payments from Dodo Payments. It only sends requests that read, and never changes
-            anything in your account.
+            your organization, subscriptions and orders from Polar; brands, subscriptions and
+            payments from Dodo Payments; subscriptions, products and transactions from Creem;
+            subscriptions and paid invoices from Chargebee; your account, the key&apos;s
+            permissions, memberships, plans, promo codes and payments from Whop; and your
+            project&apos;s MRR and active subscriptions charts from RevenueCat. To check that a
+            RevenueCat key reaches nothing else, it also asks for your projects and customers, which
+            RevenueCat refuses for a key limited to charts. It only sends requests that read, and
+            never changes anything in your account.
           </p>
           <p>
             These records can include your customers&apos; names, email addresses and countries. We

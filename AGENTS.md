@@ -10,7 +10,7 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 
 # The SaaS Harbor
 
-Next.js 16 App Router and Supabase platform where independent SaaS products get public profiles and rank on a leaderboard of MRR verified through read-only keys to their payment provider (Stripe, Paddle, Polar or Dodo Payments). Read `README.md`, `docs/ARCHITECTURE.md` and `docs/STATUS.md` before larger changes.
+Next.js 16 App Router and Supabase platform where independent SaaS products get public profiles and rank on a leaderboard of MRR verified through read-only keys to their payment provider (Stripe, Paddle, Polar, Dodo Payments, Creem, Chargebee, Whop or RevenueCat). Read `README.md`, `docs/ARCHITECTURE.md` and `docs/STATUS.md` before larger changes.
 
 ## Commands
 

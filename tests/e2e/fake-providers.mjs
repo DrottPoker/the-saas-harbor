@@ -1,6 +1,6 @@
 // Minimal stand-in for the payment provider APIs and the exchange-rate API, for the tests only.
-// Stripe is below; Paddle, Polar and Dodo Payments are in fake-billing.mjs, and a founder's DNS
-// in fake-site.mjs.
+// Stripe is below; Paddle, Polar and Dodo Payments are in fake-billing.mjs, Creem, Chargebee, Whop
+// and RevenueCat in fake-billing-extra.mjs, and a founder's DNS in fake-site.mjs.
 // Account "one" has MRR $104 from 3 paying customers: $29 monthly, a $600 yearly plan at 50% off
 // forever, a past-due EUR 40 plan at 0.8 EUR per USD, and one usage-based item that is skipped.
 // Its paid invoices give a month-end history of $29 for a year, plus $25 a month from the yearly
@@ -11,6 +11,7 @@
 // multi-currency price whose default is USD 50, so MRR is $45; its key cannot read invoices.
 import { createServer } from "node:http";
 import { handleBilling } from "./fake-billing.mjs";
+import { handleExtraBilling } from "./fake-billing-extra.mjs";
 import { handleSite } from "./fake-site.mjs";
 
 const PORT = Number(process.env.FAKE_PROVIDERS_PORT || 3011);
@@ -199,6 +200,7 @@ createServer((request, response) => {
   const url = new URL(request.url, `http://127.0.0.1:${PORT}`);
   if (url.pathname === "/health") return send(response, 200, { ok: true });
   if (handleBilling(url, request, response)) return;
+  if (handleExtraBilling(url, request, response)) return;
   if (handleSite(url, request, response)) return;
   if (url.pathname === "/v2/rates") {
     const quotes = (url.searchParams.get("quotes") ?? "").split(",").filter(Boolean);

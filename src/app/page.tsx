@@ -13,7 +13,7 @@ export async function generateMetadata({ searchParams }: Props): Promise<Metadat
       title: "Free SaaS directory and verified MRR leaderboard",
       laterTitle: "Leaderboard",
       description:
-        "List your SaaS for free and get a public page with a link to your site. Connect Stripe, Paddle, Polar or Dodo Payments to rank by verified MRR.",
+        "List your SaaS for free and get a public page with a link to your site. Connect Stripe, Paddle, RevenueCat or another payment provider to rank by verified MRR.",
       path: "/",
     },
     firstValues(await searchParams),

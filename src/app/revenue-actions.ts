@@ -47,6 +47,19 @@ const skipped: Record<ProviderId, [string, string]> = {
     "tax-inclusive subscription without a payment was",
     "tax-inclusive subscriptions without a payment were",
   ],
+  creem: [
+    "subscription without a readable price or payment was",
+    "subscriptions without a readable price or payment were",
+  ],
+  chargebee: [
+    "subscription without a paid invoice was",
+    "subscriptions without a paid invoice were",
+  ],
+  whop: [
+    "tax-inclusive membership without a payment was",
+    "tax-inclusive memberships without a payment were",
+  ],
+  revenuecat: ["subscription was", "subscriptions were"],
 };
 
 function summary(result: Verification) {
@@ -75,9 +88,13 @@ export async function connectProviderAction(
   try {
     const client = await requireOwnedSaas(saasId);
     if (!isProviderId(provider)) throw new VerificationError("Choose a payment provider.");
-    const key = adapter(provider).parseKey(String(form.get("provider_key") ?? ""), {
-      allowTest: allowTestKeys(),
-    });
+    const key = adapter(provider).parseKey(
+      {
+        key: String(form.get("provider_key") ?? ""),
+        account: String(form.get("provider_account") ?? ""),
+      },
+      { allowTest: allowTestKeys() },
+    );
     await beginCheck(client, saasId, false);
     const result = await connectProvider(saasId, provider, key);
     revalidatePath("/", "layout");

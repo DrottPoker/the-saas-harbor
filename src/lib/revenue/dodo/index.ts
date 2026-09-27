@@ -27,7 +27,7 @@ async function environment(key: string, livemode: boolean | null, allowTest: boo
  */
 export const dodo: ProviderAdapter = {
   id: "dodo",
-  parseKey: (input) => parseDodoKey(input),
+  parseKey: ({ key }) => parseDodoKey(key),
   async read(key, livemode, { allowTest, now, history }) {
     const live = await environment(key, livemode, allowTest);
     const subscriptions = await fetchSubscriptions(key, live);

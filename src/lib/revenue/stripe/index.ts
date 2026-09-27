@@ -31,7 +31,7 @@ async function invoiceHistory(key: string, now: Date) {
 /** Stripe: subscription MRR from a restricted key, and history from paid invoices. */
 export const stripe: ProviderAdapter = {
   id: "stripe",
-  parseKey: (input, options) => parseRestrictedKey(input, options),
+  parseKey: ({ key }, options) => parseRestrictedKey(key, options),
   async read(key, livemode, { now, history }) {
     const { subscriptions, coupons } = await fetchStripeAccountData(key);
     const mrr = calculateMrr(subscriptions, coupons, Math.floor(now.getTime() / 1000));

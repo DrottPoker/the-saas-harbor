@@ -4,6 +4,7 @@
 import { ImageResponse } from "next/og";
 import { imageUrl } from "@/lib/images";
 import { logoSvg } from "@/lib/logo";
+import { PROVIDER_IDS } from "@/lib/revenue/catalog";
 
 export const OG_SIZE = { width: 1200, height: 630 };
 
@@ -158,7 +159,7 @@ export function siteImage() {
       figures={[
         ["Cost", "Free"],
         ["Made for", "Indie SaaS"],
-        ["Verify revenue with", "Stripe, Paddle, Polar, Dodo"],
+        ["Verify revenue with", `Stripe, Paddle and ${PROVIDER_IDS.length - 2} more`],
       ]}
     />,
     OG_SIZE,

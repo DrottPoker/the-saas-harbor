@@ -3,6 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 import { createHash, randomBytes, randomUUID } from "node:crypto";
 import AxeBuilder from "@axe-core/playwright";
 import { DODO_KEYS, PADDLE_KEYS, POLAR_TOKENS } from "./fake-billing.mjs";
+import { CHARGEBEE, CREEM_KEYS, REVENUECAT, WHOP_KEYS } from "./fake-billing-extra.mjs";
 import { termsUpdated } from "../../src/lib/legal";
 
 const url = process.env.TEST_SUPABASE_URL!;
@@ -2512,6 +2513,115 @@ test("founders verify revenue through Paddle, Polar and Dodo Payments", async ({
     .eq("saas_id", id)
     .order("seq");
   expect(snapshots!.map((row) => row.provider)).toEqual(["paddle", "polar", "dodo"]);
+  expect(violations).toEqual([]);
+});
+
+// Creem, Chargebee, Whop and RevenueCat verify revenue like the others. Chargebee and RevenueCat
+// also ask for the site or project the key belongs to, and Whop and RevenueCat refuse keys that
+// can do more than the verification needs.
+test("founders verify revenue through Creem, Chargebee, Whop and RevenueCat", async ({ page }) => {
+  const violations: string[] = [];
+  watchPolicy(page, violations);
+  const address = `harbor-providers-more-${run}@example.test`;
+  const secret = randomBytes(24).toString("hex");
+  const { data: created, error } = await admin.auth.admin.createUser({
+    email: address,
+    password: secret,
+    email_confirm: true,
+  });
+  if (error || !created.user) throw new Error("Unable to create the provider maker.");
+  userIds.push(created.user.id);
+  await login(page, address, secret);
+  await page.goto("/dashboard/saas/new");
+  await fillProduct(page, `More providers ${run}`);
+  await page.getByRole("button", { name: "Add SaaS", exact: true }).click();
+  await expect(page).toHaveURL(/created=1/);
+  const id = new URL(page.url()).pathname.split("/").at(-1)!;
+  const revenue = page.locator("#revenue");
+
+  // Creem: subscriptions valued by their products, without included tax.
+  await revenue.getByRole("radio", { name: "Creem" }).check();
+  await expect(
+    revenue.getByRole("link", { name: "Open Creem's developer settings" }),
+  ).toBeVisible();
+  await revenue.getByLabel("API key", { exact: true }).fill(CREEM_KEYS.one);
+  await revenue.getByRole("button", { name: "Connect and verify" }).click();
+  await expect(revenue.getByText("Connected to Creem")).toBeVisible();
+  await expect(revenue.getByText("$35.42", { exact: true })).toBeVisible();
+
+  // Chargebee asks for the site as well, and keeps it when the key is wrong.
+  await revenue.getByText("Replace the key or change the provider").click();
+  await revenue.getByRole("radio", { name: "Chargebee" }).check();
+  await revenue
+    .getByLabel("Site", { exact: true })
+    .fill(`https://${CHARGEBEE.site}.chargebee.com/`);
+  await revenue
+    .getByLabel("New read-only API key", { exact: true })
+    .fill("test_wrongkey0000000000");
+  await revenue.getByRole("button", { name: "Replace and verify" }).click();
+  await expect(
+    revenue.getByRole("alert").filter({ hasText: "Chargebee rejected the key" }),
+  ).toBeVisible();
+  await expect(revenue.getByLabel("Site", { exact: true })).toHaveValue(
+    `https://${CHARGEBEE.site}.chargebee.com/`,
+  );
+  await revenue.getByLabel("New read-only API key", { exact: true }).fill(CHARGEBEE.key);
+  await revenue.getByRole("button", { name: "Replace and verify" }).click();
+  await expect(revenue.getByText("Connected to Chargebee")).toBeVisible();
+  await expect(
+    revenue.getByText(
+      /^Chargebee connected\. Verified MRR: \$35\.21 from 2 paying customers\. 1 subscription without a paid invoice was not counted\./,
+    ),
+  ).toBeVisible();
+  await expect(revenue.getByText(`Key ${CHARGEBEE.site} · …ebee`)).toBeVisible();
+
+  // Whop refuses a key that can do more than read.
+  await revenue.getByRole("radio", { name: "Whop" }).check();
+  await revenue.getByLabel("New API key", { exact: true }).fill(WHOP_KEYS.writer);
+  await revenue.getByRole("button", { name: "Replace and verify" }).click();
+  await expect(
+    revenue.getByRole("alert").filter({ hasText: "The key can do more than read" }),
+  ).toBeVisible();
+  await revenue.getByLabel("New API key", { exact: true }).fill(WHOP_KEYS.one);
+  await revenue.getByRole("button", { name: "Replace and verify" }).click();
+  await expect(revenue.getByText("Connected to Whop")).toBeVisible();
+  await expect(revenue.getByText("$36.67", { exact: true })).toBeVisible();
+
+  // RevenueCat reads its charts, and the product page names it.
+  await revenue.getByRole("radio", { name: "RevenueCat" }).check();
+  await revenue
+    .getByLabel("Project ID", { exact: true })
+    .fill(`https://app.revenuecat.com/projects/${REVENUECAT.project}/overview`);
+  await revenue.getByLabel("New secret API key", { exact: true }).fill(REVENUECAT.keys.one);
+  await revenue.getByRole("button", { name: "Replace and verify" }).click();
+  await expect(revenue.getByText("Connected to RevenueCat")).toBeVisible();
+  await expect(revenue.getByText("$150", { exact: true })).toBeVisible();
+  await expect(revenue.getByText("42", { exact: true })).toBeVisible();
+  await page.goto(`/saas/more-providers-${run}`);
+  await expect(page.getByText(/Verified with RevenueCat through a read-only key/)).toBeVisible();
+
+  const { data: connection } = await admin
+    .from("revenue_connections")
+    .select("provider, key_hint, livemode, encrypted_key")
+    .eq("saas_id", id)
+    .single();
+  expect(connection).toMatchObject({
+    provider: "revenuecat",
+    key_hint: `${REVENUECAT.project} · sk_…0001`,
+    livemode: true,
+  });
+  expect(connection!.encrypted_key).not.toContain("harborfixture");
+  const { data: snapshots } = await admin
+    .from("revenue_snapshots")
+    .select("provider")
+    .eq("saas_id", id)
+    .order("seq");
+  expect(snapshots!.map((row) => row.provider)).toEqual([
+    "creem",
+    "chargebee",
+    "whop",
+    "revenuecat",
+  ]);
   expect(violations).toEqual([]);
 });
 

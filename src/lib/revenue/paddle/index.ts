@@ -9,7 +9,7 @@ import { paddleMrr, paddleServiceLines, transactionWindowStart } from "./mrr";
 /** Paddle Billing: MRR and history from subscriptions and their paid transactions. */
 export const paddle: ProviderAdapter = {
   id: "paddle",
-  parseKey: (input, options) => parsePaddleKey(input, options),
+  parseKey: ({ key }, options) => parsePaddleKey(key, options),
   async read(key, livemode, { now, history }) {
     const live = livemode ?? key.startsWith("pdl_live_");
     const subscriptions = await fetchSubscriptions(key, live);

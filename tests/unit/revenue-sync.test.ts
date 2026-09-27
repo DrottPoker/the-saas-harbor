@@ -3,6 +3,7 @@
 import { spawn, type ChildProcess } from "node:child_process";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { DODO_KEYS, PADDLE_KEYS, POLAR_TOKENS } from "../e2e/fake-billing.mjs";
+import { CHARGEBEE, CREEM_KEYS, REVENUECAT, WHOP_KEYS } from "../e2e/fake-billing-extra.mjs";
 import { historyToCarry, verifyRevenue } from "../../src/lib/revenue/sync";
 
 const PORT = 3912;
@@ -23,6 +24,10 @@ beforeAll(async () => {
   process.env.PADDLE_API_BASE = `${base}/paddle`;
   process.env.POLAR_API_BASE = `${base}/polar`;
   process.env.DODO_API_BASE = `${base}/dodo`;
+  process.env.CREEM_API_BASE = `${base}/creem`;
+  process.env.CHARGEBEE_API_BASE = `${base}/chargebee`;
+  process.env.WHOP_API_BASE = `${base}/whop`;
+  process.env.REVENUECAT_API_BASE = `${base}/revenuecat`;
   process.env.FX_API_BASE = base;
   process.env.REVENUE_ALLOW_TEST_KEYS = "true";
   for (let attempt = 0; attempt < 50; attempt++) {
@@ -163,6 +168,114 @@ describe("Dodo Payments verification", () => {
   });
 });
 
+const chargebeeKey = `${CHARGEBEE.site}:${CHARGEBEE.key}`;
+const revenueCatKey = (key: string) => `${REVENUECAT.project}:${key}`;
+
+describe("Creem verification", () => {
+  it("values subscriptions by their products, without included tax, with history", async () => {
+    const result = await verifyRevenue("creem", CREEM_KEYS.one, false);
+    expect(result).toMatchObject({
+      provider: "creem",
+      livemode: false,
+      mrrCents: 3_542,
+      customers: 2,
+      skippedItems: 0,
+      mrrInvoiceCents: 3_542,
+      mrr30dAgoCents: 2_500,
+      historyNote: null,
+    });
+    expect(result.currencies.usd).toBe(2_500);
+    expect(result.currencies.eur).toBe(833);
+    expect(result.history).toHaveLength(12);
+    expect(result.history!.every((point) => point.mrr_cents === 2_500)).toBe(true);
+    expect(result.subscriptionHashes).toHaveLength(2);
+  });
+
+  it("refuses an unknown key", async () => {
+    await expect(verifyRevenue("creem", "creem_test_unknownkey0000", false)).rejects.toThrow(
+      /Creem refused the request/,
+    );
+  });
+});
+
+describe("Chargebee verification", () => {
+  it("values subscriptions by their latest full invoice, with history", async () => {
+    const result = await verifyRevenue("chargebee", chargebeeKey, false);
+    expect(result).toMatchObject({
+      provider: "chargebee",
+      livemode: false,
+      mrrCents: 3_521,
+      customers: 2,
+      skippedItems: 1,
+      mrrInvoiceCents: 3_521,
+      mrr30dAgoCents: 3_000,
+      historyNote: null,
+    });
+    expect(result.history!.every((point) => point.mrr_cents === 3_000)).toBe(true);
+    expect(result.subscriptionHashes).toHaveLength(3);
+  });
+
+  it("names a site Chargebee does not know, and refuses a wrong key", async () => {
+    await expect(
+      verifyRevenue("chargebee", `nosuchsite-test:${CHARGEBEE.key}`, false),
+    ).rejects.toThrow(/no site called nosuchsite-test/);
+    await expect(
+      verifyRevenue("chargebee", `${CHARGEBEE.site}:test_wrongkey000000000000`, false),
+    ).rejects.toThrow(/Chargebee rejected the key/);
+  });
+});
+
+describe("Whop verification", () => {
+  it("finds the sandbox, and values memberships by renewals, plans and promo codes", async () => {
+    const result = await verifyRevenue("whop", WHOP_KEYS.one, null);
+    expect(result).toMatchObject({
+      provider: "whop",
+      livemode: false,
+      mrrCents: 3_667,
+      customers: 3,
+      skippedItems: 0,
+      mrrInvoiceCents: 2_167,
+      mrr30dAgoCents: 3_000,
+      historyNote: null,
+    });
+    expect(result.history![0].mrr_cents).toBe(1_500);
+    expect(result.subscriptionHashes).toHaveLength(3);
+  });
+
+  it("refuses a key that can do more than read", async () => {
+    await expect(verifyRevenue("whop", WHOP_KEYS.writer, null)).rejects.toThrow(
+      /more than read, for example plan:update/,
+    );
+  });
+});
+
+describe("RevenueCat verification", () => {
+  it("reads MRR, active subscriptions and history from the charts", async () => {
+    const result = await verifyRevenue("revenuecat", revenueCatKey(REVENUECAT.keys.one), true);
+    expect(result).toMatchObject({
+      provider: "revenuecat",
+      livemode: true,
+      mrrCents: 15_000,
+      customers: 42,
+      skippedItems: 0,
+      mrrInvoiceCents: 15_000,
+      mrr30dAgoCents: 10_000,
+      historyNote: null,
+    });
+    expect(result.history!.every((point) => point.mrr_cents === 10_000)).toBe(true);
+    expect(result.history).toHaveLength(12);
+  });
+
+  it("refuses a key with access beyond charts, and a project the key does not belong to", async () => {
+    await expect(
+      verifyRevenue("revenuecat", revenueCatKey(REVENUECAT.keys.wide), true),
+    ).rejects.toThrow(/more access than charts/);
+    await expect(
+      verifyRevenue("revenuecat", `projother1:${REVENUECAT.keys.one}`, true),
+    ).rejects.toThrow(/cannot read this project's charts/);
+  });
+});
+
 describe("claims", () => {
   it("hash Stripe ids as before and prefix other providers", async () => {
     const { createHash } = await import("node:crypto");
@@ -171,30 +284,39 @@ describe("claims", () => {
     expect(stripe.subscriptionHashes).toContain(hash("sub_fixture_1"));
     const dodo = await verifyRevenue("dodo", DODO_KEYS.one, false);
     expect(dodo.subscriptionHashes).toContain(hash("dodo:sub_dodo_monthly"));
+    const revenueCat = await verifyRevenue("revenuecat", revenueCatKey(REVENUECAT.keys.one), true);
+    expect(revenueCat.subscriptionHashes).toEqual([hash("revenuecat:project:projharbor1")]);
   });
 });
 
 describe("hourly verification", () => {
-  it("reads only what MRR needs without the history", async () => {
-    for (const [provider, key] of [
-      ["stripe", "rk_test_harborfixture0001"],
-      ["paddle", PADDLE_KEYS.one],
-      ["polar", POLAR_TOKENS.one],
-      ["dodo", DODO_KEYS.one],
-    ] as const) {
+  // Requests to one provider are spaced out as in production, so some providers take seconds.
+  it.each([
+    ["stripe", "rk_test_harborfixture0001"],
+    ["paddle", PADDLE_KEYS.one],
+    ["polar", POLAR_TOKENS.one],
+    ["dodo", DODO_KEYS.one],
+    ["creem", CREEM_KEYS.one],
+    ["chargebee", chargebeeKey],
+    ["whop", WHOP_KEYS.one],
+    ["revenuecat", revenueCatKey(REVENUECAT.keys.one)],
+  ] as const)(
+    "reads only what MRR needs from %s without the history",
+    async (provider, key) => {
       const full = await verifyRevenue(provider, key, false);
       const light = await verifyRevenue(provider, key, false, new Date(), { history: false });
-      expect(light.mrrCents, provider).toBe(full.mrrCents);
-      expect(light.customers, provider).toBe(full.customers);
-      expect(light, provider).toMatchObject({
+      expect(light.mrrCents).toBe(full.mrrCents);
+      expect(light.customers).toBe(full.customers);
+      expect(light).toMatchObject({
         history: null,
         mrrInvoiceCents: null,
         historyNote: null,
         historyAt: null,
       });
-      expect(full.historyAt, provider).not.toBeNull();
-    }
-  });
+      expect(full.historyAt).not.toBeNull();
+    },
+    20_000,
+  );
 
   it("carries over a history from the same provider read less than a day ago", () => {
     const now = Date.parse("2026-09-25T12:00:00Z");

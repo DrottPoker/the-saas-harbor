@@ -2,6 +2,8 @@
 // what the site's own pages said on GUIDE_CHECKED, and leaves out prices, which change often.
 // Update an entry when a site changes its terms, and move the date.
 
+import { providerList } from "./revenue/catalog";
+
 export const GUIDE_PUBLISHED = "2026-09-27";
 export const GUIDE_CHECKED = "2026-09-27";
 
@@ -144,8 +146,7 @@ const directories: LaunchGroup = {
       name: "The SaaS Harbor",
       url: "/list-your-saas",
       internal: true,
-      summary:
-        "A free directory of independent SaaS, with a leaderboard of MRR verified through Stripe, Paddle, Polar or Dodo Payments.",
+      summary: `A free directory of independent SaaS, with a leaderboard of MRR verified through ${providerList("or")}.`,
       how: "You create an account and add your product, which is public as soon as you save it, with no review queue. Connecting a payment provider is optional and ranks the product by verified MRR.",
       cost: "Free, with no paid plans. The dofollow link is free and comes with verified revenue.",
       bestFor: "Any SaaS, new or established, including products without revenue yet.",

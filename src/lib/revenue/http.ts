@@ -29,8 +29,18 @@ export function apiBase(override: string | undefined, origin: string, name: stri
 
 // Requests to one provider start at least this many milliseconds apart in this process. Paddle
 // limits each IP address to 240 requests a minute and Dodo each business to 240, so reads leave
-// room for other makers and the makers' own use; Polar allows 500 per organization.
-const SPACING: Partial<Record<ProviderId, number>> = { paddle: 300, polar: 150, dodo: 300 };
+// room for other makers and the makers' own use; Polar allows 500 per organization. Chargebee
+// allows 150 a minute on test sites and its smallest plan, Whop 600 per endpoint, and Creem
+// publishes no limit. RevenueCat allows 25 chart requests a minute per project, far more than a
+// verification sends.
+const SPACING: Partial<Record<ProviderId, number>> = {
+  paddle: 300,
+  polar: 150,
+  dodo: 300,
+  creem: 150,
+  chargebee: 500,
+  whop: 100,
+};
 const nextSlot = new Map<ProviderId, number>();
 
 async function throttle(provider: ProviderId) {

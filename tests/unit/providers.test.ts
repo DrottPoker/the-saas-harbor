@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { isProviderId, providerName } from "../../src/lib/revenue/catalog";
+import {
+  isProviderId,
+  providerAccount,
+  providerList,
+  providerName,
+} from "../../src/lib/revenue/catalog";
 import { parseDodoKey } from "../../src/lib/revenue/dodo/key";
 import {
   dodoMrr,
@@ -7,7 +12,7 @@ import {
   untaxedShare,
   type DodoSubscription,
 } from "../../src/lib/revenue/dodo/mrr";
-import { intervalMonths } from "../../src/lib/revenue/money";
+import { intervalMonths, periodMonths, toMinorUnits } from "../../src/lib/revenue/money";
 import { parsePaddleKey } from "../../src/lib/revenue/paddle/key";
 import {
   paddleMrr,
@@ -30,12 +35,29 @@ const DAY = 86_400;
 const iso = (seconds: number) => new Date(seconds * 1000).toISOString();
 
 describe("provider catalog", () => {
-  it("knows the four providers", () => {
-    expect(["stripe", "paddle", "polar", "dodo"].every(isProviderId)).toBe(true);
+  it("knows the eight providers", () => {
+    expect(
+      ["stripe", "paddle", "polar", "dodo", "creem", "chargebee", "whop", "revenuecat"].every(
+        isProviderId,
+      ),
+    ).toBe(true);
     expect(isProviderId("lemonsqueezy")).toBe(false);
     expect(isProviderId("toString")).toBe(false);
     expect(providerName("dodo")).toBe("Dodo Payments");
     expect(providerName(null)).toBe("a payment provider");
+  });
+
+  it("names them in a sentence", () => {
+    expect(providerList("or")).toBe(
+      "Stripe, Paddle, Polar, Dodo Payments, Creem, Chargebee, Whop or RevenueCat",
+    );
+    expect(providerList("and")).toMatch(/, Whop and RevenueCat$/);
+  });
+
+  it("asks for a site or project only where the key needs one", () => {
+    expect(providerAccount("chargebee")?.label).toBe("Site");
+    expect(providerAccount("revenuecat")?.label).toBe("Project ID");
+    expect(providerAccount("stripe")).toBeNull();
   });
 });
 
@@ -72,6 +94,23 @@ describe("intervals", () => {
     expect(intervalMonths("month", 3)).toBe(3);
     expect(intervalMonths("year")).toBe(12);
     expect(intervalMonths("week")).toBeCloseTo(7 / (365.25 / 12), 10);
+  });
+
+  it("count service periods in calendar months where they fit", () => {
+    const at = (y: number, m: number, d: number, h = 0) => Date.UTC(y, m, d, h) / 1000;
+    expect(periodMonths(at(2026, 1, 1), at(2026, 2, 1))).toBe(1);
+    expect(periodMonths(at(2026, 0, 31, 9), at(2026, 1, 28, 9))).toBe(1);
+    expect(periodMonths(at(2026, 0, 15), at(2026, 0, 14 + 31, 12))).toBe(1);
+    expect(periodMonths(at(2026, 2, 15), at(2027, 2, 15))).toBe(12);
+    expect(periodMonths(at(2026, 0, 1), at(2026, 0, 8))).toBeCloseTo(7 / (365.25 / 12), 10);
+    expect(periodMonths(at(2026, 0, 1), at(2026, 1, 15))).toBeCloseTo(45 / (365.25 / 12), 10);
+  });
+
+  it("read amounts in major units", () => {
+    expect(toMinorUnits("19.99", "usd")).toBeCloseTo(1999, 6);
+    expect(toMinorUnits(1200, "jpy")).toBe(1200);
+    expect(toMinorUnits("1.5", "kwd")).toBe(1500);
+    expect(() => toMinorUnits("free", "usd")).toThrow(/amount/);
   });
 });
 

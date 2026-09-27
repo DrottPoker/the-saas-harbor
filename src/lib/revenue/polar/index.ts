@@ -25,7 +25,7 @@ async function environment(key: string, livemode: boolean | null, allowTest: boo
 /** Polar: MRR from subscriptions, with tax and history from their paid orders. */
 export const polar: ProviderAdapter = {
   id: "polar",
-  parseKey: (input) => parsePolarToken(input),
+  parseKey: ({ key }) => parsePolarToken(key),
   async read(key, livemode, { allowTest, now, history }) {
     const live = await environment(key, livemode, allowTest);
     const subscriptions = await fetchSubscriptions(key, live);

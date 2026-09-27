@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useActionState, useId, useState } from "react";
-import { CircleAlert, CircleCheck } from "lucide-react";
+import { CircleAlert, CircleCheck, ExternalLink } from "lucide-react";
 import {
   connectProviderAction,
   disconnectProviderAction,
@@ -10,7 +10,13 @@ import {
 } from "@/app/revenue-actions";
 import { formatDate, formatUsd, type ActionState } from "@/lib/domain";
 import type { RevenueConnection, RevenueSnapshot } from "@/lib/data";
-import { isProviderId, PROVIDER_IDS, PROVIDERS, type ProviderId } from "@/lib/revenue/catalog";
+import {
+  isProviderId,
+  PROVIDER_IDS,
+  PROVIDERS,
+  providerAccount,
+  type ProviderId,
+} from "@/lib/revenue/catalog";
 import { STRIPE_KEY_PERMISSIONS, stripeKeyCreationUrl } from "@/lib/revenue/stripe/key";
 import { SITE_NAME } from "@/lib/seo";
 import { cn } from "@/lib/utils";
@@ -24,26 +30,25 @@ const resources = STRIPE_KEY_PERMISSIONS.map(({ resource }) => resource);
 const permissionList = `${resources.slice(0, -1).join(", ")} and ${resources.at(-1)}`;
 
 const strong = (text: string) => <strong className="font-medium text-foreground">{text}</strong>;
-const link = (href: string, text: string) => (
-  <a
-    href={href}
-    target="_blank"
-    rel="noopener noreferrer"
-    className="font-medium text-foreground underline underline-offset-2"
-  >
-    {text}
-  </a>
-);
 
-// How to create a read-only key with each provider, and what the key is used to read.
-const guides: Record<ProviderId, { steps: React.ReactNode[]; reads: string }> = {
+type Guide = {
+  /** Where the key is made, and the link's words. */
+  dashboard: { href: string; label: string };
+  steps: React.ReactNode[];
+  /** What the key is used to read. */
+  reads: string;
+};
+
+// How to create a read-only key with each provider.
+const guides: Record<ProviderId, Guide> = {
   stripe: {
+    dashboard: {
+      href: stripeKeyCreationUrl(SITE_NAME),
+      label: "Create a read-only key in Stripe",
+    },
     reads: "subscriptions and paid invoices",
     steps: [
-      <>
-        {link(stripeKeyCreationUrl(SITE_NAME), "Create a read-only key in Stripe")}. Stripe opens
-        with the key&apos;s name and permissions filled in.
-      </>,
+      "Stripe opens a new restricted key with its name and permissions filled in.",
       <>
         Check that {strong("Read")} is set for {permissionList} and None for everything else, then
         choose {strong("Create key")}.
@@ -52,13 +57,13 @@ const guides: Record<ProviderId, { steps: React.ReactNode[]; reads: string }> = 
     ],
   },
   paddle: {
+    dashboard: {
+      href: "https://vendors.paddle.com/authentication-v2",
+      label: "Open Paddle's API keys",
+    },
     reads: "subscriptions and paid transactions",
     steps: [
-      <>
-        In Paddle, open{" "}
-        {link("https://vendors.paddle.com/authentication-v2", "Developer tools → Authentication")}{" "}
-        and choose {strong("New API key")}.
-      </>,
+      <>Under Developer tools → Authentication, choose {strong("New API key")}.</>,
       <>
         Give it {strong("Read")} for Subscriptions and Transactions and no other permissions. Leave
         the expiry date empty, or the key stops working when it expires.
@@ -67,13 +72,10 @@ const guides: Record<ProviderId, { steps: React.ReactNode[]; reads: string }> = 
     ],
   },
   polar: {
+    dashboard: { href: "https://polar.sh/dashboard", label: "Open the Polar dashboard" },
     reads: "your organization, subscriptions and paid orders",
     steps: [
-      <>
-        In Polar, open your organization&apos;s{" "}
-        {link("https://polar.sh/dashboard", "Settings → Developers")} and choose{" "}
-        {strong("New Token")}.
-      </>,
+      <>In your organization&apos;s Settings → Developers, choose {strong("New Token")}.</>,
       <>
         Select the scopes organizations:read, subscriptions:read and orders:read and nothing else,
         and choose {strong("No expiration")}.
@@ -82,17 +84,97 @@ const guides: Record<ProviderId, { steps: React.ReactNode[]; reads: string }> = 
     ],
   },
   dodo: {
+    dashboard: { href: "https://app.dodopayments.com", label: "Open the Dodo Payments dashboard" },
     reads: "subscriptions and payments",
     steps: [
-      <>
-        In Dodo Payments, open {link("https://app.dodopayments.com", "Developer → API Keys")} and
-        choose {strong("Add API Key")}.
-      </>,
+      <>Under Developer → API Keys, choose {strong("Add API Key")}.</>,
       <>Turn off {strong("Enable write access")}, so the key can only read.</>,
       "Copy the key, which Dodo Payments shows only once, and paste it below.",
     ],
   },
+  creem: {
+    dashboard: {
+      href: "https://creem.io/dashboard/developers",
+      label: "Open Creem's developer settings",
+    },
+    reads: "products, subscriptions and paid transactions",
+    steps: [
+      <>Under Developers → API keys, create a new key.</>,
+      <>
+        In the scope picker, give it {strong("read")} access to products, subscriptions and
+        transactions and nothing else.
+      </>,
+      "Copy the key, which starts with creem_, and paste it below.",
+    ],
+  },
+  chargebee: {
+    dashboard: { href: "https://app.chargebee.com/login", label: "Sign in to Chargebee" },
+    reads: "subscriptions and paid invoices",
+    steps: [
+      <>
+        Open Settings → Configure Chargebee → API keys and events, and choose{" "}
+        {strong("Add API key")}.
+      </>,
+      <>
+        Choose a {strong("Read-only key")} with access to all data, or restricted to transactional
+        data.
+      </>,
+      "Copy the key, and enter your site: the name before .chargebee.com in your dashboard's address.",
+    ],
+  },
+  whop: {
+    dashboard: { href: "https://whop.com/dashboard", label: "Open the Whop dashboard" },
+    reads: "memberships, plans, promo codes and paid payments",
+    steps: [
+      <>
+        Choose your business, open Developer → Account API keys and create a key with custom
+        permissions.
+      </>,
+      <>
+        Give it only member:basic:read, plan:basic:read, payment:basic:read and
+        promo_code:basic:read. A key with any permission beyond reading is refused.
+      </>,
+      "Copy the key and paste it below.",
+    ],
+  },
+  revenuecat: {
+    dashboard: { href: "https://app.revenuecat.com", label: "Open the RevenueCat dashboard" },
+    reads: "your project's MRR and active subscriptions charts",
+    steps: [
+      <>
+        In your project, open Project settings → API keys and choose {strong("New secret API key")}{" "}
+        with version V2.
+      </>,
+      <>
+        Set Charts & metrics to {strong("Read only")} and everything else to No access. A key with
+        more access is refused.
+      </>,
+      "Copy the key, which starts with sk_, and the project ID, which follows /projects/ in the address of any page in your project.",
+    ],
+  },
 };
+
+// Where to make the key, with the steps: the dashboard link opens in a new tab.
+function KeyGuide({ guide }: { guide: Guide }) {
+  return (
+    <div className="rounded-xl border bg-subtle p-4">
+      <a
+        href={guide.dashboard.href}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="group flex items-center justify-between gap-3 text-sm font-medium"
+      >
+        <span className="underline-offset-2 group-hover:underline">{guide.dashboard.label}</span>
+        <ExternalLink aria-hidden="true" className="size-4 shrink-0 text-muted-foreground" />
+      </a>
+      <ol className="mt-3 grid list-decimal gap-1.5 pl-5 text-sm text-muted-foreground">
+        {guide.steps.map((step, index) => (
+          <li key={index}>{step}</li>
+        ))}
+      </ol>
+    </div>
+  );
+}
 
 // Why a connected product has no chart, in each provider's terms.
 const noHistory: Record<ProviderId, string> = {
@@ -102,6 +184,11 @@ const noHistory: Record<ProviderId, string> = {
     "No revenue history: the Paddle account has more transactions than one verification reads.",
   polar: "No revenue history: the Polar account has more orders than one verification reads.",
   dodo: "No revenue history: Dodo Payments does not say which period a payment covers.",
+  creem: "No revenue history: the Creem account has more transactions than one verification reads.",
+  chargebee:
+    "No revenue history: the Chargebee site has more invoices than one verification reads.",
+  whop: "No revenue history: the Whop account has more payments or plans than one verification reads.",
+  revenuecat: "No revenue history yet. Refresh to read RevenueCat's MRR chart.",
 };
 
 // Outside the key form, so the reset after each submission leaves the choice as it was.
@@ -157,16 +244,32 @@ function ConnectForm({
   const [state, action] = useEditorAction(connectProviderAction.bind(null, saasId, provider));
   const group = useId();
   const { name, keyLabel, newKeyLabel, placeholder } = PROVIDERS[provider];
+  const account = providerAccount(provider);
   const guide = guides[provider];
   return (
     <div className="grid gap-4">
       <ProviderChoice name={group} value={provider} onChange={setProvider} />
       <form action={action} className="grid gap-4">
-        <ol className="grid list-decimal gap-1.5 pl-5 text-sm text-muted-foreground">
-          {guide.steps.map((step, index) => (
-            <li key={index}>{step}</li>
-          ))}
-        </ol>
+        <KeyGuide guide={guide} />
+        {/* Names the provider in the submitted values, so a typed site or project returns only
+            to the provider it was typed for. */}
+        <input type="hidden" name="provider" value={provider} />
+        {account && (
+          <Field name="provider_account" label={account.label}>
+            <Input
+              key={provider}
+              id="provider_account"
+              name="provider_account"
+              autoComplete="off"
+              spellCheck={false}
+              placeholder={account.placeholder}
+              defaultValue={
+                state.values?.provider === provider ? state.values.provider_account : undefined
+              }
+              required
+            />
+          </Field>
+        )}
         <Field name="provider_key" label={replace ? newKeyLabel : keyLabel}>
           <Input
             id="provider_key"

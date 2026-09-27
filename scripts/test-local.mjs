@@ -47,6 +47,10 @@ const result = spawnSync(npx, ["playwright", "test", ...extra], {
     PADDLE_API_BASE: `${fakeProviders}/paddle`,
     POLAR_API_BASE: `${fakeProviders}/polar`,
     DODO_API_BASE: `${fakeProviders}/dodo`,
+    CREEM_API_BASE: `${fakeProviders}/creem`,
+    CHARGEBEE_API_BASE: `${fakeProviders}/chargebee`,
+    WHOP_API_BASE: `${fakeProviders}/whop`,
+    REVENUECAT_API_BASE: `${fakeProviders}/revenuecat`,
     FX_API_BASE: fakeProviders,
     // Domain checks ask the fake server's DNS (tests/e2e/fake-site.mjs).
     DOMAIN_DNS_SERVERS: "127.0.0.1:3053",

@@ -2,12 +2,13 @@ import Link from "next/link";
 import { demoActive } from "@/lib/data";
 import { PageHeader, Shell } from "@/components/shell";
 import { Button } from "@/components/ui/button";
+import { providerList } from "@/lib/revenue/catalog";
 import { pageMetadata } from "@/lib/seo";
 
 export const metadata = pageMetadata({
   title: "How it works",
   description:
-    "How The SaaS Harbor verifies MRR with read-only keys to Stripe, Paddle, Polar and Dodo Payments, how the leaderboard is ranked, and what is public.",
+    "How The SaaS Harbor verifies MRR with read-only keys to payment providers such as Stripe, Paddle, Polar and RevenueCat, how the leaderboard is ranked, and what is public.",
   path: "/about",
 });
 
@@ -15,9 +16,9 @@ const sections = [
   {
     title: "Verified revenue",
     body: [
-      "Revenue is never typed in by founders. Each product connects its payment provider, Stripe, Paddle, Polar or Dodo Payments, with a key that can only read: subscriptions and what was charged for them. The key is encrypted when stored, used only by our server to read data, and can be revoked with the provider at any time.",
-      "Monthly recurring revenue (MRR) is calculated the same way for every provider: active and past-due subscriptions, normalized to one month, after ongoing discounts and before tax. Trials, paused subscriptions, one-time discounts and usage-based charges are not counted. With Stripe each subscription is valued by its prices and discounts. Paddle bills in local prices and currencies, so a Paddle subscription is valued by its latest charge for a full period. Polar and Dodo Payments give each subscription its recurring amount, and where it includes tax, the tax is taken out at the share its latest payment shows. Other currencies are converted to US dollars with daily central-bank reference rates. Paying customers are the customers with a subscription worth more than zero.",
-      "Verification runs again every hour, and the history and 30-day growth once a day. A figure that has not been verified for seven days is hidden and removed from the leaderboard, so a revoked key cannot keep an old number on display. The history and 30-day growth come from paid charges; Dodo Payments does not say which period a payment covers, so its products have no history. A payment provider account can only verify one product.",
+      `Revenue is never typed in by founders. Each product connects its payment provider, ${providerList("or")}, with a key that can only read: subscriptions and what was charged for them, or with RevenueCat, its charts. The key is encrypted when stored, used only by our server to read data, and can be revoked with the provider at any time.`,
+      "Monthly recurring revenue (MRR) is calculated the same way for every provider that shows its subscriptions: active and past-due subscriptions, normalized to one month, after ongoing discounts and before tax. Trials, paused subscriptions, one-time discounts and usage-based charges are not counted. With Stripe each subscription is valued by its prices and discounts, and with Creem by its product's price and discount. Paddle bills in local prices and currencies and Chargebee's prices can include tax, so their subscriptions are valued by their latest charge for a full period; a Whop membership is valued by its latest renewal, or in its first period by its plan's price. Polar and Dodo Payments give each subscription its recurring amount. Where an amount includes tax, the tax is taken out at the share the latest payment shows. RevenueCat, for app store subscriptions, gives only its own MRR, read before tax: it counts introductory prices as charged, leaves out subscriptions whose payment is being retried, and counts subscriptions rather than customers. Other currencies are converted to US dollars with daily central-bank reference rates. Paying customers are the customers with a subscription worth more than zero.",
+      "Verification runs again every hour, and the history and 30-day growth once a day. A figure that has not been verified for seven days is hidden and removed from the leaderboard, so a revoked key cannot keep an old number on display. The history and 30-day growth come from paid charges, and with RevenueCat from its daily MRR chart; Dodo Payments does not say which period a payment covers, so its products have no history. A payment provider account can only verify one product.",
     ],
   },
   {

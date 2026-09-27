@@ -3,7 +3,7 @@
 -- Runs in a rolled-back transaction.
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(9);
+select plan(10);
 
 insert into auth.users(id) values ('c7000000-0000-4000-8000-000000000001');
 insert into public.profiles(id, name) values ('c7000000-0000-4000-8000-000000000001', 'Provider Maker');
@@ -53,6 +53,15 @@ select is(
   (select count(*)::int from private.subscription_claims
     where saas_id = 'c7100000-0000-4000-8000-000000000001' and subscription_hash = repeat('d', 64)),
   0, 'the old provider''s claims are released');
+select lives_ok(
+  $$ do $d$ declare p text; begin
+       foreach p in array array['creem', 'chargebee', 'whop', 'revenuecat', 'polar'] loop
+         perform public.record_revenue_verification('c7100000-0000-4000-8000-000000000001', p,
+           'v1:' || p, p || '…xyz', true, 100, 1, '{"usd": 100}', null,
+           array[repeat('f', 64)], null, null, null);
+       end loop;
+     end $d$ $$,
+  'Creem, Chargebee, Whop and RevenueCat are accepted too');
 select throws_ok(
   $$ select public.record_revenue_verification('c7100000-0000-4000-8000-000000000001', 'lemon',
     'v1:lemon', 'x', true, 1, 1, '{}', null, '{}', null, null, null) $$,
