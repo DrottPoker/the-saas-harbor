@@ -12,7 +12,7 @@ Makers can message each other privately (see Messages below), and report product
 
 At the project owner's request, users can create an account and sign in with Google through Supabase Auth, next to email and password:
 
-- **Continue with Google** on the sign-in and sign-up pages, above the email form, shown only while Supabase Auth has Google turned on. The Google mark is drawn in the text color, since the site keeps to its own palette; Google's branding guidelines prefer the four-color mark, so change it if Google's review asks.
+- **Continue with Google** on the sign-in and sign-up pages, above the email form, shown only while Supabase Auth has Google turned on. The button carries Google's four-color mark, as Google's branding guidelines ask; at the owner's request, brand marks are the one exception to the rule against hardcoded colors.
 - **Username and Terms after the first sign-in.** An account created through Google has no username and has accepted no terms, so it goes to Choose your username (`/auth/finish`) first, with the same username rules and the same Terms box as email sign-up, and the version is recorded the same way. Nothing else opens until then; Sign out is on the page. Accounts that never finish are deleted after seven days.
 - **Deleting an account without a password** is confirmed by signing in with Google again for the same account, within five minutes; the database accepts that sign-in instead of a password.
 - The privacy policy describes what Google sends (account ID, email address, name, picture address), that the name and picture are not shown, and the seven-day deletion.
