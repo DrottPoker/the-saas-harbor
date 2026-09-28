@@ -8,6 +8,10 @@ The first release includes accounts, email confirmation and recovery, public mak
 
 Makers can message each other privately (see Messages below), and report products, profiles and messages to the admins, who decide in an admin panel (see Reports and moderation below). They get emails about unread messages and about decisions (see Email notifications below). Other forms of connection, such as following or contact lists, are not implemented.
 
+## No script warning on missing pages 2026-09-28
+
+A missing page (a hidden product, a suspended account, `/admin` for anyone but an admin) is Next.js's bare error document, which the browser draws itself, root layout included. React then created the inline theme script as an element, which it never runs, and warned about it in development; the theme only came back through the theme menu after React drew the page. The script is now put into the server's HTML through `useServerInsertedHTML` (`src/components/theme-script.tsx`), so it is in the head of every page, 404s included, and React never creates it. The theme browser test checks both and fails on the warning; it failed on the old layout.
+
 ## Emails in the site's design 2026-09-28
 
 At the owner's request, every email now looks like the site: the logo and name above a card with a heading, the text and a dark button, and the small print below it, in the light theme's colors, with a preview line for inboxes. Notification emails and the Auth emails (confirmation and password reset) share one frame, `src/lib/email/layout.ts`. The Auth templates in `supabase/templates` are generated from `src/lib/email/auth-templates.ts`, and a unit test fails when they differ (`npx vitest run -u` rewrites them); Prettier leaves them alone. The texts are unchanged.

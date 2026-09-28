@@ -1,4 +1,4 @@
-// Shared by the server layout (inline script) and the client theme menu.
+// Shared by the inline theme script (ThemeScript) and the theme menu.
 export type Theme = "light" | "dark" | "system";
 export const THEME_COOKIE = "theme";
 

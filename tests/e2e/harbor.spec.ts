@@ -467,6 +467,11 @@ test("demo products fill the lists without a rank, until real products take thei
 test("theme menu persists light and dark, and system follows the OS", async ({ page }) => {
   const light = "rgb(232, 230, 223)";
   const dark = "rgb(14, 21, 32)";
+  // React warns about a script it creates itself, which it would never run.
+  const scriptWarnings: string[] = [];
+  page.on("console", (message) => {
+    if (message.text().includes("Encountered a script tag")) scriptWarnings.push(page.url());
+  });
   await page.emulateMedia({ colorScheme: "light" });
   await page.goto("/");
   expect(await pageBackground(page)).toBe(light);
@@ -474,7 +479,14 @@ test("theme menu persists light and dark, and system follows the OS", async ({ p
   await page.getByRole("menuitemradio", { name: "Dark" }).click();
   await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
   expect(await pageBackground(page)).toBe(dark);
-  // The inline script restores the saved choice before paint on a full reload.
+  // The inline script restores the saved choice before paint on a full reload. It is in the head
+  // of the server's HTML, with the nonce, also on a missing page.
+  for (const path of ["/", "/missing"]) {
+    const html = await (await page.request.get(path)).text();
+    expect(html.slice(0, html.indexOf("</head>"))).toMatch(
+      /<script nonce="[^"]+">\(function\(\)\{try\{var m=document\.cookie/,
+    );
+  }
   await page.reload();
   await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
   expect(await pageBackground(page)).toBe(dark);
@@ -504,6 +516,7 @@ test("theme menu persists light and dark, and system follows the OS", async ({ p
   expect(await pageBackground(page)).toBe(light);
   await page.reload();
   await expect(page.locator("html")).not.toHaveAttribute("data-theme");
+  expect(scriptWarnings).toEqual([]);
 });
 
 test("registration, email confirmation, profile and SaaS editing, storage, privacy and logout", async ({

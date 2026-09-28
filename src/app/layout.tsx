@@ -4,11 +4,11 @@ import { headers } from "next/headers";
 import { FeedbackButton } from "@/components/feedback-button";
 import { PageViews } from "@/components/page-views";
 import { SiteFooter, SiteHeader } from "@/components/site-chrome";
+import { ThemeScript } from "@/components/theme-script";
 import { VercelAnalytics } from "@/components/vercel-analytics";
 import { accountMenu } from "@/lib/account-menu";
 import { SITE_DESCRIPTION, SITE_NAME, siteUrl } from "@/lib/seo";
 import { currentUser, unreadMessageCount } from "@/lib/supabase/server";
-import { themeScript } from "@/lib/theme";
 import "./globals.css";
 
 const sans = Geist({ subsets: ["latin"], variable: "--font-geist-sans" });
@@ -46,12 +46,7 @@ export default async function RootLayout({ children, modal }: LayoutProps<"/">) 
   return (
     <html lang="en" className={`${sans.variable} ${mono.variable}`} suppressHydrationWarning>
       <head>
-        {/* Browsers hide nonce values from the DOM, so hydration would see a mismatch. */}
-        <script
-          nonce={nonce}
-          suppressHydrationWarning
-          dangerouslySetInnerHTML={{ __html: themeScript }}
-        />
+        <ThemeScript nonce={nonce} />
       </head>
       <body className="flex min-h-dvh flex-col">
         <a
