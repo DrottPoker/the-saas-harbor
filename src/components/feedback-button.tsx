@@ -8,11 +8,12 @@ import { feedbackHref } from "@/lib/feedback";
 /**
  * A button in the corner of every page that opens the feedback form, remembering the page. On
  * phones it would cover content, so the footer's Send feedback link stands in there. It is left
- * out of the admin panel, where the feedback is read.
+ * out of the admin panel, where the feedback is read, and out of Messages, where it would cover the
+ * message field.
  */
 export function FeedbackButton() {
   const path = usePathname();
-  if (path === "/feedback" || path.startsWith("/admin")) return null;
+  if (path === "/feedback" || /^\/(admin|messages)(\/|$)/.test(path)) return null;
   return (
     <Link
       href={feedbackHref(path)}

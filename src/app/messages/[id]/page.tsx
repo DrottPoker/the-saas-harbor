@@ -1,12 +1,12 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
+import { ArrowLeft } from "lucide-react";
 import { z } from "zod";
 import { PersonAvatar } from "@/components/avatars";
-import { BackLink } from "@/components/back-link";
 import { BlockControl } from "@/components/messages/block-control";
 import { Conversation } from "@/components/messages/conversation";
-import { Notice, Shell } from "@/components/shell";
+import { Notice } from "@/components/shell";
 import { publicProfile } from "@/lib/data";
 import { MESSAGE_COLUMNS, MESSAGE_PAGE_SIZE, type ChatMessage } from "@/lib/messages";
 import { requireUser, serverClient } from "@/lib/supabase/server";
@@ -73,56 +73,62 @@ export default async function ConversationPage({ params }: Props) {
   const blocked = !!block.data;
   const suspended = !!me.data?.suspended_at;
 
+  // The right pane of the messages layout; below md it fills the window alone.
   return (
-    <Shell size="narrow">
-      <BackLink href="/messages">Messages</BackLink>
-      <div className="mt-4 flex items-center gap-4 border-b pb-6">
-        <PersonAvatar path={other.avatar_path} name={other.name} size="lg" />
+    <>
+      <div className="flex min-h-14 shrink-0 items-center gap-3 border-b py-2 pr-4 pl-2 md:pl-4">
+        <Link
+          href="/messages"
+          className="inline-flex size-9 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-subtle hover:text-foreground md:hidden"
+        >
+          <ArrowLeft aria-hidden="true" className="size-4" />
+          <span className="sr-only">Back to messages</span>
+        </Link>
+        <PersonAvatar path={other.avatar_path} name={other.name} size="sm" />
         <div className="min-w-0 flex-1">
-          <h1 className="truncate text-2xl font-semibold tracking-tight">{other.name}</h1>
+          <h1 className="truncate leading-tight font-semibold">{other.name}</h1>
           <Link
             href={`/users/${other.slug}`}
-            className="text-sm text-muted-foreground hover:text-foreground hover:underline"
+            className="text-xs text-muted-foreground hover:text-foreground hover:underline"
           >
             View profile
           </Link>
         </div>
         {me.data && <BlockControl makerId={other.id} name={other.name} blocked={blocked} />}
       </div>
-      <div className="pt-6">
-        <Conversation
-          userId={user.id}
-          other={{ id: other.id, name: other.name }}
-          initialConversationId={conversation.data?.id ?? null}
-          initialMessages={messages}
-          initialHasEarlier={messages.length === MESSAGE_PAGE_SIZE}
-          initialOtherReadAt={otherReadAt}
-          canSend={!!me.data && !blocked && !suspended}
-          closedNotice={
-            !me.data ? (
-              <Notice>
-                Set up your{" "}
-                <Link href="/dashboard/profile" className="font-medium underline">
-                  profile
-                </Link>{" "}
-                before sending messages. Other users see your name and photo.
-              </Notice>
-            ) : suspended ? (
-              <Notice>
-                Your account is suspended, so you cannot send messages. Your{" "}
-                <Link href="/dashboard" className="font-medium underline">
-                  dashboard
-                </Link>{" "}
-                explains why.
-              </Notice>
-            ) : (
-              <Notice>
-                You blocked {other.name}. Neither of you can send messages until you unblock them.
-              </Notice>
-            )
-          }
-        />
-      </div>
-    </Shell>
+      <Conversation
+        key={other.id}
+        userId={user.id}
+        other={{ id: other.id, name: other.name }}
+        initialConversationId={conversation.data?.id ?? null}
+        initialMessages={messages}
+        initialHasEarlier={messages.length === MESSAGE_PAGE_SIZE}
+        initialOtherReadAt={otherReadAt}
+        canSend={!!me.data && !blocked && !suspended}
+        closedNotice={
+          !me.data ? (
+            <Notice>
+              Set up your{" "}
+              <Link href="/dashboard/profile" className="font-medium underline">
+                profile
+              </Link>{" "}
+              before sending messages. Other users see your name and photo.
+            </Notice>
+          ) : suspended ? (
+            <Notice>
+              Your account is suspended, so you cannot send messages. Your{" "}
+              <Link href="/dashboard" className="font-medium underline">
+                dashboard
+              </Link>{" "}
+              explains why.
+            </Notice>
+          ) : (
+            <Notice>
+              You blocked {other.name}. Neither of you can send messages until you unblock them.
+            </Notice>
+          )
+        }
+      />
+    </>
   );
 }

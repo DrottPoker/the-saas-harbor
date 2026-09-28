@@ -12,6 +12,11 @@ export type SendState = ActionState & { message?: ChatMessage };
 export const MESSAGE_COLUMNS = "id, conversation_id, sender_id, body, created_at";
 export const MESSAGE_PAGE_SIZE = 50;
 
+/** One row of the conversation list, from the view `inbox`. */
+export type InboxConversation = Database["public"]["Views"]["inbox"]["Row"];
+export const INBOX_COLUMNS =
+  "id, other_id, other_name, other_avatar_path, last_message_at, last_body, last_sender_id, unread, blocked";
+
 const text = (x: string, y: string) => (x < y ? -1 : x > y ? 1 : 0);
 
 /**
@@ -65,10 +70,22 @@ export function formatMessageTime(value: string, now = new Date()) {
   const date = new Date(value);
   const time = date.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
   if (date.toDateString() === now.toDateString()) return time;
-  const day = date.toLocaleDateString("en-US", {
+  return `${formatDay(date, now)}, ${time}`;
+}
+
+/** The shorter form for the conversation list: "3:05 PM" today, else the day only. Local time. */
+export function formatListTime(value: string, now = new Date()) {
+  const date = new Date(value);
+  if (date.toDateString() === now.toDateString())
+    return date.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
+  return formatDay(date, now);
+}
+
+/** "Sep 24" this year, "Sep 24, 2025" before. */
+function formatDay(date: Date, now: Date) {
+  return date.toLocaleDateString("en-US", {
     month: "short",
     day: "numeric",
     ...(date.getFullYear() === now.getFullYear() ? {} : { year: "numeric" }),
   });
-  return `${day}, ${time}`;
 }

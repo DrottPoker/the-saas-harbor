@@ -218,16 +218,23 @@ export function Conversation({
 
   const status = deliveryStatus(messages, userId, otherReadAt);
 
+  const privacy = (
+    <p className="text-xs text-muted-foreground">
+      Only you and {other.name} can read this conversation.
+    </p>
+  );
+
+  // Fills the pane: the messages scroll, and the composer stays at the bottom.
   return (
-    <div className="grid gap-4">
+    <div className="flex min-h-0 flex-1 flex-col">
       <div
         ref={log}
         role="log"
         aria-label={`Messages with ${other.name}`}
         tabIndex={0}
-        className="max-h-[min(60vh,40rem)] min-h-56 overflow-y-auto rounded-xl border bg-surface p-4 shadow-card sm:p-5"
+        className="min-h-0 flex-1 overflow-y-auto p-4 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring sm:p-5"
       >
-        {hasEarlier && (
+        {hasEarlier ? (
           <div className="mb-4 text-center">
             <Button
               type="button"
@@ -239,11 +246,16 @@ export function Conversation({
               {loadingEarlier ? "Loading..." : "Show earlier messages"}
             </Button>
           </div>
+        ) : (
+          messages.length > 0 && <div className="mb-4 text-center">{privacy}</div>
         )}
         {messages.length === 0 ? (
-          <p className="py-16 text-center text-sm text-muted-foreground">
-            No messages yet. Say hello to {other.name}.
-          </p>
+          <div className="flex h-full flex-col items-center justify-center gap-1.5 text-center">
+            <p className="text-sm text-muted-foreground">
+              No messages yet. Say hello to {other.name}.
+            </p>
+            {privacy}
+          </div>
         ) : (
           <ol className="grid gap-1">
             {messages.map((message, index) => {
@@ -298,37 +310,40 @@ export function Conversation({
         )}
       </div>
 
-      {canSend ? (
-        <form action={send} className="grid gap-3">
-          <label htmlFor="message-body" className="sr-only">
-            Message to {other.name}
-          </label>
-          <Textarea
-            id="message-body"
-            name="body"
-            rows={3}
-            required
-            maxLength={MESSAGE_MAX_LENGTH}
-            placeholder={`Write to ${other.name}`}
-            defaultValue={state.draft}
-            onKeyDown={(event) => {
-              if (event.key === "Enter" && (event.metaKey || event.ctrlKey)) {
-                event.preventDefault();
-                event.currentTarget.form?.requestSubmit();
-              }
-            }}
-          />
-          {state.error && <Notice tone="error">{state.error}</Notice>}
-          <div className="flex items-center justify-between gap-4">
-            <p className="text-[13px] text-muted-foreground">
-              Only you and {other.name} can read this conversation.
-            </p>
-            <Submit pendingLabel="Sending...">Send</Submit>
-          </div>
-        </form>
-      ) : (
-        closedNotice
-      )}
+      <div className="shrink-0 border-t p-3 sm:p-4">
+        {canSend ? (
+          <form action={send} className="grid gap-3">
+            {state.error && <Notice tone="error">{state.error}</Notice>}
+            <div className="flex items-end gap-2">
+              <label htmlFor="message-body" className="sr-only">
+                Message to {other.name}
+              </label>
+              {/* Grows with the text up to a limit, then scrolls. */}
+              <Textarea
+                id="message-body"
+                name="body"
+                rows={1}
+                required
+                maxLength={MESSAGE_MAX_LENGTH}
+                placeholder={`Write to ${other.name}`}
+                defaultValue={state.draft}
+                className="max-h-40 min-h-10 resize-none"
+                onKeyDown={(event) => {
+                  if (event.key === "Enter" && (event.metaKey || event.ctrlKey)) {
+                    event.preventDefault();
+                    event.currentTarget.form?.requestSubmit();
+                  }
+                }}
+              />
+              <Submit size="lg" pendingLabel="Sending...">
+                Send
+              </Submit>
+            </div>
+          </form>
+        ) : (
+          closedNotice
+        )}
+      </div>
     </div>
   );
 }

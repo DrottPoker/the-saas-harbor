@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { safeNext } from "../../src/lib/domain";
 import {
   deliveryStatus,
+  formatListTime,
   formatMessageTime,
   laterTime,
   mergeMessages,
@@ -80,6 +81,13 @@ describe("message times", () => {
   it("adds the day this year and the year before that", () => {
     expect(format(new Date(2026, 8, 23, 9, 30))).toBe("Sep 23, 9:30 AM");
     expect(format(new Date(2025, 11, 31, 23, 59))).toBe("Dec 31, 2025, 11:59 PM");
+  });
+
+  it("shows the time today and only the day before that in the conversation list", () => {
+    const short = (date: Date) => formatListTime(date.toISOString(), now).replace(/\u202f/g, " ");
+    expect(short(new Date(2026, 8, 24, 15, 5))).toBe("3:05 PM");
+    expect(short(new Date(2026, 8, 23, 9, 30))).toBe("Sep 23");
+    expect(short(new Date(2025, 11, 31, 23, 59))).toBe("Dec 31, 2025");
   });
 });
 

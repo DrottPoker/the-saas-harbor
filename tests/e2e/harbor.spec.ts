@@ -1576,6 +1576,12 @@ test("users message each other live, with unread counts and blocking", async ({ 
   const delivered = writerLog.getByText("Delivered", { exact: true });
   const seen = writerLog.getByText(`Seen by ${reader.name}`);
   await expect(delivered).toBeVisible();
+  // The new conversation joins the list beside it at once, marked as the open one.
+  const writerRow = writerPage
+    .getByRole("list", { name: "Conversations" })
+    .getByRole("link")
+    .filter({ hasText: reader.name });
+  await expect(writerRow).toHaveAttribute("aria-current", "page");
 
   const unread = readerPage.getByRole("link", { name: "Messages, 1 unread" });
   await expect(unread).toBeVisible();
@@ -1590,6 +1596,9 @@ test("users message each other live, with unread counts and blocking", async ({ 
   await expect(
     readerPage.getByRole("log").getByText("Hello! Are you open to partners?"),
   ).toBeVisible();
+  // The list stays beside the open conversation, which shows no unread count.
+  await expect(row).toHaveAttribute("aria-current", "page");
+  await expect(row.getByText("1 unread")).toHaveCount(0);
   // The writer sees that the message was read, live and after a reload.
   await expect(seen).toBeVisible();
   await expect(delivered).toHaveCount(0);
@@ -1645,6 +1654,14 @@ test("users message each other live, with unread counts and blocking", async ({ 
     await readerPage.goto(path);
     await expectNoHorizontalScroll(readerPage);
   }
+  // On a phone the conversation fills the screen, and the back link returns to the list.
+  await readerPage.goto(`/messages/${writer.id}`);
+  const conversations = readerPage.getByRole("list", { name: "Conversations" });
+  await expect(readerPage.getByRole("log")).toBeVisible();
+  await expect(conversations).toBeHidden();
+  await readerPage.getByRole("link", { name: "Back to messages" }).click();
+  await expect(readerPage).toHaveURL("/messages");
+  await expect(conversations).toBeVisible();
   expect(hydrationErrors).toEqual([]);
   expect(violations).toEqual([]);
 });

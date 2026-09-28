@@ -1,7 +1,7 @@
 "use client";
 
 import { useSyncExternalStore } from "react";
-import { formatMessageTime } from "@/lib/messages";
+import { formatListTime, formatMessageTime } from "@/lib/messages";
 
 const subscribe = () => () => {};
 
@@ -9,10 +9,19 @@ const subscribe = () => () => {};
  * A time in the visitor's own time zone. The server does not know it, so the text is filled in
  * right after hydration instead of rendering the server's time zone.
  */
-export function LocalTime({ value, className }: { value: string; className?: string }) {
+export function LocalTime({
+  value,
+  short = false,
+  className,
+}: {
+  value: string;
+  /** The day only, unless it is today. */
+  short?: boolean;
+  className?: string;
+}) {
   const text = useSyncExternalStore(
     subscribe,
-    () => formatMessageTime(value),
+    () => (short ? formatListTime : formatMessageTime)(value),
     () => null,
   );
   return (
