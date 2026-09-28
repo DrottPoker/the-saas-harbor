@@ -1707,6 +1707,17 @@ test("reports reach the admin panel, where admins hide products and suspend acco
     p_admin: true,
   });
   if (grantError) throw new Error("Unable to grant admin rights.");
+  // Messages to the reporter are alerted on Telegram, as the owner's own account can be.
+  const { data: reporterProfile } = await admin
+    .from("profiles")
+    .select("slug")
+    .eq("id", reporter.id)
+    .single();
+  const { error: inboxError } = await admin.rpc("set_telegram_inbox", {
+    p_username: reporterProfile?.slug,
+    p_on: true,
+  });
+  if (inboxError) throw new Error("Unable to choose the reporter for message alerts.");
 
   // The maker lists a product and writes to the reporter, through the app's own functions.
   const makerClient = createClient(url, publicKey, {
@@ -1788,6 +1799,23 @@ test("reports reach the admin panel, where admins hide products and suspend acco
   await reporterPage.getByRole("button", { name: "Send report" }).click();
   await expect(reporterPage).toHaveURL("/dashboard/reports?sent=1");
   await expect(sent).toHaveCount(2);
+
+  // The owner's Telegram chat hears of the product, both reports and the message, but never gets
+  // the message itself.
+  await expect
+    .poll(async () => {
+      const texts = await telegramMessages(reporterPage.request);
+      const alerted = (start: string, part: string) =>
+        texts.some((text) => text.startsWith(start) && text.includes(part));
+      return [
+        alerted("<b>New product</b>", product),
+        alerted("<b>New report</b>", `the product ${product}: Misleading or false information`),
+        alerted("<b>New report</b>", `a message from ${maker.name}: Spam or advertising`),
+        alerted("<b>New message</b>", maker.name),
+        texts.some((text) => text.includes(offer)),
+      ];
+    })
+    .toEqual([true, true, true, true, false]);
 
   // The admins get an email about waiting reports.
   await expect

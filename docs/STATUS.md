@@ -8,6 +8,12 @@ The first release includes accounts, email confirmation and recovery, public mak
 
 Makers can message each other privately (see Messages below), and report products, profiles and messages to the admins, who decide in an admin panel (see Reports and moderation below). They get emails about unread messages and about decisions (see Email notifications below). Other forms of connection, such as following or contact lists, are not implemented.
 
+## Telegram alerts about products, reports and messages 2026-09-28
+
+At the owner's request, the Telegram chat now also hears of every new product (its name, tagline, category and founder, with a link to its page), every new report (who reported what, the reason, the reporter's explanation and the number of open reports, with a link to the report) and messages to the owner's own account. For messages the owner chose a setting that names exactly one account over alerting all admins: `select public.set_telegram_inbox('<username>', true);` in the SQL editor. A message alert names the sender and links to the conversation, once per conversation until it is read, as the emails do; at the owner's choice it never contains the message, and a report's copy of a message is left out too. The privacy policy says so.
+
+`npm run check` (439 unit tests), `npm run build`, `npm run test:db` (647 database tests, with `telegram_alert_kinds.test.sql`) and `npm run test:e2e` pass; the reports browser test now checks the product, both reports and the message alert at the fake Telegram API, and that the message itself never arrives.
+
 ## Telegram alerts about new accounts and feedback 2026-09-28
 
 At the owner's request, the owner gets an alert in a Telegram chat for every new account and every new feedback, so they see both on their phone at once. A sign-up alert names the user by name and username and says how the account signed up, whether its email address is confirmed and how many accounts there are; a feedback alert quotes the feedback with its kind, sender and page. Both link to the admin panel. Email addresses are never sent, a choice the owner made over sending them, or only a notice with a link. The privacy policy now says that admins get these alerts on Telegram, that Telegram is based outside the EU, and that sent alerts stay in the chat.

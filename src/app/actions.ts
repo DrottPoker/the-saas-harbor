@@ -482,6 +482,7 @@ export async function saveSaas(_state: ActionState, form: FormData): Promise<Act
   }
   // Search engines that take IndexNow notices hear about the page at once.
   announceProduct(savedId, previousSlug);
+  if (!existed) sendQueuedTelegramAlerts();
   revalidatePath("/", "layout");
   // New products continue to revenue verification; edits return to the dashboard.
   redirect(

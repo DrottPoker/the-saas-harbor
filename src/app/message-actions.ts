@@ -6,6 +6,7 @@ import { MESSAGE_MAX_LENGTH, type ActionState } from "@/lib/domain";
 import { sendQueuedEmails } from "@/lib/email/outbox";
 import type { SendState } from "@/lib/messages";
 import { requireUser } from "@/lib/supabase/server";
+import { sendQueuedTelegramAlerts } from "@/lib/telegram/outbox";
 
 const id = z.uuid();
 
@@ -35,6 +36,7 @@ export async function sendMessageAction(
     };
   // A message email waits a few minutes, so this sends what became due in the meantime.
   sendQueuedEmails();
+  sendQueuedTelegramAlerts();
   const { conversation_id, sender_id, created_at } = data;
   return { message: { id: data.id, conversation_id, sender_id, body: data.body, created_at } };
 }

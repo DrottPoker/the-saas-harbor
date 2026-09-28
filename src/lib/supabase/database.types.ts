@@ -1555,6 +1555,10 @@ export type Database = {
         Args: { p_admin: boolean; p_email: string }
         Returns: string
       }
+      set_telegram_inbox: {
+        Args: { p_on: boolean; p_username: string }
+        Returns: string
+      }
       set_username: { Args: { p_username: string }; Returns: undefined }
       submit_feedback: {
         Args: { p_kind: string; p_message: string; p_page: string }

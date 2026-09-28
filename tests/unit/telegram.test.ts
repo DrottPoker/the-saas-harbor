@@ -75,11 +75,93 @@ describe("feedback alerts", () => {
     ).toContain("From Lena Berg (@lena):"));
 });
 
+const product = {
+  name: "Lena Berg",
+  username: "lena",
+  product: "Querybird",
+  tagline: "SQL answers <fast>",
+  category: "Developer Tools",
+  slug: "querybird",
+  hidden: false,
+};
+const report = {
+  name: "Tomás Rivera",
+  username: "tomas",
+  report_id: "d0000000-0000-4000-8000-000000000001",
+  target: "saas",
+  target_name: "Querybird",
+  subject_name: "Lena Berg",
+  reason: "spam",
+  details: "",
+  open_reports: 3,
+};
+const message = {
+  name: "Tomás Rivera",
+  username: "tomas",
+  sender_id: "c0000000-0000-4000-8000-000000000001",
+  sender_suspended: false,
+  wanted: true,
+  blocked: false,
+};
+
+describe("product alerts", () => {
+  it("name the product, its founder and category, and link to its page", () =>
+    expect(renderAlert(alert("saas", product), origin)).toBe(
+      [
+        "<b>New product</b>",
+        "Querybird by Lena Berg (@lena), in Developer Tools.",
+        "<blockquote>SQL answers &lt;fast&gt;</blockquote>",
+        `<a href="${origin}/saas/querybird">Open the product</a>`,
+      ].join("\n"),
+    ));
+});
+
+describe("report alerts", () => {
+  it("say who reported what and why, and link to the report", () =>
+    expect(renderAlert(alert("report", report), origin)).toBe(
+      [
+        "<b>New report</b>",
+        "Tomás Rivera (@tomas) reported the product Querybird: Spam or advertising.",
+        "3 open reports.",
+        `<a href="${origin}/admin/reports/${report.report_id}">Open the report</a>`,
+      ].join("\n"),
+    ));
+  it("quote the reporter's explanation, and name whose profile or message it is", () => {
+    const profile = renderAlert(
+      alert("report", { ...report, target: "profile", reason: "other", details: "Fake <b>" }),
+      origin,
+    )!;
+    expect(profile).toContain("reported the profile of Lena Berg: Something else.");
+    expect(profile).toContain("<blockquote>Fake &lt;b&gt;</blockquote>");
+    const reported = renderAlert(
+      alert("report", { ...report, target: "message", open_reports: 1 }),
+      origin,
+    )!;
+    expect(reported).toContain("reported a message from Lena Berg: Spam or advertising.");
+    expect(reported).toContain("1 open report.");
+  });
+});
+
+describe("message alerts", () => {
+  it("name the sender and link to the conversation, never the message", () =>
+    expect(renderAlert(alert("message", { ...message, body: "Secret offer" }), origin)).toBe(
+      [
+        "<b>New message</b>",
+        "Tomás Rivera (@tomas) wrote to you.",
+        `<a href="${origin}/messages/${message.sender_id}">Read and reply</a>`,
+      ].join("\n"),
+    ));
+});
+
 describe("alerts with nothing to send", () => {
   it.each([
     ["the subject is gone", alert("signup", null)],
     ["the feedback has no text", alert("feedback", { ...feedback, message: "" })],
-    ["the kind is unknown", alert("report", signup)],
+    ["the product was hidden", alert("saas", { ...product, hidden: true })],
+    ["the account no longer wants message alerts", alert("message", { ...message, wanted: false })],
+    ["either user blocked the other", alert("message", { ...message, blocked: true })],
+    ["the sender was suspended", alert("message", { ...message, sender_suspended: true })],
+    ["the kind is unknown", alert("invoice", signup)],
   ])("are skipped when %s", (_, claimed) => expect(renderAlert(claimed, origin)).toBeNull());
 });
 
