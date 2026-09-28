@@ -1,7 +1,7 @@
 "use client";
 
 import { useSyncExternalStore } from "react";
-import { formatListTime, formatMessageTime } from "@/lib/messages";
+import { formatFullTime, formatListTime, formatMessageTime } from "@/lib/messages";
 
 const subscribe = () => () => {};
 
@@ -12,16 +12,19 @@ const subscribe = () => () => {};
 export function LocalTime({
   value,
   short = false,
+  full = false,
   className,
 }: {
   value: string;
   /** The day only, unless it is today. */
   short?: boolean;
+  /** Always the day, its year and the time. */
+  full?: boolean;
   className?: string;
 }) {
   const text = useSyncExternalStore(
     subscribe,
-    () => (short ? formatListTime : formatMessageTime)(value),
+    () => (full ? formatFullTime : short ? formatListTime : formatMessageTime)(value),
     () => null,
   );
   return (

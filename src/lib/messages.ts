@@ -73,6 +73,17 @@ export function formatMessageTime(value: string, now = new Date()) {
   return `${formatDay(date, now)}, ${time}`;
 }
 
+/** The day, with its year, and the time: "Sep 24, 2026, 3:05 PM". Local time. */
+export function formatFullTime(value: string) {
+  return new Date(value).toLocaleString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  });
+}
+
 /** The shorter form for the conversation list: "3:05 PM" today, else the day only. Local time. */
 export function formatListTime(value: string, now = new Date()) {
   const date = new Date(value);

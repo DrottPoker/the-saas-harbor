@@ -2050,6 +2050,10 @@ test("users send feedback from any page, and admins read it and mark it handled"
     `/admin/accounts/${sender.id}`,
   );
   await expect(item.getByRole("link", { name: "/stats" })).toHaveAttribute("href", "/stats");
+  // When it came in, with the time, in the admin's own time zone.
+  await expect(item.locator("time")).toHaveText(
+    /^[A-Z][a-z]{2} \d{1,2}, \d{4}, \d{1,2}:\d{2}\s(AM|PM)$/,
+  );
 
   // Marking it handled moves it from New to Handled, and it can be marked new again.
   await item.getByRole("button", { name: "Mark as handled" }).click();

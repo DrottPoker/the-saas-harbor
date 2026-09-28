@@ -1,9 +1,9 @@
 import Link from "next/link";
 import { setFeedbackHandledAction } from "@/app/feedback-actions";
-import { formatDate } from "@/lib/domain";
 import { FEEDBACK_KINDS, feedbackLabels, type FeedbackKind } from "@/lib/feedback";
 import type { Database } from "@/lib/supabase/database.types";
 import { Badge } from "../badge";
+import { LocalTime } from "../local-time";
 import { Button } from "../ui/button";
 
 export type FeedbackRow = Pick<
@@ -48,7 +48,7 @@ export function FeedbackList({
                   >
                     {names.get(item.user_id) ?? "an account without a profile"}
                   </Link>{" "}
-                  · {formatDate(item.created_at)}
+                  · <LocalTime value={item.created_at} full />
                 </span>
               </div>
               <p className="leading-7 whitespace-pre-wrap [overflow-wrap:anywhere]">
