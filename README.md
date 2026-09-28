@@ -35,7 +35,7 @@ A focused, responsive home for independent SaaS: public maker profiles, product 
 - Supabase RLS, owner checks in Server Actions, owner-scoped image uploads, and a Content Security Policy with a fresh nonce per request.
 - Light and dark themes.
 
-Sales, escrow, company profiles and payment providers other than Stripe, Paddle, Polar, Dodo Payments, Creem, Chargebee, Whop, RevenueCat and Gumroad are outside this release. Lemon Squeezy (its keys always have full access), Superwall (its MRR can only be read with a POST request) and Mollie (its subscriptions carry no tax) were left out on purpose.
+Sales, escrow, company profiles and payment providers other than Stripe, Paddle, Polar, Dodo Payments, Creem, Chargebee, Whop, RevenueCat and Gumroad are outside this release. Lemon Squeezy (its keys always have full access), Superwall (its MRR can only be read with a POST request) and Mollie (its subscriptions carry no tax) were left out on purpose. Shopify stores are planned for later (see `docs/STATUS.md`, known issue 25).
 
 ## Run locally
 
