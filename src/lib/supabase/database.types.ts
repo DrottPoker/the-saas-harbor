@@ -1312,6 +1312,22 @@ export type Database = {
         Args: { p_note: string; p_saas: string }
         Returns: undefined
       }
+      admin_revenue: {
+        Args: { p_ids: string[] }
+        Returns: {
+          mrr_cents: number
+          provider: string
+          revenue_12m_cents: number
+          revenue_30d_cents: number
+          revenue_total_cents: number
+          saas_id: string
+          share_mrr: boolean
+          share_revenue: boolean
+          stale: boolean
+          status: string
+          verified_at: string
+        }[]
+      }
       admin_set_feedback_handled: {
         Args: { p_feedback: string; p_handled: boolean }
         Returns: undefined

@@ -150,7 +150,7 @@ Demo accounts from `npm run db:seed` are `<name>@demo.harbor.test` (for example 
 
 ### Admins
 
-Admins review reports in the admin panel at `/admin`, which is reached from the account menu, where the number of open reports is shown. Everyone else gets a 404 there. Admin rights are rows in `private.admins`, which the app cannot write, so they are granted outside it:
+Admins review reports in the admin panel at `/admin`, which is reached from the account menu, where the number of open reports is shown. Its product pages also show every product's latest verified MRR and revenue, including figures the founder keeps private. Everyone else gets a 404 there. Admin rights are rows in `private.admins`, which the app cannot write, so they are granted outside it:
 
 ```powershell
 npm run admin -- grant you@example.com    # the account must exist

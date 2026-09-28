@@ -210,12 +210,13 @@ export default function Privacy() {
               <strong className="font-medium text-foreground">Admins:</strong> the people the
               operator appoints to run and moderate the site. They see account details such as your
               email address, when you joined and signed in and from which country, how you found the
-              site and how far you have come with the service, reports, decisions, feedback, and
-              messages that are reported. Alerts about new accounts, with the username and how the
-              account was created, new products, reports, with the reason and your explanation, and
-              feedback, with its text, are also sent to the admins&apos; chat on Telegram. So is a
-              notice with your name when you write to the site&apos;s own account, but never the
-              message.
+              site and how far you have come with the service, the latest verified MRR and revenue
+              of your products, including the figures you keep private, reports, decisions,
+              feedback, and messages that are reported. Alerts about new accounts, with the username
+              and how the account was created, new products, reports, with the reason and your
+              explanation, and feedback, with its text, are also sent to the admins&apos; chat on
+              Telegram. So is a notice with your name when you write to the site&apos;s own account,
+              but never the message.
             </li>
             <li>
               <strong className="font-medium text-foreground">Service providers:</strong> our

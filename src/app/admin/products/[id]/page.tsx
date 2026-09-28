@@ -9,10 +9,12 @@ import { ProductLogo } from "@/components/avatars";
 import { Badge } from "@/components/badge";
 import { BackLink } from "@/components/back-link";
 import { Notice } from "@/components/shell";
-import { profileNames, requireAdmin } from "@/lib/admin";
+import { adminRevenue, profileNames, requireAdmin, type AdminRevenue } from "@/lib/admin";
 import { formatDate, formatUsd } from "@/lib/domain";
 import { decisionLabels, isReason } from "@/lib/moderation";
 import { firstValues, type SearchParams } from "@/lib/params";
+import { REVENUE_WINDOWS } from "@/lib/revenue-figures";
+import { providerName } from "@/lib/revenue/catalog";
 
 type Props = {
   params: Promise<{ id: string }>;
@@ -23,26 +25,48 @@ export const metadata = { title: "Product" };
 
 const link = "font-medium underline underline-offset-2";
 
-function revenue(listing: { revenue_status: string | null; mrr_cents: number | null } | null) {
-  if (listing?.revenue_status === "verified" && listing.mrr_cents != null)
-    return `${formatUsd(listing.mrr_cents)} MRR, verified and shared`;
-  if (listing?.revenue_status === "private") return "Verified, kept private";
-  if (listing?.revenue_status === "stale") return "Verification out of date";
-  return "Not verified";
+// A verified figure, and whether the founder shares it on the site.
+function figure(cents: number | null, shared: boolean, missing: string) {
+  if (cents == null) return <span className="text-muted-foreground">{missing}</span>;
+  return (
+    <>
+      <span className="font-medium tabular-nums">{formatUsd(cents)}</span>
+      <span className="text-muted-foreground"> · {shared ? "Shared" : "Private"}</span>
+    </>
+  );
+}
+
+function revenueRows(revenue: AdminRevenue): [string, React.ReactNode][] {
+  return [
+    [
+      "Provider",
+      `${providerName(revenue.provider)}${revenue.status === "error" ? ", latest check failed" : ""}`,
+    ],
+    [
+      "Verified",
+      revenue.verified_at
+        ? `${formatDate(revenue.verified_at)}${revenue.stale ? ", out of date and not shown on the site" : ""}`
+        : "Not yet",
+    ],
+    ["MRR", figure(revenue.mrr_cents, revenue.share_mrr, "Not verified yet")],
+    ...REVENUE_WINDOWS.map(({ column, short }): [string, React.ReactNode] => [
+      `Revenue, ${short.toLowerCase()}`,
+      figure(revenue[column], revenue.share_revenue, "Not read yet"),
+    ]),
+  ];
 }
 
 export default async function AdminProduct({ params, searchParams }: Props) {
   const { client } = await requireAdmin();
   const { id } = await params;
   if (!z.uuid().safeParse(id).success) notFound();
-  const [product, listing, reports, log] = await Promise.all([
+  const [product, revenue, reports, log] = await Promise.all([
     client
       .from("saas")
       .select("*, owner:profiles(id, name, suspended_at)")
       .eq("id", id)
       .maybeSingle(),
-    // Admins read the public projection of every product, hidden ones included.
-    client.from("public_saas").select("revenue_status, mrr_cents").eq("id", id).maybeSingle(),
+    adminRevenue(client, [id]),
     client
       .from("reports")
       .select("id, target, content, reason, status, created_at, subject_id")
@@ -54,7 +78,7 @@ export default async function AdminProduct({ params, searchParams }: Props) {
       .eq("saas_id", id)
       .order("created_at", { ascending: false }),
   ]);
-  for (const result of [product, listing, reports, log])
+  for (const result of [product, reports, log])
     if (result.error) throw new Error("This product could not be loaded.");
   const item = product.data;
   if (!item) notFound();
@@ -63,6 +87,7 @@ export default async function AdminProduct({ params, searchParams }: Props) {
     ...(log.data ?? []).map((entry) => entry.admin_id),
   ]);
   const ownerSuspended = !!item.owner?.suspended_at;
+  const figures = revenue.get(id);
   const returnTo = `/admin/products/${id}`;
 
   return (
@@ -97,7 +122,6 @@ export default async function AdminProduct({ params, searchParams }: Props) {
                 ["Category", item.category],
                 ["Website", item.website],
                 ["Listed", formatDate(item.created_at)],
-                ["Revenue", revenue(listing.data)],
                 [
                   "Public page",
                   !item.hidden_at && !ownerSuspended ? (
@@ -113,6 +137,18 @@ export default async function AdminProduct({ params, searchParams }: Props) {
             <p className="mt-4 border-t pt-4 text-sm leading-6 whitespace-pre-wrap text-foreground/85 [overflow-wrap:anywhere]">
               {item.description}
             </p>
+          </Panel>
+
+          <Panel
+            id="revenue"
+            title="Revenue"
+            description="The latest verified figures, including those the founder keeps private."
+          >
+            {figures ? (
+              <Facts rows={revenueRows(figures)} />
+            ) : (
+              <p className="text-sm text-muted-foreground">No payment provider is connected.</p>
+            )}
           </Panel>
 
           <section aria-labelledby="reports">

@@ -1,6 +1,6 @@
 import Link from "next/link";
-import type { LogEntry, Report } from "@/lib/admin";
-import { formatDate } from "@/lib/domain";
+import type { AdminRevenue, LogEntry, Report } from "@/lib/admin";
+import { formatDate, formatUsd } from "@/lib/domain";
 import {
   actionLabels,
   adminStatusLabels,
@@ -15,6 +15,7 @@ import {
   type ModerationAction,
   type ReportTarget,
 } from "@/lib/moderation";
+import { cn } from "@/lib/utils";
 import { PersonAvatar, ProductLogo } from "../avatars";
 import { Badge } from "../badge";
 
@@ -80,13 +81,33 @@ export type AdminProduct = {
   owner: { name: string; suspended_at: string | null } | null;
 };
 
+// The latest MRR and 30-day revenue, whether the founder shares them or not.
+function RevenueSummary({ revenue }: { revenue: AdminRevenue | undefined }) {
+  const box = "text-sm tabular-nums sm:w-44 sm:shrink-0 sm:text-right";
+  if (!revenue) return <p className={cn(box, "text-muted-foreground")}>Not connected</p>;
+  const { mrr_cents: mrr, revenue_30d_cents: days30 } = revenue;
+  return (
+    <div className={box}>
+      <p className={mrr == null ? "text-muted-foreground" : "font-medium"}>
+        {mrr == null ? "MRR not verified yet" : `${formatUsd(mrr)} MRR`}
+      </p>
+      <p className="text-muted-foreground">
+        {days30 == null ? "Revenue not read yet" : `${formatUsd(days30)} last 30 days`}
+      </p>
+    </div>
+  );
+}
+
 export function ProductList({
   products,
   openReports,
+  revenue,
   showMaker = true,
 }: {
   products: AdminProduct[];
   openReports: Map<string, number>;
+  /** The latest verified figures by product id, from adminRevenue(). */
+  revenue: Map<string, AdminRevenue>;
   /** Off on a maker's own page. */
   showMaker?: boolean;
 }) {
@@ -94,6 +115,7 @@ export function ProductList({
     <ul aria-label="Products" className="divide-y rounded-xl border bg-surface shadow-card">
       {products.map((product) => {
         const reports = openReports.get(product.id) ?? 0;
+        const figures = revenue.get(product.id);
         return (
           <li key={product.id}>
             <Link href={`/admin/products/${product.id}`} className={row}>
@@ -107,7 +129,9 @@ export function ProductList({
                   </p>
                 </div>
               </div>
+              <RevenueSummary revenue={figures} />
               <div className="flex flex-wrap gap-1.5 sm:justify-end">
+                {figures?.stale && <Badge>Figures out of date</Badge>}
                 {reports > 0 && (
                   <Badge tone="accent">
                     {reports} open {reports === 1 ? "report" : "reports"}

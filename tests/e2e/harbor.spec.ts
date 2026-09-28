@@ -3036,6 +3036,7 @@ test("founders verify their website's domain with a DNS record", async ({ page }
 // ($50) 45 days ago, a one-time $99 purchase 3 days ago and one refunded in full: $1,649 in all.
 test("founders share revenue from all payments, and visitors rank products by it", async ({
   page,
+  browser,
 }) => {
   const violations: string[] = [];
   watchPolicy(page, violations);
@@ -3173,6 +3174,48 @@ test("founders share revenue from all payments, and visitors rank products by it
   await expect(page.getByText("Revenue, last 30 days")).toHaveCount(0);
   const { data: gone } = await anon.from("revenue_leaderboard").select("id").eq("id", id);
   expect(gone).toEqual([]);
+
+  // Admins still see every figure the founder keeps private, in the list and on the product.
+  const moderator = `harbor-revenue-admin-${run}@example.test`;
+  const moderatorSecret = randomBytes(24).toString("hex");
+  const { data: moderatorUser, error: moderatorError } = await admin.auth.admin.createUser({
+    email: moderator,
+    password: moderatorSecret,
+    email_confirm: true,
+  });
+  if (moderatorError || !moderatorUser.user) throw new Error("Unable to create the revenue admin.");
+  userIds.push(moderatorUser.user.id);
+  const { error: moderatorProfileError } = await admin
+    .from("profiles")
+    .insert({ id: moderatorUser.user.id, name: `Revenue admin ${run}` });
+  if (moderatorProfileError) throw new Error("Unable to create the revenue admin's profile.");
+  const { error: grantError } = await admin.rpc("set_admin", {
+    p_email: moderator,
+    p_admin: true,
+  });
+  if (grantError) throw new Error("Unable to grant admin rights.");
+  const adminPage = await (await browser.newContext()).newPage();
+  await login(adminPage, moderator, moderatorSecret);
+  await adminPage.goto(`/admin/products?q=${encodeURIComponent(name)}`);
+  const listed = adminPage
+    .getByRole("list", { name: "Products", exact: true })
+    .getByRole("listitem")
+    .filter({ hasText: name });
+  await expect(listed).toContainText("$182.50 MRR");
+  await expect(listed).toContainText(`${figures.days30} last 30 days`);
+  await listed.getByRole("link").click();
+  const panel = adminPage.getByRole("region", { name: "Revenue", exact: true });
+  const fact = (label: string) =>
+    panel
+      .locator("dt")
+      .filter({ hasText: new RegExp(`^${label}$`) })
+      .locator("xpath=following-sibling::dd[1]");
+  await expect(fact("Provider")).toHaveText("Paddle");
+  await expect(fact("MRR")).toHaveText("$182.50 · Private");
+  await expect(fact("Revenue, 30 days")).toHaveText(`${figures.days30} · Private`);
+  await expect(fact("Revenue, 12 months")).toHaveText(`${figures.months12} · Private`);
+  await expect(fact("Revenue, all time")).toHaveText(`${figures.total} · Private`);
+  await adminPage.context().close();
   expect(violations).toEqual([]);
 });
 

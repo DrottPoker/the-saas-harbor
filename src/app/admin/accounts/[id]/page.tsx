@@ -9,7 +9,7 @@ import { PersonAvatar } from "@/components/avatars";
 import { Badge } from "@/components/badge";
 import { BackLink } from "@/components/back-link";
 import { Notice } from "@/components/shell";
-import { openReportCounts, profileNames, requireAdmin } from "@/lib/admin";
+import { adminRevenue, openReportCounts, profileNames, requireAdmin } from "@/lib/admin";
 import { countryName } from "@/lib/analytics-reports";
 import { formatDate } from "@/lib/domain";
 import { decisionLabels, isReason } from "@/lib/moderation";
@@ -55,13 +55,11 @@ export default async function AdminAccount({ params, searchParams }: Props) {
     if (result.error) throw new Error("This account could not be loaded.");
   if (!account.data) notFound();
   const maker = profile.data;
-  const [admins, productReports] = await Promise.all([
+  const productIds = (products.data ?? []).map((product) => product.id);
+  const [admins, productReports, productRevenue] = await Promise.all([
     profileNames(client, [id, ...(log.data ?? []).map((entry) => entry.admin_id)]),
-    openReportCounts(
-      client,
-      "saas_id",
-      (products.data ?? []).map((product) => product.id),
-    ),
+    openReportCounts(client, "saas_id", productIds),
+    adminRevenue(client, productIds),
   ]);
   const owner = maker && { name: maker.name, suspended_at: maker.suspended_at };
   const returnTo = `/admin/accounts/${id}`;
@@ -150,6 +148,7 @@ export default async function AdminAccount({ params, searchParams }: Props) {
               <ProductList
                 products={products.data.map((product) => ({ ...product, owner }))}
                 openReports={productReports}
+                revenue={productRevenue}
                 showMaker={false}
               />
             ) : (

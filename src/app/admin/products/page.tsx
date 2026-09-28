@@ -2,7 +2,7 @@ import { FilterTabs, SearchForm } from "@/components/admin/filters";
 import { ProductList, type AdminProduct } from "@/components/admin/rows";
 import { ResultsFooter } from "@/components/listings";
 import { EmptyState, PageHeader } from "@/components/shell";
-import { ADMIN_PAGE_SIZE, openReportCounts, requireAdmin } from "@/lib/admin";
+import { ADMIN_PAGE_SIZE, adminRevenue, openReportCounts, requireAdmin } from "@/lib/admin";
 import { PAST_LAST_PAGE } from "@/lib/data";
 import { containsPattern } from "@/lib/domain";
 import { firstValues, safePage, type SearchParams } from "@/lib/params";
@@ -70,17 +70,17 @@ export default async function AdminProducts({
     products = result.data ?? [];
     count = result.count ?? 0;
   }
-  const reports = await openReportCounts(
-    client,
-    "saas_id",
-    products.map((product) => product.id),
-  );
+  const shown = products.map((product) => product.id);
+  const [reports, revenue] = await Promise.all([
+    openReportCounts(client, "saas_id", shown),
+    adminRevenue(client, shown),
+  ]);
 
   return (
     <>
       <PageHeader
         title="Products"
-        description="Every listed product, including hidden ones and those of suspended founders."
+        description="Every listed product, including hidden ones and those of suspended founders. Revenue figures include those the founders keep private."
         actions={
           <SearchForm
             action="/admin/products"
@@ -102,7 +102,7 @@ export default async function AdminProducts({
         <EmptyState title="No matching products">Try another filter or search term.</EmptyState>
       ) : (
         <>
-          <ProductList products={products} openReports={reports} />
+          <ProductList products={products} openReports={reports} revenue={revenue} />
           <ResultsFooter
             page={page}
             count={count}
