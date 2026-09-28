@@ -8,6 +8,14 @@ The first release includes accounts, email confirmation and recovery, public mak
 
 Makers can message each other privately (see Messages below), and report products, profiles and messages to the admins, who decide in an admin panel (see Reports and moderation below). They get emails about unread messages and about decisions (see Email notifications below). Other forms of connection, such as following or contact lists, are not implemented.
 
+## Read receipts in messages 2026-09-28
+
+At the owner's request, the sender now sees whether their message was read: under their newest message it says Delivered, and Seen once the recipient has opened the conversation, live without a reload. Once the other user replies, the line goes, since the reply shows they read it. The read position was already stored for unread counts; the other participant can now read it too, and nobody else can (migration `20260928100000_read_receipts.sql`). Makers can no longer write their read position directly, so it cannot be set ahead to fake Seen or moved back to hide it; it moves only forward, never past the newest message, and every move is announced to the other user with ids and a time, never text. The privacy policy says the users you write to see how far you have read. There is no setting to turn read receipts off.
+
+An open conversation now also catches up once its live channel has joined, not only after the connection dropped, so a message or a read in the moment between loading the page and the live connection is no longer missed.
+
+pgTAP covers who sees read positions, the refused direct writes, the stop at the newest message and the one event per move to the other user only; unit tests cover Delivered and Seen to the microsecond; the messaging browser test checks Delivered, Seen live and after a reload, the line going with a reply, and Seen again after unblocking.
+
 ## No script warning on missing pages 2026-09-28
 
 A missing page (a hidden product, a suspended account, `/admin` for anyone but an admin) is Next.js's bare error document, which the browser draws itself, root layout included. React then created the inline theme script as an element, which it never runs, and warned about it in development; the theme only came back through the theme menu after React drew the page. The script is now put into the server's HTML through `useServerInsertedHTML` (`src/components/theme-script.tsx`), so it is in the head of every page, 404s included, and React never creates it. The theme browser test checks both and fails on the warning; it failed on the old layout.
@@ -563,7 +571,7 @@ Product and quality:
 11. Old images stay in storage after replacement or removal, until the account is deleted. There is no limit on how many files a maker stores in their folder; a cleanup of unreferenced files should come before a per-maker limit, so replacing a logo never fills it up.
 12. All routes are dynamic with `no-store`. Public pages could be cached once traffic grows, with private data kept separate. The nonce-based Content Security Policy needs a fresh render per request, so caching pages would mean moving to hashes or the experimental SRI support first.
 13. Faked revenue through the maker's own Stripe account (see Release review, point 1). Postponed by the owner. Paddle already values subscriptions by their paid charges; Polar and Dodo Payments count subscriptions as the provider reports them.
-14. Realtime keeps its message event rows, which hold ids only, for a few days.
+14. Realtime keeps its message and read event rows, which hold ids and times only, for a few days.
 15. Notification emails have no one-click unsubscribe (`List-Unsubscribe`, RFC 8058): turning them off takes a sign-in. Large senders to Gmail and Yahoo need it, so add it before volumes grow. The emails are in English only.
 16. Demo products retire themselves at 12 ranked products, but their code stays. Remove it once the directory has grown; ARCHITECTURE lists the parts.
 17. The browser tests run against `next dev`, which compiles routes on demand. Once, it answered Page not found for the product form in the registration test, and the failure did not repeat. Failed tests now keep a trace; if it happens again, the trace shows the address and the requests. Running the browser tests against a production build (`next build` and `next start`) would remove the dev server's compile timing from the tests. On 2026-09-26 one run failed once in the registration test with `ECONNRESET` on a request to the test server (the redirect from a product id); it did not repeat in the next three full runs. On 2026-09-28 a run answered Page not found for the milestone page after a source file was changed while the tests ran; the next run, with nothing changed, passed.

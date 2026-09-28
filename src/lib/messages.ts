@@ -12,18 +12,43 @@ export type SendState = ActionState & { message?: ChatMessage };
 export const MESSAGE_COLUMNS = "id, conversation_id, sender_id, body, created_at";
 export const MESSAGE_PAGE_SIZE = 50;
 
-/** Adds messages to a thread without duplicates, oldest first. Timestamps are ISO strings in UTC. */
+const text = (x: string, y: string) => (x < y ? -1 : x > y ? 1 : 0);
+
+/**
+ * Orders two timestamps from the database, which are ISO strings in UTC. Microseconds decide
+ * within the same millisecond.
+ */
+export function compareTimes(a: string, b: string) {
+  return Date.parse(a) - Date.parse(b) || text(a, b);
+}
+
+/** The later of two timestamps, when there is one. */
+export function laterTime(a: string | null, b: string | null) {
+  return a && b ? (compareTimes(a, b) >= 0 ? a : b) : (a ?? b);
+}
+
+/** Adds messages to a thread without duplicates, oldest first. */
 export function mergeMessages(current: ChatMessage[], incoming: ChatMessage[]) {
   const byId = new Map(current.map((message) => [message.id, message]));
   for (const message of incoming) byId.set(message.id, message);
-  // Microseconds decide within the same millisecond; the id makes the order total.
-  const text = (x: string, y: string) => (x < y ? -1 : x > y ? 1 : 0);
+  // The id makes the order total.
   return [...byId.values()].sort(
-    (a, b) =>
-      Date.parse(a.created_at) - Date.parse(b.created_at) ||
-      text(a.created_at, b.created_at) ||
-      text(a.id, b.id),
+    (a, b) => compareTimes(a.created_at, b.created_at) || text(a.id, b.id),
   );
+}
+
+/**
+ * What the sender sees under their newest message: Seen once the other maker has read up to it,
+ * Delivered before. Nothing when the newest message is the other maker's.
+ */
+export function deliveryStatus(
+  messages: ChatMessage[],
+  userId: string,
+  otherReadAt: string | null,
+): "Delivered" | "Seen" | null {
+  const newest = messages.at(-1);
+  if (newest?.sender_id !== userId) return null;
+  return otherReadAt && compareTimes(otherReadAt, newest.created_at) >= 0 ? "Seen" : "Delivered";
 }
 
 /** A time label is shown when the sender changes or five minutes pass since the last message. */

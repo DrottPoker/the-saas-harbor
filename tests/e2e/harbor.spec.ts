@@ -1573,6 +1573,9 @@ test("users message each other live, with unread counts and blocking", async ({ 
   await writerSend.click();
   await expect(writerLog.getByText("Hello! Are you open to partners?")).toBeVisible();
   await expect(writerField).toHaveValue("");
+  const delivered = writerLog.getByText("Delivered", { exact: true });
+  const seen = writerLog.getByText(`Seen by ${reader.name}`);
+  await expect(delivered).toBeVisible();
 
   const unread = readerPage.getByRole("link", { name: "Messages, 1 unread" });
   await expect(unread).toBeVisible();
@@ -1587,6 +1590,11 @@ test("users message each other live, with unread counts and blocking", async ({ 
   await expect(
     readerPage.getByRole("log").getByText("Hello! Are you open to partners?"),
   ).toBeVisible();
+  // The writer sees that the message was read, live and after a reload.
+  await expect(seen).toBeVisible();
+  await expect(delivered).toHaveCount(0);
+  await writerPage.reload();
+  await expect(seen).toBeVisible();
   await expect(
     readerPage.getByRole("banner").getByRole("link", { name: "Messages", exact: true }),
   ).toBeVisible();
@@ -1595,6 +1603,7 @@ test("users message each other live, with unread counts and blocking", async ({ 
   await readerPage.getByLabel(`Message to ${writer.name}`).fill("Yes, happy to talk.");
   await readerPage.getByRole("button", { name: "Send", exact: true }).click();
   await expect(writerLog.getByText("Yes, happy to talk.")).toBeVisible();
+  await expect(seen).toHaveCount(0);
   await expect(
     writerPage.getByRole("banner").getByRole("link", { name: "Messages", exact: true }),
   ).toBeVisible();
@@ -1614,6 +1623,7 @@ test("users message each other live, with unread counts and blocking", async ({ 
   await expect(readerPage.getByLabel(`Message to ${writer.name}`)).toBeVisible();
   await writerSend.click();
   await expect(readerPage.getByRole("log").getByText("Are you there?")).toBeVisible();
+  await expect(seen).toBeVisible();
 
   // Makers cannot message themselves.
   await writerPage.goto(`/users/${writer.id}`);

@@ -10,12 +10,14 @@ export type MessageEvent = {
   sender_id: string;
   created_at: string;
 };
-type Listener = (event: MessageEvent) => void;
+/** Announced to the other participant when a maker reads further in a conversation. */
+export type ReadEvent = { conversation_id: string; read_at: string };
 
-const listeners = new Set<Listener>();
+const listeners = new Set<(event: MessageEvent) => void>();
+const readListeners = new Set<(event: ReadEvent) => void>();
 const unreadListeners = new Set<() => void>();
-const reconnectListeners = new Set<() => void>();
-let open: { userId: string; channel: RealtimeChannel } | null = null;
+const joinListeners = new Set<() => void>();
+let open: { userId: string; channel: RealtimeChannel; joined: boolean } | null = null;
 
 function close() {
   if (!open) return;
@@ -31,15 +33,20 @@ function join(userId: string) {
     .channel(`user:${userId}`, { config: { private: true } })
     .on("broadcast", { event: "message" }, ({ payload }) => {
       for (const listener of listeners) listener(payload as MessageEvent);
+    })
+    .on("broadcast", { event: "read" }, ({ payload }) => {
+      for (const listener of readListeners) listener(payload as ReadEvent);
     });
-  open = { userId, channel };
-  // Joining again after the connection dropped means events sent meanwhile were missed, so the
-  // open conversation catches up and the header counts again.
-  let joined = false;
+  const current = { userId, channel, joined: false };
+  open = current;
+  // Events sent before a join were missed, so the open conversation catches up, and after the
+  // connection dropped the header counts again too.
   const subscribed = (status: string) => {
     if (status !== "SUBSCRIBED") return;
-    if (joined) for (const listener of [...reconnectListeners, ...unreadListeners]) listener();
-    joined = true;
+    const again = current.joined;
+    current.joined = true;
+    for (const listener of joinListeners) listener();
+    if (again) for (const listener of unreadListeners) listener();
   };
   // A private channel needs the session token before it joins.
   void client.realtime.setAuth().then(() => {
@@ -47,14 +54,23 @@ function join(userId: string) {
   });
 }
 
-/** Listens for new messages on the maker's private channel, shared by everything in the tab. */
-export function onMessage(userId: string, listener: Listener) {
-  listeners.add(listener);
+function listen<T>(set: Set<T>, userId: string, listener: T) {
+  set.add(listener);
   if (open?.userId !== userId) join(userId);
   return () => {
-    listeners.delete(listener);
-    if (!listeners.size) close();
+    set.delete(listener);
+    if (!listeners.size && !readListeners.size) close();
   };
+}
+
+/** Listens for new messages on the maker's private channel, shared by everything in the tab. */
+export function onMessage(userId: string, listener: (event: MessageEvent) => void) {
+  return listen(listeners, userId, listener);
+}
+
+/** Listens for the other maker reading further in a conversation, on the same channel. */
+export function onRead(userId: string, listener: (event: ReadEvent) => void) {
+  return listen(readListeners, userId, listener);
 }
 
 /** Lets the header refresh its unread count after a conversation was read in this tab. */
@@ -65,11 +81,15 @@ export function onUnreadChange(listener: () => void) {
   };
 }
 
-/** Runs when the channel joins again after the connection dropped. */
-export function onReconnect(listener: () => void) {
-  reconnectListeners.add(listener);
+/**
+ * Runs once the channel has joined, at once when it already has, and again whenever it joins
+ * again after the connection dropped: events sent before a join were missed.
+ */
+export function onJoin(listener: () => void) {
+  joinListeners.add(listener);
+  if (open?.joined) listener();
   return () => {
-    reconnectListeners.delete(listener);
+    joinListeners.delete(listener);
   };
 }
 

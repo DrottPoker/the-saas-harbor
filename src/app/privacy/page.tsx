@@ -203,7 +203,8 @@ export default function Privacy() {
             </li>
             <li>
               <strong className="font-medium text-foreground">The users you write to:</strong> the
-              conversations you have with them. Messages are not end-to-end encrypted.
+              conversations you have with them, and how far you have read them. Messages are not
+              end-to-end encrypted.
             </li>
             <li>
               <strong className="font-medium text-foreground">Admins:</strong> the people the

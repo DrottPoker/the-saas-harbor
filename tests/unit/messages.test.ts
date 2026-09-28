@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { safeNext } from "../../src/lib/domain";
 import {
+  deliveryStatus,
   formatMessageTime,
+  laterTime,
   mergeMessages,
   startsGroup,
   type ChatMessage,
@@ -40,6 +42,30 @@ describe("message threads", () => {
     expect(startsGroup(start, message("2", "2026-09-24T10:04:59+00:00"))).toBe(false);
     expect(startsGroup(start, message("3", "2026-09-24T10:05:01+00:00"))).toBe(true);
     expect(startsGroup(start, message("4", "2026-09-24T10:01:00+00:00", "b"))).toBe(true);
+  });
+});
+
+describe("read receipts", () => {
+  const sent = message("1", "2026-09-24T10:00:00.12345+00:00", "me");
+  const reply = message("2", "2026-09-24T10:01:00+00:00", "them");
+
+  it("says Seen once the other maker has read up to the newest message", () => {
+    expect(deliveryStatus([sent], "me", null)).toBe("Delivered");
+    expect(deliveryStatus([sent], "me", "2026-09-24T10:00:00.1234+00:00")).toBe("Delivered");
+    expect(deliveryStatus([sent], "me", sent.created_at)).toBe("Seen");
+    expect(deliveryStatus([sent], "me", "2026-09-24T10:05:00+00:00")).toBe("Seen");
+  });
+
+  it("says nothing when the newest message is the other maker's, or there is none", () => {
+    expect(deliveryStatus([sent, reply], "me", null)).toBeNull();
+    expect(deliveryStatus([], "me", null)).toBeNull();
+  });
+
+  it("keeps the later read position, to microseconds", () => {
+    expect(laterTime(null, null)).toBeNull();
+    expect(laterTime(null, sent.created_at)).toBe(sent.created_at);
+    expect(laterTime("2026-09-24T10:00:00.1234+00:00", sent.created_at)).toBe(sent.created_at);
+    expect(laterTime(reply.created_at, sent.created_at)).toBe(reply.created_at);
   });
 });
 

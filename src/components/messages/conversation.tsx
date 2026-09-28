@@ -14,6 +14,8 @@ import { MESSAGE_MAX_LENGTH } from "@/lib/domain";
 import {
   MESSAGE_COLUMNS,
   MESSAGE_PAGE_SIZE,
+  deliveryStatus,
+  laterTime,
   mergeMessages,
   startsGroup,
   type ChatMessage,
@@ -27,7 +29,14 @@ import { LocalTime } from "../local-time";
 import { Notice } from "../shell";
 import { Button } from "../ui/button";
 import { Textarea } from "../ui/textarea";
-import { notifyUnreadChange, onMessage, onReconnect, type MessageEvent } from "./live";
+import {
+  notifyUnreadChange,
+  onJoin,
+  onMessage,
+  onRead,
+  type MessageEvent,
+  type ReadEvent,
+} from "./live";
 
 type Scroll = "bottom" | { fromBottom: number } | null;
 
@@ -37,6 +46,7 @@ export function Conversation({
   initialConversationId,
   initialMessages,
   initialHasEarlier,
+  initialOtherReadAt,
   canSend,
   closedNotice,
 }: {
@@ -45,6 +55,8 @@ export function Conversation({
   initialConversationId: string | null;
   initialMessages: ChatMessage[];
   initialHasEarlier: boolean;
+  /** How far the other maker has read, for Seen under the newest message. */
+  initialOtherReadAt: string | null;
   canSend: boolean;
   /** Shown instead of the composer when the maker cannot send. */
   closedNotice?: React.ReactNode;
@@ -53,6 +65,7 @@ export function Conversation({
   const [conversationId, setConversationId] = useState(initialConversationId);
   const [hasEarlier, setHasEarlier] = useState(initialHasEarlier);
   const [loadingEarlier, setLoadingEarlier] = useState(false);
+  const [otherReadAt, setOtherReadAt] = useState(initialOtherReadAt);
   const log = useRef<HTMLDivElement>(null);
   const scroll = useRef<Scroll>("bottom");
   const readUpTo = useRef<string | null>(null);
@@ -86,8 +99,9 @@ export function Conversation({
     notifyUnreadChange();
   });
 
-  // Messages that arrived while the tab was hidden or the connection was down: everything after
-  // the newest one on screen, page by page, so a long absence leaves no gap.
+  // Messages that arrived before the channel joined, while the tab was hidden or while the
+  // connection was down: everything after the newest one on screen, page by page, so a long
+  // absence leaves no gap.
   const catchUp = useEffectEvent(async () => {
     const client = browserClient();
     if (!conversationId || !client) return;
@@ -107,6 +121,24 @@ export function Conversation({
       if (!after || data.length < MESSAGE_PAGE_SIZE) return;
       after = data.at(-1)!.created_at;
     }
+  });
+
+  // How far the other maker has read, for read events the tab missed in the same way.
+  const catchUpReading = useEffectEvent(async () => {
+    const client = browserClient();
+    if (!conversationId || !client) return;
+    const { data } = await client
+      .from("conversation_reads")
+      .select("read_at")
+      .eq("conversation_id", conversationId)
+      .eq("user_id", other.id)
+      .maybeSingle();
+    if (data) setOtherReadAt((current) => laterTime(current, data.read_at));
+  });
+
+  const otherRead = useEffectEvent((event: ReadEvent) => {
+    if (event.conversation_id === conversationId)
+      setOtherReadAt((current) => laterTime(current, event.read_at));
   });
 
   const receive = useEffectEvent(async (event: MessageEvent) => {
@@ -130,16 +162,19 @@ export function Conversation({
       if (document.visibilityState !== "visible") return;
       void markRead();
       void catchUp();
+      void catchUpReading();
     };
     document.addEventListener("visibilitychange", onVisible);
     return () => document.removeEventListener("visibilitychange", onVisible);
   }, []);
 
   useEffect(() => onMessage(userId, (event) => void receive(event)), [userId]);
+  useEffect(() => onRead(userId, (event) => otherRead(event)), [userId]);
   useEffect(
     () =>
-      onReconnect(() => {
+      onJoin(() => {
         void catchUp();
+        void catchUpReading();
         void markRead();
       }),
     [],
@@ -180,6 +215,8 @@ export function Conversation({
     },
     {},
   );
+
+  const status = deliveryStatus(messages, userId, otherReadAt);
 
   return (
     <div className="grid gap-4">
@@ -238,6 +275,12 @@ export function Conversation({
                     <span className="sr-only">{mine ? "You" : other.name}: </span>
                     {message.body}
                   </p>
+                  {status && index === messages.length - 1 && (
+                    <p className="px-1.5 pt-1 text-xs text-muted-foreground">
+                      {status}
+                      {status === "Seen" && <span className="sr-only"> by {other.name}</span>}
+                    </p>
+                  )}
                   {/* With a mouse the link appears on hover or focus; on touch screens it stays. */}
                   {!mine && (
                     <Link

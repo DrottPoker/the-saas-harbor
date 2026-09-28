@@ -49,16 +49,26 @@ export default async function ConversationPage({ params }: Props) {
   if (me.error || conversation.error || block.error)
     throw new Error("This conversation could not be loaded.");
   let messages: ChatMessage[] = [];
+  let otherReadAt: string | null = null;
   if (conversation.data) {
-    const { data, error } = await client
-      .from("messages")
-      .select(MESSAGE_COLUMNS)
-      .eq("conversation_id", conversation.data.id)
-      .order("created_at", { ascending: false })
-      .order("id", { ascending: false })
-      .limit(MESSAGE_PAGE_SIZE);
-    if (error) throw new Error("This conversation could not be loaded.");
-    messages = data.reverse();
+    const [page, read] = await Promise.all([
+      client
+        .from("messages")
+        .select(MESSAGE_COLUMNS)
+        .eq("conversation_id", conversation.data.id)
+        .order("created_at", { ascending: false })
+        .order("id", { ascending: false })
+        .limit(MESSAGE_PAGE_SIZE),
+      client
+        .from("conversation_reads")
+        .select("read_at")
+        .eq("conversation_id", conversation.data.id)
+        .eq("user_id", id)
+        .maybeSingle(),
+    ]);
+    if (page.error || read.error) throw new Error("This conversation could not be loaded.");
+    messages = page.data.reverse();
+    otherReadAt = read.data?.read_at ?? null;
   }
   const blocked = !!block.data;
   const suspended = !!me.data?.suspended_at;
@@ -86,6 +96,7 @@ export default async function ConversationPage({ params }: Props) {
           initialConversationId={conversation.data?.id ?? null}
           initialMessages={messages}
           initialHasEarlier={messages.length === MESSAGE_PAGE_SIZE}
+          initialOtherReadAt={otherReadAt}
           canSend={!!me.data && !blocked && !suspended}
           closedNotice={
             !me.data ? (

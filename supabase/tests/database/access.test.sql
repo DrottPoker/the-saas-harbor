@@ -1,7 +1,7 @@
 -- Grants, RLS, storage ownership, verified revenue and ranking. Runs in a rolled-back transaction.
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(113);
+select plan(120);
 
 insert into auth.users(id) values
   ('b0000000-0000-4000-8000-000000000001'),
@@ -458,6 +458,42 @@ select throws_ok(
   '42501', null, 'makers cannot change messages'
 );
 
+-- Read receipts: the position stops at the newest message, and only the other maker hears of it.
+select is(
+  (select read_at from public.conversation_reads
+    where conversation_id = (select id from pgtap_pair) and user_id = 'b0000000-0000-4000-8000-000000000001'),
+  (select max(created_at) from public.messages where conversation_id = (select id from pgtap_pair)),
+  'the read position stops at the newest message'
+);
+select public.mark_conversation_read((select id from pgtap_pair), now() + interval '1 minute');
+select throws_ok(
+  $$ update public.conversation_reads set read_at = now() + interval '1 year'
+    where user_id = 'b0000000-0000-4000-8000-000000000001' $$,
+  '42501', null, 'makers cannot move their read position directly'
+);
+select throws_ok(
+  $$ insert into public.conversation_reads(conversation_id, user_id, read_at)
+    values ((select id from pgtap_pair), 'b0000000-0000-4000-8000-000000000001', now()) $$,
+  '42501', null, 'makers cannot write a read position'
+);
+reset role;
+select results_eq(
+  $$ select topic, payload ->> 'conversation_id', (payload ->> 'read_at')::timestamptz
+    from realtime.messages
+    where event = 'read' and topic in ('user:b0000000-0000-4000-8000-000000000001', 'user:b0000000-0000-4000-8000-000000000002') $$,
+  $$ select 'user:b0000000-0000-4000-8000-000000000002'::text, (select id::text from pgtap_pair), max(created_at)
+    from public.messages where conversation_id = (select id from pgtap_pair) $$,
+  'reading tells only the other maker, once, with the conversation and the read position'
+);
+set local role authenticated;
+select set_config('request.jwt.claim.sub', 'b0000000-0000-4000-8000-000000000002', true);
+select results_eq(
+  $$ select user_id from public.conversation_reads
+    where conversation_id = (select id from pgtap_pair) order by user_id $$,
+  $$ values ('b0000000-0000-4000-8000-000000000001'::uuid), ('b0000000-0000-4000-8000-000000000002'::uuid) $$,
+  'each maker in a conversation sees how far the other has read'
+);
+
 set local role authenticated;
 select set_config('request.jwt.claim.sub', 'b0000000-0000-4000-8000-000000000003', true);
 select is_empty(
@@ -468,12 +504,21 @@ select is_empty(
   'select 1 from public.conversations where id = (select id from pgtap_pair)',
   'other makers cannot see the conversation'
 );
+select is_empty(
+  'select 1 from public.conversation_reads where conversation_id = (select id from pgtap_pair)',
+  'other makers cannot see how far the makers have read'
+);
 select public.mark_conversation_read((select id from pgtap_pair), now());
 reset role;
 select is(
   (select count(*)::int from public.conversation_reads where user_id = 'b0000000-0000-4000-8000-000000000003'
     and conversation_id = (select id from pgtap_pair)),
   0, 'other makers cannot mark the conversation read'
+);
+select is(
+  (select count(*)::int from realtime.messages where event = 'read'
+    and payload ->> 'conversation_id' = (select id::text from pgtap_pair)),
+  1, 'other makers cannot send a read event'
 );
 
 set local role authenticated;
@@ -516,8 +561,11 @@ select throws_ok(
 reset role;
 select is_empty(
   $$ select 1 from realtime.messages
-    where topic in ('user:b0000000-0000-4000-8000-000000000001', 'user:b0000000-0000-4000-8000-000000000002') and (payload ? 'body' or event <> 'message') $$,
-  'Realtime events carry ids only'
+    where topic in ('user:b0000000-0000-4000-8000-000000000001', 'user:b0000000-0000-4000-8000-000000000002')
+      and (event not in ('message', 'read') or exists (
+        select 1 from jsonb_object_keys(payload) k
+        where k not in ('id', 'conversation_id', 'sender_id', 'created_at', 'read_at'))) $$,
+  'Realtime events carry ids and times only, never the text'
 );
 set local role authenticated;
 select set_config('request.jwt.claim.sub', 'b0000000-0000-4000-8000-000000000002', true);
