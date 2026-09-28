@@ -12,7 +12,7 @@ if (!token)
 if (!/^\d+:[\w-]+$/.test(token))
   throw new Error(
     "TELEGRAM_BOT_TOKEN in .env.local is not a whole bot token. Copy all of it from @BotFather: " +
-      "the bot's number, a colon and a code, such as 123456789:AAHdqTcvCH1vGWJxfSeofSAs0K5PALDsaw.",
+      "the bot's number, a colon and a code of about 35 characters, such as 123456789:AAH...",
   );
 const base = (env.TELEGRAM_API_BASE || "https://api.telegram.org").replace(/\/$/, "");
 
