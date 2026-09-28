@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { authTemplates } from "../../src/lib/email/auth-templates";
 import { renderEmail, type ClaimedEmail } from "../../src/lib/email/templates";
 
 const settings = { origin: "https://harbor.example", contact: "help@harbor.example" };
@@ -51,10 +52,39 @@ describe("message emails", () => {
       row("message", { ...message, sender_name: '<img src=x onerror="alert(1)">\nBcc: x' }, null),
       settings,
     )!;
-    expect(email.html).not.toContain("<img");
+    expect(email.html).not.toContain("<img src=x");
     expect(email.html).toContain("&lt;img src=x onerror=&quot;alert(1)&quot;&gt;");
     expect(email.subject).not.toMatch(/[\r\n]/);
     expect(email.text.startsWith("Hi,")).toBe(true);
+  });
+});
+
+describe("the email frame", () => {
+  it("wraps the content with the logo, a heading and a preview line", () => {
+    const { html } = renderEmail(row("message", message), settings)!;
+    expect(html.startsWith("<!doctype html>")).toBe(true);
+    expect(html).toContain('<img src="https://harbor.example/logo.png"');
+    expect(html).toContain(">New message from Tomás Rivera</h1>");
+    expect(html).toMatch(/display: none[^>]*>Tomás Rivera sent you a message on The SaaS Harbor\./);
+  });
+  it("links the settings in the small print", () =>
+    expect(renderEmail(row("message", message), settings)!.html).toContain(
+      'href="https://harbor.example/dashboard/settings"',
+    ));
+});
+
+describe("auth emails", () => {
+  it.each(Object.entries(authTemplates))(
+    "match supabase/templates/%s.html",
+    async (name, template) =>
+      await expect(template).toMatchFileSnapshot(`../../supabase/templates/${name}.html`),
+  );
+  it("link to the confirm page with the token and the site's logo", () => {
+    expect(authTemplates.confirmation).toContain(
+      'href="{{ .RedirectTo }}?token_hash={{ .TokenHash }}&amp;type=email"',
+    );
+    expect(authTemplates.recovery).toContain("&amp;type=recovery");
+    expect(authTemplates.recovery).toContain('<img src="{{ .SiteURL }}/logo.png"');
   });
 });
 

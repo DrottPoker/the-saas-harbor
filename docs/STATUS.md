@@ -8,6 +8,14 @@ The first release includes accounts, email confirmation and recovery, public mak
 
 Makers can message each other privately (see Messages below), and report products, profiles and messages to the admins, who decide in an admin panel (see Reports and moderation below). They get emails about unread messages and about decisions (see Email notifications below). Other forms of connection, such as following or contact lists, are not implemented.
 
+## Emails in the site's design 2026-09-28
+
+At the owner's request, every email now looks like the site: the logo and name above a card with a heading, the text and a dark button, and the small print below it, in the light theme's colors, with a preview line for inboxes. Notification emails and the Auth emails (confirmation and password reset) share one frame, `src/lib/email/layout.ts`. The Auth templates in `supabase/templates` are generated from `src/lib/email/auth-templates.ts`, and a unit test fails when they differ (`npx vitest run -u` rewrites them); Prettier leaves them alone. The texts are unchanged.
+
+Production sends the new notification emails once the code is deployed. The Auth emails change there only after `npm run auth:production`, which pushes the Auth settings and asks first.
+
+Unit tests cover the frame and the generated templates; the browser tests for sign-up, password reset, reports and message emails passed through local Auth and Mailpit, where the logo address came from the site URL. The emails were checked at 390 px and on a desktop width.
+
 ## Gumroad, connected with OAuth 2026-09-28
 
 At a user's request, and the owner's, Gumroad can verify revenue too, which brings in founders who sell one-time licenses and memberships there. Gumroad's personal access tokens can do anything on the account, refunds and emails to customers included, so founders connect it by approving read access to their sales on Gumroad instead, through the site's own OAuth application, and never paste a token. The token can only view sales, which every verification checks. MRR comes from the active subscribers of memberships, each valued by its latest charge for a whole period, with history from those charges, and revenue from Gumroad's sales summary by day, one-time purchases included (see ARCHITECTURE, Connecting Gumroad). How it works, the privacy policy (with a new date) and the provider lists name it. Migration `20260928090000_gumroad.sql` accepts the name; it was applied to production on 2026-09-28, before the code.

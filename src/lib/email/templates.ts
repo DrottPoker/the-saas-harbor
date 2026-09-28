@@ -11,6 +11,14 @@ import {
 } from "../milestones";
 import { decisionLabels, isReason } from "../moderation";
 import { isProviderId, providerName } from "../revenue/catalog";
+import {
+  emailButton,
+  emailColors,
+  emailDocument,
+  emailLink,
+  emailParagraph,
+  escapeHtml,
+} from "./layout";
 
 /** A row from claim_emails(). The context is computed when the email is claimed. */
 export type ClaimedEmail = {
@@ -23,12 +31,6 @@ export type ClaimedEmail = {
 export type Email = { subject: string; text: string; html: string };
 export type EmailSettings = { origin: string; contact: string | null };
 
-const escape = (value: string) =>
-  value.replace(
-    /[&<>"']/g,
-    (character) =>
-      ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[character]!,
-  );
 // Subjects are one line, and parts of them come from makers.
 const oneLine = (value: string) => value.replace(/\s+/g, " ").trim().slice(0, 150);
 
@@ -37,6 +39,7 @@ type Link = { label: string; url: string };
 type Picture = { src: string; alt: string; link: string; width: number; height: number };
 
 function compose({
+  origin,
   subject,
   name,
   body,
@@ -45,6 +48,7 @@ function compose({
   links = [],
   footer,
 }: {
+  origin: string;
   subject: string;
   name: string | null;
   body: string[];
@@ -62,40 +66,37 @@ function compose({
     ...links.map((link) => `${link.label}: ${link.url}`),
     ...footer.map((part) => (typeof part === "string" ? part : `${part.label}: ${part.url}`)),
   ].join("\n\n");
-  const paragraph = (content: string, style = "margin: 0 0 16px") =>
-    `<p style="${style}">${content}</p>`;
-  const small = "margin: 0 0 8px; color: #585c61; font-size: 13px";
-  const html = [
-    `<div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; font-size: 15px; line-height: 1.6; color: #1a1b1e; max-width: 480px">`,
-    paragraph(escape(greeting)),
-    ...body.map((line) => paragraph(escape(line).replace(/\n/g, "<br>"))),
+  const content = [
+    emailParagraph(escapeHtml(greeting)),
+    ...body.map((line) => emailParagraph(escapeHtml(line).replace(/\n/g, "<br>"))),
     ...(picture
       ? [
-          paragraph(
-            `<a href="${escape(picture.link)}"><img src="${escape(picture.src)}" alt="${escape(picture.alt)}" width="${picture.width}" height="${picture.height}" style="display: block; width: 100%; max-width: ${picture.width}px; height: auto; border: 1px solid #cfccc3; border-radius: 8px"></a>`,
+          emailParagraph(
+            `<a href="${escapeHtml(picture.link)}"><img src="${escapeHtml(picture.src)}" alt="${escapeHtml(picture.alt)}" width="${picture.width}" height="${picture.height}" style="display: block; width: 100%; max-width: ${picture.width}px; height: auto; border: 1px solid ${emailColors.border}; border-radius: 8px"></a>`,
           ),
         ]
       : []),
-    paragraph(
-      `<a href="${escape(action.url)}" style="display: inline-block; background: #1a1b1e; color: #fbfaf8; text-decoration: none; padding: 10px 16px; border-radius: 8px; font-weight: 600">${escape(action.label)}</a>`,
-      links.length ? "margin: 8px 0 12px" : "margin: 8px 0 24px",
-    ),
-    ...links.map((link, index) =>
-      paragraph(
-        `<a href="${escape(link.url)}" style="color: #1a1b1e">${escape(link.label)}</a>`,
-        index === links.length - 1 ? "margin: 0 0 24px" : "margin: 0 0 8px",
-      ),
-    ),
-    ...footer.map((part) =>
-      paragraph(
-        typeof part === "string"
-          ? escape(part)
-          : `<a href="${escape(part.url)}" style="color: #585c61">${escape(part.label)}</a>`,
-        small,
-      ),
-    ),
-    "</div>",
+    emailButton(action.label, action.url),
+    ...(links.length
+      ? [
+          emailParagraph(
+            links.map((link) => emailLink(link.label, link.url)).join("&nbsp;&nbsp;·&nbsp;&nbsp;"),
+            "16px 0 0",
+          ),
+        ]
+      : []),
   ].join("\n");
+  const html = emailDocument({
+    origin,
+    heading: oneLine(subject),
+    preview: oneLine(body[0] ?? subject),
+    content,
+    footer: footer.map((part) =>
+      typeof part === "string"
+        ? escapeHtml(part)
+        : `<a href="${escapeHtml(part.url)}" style="color: ${emailColors.mutedForeground}; text-decoration: underline">${escapeHtml(part.label)}</a>`,
+    ),
+  });
   return { subject: oneLine(subject), text, html };
 }
 
@@ -119,6 +120,7 @@ export function renderEmail(row: ClaimedEmail, { origin, contact }: EmailSetting
     if (!context.wanted || context.blocked || context.sender_suspended || !unread || !sender)
       return null;
     return compose({
+      origin,
       subject: `New message from ${sender}`,
       name: row.name,
       body: [
@@ -139,6 +141,7 @@ export function renderEmail(row: ClaimedEmail, { origin, contact }: EmailSetting
     if (!context.wanted || !open) return null;
     const reports = open === 1 ? "1 open report" : `${open} open reports`;
     return compose({
+      origin,
       subject: `${reports} on The SaaS Harbor`,
       name: row.name,
       body: [`${open === 1 ? "A report waits" : `${open} reports wait`} for review.`],
@@ -164,6 +167,7 @@ export function renderEmail(row: ClaimedEmail, { origin, contact }: EmailSetting
     switch (context.action) {
       case "hide_saas":
         return compose({
+          origin,
           subject: `An admin hid your product ${label}`,
           name: row.name,
           body: [
@@ -175,6 +179,7 @@ export function renderEmail(row: ClaimedEmail, { origin, contact }: EmailSetting
         });
       case "restore_saas":
         return compose({
+          origin,
           subject: `Your product ${label} is shown again`,
           name: row.name,
           body: [`An admin reviewed ${label} again, and it is shown on The SaaS Harbor again.`],
@@ -183,6 +188,7 @@ export function renderEmail(row: ClaimedEmail, { origin, contact }: EmailSetting
         });
       case "suspend_account":
         return compose({
+          origin,
           subject: "Your account on The SaaS Harbor is suspended",
           name: row.name,
           body: [
@@ -194,6 +200,7 @@ export function renderEmail(row: ClaimedEmail, { origin, contact }: EmailSetting
         });
       case "restore_account":
         return compose({
+          origin,
           subject: "Your account on The SaaS Harbor is active again",
           name: row.name,
           body: [
@@ -220,6 +227,7 @@ export function renderEmail(row: ClaimedEmail, { origin, contact }: EmailSetting
     const share = shareLinks(page, shareText(lead, name));
     const provider = isProviderId(context.provider) ? providerName(context.provider) : null;
     return compose({
+      origin,
       subject: `${name} reached ${milestoneObject(lead)}`,
       name: row.name,
       body: [
@@ -265,6 +273,7 @@ export function renderEmail(row: ClaimedEmail, { origin, contact }: EmailSetting
           : null;
     if (!outcome) return null;
     return compose({
+      origin,
       subject: "Your report has been reviewed",
       name: row.name,
       body: [`An admin reviewed your report about ${about}.`, outcome],
