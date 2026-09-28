@@ -2,7 +2,7 @@ import { beforeAll, describe, expect, it } from "vitest";
 import type { Listing, Profile } from "../../src/lib/data";
 import { categories, categoryFromSlug, categorySlug } from "../../src/lib/domain";
 import { escapeMarkdown, llmsText, makerMarkdown, productMarkdown } from "../../src/lib/markdown";
-import { listMetadata, websiteRel } from "../../src/lib/seo";
+import { listMetadata, productSummary, profileDescription, websiteRel } from "../../src/lib/seo";
 import {
   categoryJsonLd,
   faqJsonLd,
@@ -126,6 +126,18 @@ describe("structured data", () => {
           { position: 2, name: "Second", url: "https://harbor.example/saas/second" },
         ],
       },
+    }));
+
+  it("gives a revenue ranking its own address and name", () =>
+    expect(
+      leaderboardJsonLd([listing()], {
+        path: "/?by=12m",
+        name: "SaaS ranked by verified revenue, 12 months",
+      }),
+    ).toMatchObject({
+      url: "https://harbor.example/?by=12m",
+      name: "SaaS ranked by verified revenue, 12 months",
+      mainEntity: { itemListElement: [{ position: 1, name: "QueryBird" }] },
     }));
 
   it("repeats a page's questions and answers", () =>
@@ -365,6 +377,13 @@ describe("markdown", () => {
       "- [Where to launch your SaaS](https://harbor.example/where-to-launch):",
     );
     expect(llmsText([], new Map(), categories)).toContain("No product shares verified MRR yet.");
+    // The revenue rankings are pages of their own.
+    expect(text).toContain(
+      "- [SaaS ranked by verified revenue, 30 days](https://harbor.example/?by=30d): products ranked by verified revenue in the last 30 days, one-time purchases included",
+    );
+    expect(text).toContain(
+      "- [SaaS ranked by verified revenue, all time](https://harbor.example/?by=all): products ranked by verified revenue since their first payment",
+    );
   });
 
   it("lists the technologies that products use", () => {
@@ -422,6 +441,88 @@ describe("list metadata", () => {
       alternates: { canonical: "/discover" },
     });
     expect(listMetadata(list, { q: "  " })).not.toHaveProperty("robots");
+  });
+});
+
+describe("product titles and descriptions", () => {
+  it("carry verified MRR and paying customers", () =>
+    expect(productSummary(listing())).toEqual({
+      title: "QueryBird: $4,200 verified MRR",
+      description: "SQL reports for small teams. Verified MRR $4,200 from 37 paying customers.",
+    }));
+
+  it("end the tagline as a sentence without doubling its punctuation", () => {
+    expect(productSummary(listing({ tagline: "Reports, fast!" })).description).toMatch(
+      /^Reports, fast! Verified/,
+    );
+    expect(productSummary(listing({ tagline: "Reports." })).description).toMatch(
+      /^Reports\. Verified/,
+    );
+  });
+
+  it("leave out figures of zero", () =>
+    expect(productSummary(listing({ mrr_cents: 0, customers: 0 }))).toEqual({
+      title: "QueryBird",
+      description: "SQL reports for small teams.",
+    }));
+
+  it("show revenue from all payments when there is no MRR", () =>
+    expect(
+      productSummary(
+        listing({
+          mrr_cents: 0,
+          customers: 0,
+          revenue_12m_cents: 90_000,
+          revenue_total_cents: 150_050,
+        }),
+      ),
+    ).toEqual({
+      title: "QueryBird: $1,500.50 verified revenue",
+      description: "SQL reports for small teams. Verified revenue, all time: $1,500.50.",
+    }));
+
+  it("add revenue beside MRR", () =>
+    expect(productSummary(listing({ revenue_total_cents: 5_000_000 })).description).toBe(
+      "SQL reports for small teams. Verified MRR $4,200 from 37 paying customers. Verified revenue, all time: $50,000.",
+    ));
+
+  it("show only what is shared and verified", () => {
+    for (const overrides of [{ mrr_cents: null }, { revenue_status: "stale" }])
+      expect(productSummary(listing({ ...overrides, customers: null }))).toEqual({
+        title: "QueryBird",
+        description: "SQL reports for small teams.",
+      });
+  });
+});
+
+describe("profile descriptions", () => {
+  const person = { name: "Tomas Rivera", headline: "Builds tools for data teams", bio: "" };
+
+  it("name the products the user is the founder of", () => {
+    expect(profileDescription(person, ["QueryBird"])).toBe(
+      "Builds tools for data teams. Founder of QueryBird.",
+    );
+    expect(profileDescription(person, ["A", "B"])).toBe(
+      "Builds tools for data teams. Founder of A and B.",
+    );
+    expect(profileDescription(person, ["A", "B", "C", "D", "E"])).toBe(
+      "Builds tools for data teams. Founder of A, B, C and 2 more.",
+    );
+  });
+
+  it("start with the About section when there is no headline", () =>
+    expect(
+      profileDescription({ ...person, headline: "", bio: "I build things" }, ["QueryBird"]),
+    ).toBe("I build things. Founder of QueryBird."));
+
+  it("fall back to the name", () => {
+    expect(profileDescription({ ...person, headline: "" }, ["QueryBird"])).toBe(
+      "Tomas Rivera, founder of QueryBird, on The SaaS Harbor.",
+    );
+    expect(profileDescription({ ...person, headline: "" }, [])).toBe(
+      "Tomas Rivera on The SaaS Harbor",
+    );
+    expect(profileDescription(person, [])).toBe("Builds tools for data teams.");
   });
 });
 

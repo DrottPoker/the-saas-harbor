@@ -3120,8 +3120,15 @@ test("founders share revenue from all payments, and visitors rank products by it
   await expect(figure("Revenue, all time")).toHaveText(figures.total);
   await expect(figure("Monthly recurring revenue")).toHaveText("Not shared");
   await expect(page.getByText(/Verified with Paddle through a read-only key/)).toBeVisible();
+  // Search results show the revenue in place of the MRR the product keeps private.
+  await expect(page).toHaveTitle(`${name}: ${figures.total} verified revenue | The SaaS Harbor`);
   const markdown = await (await page.request.get(`${productPath}.md`)).text();
   expect(markdown).toContain(`- Revenue, all time: ${figures.total}`);
+  // The revenue rankings hold a product now, so search engines get them.
+  const origin = test.info().project.use.baseURL!;
+  expect(await (await page.request.get("/sitemap.xml")).text()).toContain(
+    `<loc>${origin}/?by=all</loc>`,
+  );
   expect(markdown).toContain("- Monthly recurring revenue: not shared");
 
   // The leaderboard ranks it by revenue, and not by MRR, which it does not share.

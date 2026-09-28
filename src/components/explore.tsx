@@ -3,7 +3,13 @@ import { Search } from "lucide-react";
 import { demoRows, listings, rankSort, type Sort } from "@/lib/data";
 import { categories } from "@/lib/domain";
 import { safePage } from "@/lib/params";
-import { rankingFrom, REVENUE_WINDOWS, revenueWindow, type Ranking } from "@/lib/revenue-figures";
+import {
+  rankingFrom,
+  revenueRankingTitle,
+  REVENUE_WINDOWS,
+  revenueWindow,
+  type Ranking,
+} from "@/lib/revenue-figures";
 import { leaderboardJsonLd } from "@/lib/structured-data";
 import { techFromSlug } from "@/lib/tech";
 import { cn } from "@/lib/utils";
@@ -72,7 +78,8 @@ export async function Explore({
 }) {
   const ranked = mode === "ranked";
   const ranking = ranked ? rankingFrom(params.by) : "mrr";
-  const byRevenue = ranking !== "mrr";
+  const revenue = revenueWindow(ranking);
+  const byRevenue = !!revenue;
   const category = categories.includes(params.category as (typeof categories)[number])
     ? params.category!
     : "";
@@ -126,9 +133,14 @@ export async function Explore({
 
   return (
     <Shell>
-      {/* Search engines and AI assistants read the plain leaderboard's first page as a list. */}
-      {ranked && !byRevenue && !filtered && !!rows.length && (
-        <JsonLd data={leaderboardJsonLd(rows)} />
+      {/* Search engines and AI assistants read each ranking's plain first page as a list. */}
+      {ranked && !filtered && !!rows.length && (
+        <JsonLd
+          data={leaderboardJsonLd(
+            rows,
+            revenue ? { path: `/?by=${ranking}`, name: revenueRankingTitle(revenue) } : undefined,
+          )}
+        />
       )}
       {ranked ? (
         <>

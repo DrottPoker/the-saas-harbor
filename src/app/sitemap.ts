@@ -1,6 +1,7 @@
 import type { MetadataRoute } from "next";
-import { categoryCounts, techCounts } from "@/lib/data";
+import { categoryCounts, revenueRankedCount, techCounts } from "@/lib/data";
 import { categories, categorySlug } from "@/lib/domain";
+import { REVENUE_WINDOWS } from "@/lib/revenue-figures";
 import { publicClient } from "@/lib/supabase/server";
 import { siteUrl } from "@/lib/seo";
 import { technologies } from "@/lib/tech";
@@ -24,10 +25,21 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   ];
   const client = publicClient();
   if (!client) return pages;
-  // Category and technology pages with listed products; empty ones ask search engines not to
-  // index them.
-  const [counts, techs] = await Promise.all([categoryCounts(), techCounts()]);
+  // Revenue rankings, category and technology pages with products; empty ones ask search engines
+  // not to index them.
+  const [revenueRanked, counts, techs] = await Promise.all([
+    revenueRankedCount(),
+    categoryCounts(),
+    techCounts(),
+  ]);
   pages.push(
+    ...(revenueRanked
+      ? REVENUE_WINDOWS.map(({ ranking }) => ({
+          url: `${base}/?by=${ranking}`,
+          changeFrequency: "daily" as const,
+          priority: 0.7,
+        }))
+      : []),
     { url: `${base}/categories`, changeFrequency: "weekly", priority: 0.6 },
     ...categories
       .filter((category) => counts.get(category)?.products)

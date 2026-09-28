@@ -4,7 +4,7 @@
 import { monthLabel, parseHistory, wholeUsd } from "./charts";
 import type { CategoryCount, Listing, Profile } from "./data";
 import { categorySlug, formatDate, formatUsd } from "./domain";
-import { REVENUE_WINDOWS, sharesRevenue } from "./revenue-figures";
+import { REVENUE_WINDOWS, revenueRankingTitle, sharesRevenue } from "./revenue-figures";
 import { providerList, providerName } from "./revenue/catalog";
 import { rolePeriod, sortRoles, type ProfileExperience } from "./profile";
 import { SITE_DESCRIPTION, SITE_NAME, siteUrl } from "./seo";
@@ -217,7 +217,7 @@ export function llmsText(
     "",
     `> ${SITE_DESCRIPTION}`,
     "",
-    "Founders list their products with a public profile. Monthly recurring revenue (MRR) is never typed in: each product connects its payment provider with a read-only key, and the site reads active subscriptions, normalizes them to one month, and converts other currencies to US dollars. Founders choose whether the verified figures are public. Products are ranked by verified MRR that is shared and was verified in the last seven days.",
+    "Founders list their products with a public profile. Monthly recurring revenue (MRR) is never typed in: each product connects its payment provider with a read-only key, and the site reads active subscriptions, normalizes them to one month, and converts other currencies to US dollars. Founders choose whether the verified figures are public. Products are ranked by verified MRR that is shared and was verified in the last seven days. The leaderboard also ranks products by revenue from all their payments, one-time purchases included, over the last 30 days, the last 12 months and all time, where founders share it.",
     "",
     `Listing a SaaS is free and needs no payment details and no revenue, so newly launched products are welcome. A listing is public as soon as it is saved, without a review queue, and appears in New arrivals, Browse and its category and technology pages, with a link to the product's website. Connecting ${providerList("or")} is optional and puts the product on the leaderboard, which has no paid placements; while its revenue is verified, the link to the product's website is followed by search engines (dofollow), for free. Founders sign up at ${base}/auth?mode=signup, and ${base}/list-your-saas describes what a listing gives.`,
     "",
@@ -226,6 +226,10 @@ export function llmsText(
     "## Pages",
     "",
     `- [Leaderboard](${base}/): products ranked by verified MRR`,
+    ...REVENUE_WINDOWS.map(
+      ({ ranking, short }) =>
+        `- [${revenueRankingTitle({ short })}](${base}/?by=${ranking}): products ranked by verified revenue ${ranking === "all" ? "since their first payment" : `in the last ${short}`}, one-time purchases included`,
+    ),
     `- [Browse](${base}/discover): every listed product, A to Z`,
     `- [New arrivals](${base}/newest): the latest products to join`,
     `- [Categories](${base}/categories): products by category`,

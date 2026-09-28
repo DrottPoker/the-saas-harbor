@@ -174,6 +174,20 @@ export const techCounts = cache(async () => {
 });
 
 /**
+ * How many products the revenue rankings hold. Revenue is shared for every window at once, so each
+ * ranking holds the same products.
+ */
+export const revenueRankedCount = cache(async () => {
+  const client = publicClient();
+  if (!client) throw new Error("Supabase is not configured.");
+  const { count, error } = await client
+    .from("revenue_leaderboard")
+    .select("id", { count: "exact", head: true });
+  if (error) throw new Error("The revenue rankings could not be loaded.");
+  return count ?? 0;
+});
+
+/**
  * Whether the made-up demo products show (src/lib/demo.ts): until a full page of real products
  * shares verified MRR, and never with DEMO_PRODUCTS=off. When the count cannot be read, they stay
  * hidden.
@@ -299,15 +313,17 @@ export const publicProfileExperience = cache(async (id: string) => {
   if (error) throw new Error("This profile could not be loaded.");
   return data;
 });
-// A maker's key figures: every listed product, and verified MRR and paying customers summed over
-// the products that share them.
+// A maker's key figures: every listed product, oldest first, and verified MRR and paying customers
+// summed over the products that share them.
 export const makerTotals = cache(async (id: string) => {
   const client = publicClient();
   if (!client) throw new Error("Supabase is not configured.");
   const { data, error } = await client
     .from("public_saas")
-    .select("mrr_cents, customers")
-    .eq("owner_id", id);
+    .select("name, mrr_cents, customers")
+    .eq("owner_id", id)
+    .order("created_at")
+    .order("id");
   if (error) throw new Error("This profile could not be loaded.");
   const sum = (values: (number | null)[]) => {
     const shared = values.filter((value): value is number => value !== null);
@@ -318,6 +334,7 @@ export const makerTotals = cache(async (id: string) => {
   };
   return {
     products: data.length,
+    names: data.flatMap((row) => (row.name ? [row.name] : [])),
     mrr: sum(data.map((row) => row.mrr_cents)),
     customers: sum(data.map((row) => row.customers)),
   };

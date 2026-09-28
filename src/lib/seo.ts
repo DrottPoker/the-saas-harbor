@@ -1,4 +1,7 @@
 import type { Metadata } from "next";
+import type { Listing } from "./data";
+import { formatUsd } from "./domain";
+import { excerpt } from "./moderation";
 import { safePage } from "./params";
 
 export const SITE_NAME = "The SaaS Harbor";
@@ -60,6 +63,67 @@ export function listMetadata(
     }),
     ...(search && { robots: { index: false, follow: true } }),
   };
+}
+
+/** Text as a sentence: a full stop is added unless it already ends in one. */
+function sentence(text: string) {
+  const line = text.trim();
+  return /[.!?…]$/.test(line) ? line : `${line}.`;
+}
+
+/**
+ * A product page's title and description, as search results and shared links show them. They
+ * carry a figure the page shares only when it is above zero: MRR, or else revenue from all
+ * payments, which products sold once have instead of MRR.
+ */
+export function productSummary(item: Pick<Listing, ProductSummaryField>) {
+  const name = item.name ?? "";
+  const mrr = item.revenue_status === "verified" && item.mrr_cents ? item.mrr_cents : null;
+  const revenue = item.revenue_total_cents || null;
+  const customers = item.customers
+    ? ` from ${item.customers.toLocaleString("en-US")} paying ${item.customers === 1 ? "customer" : "customers"}`
+    : "";
+  return {
+    title: mrr
+      ? `${name}: ${formatUsd(mrr)} verified MRR`
+      : revenue
+        ? `${name}: ${formatUsd(revenue)} verified revenue`
+        : name,
+    description: [
+      sentence(item.tagline ?? ""),
+      mrr && `Verified MRR ${formatUsd(mrr)}${customers}.`,
+      revenue && `Verified revenue, all time: ${formatUsd(revenue)}.`,
+    ]
+      .filter(Boolean)
+      .join(" "),
+  };
+}
+
+type ProductSummaryField =
+  "name" | "tagline" | "revenue_status" | "mrr_cents" | "customers" | "revenue_total_cents";
+
+/** Names joined as a reader would say them: "A", "A and B", "A, B and C", "A, B, C and 2 more". */
+function nameList(names: string[], most = 3) {
+  if (names.length > most)
+    return `${names.slice(0, most).join(", ")} and ${names.length - most} more`;
+  return names.length > 1 ? `${names.slice(0, -1).join(", ")} and ${names.at(-1)}` : names[0];
+}
+
+/**
+ * A profile page's description: the headline or the start of the About section, and the products
+ * the user is the founder of, which people often search for.
+ */
+export function profileDescription(
+  profile: { name: string; headline: string | null; bio: string | null },
+  products: string[],
+) {
+  const founder = products.length ? `Founder of ${nameList(products)}.` : "";
+  const about = profile.headline || (profile.bio && excerpt(profile.bio, founder ? 110 : 160));
+  const lead = about ? sentence(about) : "";
+  if (lead) return [lead, founder].filter(Boolean).join(" ");
+  return products.length
+    ? `${profile.name}, founder of ${nameList(products)}, on ${SITE_NAME}.`
+    : `${profile.name} on ${SITE_NAME}`;
 }
 
 /**

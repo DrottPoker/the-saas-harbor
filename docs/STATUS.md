@@ -8,6 +8,16 @@ The first release includes accounts, email confirmation and recovery, public mak
 
 Makers can message each other privately (see Messages below), and report products, profiles and messages to the admins, who decide in an admin panel (see Reports and moderation below). They get emails about unread messages and about decisions (see Email notifications below). Other forms of connection, such as following or contact lists, are not implemented.
 
+## Search result titles and the revenue rankings 2026-09-28
+
+At the owner's question whether SEO was up to date, the live site was checked page by page (titles, descriptions, canonical links, robots, structured data, the sitemap and llms.txt). The basics were in place; what the recent features had left behind is now fixed:
+
+- **Product titles and descriptions.** The description ran the tagline into the figures without a full stop ("no subscription Verified MRR $0"), and a product with $0 MRR had "$0 verified MRR from 0 paying customers" in its search result. A figure now appears only when it is above zero, and a product sold once shows its verified revenue from all payments instead, such as "QueryBird: $1,500 verified revenue". Shared revenue also goes into the description beside MRR.
+- **Profile descriptions** name the products the user is the founder of, after the headline or the start of the About section, rather than only a two-word headline or "name on The SaaS Harbor".
+- **Revenue rankings** (`/?by=30d`, `12m`, `all`), which have their own titles and canonical links, are now in the sitemap once a product shares revenue, in llms.txt, and have `CollectionPage` data like the MRR ranking. While no product shares revenue they answer with `noindex`, like an empty category.
+
+`npm run check` (449 unit tests), `npm run build` and `npm run test:e2e` pass.
+
 ## Telegram alerts about products, reports and messages 2026-09-28
 
 At the owner's request, the Telegram chat now also hears of every new product (its name, tagline, category and founder, with a link to its page), every new report (who reported what, the reason, the reporter's explanation and the number of open reports, with a link to the report) and messages to the owner's own account. For messages the owner chose a setting that names exactly one account over alerting all admins: `select public.set_telegram_inbox('<username>', true);` in the SQL editor. A message alert names the sender and links to the conversation, once per conversation until it is read, as the emails do; at the owner's choice it never contains the message, and a report's copy of a message is left out too. The privacy policy says so.

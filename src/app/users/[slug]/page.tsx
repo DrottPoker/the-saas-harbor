@@ -12,8 +12,7 @@ import { EmptyState, Notice, Shell } from "@/components/shell";
 import { Button } from "@/components/ui/button";
 import { findProfile, listings, makerTotals, PAGE_SIZE, publicProfileExperience } from "@/lib/data";
 import { formatUsd } from "@/lib/domain";
-import { excerpt } from "@/lib/moderation";
-import { pageMetadata, SITE_NAME } from "@/lib/seo";
+import { pageMetadata, profileDescription } from "@/lib/seo";
 import { makerJsonLd } from "@/lib/structured-data";
 import { JsonLd } from "@/components/json-ld";
 import { currentUser } from "@/lib/supabase/server";
@@ -29,10 +28,7 @@ export async function generateMetadata({ params }: Pick<Props, "params">): Promi
   return {
     ...pageMetadata({
       title: profile.name,
-      description:
-        profile.headline ||
-        (profile.bio && excerpt(profile.bio, 160)) ||
-        `${profile.name} on ${SITE_NAME}`,
+      description: profileDescription(profile, totals.names),
       path: `/users/${profile.slug}`,
       type: "profile",
       markdown: true,

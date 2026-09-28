@@ -1,9 +1,8 @@
 import type { Metadata } from "next";
 import { notFound, permanentRedirect } from "next/navigation";
 import { findSaas, publicProfile } from "@/lib/data";
-import { formatUsd } from "@/lib/domain";
 import { currentUser, serverClient } from "@/lib/supabase/server";
-import { pageMetadata } from "@/lib/seo";
+import { pageMetadata, productSummary } from "@/lib/seo";
 import { productJsonLd } from "@/lib/structured-data";
 import { JsonLd } from "@/components/json-ld";
 import { ProductProfile } from "@/components/product-profile";
@@ -26,16 +25,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (!found || "redirect" in found) return {};
   const { item } = found;
   if (!item.name || !item.tagline) return {};
-  // Shared, fresh MRR goes into the title and description, as search results and links show it.
-  const mrr =
-    item.revenue_status === "verified" && item.mrr_cents != null ? formatUsd(item.mrr_cents) : null;
-  const customers =
-    item.customers != null
-      ? ` from ${item.customers.toLocaleString("en-US")} paying ${item.customers === 1 ? "customer" : "customers"}`
-      : "";
   return pageMetadata({
-    title: mrr ? `${item.name}: ${mrr} verified MRR` : item.name,
-    description: mrr ? `${item.tagline} Verified MRR ${mrr}${customers}.` : item.tagline,
+    ...productSummary(item),
     path: `/saas/${item.slug}`,
     markdown: true,
   });

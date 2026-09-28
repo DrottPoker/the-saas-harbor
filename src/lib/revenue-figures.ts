@@ -34,6 +34,11 @@ export function revenueWindow(ranking: Ranking) {
   return REVENUE_WINDOWS.find((window) => window.ranking === ranking);
 }
 
+/** A revenue ranking's name, as its page title and structured data give it. */
+export function revenueRankingTitle(window: { short: string }) {
+  return `SaaS ranked by verified revenue, ${window.short.toLowerCase()}`;
+}
+
 /** Whether a listing shows any revenue figure besides MRR. */
 export function sharesRevenue(item: Listing) {
   return REVENUE_WINDOWS.some(({ column }) => item[column] != null);

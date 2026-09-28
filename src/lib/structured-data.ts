@@ -130,13 +130,19 @@ export function guideJsonLd({
   };
 }
 
-/** The first page of the leaderboard on the home page, in rank order. */
-export function leaderboardJsonLd(ranked: Listing[]): JsonLd {
+/**
+ * The first page of a leaderboard ranking on the home page, in rank order: by MRR, or by revenue
+ * at its own address.
+ */
+export function leaderboardJsonLd(
+  ranked: Listing[],
+  list = { path: "/", name: "SaaS ranked by verified MRR" },
+): JsonLd {
   return {
     "@context": "https://schema.org",
     "@type": "CollectionPage",
-    url: `${siteUrl()}/`,
-    name: "SaaS ranked by verified MRR",
+    url: `${siteUrl()}${list.path}`,
+    name: list.name,
     isPartOf: isPartOf(),
     mainEntity: rankedList(ranked),
   };
