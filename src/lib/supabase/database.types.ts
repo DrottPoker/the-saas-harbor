@@ -1360,12 +1360,31 @@ export type Database = {
           name: string
         }[]
       }
+      claim_telegram_alerts: {
+        Args: { p_limit: number }
+        Returns: {
+          context: Json
+          feedback_id: string
+          id: number
+          kind: string
+          user_id: string
+        }[]
+      }
       complete_email: {
         Args: { p_error: string; p_id: number; p_status: string }
         Returns: undefined
       }
       complete_signup: {
         Args: { p_terms_version: string; p_username: string }
+        Returns: undefined
+      }
+      complete_telegram_alert: {
+        Args: {
+          p_error: string
+          p_id: number
+          p_retry_after: number
+          p_status: string
+        }
         Returns: undefined
       }
       delete_account: { Args: never; Returns: undefined }

@@ -1,7 +1,7 @@
 // Minimal stand-in for the payment provider APIs and the exchange-rate API, for the tests only.
 // Stripe is below; Paddle, Polar and Dodo Payments are in fake-billing.mjs, Creem, Chargebee, Whop
-// and RevenueCat in fake-billing-extra.mjs, Gumroad in fake-gumroad.mjs, and a founder's DNS in
-// fake-site.mjs.
+// and RevenueCat in fake-billing-extra.mjs, Gumroad in fake-gumroad.mjs, a founder's DNS in
+// fake-site.mjs and the Telegram Bot API in fake-telegram.mjs.
 // Account "one" has MRR $104 from 3 paying customers: $29 monthly, a $600 yearly plan at 50% off
 // forever, a past-due EUR 40 plan at 0.8 EUR per USD, and one usage-based item that is skipped.
 // Its paid invoices give a month-end history of $29 for a year, plus $25 a month from the yearly
@@ -20,6 +20,7 @@ import { handleBilling } from "./fake-billing.mjs";
 import { handleExtraBilling } from "./fake-billing-extra.mjs";
 import { handleGumroad } from "./fake-gumroad.mjs";
 import { handleSite } from "./fake-site.mjs";
+import { handleTelegram } from "./fake-telegram.mjs";
 
 const PORT = Number(process.env.FAKE_PROVIDERS_PORT || 3011);
 const VERSION = "2026-08-26.dahlia";
@@ -280,6 +281,7 @@ createServer(async (request, response) => {
   const url = new URL(request.url, `http://127.0.0.1:${PORT}`);
   if (url.pathname === "/health") return send(response, 200, { ok: true });
   if (await handleGumroad(url, request, response)) return;
+  if (await handleTelegram(url, request, response)) return;
   if (handleBilling(url, request, response)) return;
   if (handleExtraBilling(url, request, response)) return;
   if (handleSite(url, request, response)) return;

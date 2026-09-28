@@ -5,6 +5,7 @@ import type { ActionState } from "@/lib/domain";
 import { feedbackPage, feedbackSchema } from "@/lib/feedback";
 import { adminSession } from "@/lib/admin";
 import { requireUser } from "@/lib/supabase/server";
+import { sendQueuedTelegramAlerts } from "@/lib/telegram/outbox";
 
 export async function submitFeedbackAction(
   from: string | null,
@@ -30,6 +31,7 @@ export async function submitFeedbackAction(
           ? `${error.message}.`
           : "Your feedback could not be sent. Please try again.",
     };
+  sendQueuedTelegramAlerts();
   revalidatePath("/admin", "layout");
   return { success: "sent" };
 }

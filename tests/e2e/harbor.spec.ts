@@ -90,6 +90,16 @@ async function sendDueEmails(request: APIRequestContext) {
   expect(response.status()).toBe(200);
   expect((await response.json()).configured).toBe(true);
 }
+// Runs the scheduled Telegram job, then lists the messages the fake Telegram API has received.
+async function telegramMessages(request: APIRequestContext) {
+  const response = await request.post("/api/telegram/send", {
+    headers: { Authorization: `Bearer ${process.env.TEST_CRON_SECRET}` },
+  });
+  expect(response.status()).toBe(200);
+  expect((await response.json()).configured).toBe(true);
+  const sent = await request.get("http://127.0.0.1:3011/telegram/messages");
+  return ((await sent.json()) as { text: string }[]).map((message) => message.text);
+}
 // A page logs a console error for everything the Content Security Policy blocks.
 function watchPolicy(page: Page, violations: string[]) {
   page.on("console", (message) => {
@@ -134,7 +144,7 @@ test.beforeAll(async ({ playwright }, info) => {
     ...["/dashboard", "/dashboard/profile", "/dashboard/reports", `/dashboard/saas/${id}`],
     ...["/dashboard/settings", "/api/email/send", "/api/analytics", "/admin/analytics/data"],
     ...["/messages", `/messages/${id}`, `/report/saas/${id}`, "/api/revenue/sync"],
-    ...["/api/domains/check"],
+    ...["/api/domains/check", "/api/telegram/send"],
     ...["/sitemap.xml", "/robots.txt", "/opengraph-image", "/llms.txt", "/indexnow.txt"],
     ...["/favicon.ico", "/apple-icon", "/logo.png"],
     ...[
@@ -2029,6 +2039,10 @@ test("users send feedback from any page, and admins read it and mark it handled"
   await dialog.getByRole("button", { name: "Send feedback" }).click();
   const thanks = page.getByRole("heading", { name: "Thank you for your feedback" });
   await expect(thanks).toBeFocused();
+  // The owner's Telegram chat gets it too, with its kind and the page it came from.
+  await expect
+    .poll(async () => (await telegramMessages(page.request)).find((text) => text.includes(message)))
+    .toMatch(/^<b>New feedback: Bug or error<\/b>\n.* on <code>\/stats<\/code>:/);
   // Closing returns to the page, and sign-in is no longer in the way back.
   await page.getByRole("button", { name: "Done" }).click();
   await expect(page).toHaveURL(/\/stats$/);

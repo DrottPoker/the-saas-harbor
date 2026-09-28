@@ -23,6 +23,7 @@ A focused, responsive home for independent SaaS: public maker profiles, product 
 - Demo products while the directory is new: until 12 real products share verified MRR, the leaderboard, Browse and New arrivals fill their first page with made-up products after the real ones. On the leaderboard they sit under a Demo MRR column without a rank or tag; cards and their own pages carry a Demo tag. They are never ranked or called verified, have their own pages under `/demo` that search engines skip, and disappear as real products join. `DEMO_PRODUCTS=off` hides them at once.
 - Private messages between makers, with the conversation list and the open conversation side by side: Send message on maker profiles and product pages, live delivery, read receipts (Delivered, then Seen) and unread counts, blocking, and limits against spam.
 - Email notifications: one email per unread conversation, which names the sender but never contains the message, a note to admins about open reports, and emails to makers about decisions on their products or account and to reporters about the outcome. Makers choose under Email settings in the account menu.
+- Telegram alerts for the owner: every new account and every new feedback in a Telegram chat, with a link to the admin panel and never an email address (see [Telegram alerts](#telegram-alerts)).
 - Milestones: when a product's shared, verified MRR passes an amount from $100 to $1M, or the product reaches the top 10, the top 3 or first place once the leaderboard has 25 products, its founder gets one email with a card to share and links that post it on X or LinkedIn. Each milestone has a page (`/saas/<slug>/milestones/<key>`) whose sharing image is the card, shown while the MRR stays shared.
 - Reports and moderation: signed-in makers report a product, a profile or a message they received, and follow the outcome under Your reports in the account menu. An admin panel at `/admin` lists reports, products, accounts and every decision; an account's page shows the country of its latest sign-in, from the IP address (only the country code is kept). Admins hide products and suspend accounts with a reason and an explanation the maker sees in their dashboard. An account lists at most 20 products and adds at most 5 a day.
 - Deletion by the maker: a single product, confirmed by typing its name, or the whole account, confirmed with the password, or for an account that signs in only with Google or GitHub, by signing in with it again. Everything that belongs to it goes, including images, provider keys and verification history, and for the account also the sign-in records.
@@ -91,6 +92,17 @@ The app sends its own emails through SMTP, separately from the Auth emails:
 Makers turn message and milestone emails off, and admins report emails, under Email settings in the account menu. The database queues each email together with what it is about, and the app sends what is due right after the action and whenever `POST /api/email/send` is called with `Authorization: Bearer $CRON_SECRET` (see ARCHITECTURE).
 
 `npm run dev` points `SMTP_HOST` and `SMTP_PORT` in `.env.local` at Mailpit's SMTP port (55325), so notifications land in Mailpit next to the Auth emails. Message emails wait five minutes; `npm run email:send` sends whatever is due through the running dev server, as the production scheduler will. To send them to real inboxes, set `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS` and `EMAIL_FROM` in `.env.local`, which `npm run dev` then keeps; for Gmail, `smtp.gmail.com`, port 587, your address as user and sender, and an app password. The demo accounts' `.test` addresses cannot receive email, so their notifications then bounce. The browser tests always use Mailpit.
+
+### Telegram alerts
+
+The owner can get an alert in Telegram for every new account (the username, how it signed up, whether the email address is confirmed and the number of accounts) and every new feedback (its kind, the sender, the page and the text), each with a link to the admin panel. Email addresses are never sent. To set it up, once:
+
+1. In Telegram, open `@BotFather`, send `/newbot`, and choose a name and a username that ends in `bot`. BotFather answers with the bot's token. Keep it in a password manager: anyone with it can act as the bot.
+2. Open the new bot through the `t.me/<username>` link BotFather gives, and press Start.
+3. Add `TELEGRAM_BOT_TOKEN=<token>` to `.env.local` and run `npm run telegram:check`. It lists the chats that have written to the bot; add the `TELEGRAM_CHAT_ID=<id>` line it prints to `.env.local` and run it again, which sends a test message.
+4. For production, add both variables to Vercel (see Production) and redeploy.
+
+`npm run dev` keeps these lines in `.env.local`, so local sign-ups and feedback are alerted too, with links to localhost. Remove the lines when you are done, or use a second bot for development. The browser tests always use a fake Bot API. Without both variables nothing is sent; alerts wait, and are skipped after a day.
 
 ### Revenue verification
 
@@ -191,24 +203,25 @@ This serves a production build on http://localhost:3001 against the local stack 
 Production runs on three services, all in the EU where they allow it:
 
 - **App:** Vercel, functions in Frankfurt (`fra1`), deployed from `main`. `vercel.json` sets the framework (a project created with the preset Other otherwise looks for a static `public` folder and fails), the region, and turns off deployments of `development`. The Hobby plan is enough to start, since the scheduled jobs run in the database; Vercel allows Hobby only for non-commercial use, so move to Pro once the site earns money. Web Analytics and Speed Insights are turned on under the project's Analytics and Speed Insights tabs; the app renders its script only when `VERCEL_ENV` is `production`, so previews, local servers and tests send nothing.
-- **Scheduled jobs:** pg_cron in the database calls `POST /api/email/send` every minute, `POST /api/revenue/sync` every ten minutes and `POST /api/domains/check` every hour through pg_net, with `Authorization: Bearer` and the production `CRON_SECRET` (migrations `20260926010000_scheduled_jobs.sql` and `20260926100000_domain_verification.sql`). Where to call and the secret are in Supabase Vault; without them, as locally and in CI, a run does nothing.
+- **Scheduled jobs:** pg_cron in the database calls `POST /api/email/send` and `POST /api/telegram/send` every minute, `POST /api/revenue/sync` every ten minutes and `POST /api/domains/check` every hour through pg_net, with `Authorization: Bearer` and the production `CRON_SECRET` (migrations `20260926010000_scheduled_jobs.sql`, `20260926100000_domain_verification.sql` and `20260928110000_telegram_alerts.sql`). Where to call and the secret are in Supabase Vault; without them, as locally and in CI, a run does nothing.
 - **Database, Auth and Storage:** the Supabase Cloud project `vgwgeennghaqpvfsqewq` ("The SaaS Harbor", Frankfurt, eu-central-1) in the Auxron organization, at `https://vgwgeennghaqpvfsqewq.supabase.co`. Upgrade it to Pro before launch: free projects pause after a week without activity and have no daily backups.
 - **Email:** Resend, through SMTP (`smtp.resend.com`, port 465, user `resend`, an API key as password), for both Supabase Auth and the notification emails, from the domain `thesaasharbor.com` in Resend's EU region. Use one API key per sender (Supabase, Vercel) with sending access only, so either can be revoked alone.
 
 **Vercel environment variables** (Production only; previews must not reach the production database):
 
-| Variable                                     | Value                                                                                          |
-| -------------------------------------------- | ---------------------------------------------------------------------------------------------- |
-| `NEXT_PUBLIC_SUPABASE_URL`                   | `https://vgwgeennghaqpvfsqewq.supabase.co`                                                     |
-| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`       | The publishable key, Supabase dashboard → Project Settings → API Keys                          |
-| `SUPABASE_SECRET_KEY`                        | A secret key from the same page, created for Vercel (mark as Sensitive)                        |
-| `NEXT_PUBLIC_SITE_URL`                       | `https://thesaasharbor.com`                                                                    |
-| `STRIPE_KEY_ENCRYPTION_KEY`                  | New for production: 32 random bytes, base64 (see below); keep a copy in a vault                |
-| `CRON_SECRET`                                | New for production: at least 32 random characters (see below)                                  |
-| `SMTP_HOST`, `SMTP_PORT`                     | `smtp.resend.com`, `465`                                                                       |
-| `SMTP_USER`, `SMTP_PASS`                     | `resend`, the Resend API key for Vercel                                                        |
-| `EMAIL_FROM`                                 | `The SaaS Harbor <notifications@thesaasharbor.com>`                                            |
-| `GUMROAD_CLIENT_ID`, `GUMROAD_CLIENT_SECRET` | From the OAuth application on Gumroad (see Revenue verification); mark the secret as Sensitive |
+| Variable                                     | Value                                                                                             |
+| -------------------------------------------- | ------------------------------------------------------------------------------------------------- |
+| `NEXT_PUBLIC_SUPABASE_URL`                   | `https://vgwgeennghaqpvfsqewq.supabase.co`                                                        |
+| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`       | The publishable key, Supabase dashboard → Project Settings → API Keys                             |
+| `SUPABASE_SECRET_KEY`                        | A secret key from the same page, created for Vercel (mark as Sensitive)                           |
+| `NEXT_PUBLIC_SITE_URL`                       | `https://thesaasharbor.com`                                                                       |
+| `STRIPE_KEY_ENCRYPTION_KEY`                  | New for production: 32 random bytes, base64 (see below); keep a copy in a vault                   |
+| `CRON_SECRET`                                | New for production: at least 32 random characters (see below)                                     |
+| `SMTP_HOST`, `SMTP_PORT`                     | `smtp.resend.com`, `465`                                                                          |
+| `SMTP_USER`, `SMTP_PASS`                     | `resend`, the Resend API key for Vercel                                                           |
+| `EMAIL_FROM`                                 | `The SaaS Harbor <notifications@thesaasharbor.com>`                                               |
+| `GUMROAD_CLIENT_ID`, `GUMROAD_CLIENT_SECRET` | From the OAuth application on Gumroad (see Revenue verification); mark the secret as Sensitive    |
+| `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID`     | Optional: the bot's token and the owner's chat (see Telegram alerts); mark the token as Sensitive |
 
 Leave `REVENUE_ALLOW_TEST_KEYS`, `LOCAL_MAILPIT_URL` and the `*_API_BASE` overrides unset. Generate each secret in your own terminal with `node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"` and paste it straight into Vercel. Losing `STRIPE_KEY_ENCRYPTION_KEY` makes every stored provider key unreadable.
 

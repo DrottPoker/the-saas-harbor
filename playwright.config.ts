@@ -1,6 +1,7 @@
 import { defineConfig, devices } from "@playwright/test";
 // Port 3002 keeps the test server clear of the regular dev server on 3001. The fake server on
-// 3011 replaces the payment providers and the exchange-rate service (tests/e2e/fake-providers.mjs).
+// 3011 replaces the payment providers, the exchange-rate service and Telegram
+// (tests/e2e/fake-providers.mjs).
 export default defineConfig({
   testDir: "./tests/e2e",
   fullyParallel: false,

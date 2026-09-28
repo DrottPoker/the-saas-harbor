@@ -211,7 +211,9 @@ export default function Privacy() {
               operator appoints to run and moderate the site. They see account details such as your
               email address, when you joined and signed in and from which country, how you found the
               site and how far you have come with the service, reports, decisions, feedback, and
-              messages that are reported.
+              messages that are reported. New accounts, with the username and how the account was
+              created, and feedback, with its text, are also sent to the admins&apos; chat on
+              Telegram.
             </li>
             <li>
               <strong className="font-medium text-foreground">Service providers:</strong> our
@@ -220,9 +222,10 @@ export default function Privacy() {
               image storage run on Supabase, in its Frankfurt, Germany region. Emails are sent
               through Resend. Vercel also records the statistics described above. If you sign in
               with Google or GitHub, that service learns that you signed in here, under its own
-              privacy policy. Vercel and Resend are based in the United States. When a provider
-              handles data outside the EU or EEA, we rely on the safeguards the GDPR provides for,
-              such as the EU standard contractual clauses.
+              privacy policy. Vercel and Resend are based in the United States. When they handle
+              data outside the EU or EEA, we rely on the safeguards the GDPR provides for, such as
+              the EU standard contractual clauses. Telegram, which delivers the alerts to admins
+              under its own terms, is based outside the EU.
             </li>
           </List>
           <p>
@@ -250,8 +253,9 @@ export default function Privacy() {
             the data that belongs to it is deleted, apart from what is needed for longer, such as
             reports and decisions that are still relevant, and copies in backups until those backups
             expire. The site statistics are kept apart from accounts for up to 25 months. Records of
-            sent emails and other technical records are kept for a short time. Information that was
-            public may already have been copied by others, such as search engines.
+            sent emails and other technical records are kept for a short time. Alerts sent to admins
+            on Telegram stay in their chat until they are deleted there. Information that was public
+            may already have been copied by others, such as search engines.
           </p>
           <p>
             We use technical and organisational measures to protect your data, such as encryption of

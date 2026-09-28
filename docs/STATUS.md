@@ -8,6 +8,14 @@ The first release includes accounts, email confirmation and recovery, public mak
 
 Makers can message each other privately (see Messages below), and report products, profiles and messages to the admins, who decide in an admin panel (see Reports and moderation below). They get emails about unread messages and about decisions (see Email notifications below). Other forms of connection, such as following or contact lists, are not implemented.
 
+## Telegram alerts about new accounts and feedback 2026-09-28
+
+At the owner's request, the owner gets an alert in a Telegram chat for every new account and every new feedback, so they see both on their phone at once. A sign-up alert names the user by name and username and says how the account signed up, whether its email address is confirmed and how many accounts there are; a feedback alert quotes the feedback with its kind, sender and page. Both link to the admin panel. Email addresses are never sent, a choice the owner made over sending them, or only a notice with a link. The privacy policy now says that admins get these alerts on Telegram, that Telegram is based outside the EU, and that sent alerts stay in the chat.
+
+The alerts go through an outbox like the emails (migration `20260928110000_telegram_alerts.sql`, `src/lib/telegram/`): the database queues them, the app sends them right after sign-up and feedback, and a job every minute sends the rest and tries failures again. They are sent only once `TELEGRAM_BOT_TOKEN` and `TELEGRAM_CHAT_ID` are set, locally in `.env.local` and in production in Vercel; `npm run telegram:check` finds the chat id and sends a test message (see README). Alerts that wait a day are skipped. The bot only sends for now; answering questions in the chat, with an AI model the owner can switch, is a possible next step.
+
+`npm run check` (431 unit tests), `npm run build`, `npm run test:db` (633 database tests) and `npm run test:e2e` (19 browser tests, where the feedback test now checks the alert that reaches a fake Telegram API) pass.
+
 ## Feedback in a dialog, with the right page 2026-09-28
 
 The admin panel said feedback was sent from the feedback page when the user had come from another page: the footer's Send feedback link opened `/feedback` without the page, and on phones and in Messages that link is the only way in. Both the footer link and the Feedback button now carry the page the user is on, and the admin panel says Page not recorded for feedback without one, such as earlier feedback from the footer, whose page cannot be recovered.

@@ -10,12 +10,14 @@ select results_eq(
   $$ values ('harbor-analytics-retention'::text, '41 3 * * *'::text),
     ('harbor-domain-checks', '23 * * * *'),
     ('harbor-email-send', '* * * * *'), ('harbor-job-history', '17 3 * * *'),
-    ('harbor-revenue-sync', '*/10 * * * *'), ('harbor-unfinished-signups', '53 3 * * *') $$,
-  'emails every minute, revenue every ten minutes, domains hourly, cleanup daily');
+    ('harbor-revenue-sync', '*/10 * * * *'), ('harbor-telegram-send', '* * * * *'),
+    ('harbor-unfinished-signups', '53 3 * * *') $$,
+  'emails and Telegram alerts every minute, revenue every ten minutes, domains hourly, cleanup daily');
 select ok(
   (select command like '%/api/email/send%' from cron.job where jobname = 'harbor-email-send')
   and (select command like '%/api/revenue/sync%' from cron.job where jobname = 'harbor-revenue-sync')
-  and (select command like '%/api/domains/check%' from cron.job where jobname = 'harbor-domain-checks'),
+  and (select command like '%/api/domains/check%' from cron.job where jobname = 'harbor-domain-checks')
+  and (select command like '%/api/telegram/send%' from cron.job where jobname = 'harbor-telegram-send'),
   'each job calls its route');
 
 delete from vault.secrets where name in ('harbor_site_url', 'harbor_cron_secret');

@@ -23,6 +23,7 @@ import {
 import { addressAcceptsMail } from "@/lib/email-domain";
 import { announceProduct, announceRemovedProduct } from "@/lib/indexnow";
 import { termsUpdated } from "@/lib/legal";
+import { sendQueuedTelegramAlerts } from "@/lib/telegram/outbox";
 import {
   recordSignInCountry,
   requireUser,
@@ -119,7 +120,10 @@ export async function authenticate(
             : "Registration could not be completed. Try again or sign in if you already have an account.",
       };
     // An address that already has an account gets a made-up user, which the database ignores.
-    if (data.user) await recordAccountSource(data.user.id);
+    if (data.user) {
+      await recordAccountSource(data.user.id);
+      sendQueuedTelegramAlerts();
+    }
     if (!data.session)
       return {
         success: "Check your email and open the link to confirm your account.",
@@ -218,6 +222,7 @@ export async function finishSignupAction(
           ? USERNAME_PROBLEMS.taken
           : "Your account could not be set up. Please try again.",
     };
+  sendQueuedTelegramAlerts();
   revalidatePath("/", "layout");
   redirect(next || (await startPage(client, user.id)));
 }

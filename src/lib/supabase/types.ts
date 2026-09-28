@@ -23,6 +23,8 @@ export type Database = Omit<GeneratedDatabase, "public"> & {
       | "username_change_available_at"
       | "claim_emails"
       | "complete_email"
+      | "claim_telegram_alerts"
+      | "complete_telegram_alert"
       | "track_page_view"
     > & {
       claim_emails: {
@@ -31,6 +33,15 @@ export type Database = Omit<GeneratedDatabase, "public"> & {
       };
       complete_email: {
         Args: Nullable<Functions["complete_email"]["Args"], "p_error">;
+        Returns: undefined;
+      };
+      // Only feedback alerts have feedback; the context is null once its subject is gone.
+      claim_telegram_alerts: {
+        Args: Functions["claim_telegram_alerts"]["Args"];
+        Returns: Nullable<Row<"claim_telegram_alerts">, "feedback_id" | "context">[];
+      };
+      complete_telegram_alert: {
+        Args: Nullable<Functions["complete_telegram_alert"]["Args"], "p_error" | "p_retry_after">;
         Returns: undefined;
       };
       saas_slug_redirect: {

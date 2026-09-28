@@ -7,6 +7,7 @@ import {
   npx,
   shell,
 } from "./local-supabase.mjs";
+import { TELEGRAM } from "../tests/e2e/fake-telegram.mjs";
 
 const local = ensureLocalSupabase();
 // The tests read confirmation links from Mailpit and must never email real addresses.
@@ -66,6 +67,10 @@ const result = spawnSync(npx, ["playwright", "test", ...extra], {
     SMTP_PASS: "",
     EMAIL_FROM: "The SaaS Harbor <notifications@harbor.localhost>",
     MESSAGE_EMAIL_DELAY_SECONDS: "0",
+    // Telegram alerts go to the fake server, never to a real chat.
+    TELEGRAM_API_BASE: `${fakeProviders}/telegram`,
+    TELEGRAM_BOT_TOKEN: TELEGRAM.token,
+    TELEGRAM_CHAT_ID: TELEGRAM.chatId,
   },
 });
 process.exit(result.status ?? 1);

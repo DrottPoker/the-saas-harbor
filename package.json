@@ -27,6 +27,7 @@
     "revenue:sync": "node scripts/revenue-sync.mjs",
     "domains:check": "node scripts/domains-check.mjs",
     "email:send": "node scripts/email-send.mjs",
+    "telegram:check": "node scripts/telegram-check.mjs",
     "admin": "node scripts/admin.mjs",
     "auth:production": "node scripts/production-auth.mjs",
     "db:types": "supabase gen types typescript --local --schema public > src/lib/supabase/database.types.ts"
