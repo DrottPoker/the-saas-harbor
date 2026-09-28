@@ -59,9 +59,9 @@ export default async function RootLayout({ children, modal }: LayoutProps<"/">) 
         <main id="main" className="flex-1">
           {children}
         </main>
-        <SiteFooter />
+        <SiteFooter signedIn={!!user} />
         {modal}
-        <FeedbackButton />
+        <FeedbackButton signedIn={!!user} />
         <PageViews />
         {/* Vercel sets VERCEL_ENV; local servers, tests and previews measure nothing. */}
         {process.env.VERCEL_ENV === "production" && <VercelAnalytics />}

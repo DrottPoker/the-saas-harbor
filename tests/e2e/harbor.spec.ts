@@ -2004,7 +2004,8 @@ test("users send feedback from any page, and admins read it and mark it handled"
   });
   if (grantError) throw new Error("Unable to grant admin rights.");
 
-  // A visitor who opens the form signs in first, and comes back to it with the page remembered.
+  // A visitor who opens the form signs in first, and the form then opens in a dialog over the
+  // page, which it remembers.
   const page = await (await browser.newContext()).newPage();
   await page.goto("/stats");
   await page.getByRole("link", { name: "Feedback", exact: true }).click();
@@ -2013,18 +2014,42 @@ test("users send feedback from any page, and admins read it and mark it handled"
   await page.getByLabel("Password", { exact: true }).fill(sender.password);
   await page.getByRole("button", { name: "Sign in", exact: true }).click();
   await expect(page).toHaveURL(/\/feedback\?from=%2Fstats$/);
+  const dialog = page.getByRole("dialog", { name: "Send feedback" });
+  await expect(dialog).toBeVisible();
+  // The page stays under the dialog, hidden from screen readers while it is open.
+  await expect(
+    page.getByRole("heading", { name: "Statistics", level: 1, includeHidden: true }),
+  ).toBeAttached();
   await expectAccessible(page);
 
   // The kind is required, and so is some text.
   const message = `The statistics page shows no chart on my phone ${run}.`;
-  await page.getByLabel("Bug or error").check();
-  await page.getByLabel("Your feedback").fill(message);
-  await page.getByRole("button", { name: "Send feedback" }).click();
+  await dialog.getByLabel("Bug or error").check();
+  await dialog.getByLabel("Your feedback").fill(message);
+  await dialog.getByRole("button", { name: "Send feedback" }).click();
   const thanks = page.getByRole("heading", { name: "Thank you for your feedback" });
+  await expect(thanks).toBeFocused();
+  // Closing returns to the page, and sign-in is no longer in the way back.
+  await page.getByRole("button", { name: "Done" }).click();
+  await expect(page).toHaveURL(/\/stats$/);
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+
+  // The footer link remembers the page too. A reload shows the form as a page of its own.
+  const footerMessage = `A way to compare two products side by side ${run}.`;
+  await page.goto("/about");
+  await page.getByRole("link", { name: "Send feedback" }).click();
+  await expect(page.getByRole("dialog", { name: "Send feedback" })).toBeVisible();
+  await expect(page).toHaveURL(/\/feedback\?from=%2Fabout$/);
+  await page.reload();
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+  await expect(page.getByRole("heading", { name: "Send feedback", level: 1 })).toBeVisible();
+  await page.getByLabel("Suggestion").check();
+  await page.getByLabel("Your feedback").fill(footerMessage);
+  await page.getByRole("button", { name: "Send feedback" }).click();
   await expect(thanks).toBeFocused();
   await expect(page.getByRole("link", { name: "Back to where you were" })).toHaveAttribute(
     "href",
-    "/stats",
+    "/about",
   );
   // Users cannot read feedback back, and the feedback admin page is a 404 for them.
   await page.goto("/admin/feedback");
@@ -2050,6 +2075,8 @@ test("users send feedback from any page, and admins read it and mark it handled"
     `/admin/accounts/${sender.id}`,
   );
   await expect(item.getByRole("link", { name: "/stats" })).toHaveAttribute("href", "/stats");
+  const fromFooter = adminPage.getByRole("article").filter({ hasText: footerMessage });
+  await expect(fromFooter.getByRole("link", { name: "/about" })).toHaveAttribute("href", "/about");
   // When it came in, with the time, in the admin's own time zone.
   await expect(item.locator("time")).toHaveText(
     /^[A-Z][a-z]{2} \d{1,2}, \d{4}, \d{1,2}:\d{2}\s(AM|PM)$/,

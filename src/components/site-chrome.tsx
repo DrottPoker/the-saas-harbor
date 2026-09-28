@@ -3,6 +3,7 @@ import { LayoutDashboard, Plus } from "lucide-react";
 import type { AccountMenuData } from "@/lib/account-menu";
 import { providerList } from "@/lib/revenue/catalog";
 import { AccountMenu } from "./account-menu";
+import { FeedbackLink } from "./feedback-button";
 import { Brand } from "./logo";
 import { MessagesLink } from "./messages/messages-link";
 import { Navigation } from "./navigation";
@@ -97,7 +98,7 @@ const footerGroups: {
   },
 ];
 
-export function SiteFooter() {
+export function SiteFooter({ signedIn }: { signedIn: boolean }) {
   return (
     <footer className="mt-24 border-t">
       <div className="mx-auto grid max-w-6xl gap-10 px-4 py-12 sm:px-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]">
@@ -114,7 +115,12 @@ export function SiteFooter() {
               <ul className="mt-3 grid gap-2">
                 {links.map(([href, label]) => (
                   <li key={href}>
-                    {href.endsWith(".txt") ? (
+                    {href === "/feedback" ? (
+                      // Opens the form with the page the user is on.
+                      <FeedbackLink signedIn={signedIn} className={quietLink}>
+                        {label}
+                      </FeedbackLink>
+                    ) : href.endsWith(".txt") ? (
                       <a className={quietLink} href={href}>
                         {label}
                       </a>

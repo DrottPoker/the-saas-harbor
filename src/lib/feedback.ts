@@ -17,6 +17,12 @@ export const feedbackHints: Record<FeedbackKind, string> = {
   other: "Anything else you want to tell us.",
 };
 
+/** The heading of the form, on the page and in the dialog. */
+export const feedbackHeading = {
+  title: "Send feedback",
+  description: "Report a bug or an error, suggest something, or tell us what you think.",
+};
+
 export const FEEDBACK_MIN_LENGTH = 10;
 export const FEEDBACK_MAX_LENGTH = 2000;
 
@@ -42,4 +48,26 @@ export function feedbackPage(value: string | null | undefined) {
 export function feedbackHref(from: string | null) {
   const page = feedbackPage(from);
   return page && page !== "/feedback" ? `/feedback?from=${encodeURIComponent(page)}` : "/feedback";
+}
+
+/** Where a Feedback link on `path` leads: the form, or for a visitor, sign-in that continues there. */
+export function feedbackLink(path: string, signedIn: boolean) {
+  const href = feedbackHref(path);
+  return signedIn ? href : `/auth?next=${encodeURIComponent(href)}`;
+}
+
+/**
+ * How the form opens on a link inside the site, from the Next-Url of the navigation: in a dialog
+ * over the page, as the full page after signing in on the full sign-in page, where a dialog would
+ * sit over sign-in, or not at all over the full feedback page, which already shows the form.
+ */
+export function feedbackOpening(nextUrl: string | null): "dialog" | "page" | "none" {
+  let pathname: string;
+  try {
+    pathname = new URL(nextUrl ?? "", "http://site.invalid").pathname;
+  } catch {
+    return "dialog";
+  }
+  if (pathname === "/feedback") return "none";
+  return pathname === "/auth" || pathname.startsWith("/auth/") ? "page" : "dialog";
 }

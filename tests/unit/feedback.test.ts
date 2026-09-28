@@ -1,6 +1,12 @@
 import { describe, expect, it } from "vitest";
 import { safeNext } from "../../src/lib/domain";
-import { feedbackHref, feedbackPage, feedbackSchema } from "../../src/lib/feedback";
+import {
+  feedbackHref,
+  feedbackLink,
+  feedbackOpening,
+  feedbackPage,
+  feedbackSchema,
+} from "../../src/lib/feedback";
 
 describe("feedback", () => {
   it("keeps only paths on this site as the page it came from", () => {
@@ -19,6 +25,23 @@ describe("feedback", () => {
     expect(feedbackHref("//evil.example")).toBe("/feedback");
     expect(safeNext("/feedback?from=https%3A%2F%2Fevil.example")).toBeNull();
     expect(safeNext("/feedback?from=%2F&next=x")).toBeNull();
+  });
+
+  it("sends visitors to sign-in first, which continues to the form with the page", () => {
+    expect(feedbackLink("/stats", true)).toBe("/feedback?from=%2Fstats");
+    const visitor = feedbackLink("/stats", false);
+    expect(visitor).toBe("/auth?next=%2Ffeedback%3Ffrom%3D%252Fstats");
+    expect(safeNext(new URLSearchParams(visitor.split("?")[1]).get("next"))).toBe(
+      "/feedback?from=%2Fstats",
+    );
+  });
+
+  it("opens in a dialog, except after the full sign-in page and over the form itself", () => {
+    for (const from of ["/stats", "/saas/metricfold?x=1", "/", "/authors", null])
+      expect(feedbackOpening(from)).toBe("dialog");
+    for (const from of ["/auth", "/auth?next=%2Ffeedback", "/auth/finish"])
+      expect(feedbackOpening(from)).toBe("page");
+    expect(feedbackOpening("/feedback?from=%2Fstats")).toBe("none");
   });
 
   it("needs a kind and some text", () => {

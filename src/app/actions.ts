@@ -147,7 +147,11 @@ export async function authenticate(
   // A sign-up without email confirmation has signed in too.
   if (mode === "login" || mode === "signup") await recordSignInCountry(client);
   revalidatePath("/", "layout");
-  redirect((mode === "login" && safeNext(value(form, "next"))) || "/dashboard");
+  // Replaces sign-in in history, so going back, or closing a dialog opened next, skips the form.
+  redirect(
+    (mode === "login" && safeNext(value(form, "next"))) || "/dashboard",
+    RedirectType.replace,
+  );
 }
 
 export async function saveEmailSettingsAction(

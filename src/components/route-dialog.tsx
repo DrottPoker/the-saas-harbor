@@ -4,20 +4,30 @@ import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Dialog } from "radix-ui";
 import { X } from "lucide-react";
-import { LogoMark } from "./logo";
+import { cn } from "@/lib/utils";
 import { Button } from "./ui/button";
 
+const widths = { narrow: "max-w-[26rem]", medium: "max-w-[34rem]" } as const;
+
 /**
- * The sign-in forms in a dialog over the page the visitor was on. It opens on a link to /auth
- * inside the site; closing it goes back in history, so the address and the back button agree.
+ * A page in a dialog over the page the user was on, such as sign-in or feedback. It opens on a link
+ * inside the site to a route that `src/app/@modal` intercepts; closing it goes back in history, so
+ * the address and the back button agree.
  */
-export function AuthDialog({
+export function RouteDialog({
   title,
   description,
+  icon,
+  width = "narrow",
+  titleRef,
   children,
 }: {
   title: string;
   description: string;
+  icon?: React.ReactNode;
+  width?: keyof typeof widths;
+  /** For moving focus to the title when the content changes, such as after sending a form. */
+  titleRef?: React.Ref<HTMLHeadingElement>;
   children: React.ReactNode;
 }) {
   const router = useRouter();
@@ -26,9 +36,23 @@ export function AuthDialog({
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 z-50 bg-overlay backdrop-blur-[2px] data-[state=open]:animate-fade-in-fast" />
         {/* Anchored at the top rather than centered, so it keeps its place when a step is taller. */}
-        <Dialog.Content className="fixed top-[max(1rem,8vh)] left-1/2 z-50 max-h-[calc(100dvh-2rem)] w-[calc(100%-2rem)] max-w-[26rem] -translate-x-1/2 overflow-y-auto rounded-2xl border bg-surface p-6 text-foreground shadow-float focus:outline-none data-[state=open]:animate-dialog-in sm:p-8">
-          <LogoMark className="size-10" />
-          <Dialog.Title className="mt-5 text-xl font-semibold tracking-tight">{title}</Dialog.Title>
+        <Dialog.Content
+          className={cn(
+            "fixed top-[max(1rem,8vh)] left-1/2 z-50 max-h-[calc(100dvh-2rem)] w-[calc(100%-2rem)] -translate-x-1/2 overflow-y-auto rounded-2xl border bg-surface p-6 text-foreground shadow-float focus:outline-none data-[state=open]:animate-dialog-in sm:p-8",
+            widths[width],
+          )}
+        >
+          {icon}
+          <Dialog.Title
+            ref={titleRef}
+            tabIndex={-1}
+            className={cn(
+              "pr-8 text-xl font-semibold tracking-tight focus:outline-none",
+              icon ? "mt-5" : undefined,
+            )}
+          >
+            {title}
+          </Dialog.Title>
           <Dialog.Description className="mt-1 text-muted-foreground">
             {description}
           </Dialog.Description>
@@ -49,7 +73,7 @@ export function AuthDialog({
   );
 }
 
-/** Loads the full /auth page instead of the dialog, for a page that needs sign-in first. */
+/** Loads the full page instead of the dialog, where a dialog over the current page does not fit. */
 export function FullPageLoad({ href }: { href: string }) {
   useEffect(() => window.location.replace(href), [href]);
   return null;

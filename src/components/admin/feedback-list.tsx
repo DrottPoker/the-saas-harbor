@@ -64,7 +64,8 @@ export function FeedbackList({
                       </Link>
                     </>
                   ) : (
-                    "Sent from the feedback page"
+                    // Earlier feedback from the footer link, or a direct visit to the form.
+                    "Page not recorded"
                   )}
                 </p>
                 <form action={setFeedbackHandledAction}>

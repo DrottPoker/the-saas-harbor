@@ -1,6 +1,7 @@
 import { headers } from "next/headers";
-import { AuthDialog, FullPageLoad } from "@/components/auth-dialog";
 import { authHeadings, authMode, AuthPanel } from "@/components/auth-panel";
+import { LogoMark } from "@/components/logo";
+import { FullPageLoad, RouteDialog } from "@/components/route-dialog";
 import { authNeedsFullPage } from "@/lib/auth";
 import { firstValues, type SearchParams } from "@/lib/params";
 import { requireUser } from "@/lib/supabase/server";
@@ -19,8 +20,8 @@ export default async function AuthModal({ searchParams }: { searchParams: Promis
   if (mode === "update") await requireUser();
   const { title, description } = authHeadings[mode];
   return (
-    <AuthDialog title={title} description={description}>
+    <RouteDialog title={title} description={description} icon={<LogoMark className="size-10" />}>
       <AuthPanel searchParams={params} />
-    </AuthDialog>
+    </RouteDialog>
   );
 }
