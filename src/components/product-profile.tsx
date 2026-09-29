@@ -4,7 +4,7 @@ import { parseHistory } from "@/lib/charts";
 import type { Listing, PageViewCounts } from "@/lib/data";
 import { categorySlug, formatDate, formatUsd } from "@/lib/domain";
 import { REVENUE_WINDOWS, sharesRevenue } from "@/lib/revenue-figures";
-import { providerName } from "@/lib/revenue/catalog";
+import { providerAccess, providerName } from "@/lib/revenue/catalog";
 import { websiteRel } from "@/lib/seo";
 import { PersonAvatar, ProductLogo } from "./avatars";
 import { Badge } from "./badge";
@@ -222,8 +222,8 @@ export function ProductProfile({
           ) : (
             <>
               <BadgeCheck aria-hidden="true" className="size-4 shrink-0 text-brand" />
-              Verified with {providerName(item.provider)} through a read-only key. Last verified{" "}
-              {formatDate(item.verified_at)}.{!item.livemode && " Test mode data."}
+              Verified with {providerName(item.provider)} through {providerAccess(item.provider)}.
+              Last verified {formatDate(item.verified_at)}.{!item.livemode && " Test mode data."}
             </>
           )}
         </p>

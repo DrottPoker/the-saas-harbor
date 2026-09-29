@@ -3300,7 +3300,7 @@ test("founders connect Gumroad by approving read access to their sales", async (
     page.locator("dt", { hasText: label }).locator("xpath=following-sibling::dd[1]");
   await expect(figure("Monthly recurring revenue")).toHaveText("$50");
   await expect(figure("Revenue, all time")).toHaveText("$592");
-  await expect(page.getByText(/Verified with Gumroad/)).toBeVisible();
+  await expect(page.getByText(/Verified with Gumroad through read-only access\./)).toBeVisible();
 
   // The outcome shows only on the way back from Gumroad.
   await page.goto(`/dashboard/saas/${id}`);

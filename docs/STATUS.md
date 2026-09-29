@@ -14,6 +14,8 @@ At the owner's request, a new product shares its verified MRR, revenue, paying c
 
 `npm run check` (449 unit tests) and `npm run test:e2e` (19 tests) pass.
 
+A Gumroad product's page said it was verified through a read-only key; it now says read-only access, since Gumroad connects through OAuth (`providerAccess` in `src/lib/revenue/catalog.ts`). `npm run check` (450 unit tests) and the revenue and Gumroad browser tests pass.
+
 ## Every product's revenue in the admin panel 2026-09-28
 
 At the owner's request, admins see the latest verified MRR and revenue of every product, including figures the founder keeps private and those of hidden products. The product list and an account's products show MRR and revenue over the last 30 days beside each product, Not connected where no payment provider is, and a Figures out of date badge once the latest verification is more than seven days old, when the site no longer shows them. A product's page has a Revenue panel with the provider, whether its latest check failed, when it was verified, MRR and revenue over 30 days, 12 months and all time, each marked Shared or Private. It replaces the Revenue line under Details, which only said whether MRR was shared. The figures come from `admin_revenue()` (migration `20260928130000_admin_revenue.sql`), which checks admin rights and returns these figures only, never a key, its hint or an error text. The privacy policy now says that admins see them. The founder's own wording, that figures are private unless shared, still means that they are not public.

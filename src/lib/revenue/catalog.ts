@@ -95,6 +95,11 @@ export function connectsWithOAuth(id: ProviderId) {
   return "oauth" in PROVIDERS[id];
 }
 
+/** How the figures are read, for "Verified with Gumroad through read-only access". */
+export function providerAccess(id: string | null | undefined) {
+  return isProviderId(id) && connectsWithOAuth(id) ? "read-only access" : "a read-only key";
+}
+
 /** Every provider's name in a sentence, such as "Stripe, Paddle or Polar". */
 export function providerList(conjunction: "and" | "or") {
   const names = PROVIDER_IDS.map((id) => PROVIDERS[id].name);

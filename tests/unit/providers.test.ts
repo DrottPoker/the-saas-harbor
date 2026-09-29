@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   isProviderId,
+  providerAccess,
   providerAccount,
   providerList,
   providerName,
@@ -58,6 +59,12 @@ describe("provider catalog", () => {
     expect(providerAccount("chargebee")?.label).toBe("Site");
     expect(providerAccount("revenuecat")?.label).toBe("Project ID");
     expect(providerAccount("stripe")).toBeNull();
+  });
+
+  it("says a key for pasted keys and access for OAuth", () => {
+    expect(providerAccess("stripe")).toBe("a read-only key");
+    expect(providerAccess("gumroad")).toBe("read-only access");
+    expect(providerAccess(null)).toBe("a read-only key");
   });
 });
 
