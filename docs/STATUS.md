@@ -8,6 +8,12 @@ The first release includes accounts, email confirmation and recovery, public mak
 
 Makers can message each other privately (see Messages below), and report products, profiles and messages to the admins, who decide in an admin panel (see Reports and moderation below). They get emails about unread messages and about decisions (see Email notifications below). Other forms of connection, such as following or contact lists, are not implemented.
 
+## Figures public by default 2026-09-29
+
+At the owner's request, a new product shares its verified MRR, revenue, paying customers and launch date unless the founder hides them. The Visibility section of the product form now has a Hide box for each figure instead of a Show box, all clear on a new product; existing products keep their choices and show them as ticked Hide boxes. The dashboard, the product editor, the page for founders, the about page and the privacy policy (updated 2026-09-29) say that figures are public unless hidden. The database columns still default to private, for rows written without a choice. The browser tests check that a new product's boxes are clear and a failed save keeps ticked ones, hide the figures where they test private revenue, and show a Gumroad product's figures to visitors without any change.
+
+`npm run check` (449 unit tests) and `npm run test:e2e` (19 tests) pass.
+
 ## Every product's revenue in the admin panel 2026-09-28
 
 At the owner's request, admins see the latest verified MRR and revenue of every product, including figures the founder keeps private and those of hidden products. The product list and an account's products show MRR and revenue over the last 30 days beside each product, Not connected where no payment provider is, and a Figures out of date badge once the latest verification is more than seven days old, when the site no longer shows them. A product's page has a Revenue panel with the provider, whether its latest check failed, when it was verified, MRR and revenue over 30 days, 12 months and all time, each marked Shared or Private. It replaces the Revenue line under Details, which only said whether MRR was shared. The figures come from `admin_revenue()` (migration `20260928130000_admin_revenue.sql`), which checks admin rights and returns these figures only, never a key, its hint or an error text. The privacy policy now says that admins see them. The founder's own wording, that figures are private unless shared, still means that they are not public.

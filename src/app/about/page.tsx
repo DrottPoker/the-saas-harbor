@@ -25,7 +25,7 @@ const sections = [
   {
     title: "The leaderboard",
     body: [
-      "Products are ranked by verified MRR that their founders choose to share. Equal amounts are ordered by the date the product was listed. Category filters keep the overall rank, and a verified MRR of $0 is ranked too.",
+      "Products are ranked by verified MRR that their founders share. Equal amounts are ordered by the date the product was listed. Category filters keep the overall rank, and a verified MRR of $0 is ranked too.",
       "The leaderboard can also rank products by revenue over the last 30 days, the last 12 months or all time, which counts one-time purchases too. A product takes part in each ranking whose figure its founder shares, whether or not it shares MRR.",
       "Products without a connected payment provider, or that keep their revenue private, are still listed in Browse and New arrivals.",
       "The statistics page adds up the same figures: combined and median MRR, how MRR is spread, the change over 30 days, and the figures by category and by time since launch. It shows them once five products share verified MRR.",
@@ -60,7 +60,7 @@ const sections = [
   {
     title: "What is public",
     body: [
-      "Product details, user profiles, logos and photos are public. Verified MRR, revenue, paying customers and launch date are private by default, each with its own sharing setting. Sharing MRR also shows its month-end history and 30-day growth; the full verification history is visible only to the founder. Information that was public before may already have been copied by others.",
+      "Product details, user profiles, logos and photos are public. Verified MRR, revenue, paying customers and launch date are public by default, and founders can hide each of them. Sharing MRR also shows its month-end history and 30-day growth; the full verification history is visible only to the founder. Information that was public before may already have been copied by others.",
       <>
         Users can delete their products, or their whole account with everything in it, at any time.
         The{" "}

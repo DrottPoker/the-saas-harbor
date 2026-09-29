@@ -62,7 +62,7 @@ const questions: FaqItem[] = [
   {
     question: "Do I have to share my revenue?",
     answer:
-      "No. Verified MRR, paying customers and the launch date stay private until you choose to share each of them.",
+      "No. Verified MRR, revenue, paying customers and the launch date are public by default, and you can hide each of them when you add the product or later.",
   },
   {
     question: "Which payment providers can verify revenue?",
@@ -150,7 +150,7 @@ export default async function ListYourSaas() {
         <p className="mt-1 text-foreground/85">
           Many directories charge for a followed link to your site. Here it is free: connect your
           payment provider with a read-only key, and the link from your product page is followed by
-          search engines while your revenue stays verified. Your figures can stay private.
+          search engines while your revenue stays verified, even if you hide the figures.
         </p>
       </section>
       <div className="mt-10 grid gap-10 border-t pt-10">

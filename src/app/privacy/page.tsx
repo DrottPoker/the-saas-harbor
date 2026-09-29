@@ -191,8 +191,8 @@ export default function Privacy() {
           <List>
             <li>
               <strong className="font-medium text-foreground">Everyone:</strong> your profile, your
-              products, and the figures you choose to share, such as verified MRR and its history,
-              with the payment provider that verified them and the milestones reached. Whether a
+              products, and the figures you do not hide, such as verified MRR and its history, with
+              the payment provider that verified them and the milestones reached. Whether a
               product&apos;s domain is verified is public too. A badge you embed on your own site
               shows the shared figures there.
             </li>

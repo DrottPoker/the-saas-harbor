@@ -435,10 +435,11 @@ export async function saveSaas(_state: ActionState, form: FormData): Promise<Act
           (key) => [key, value(form, key)],
         ),
       ),
-      share_mrr: form.has("share_mrr"),
-      share_customers: form.has("share_customers"),
-      share_launch: form.has("share_launch"),
-      share_revenue: form.has("share_revenue"),
+      // Figures are shared unless their box asks to hide them.
+      share_mrr: !form.has("hide_mrr"),
+      share_customers: !form.has("hide_customers"),
+      share_launch: !form.has("hide_launch"),
+      share_revenue: !form.has("hide_revenue"),
       // One entry per ticked technology.
       tech_stack: form.getAll("tech").map(String),
     });

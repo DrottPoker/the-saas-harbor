@@ -56,6 +56,16 @@ async function fillProduct(page: Page, name: string) {
     .fill("This is an isolated local integration fixture and is removed after verification.");
   await page.getByLabel("Website", { exact: true }).fill("https://example.com");
 }
+const HIDE_FIGURES = [
+  "Hide verified MRR",
+  "Hide verified revenue for the last 30 days, 12 months and all time",
+  "Hide paying customer count",
+  "Hide launch date",
+];
+// Verified figures are public by default; tests that need them private tick every box.
+async function hideFigures(page: Page) {
+  for (const label of HIDE_FIGURES) await page.getByLabel(label, { exact: true }).check();
+}
 async function expectNoHorizontalScroll(page: Page) {
   expect(
     await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth),
@@ -714,6 +724,10 @@ test("registration, email confirmation, profile and SaaS editing, storage, priva
   await expect(page).toHaveURL(current);
   await page.goto("/dashboard/saas/new");
   await fillProduct(page, productName);
+  // A new product shares every figure unless the founder hides it.
+  for (const label of HIDE_FIGURES)
+    await expect(page.getByLabel(label, { exact: true })).not.toBeChecked();
+  await hideFigures(page);
   await page.getByLabel("Category").selectOption("Design");
   // The tech stack is ticked in groups that open on demand.
   await page
@@ -739,6 +753,9 @@ test("registration, email confirmation, profile and SaaS editing, storage, priva
   await expect(page.getByLabel("Next.js", { exact: true })).toBeChecked();
   await expect(page.getByLabel("PostgreSQL", { exact: true })).toBeChecked();
   await expect(page.getByLabel("React", { exact: true })).not.toBeChecked();
+  // And every figure the founder chose to hide.
+  for (const label of HIDE_FIGURES)
+    await expect(page.getByLabel(label, { exact: true })).toBeChecked();
   await page
     .getByLabel("Upload logo")
     .setInputFiles({ name: "logo.png", mimeType: "image/png", buffer: png });
@@ -901,7 +918,7 @@ test("registration, email confirmation, profile and SaaS editing, storage, priva
     expect(denied?.code, table).toBe("42501");
   }
   await page.goto(`/dashboard/saas/${productId}`);
-  await page.getByLabel("Show verified MRR publicly", { exact: true }).check();
+  await page.getByLabel("Hide verified MRR", { exact: true }).uncheck();
   await page.getByRole("button", { name: "Save changes" }).click();
   await expect(page).toHaveURL(/saved=/);
   // Shared MRR reaches the badge, and the editor gives the code to embed it in either theme.
@@ -1081,7 +1098,7 @@ test("registration, email confirmation, profile and SaaS editing, storage, priva
     ),
   ).toBeVisible();
 
-  await page.getByLabel("Show verified MRR publicly", { exact: true }).uncheck();
+  await page.getByLabel("Hide verified MRR", { exact: true }).check();
   await page.getByRole("button", { name: "Save changes" }).click();
   await expect(page).toHaveURL(/saved=/);
   await page.goto(`/?q=${encodeURIComponent(productName)}`);
@@ -2740,6 +2757,7 @@ test("founders verify revenue through Paddle, Polar and Dodo Payments", async ({
   await login(page, address, secret);
   await page.goto("/dashboard/saas/new");
   await fillProduct(page, `Providers ${run}`);
+  await hideFigures(page);
   await page.getByRole("button", { name: "Add SaaS", exact: true }).click();
   await expect(page).toHaveURL(/created=1/);
   const id = new URL(page.url()).pathname.split("/").at(-1)!;
@@ -2824,6 +2842,7 @@ test("founders verify revenue through Creem, Chargebee, Whop and RevenueCat", as
   await login(page, address, secret);
   await page.goto("/dashboard/saas/new");
   await fillProduct(page, `More providers ${run}`);
+  await hideFigures(page);
   await page.getByRole("button", { name: "Add SaaS", exact: true }).click();
   await expect(page).toHaveURL(/created=1/);
   const id = new URL(page.url()).pathname.split("/").at(-1)!;
@@ -3053,6 +3072,7 @@ test("founders share revenue from all payments, and visitors rank products by it
   await page.goto("/dashboard/saas/new");
   const name = `Revenue ${run}`;
   await fillProduct(page, name);
+  await hideFigures(page);
   await page.getByRole("button", { name: "Add SaaS", exact: true }).click();
   await expect(page).toHaveURL(/created=1/);
   const id = new URL(page.url()).pathname.split("/").at(-1)!;
@@ -3098,7 +3118,7 @@ test("founders share revenue from all payments, and visitors rank products by it
     .single();
   expect(connection).toEqual({ revenue_origin: true, revenue_note: null });
 
-  // Revenue stays private until the founder shares it.
+  // Hidden revenue stays private until the founder shares it.
   const productPath = `/saas/revenue-${run}`;
   await page.goto(productPath);
   await expect(page.getByText("Revenue, last 30 days")).toHaveCount(0);
@@ -3106,9 +3126,9 @@ test("founders share revenue from all payments, and visitors rank products by it
   await page.goto(`/?by=all&q=${encodeURIComponent(name)}`);
   await expect(page.getByRole("heading", { name: "No matching products" })).toBeVisible();
 
-  const share = "Show verified revenue for the last 30 days, 12 months and all time publicly";
+  const hide = "Hide verified revenue for the last 30 days, 12 months and all time";
   await page.goto(`/dashboard/saas/${id}`);
-  await page.getByLabel(share).check();
+  await page.getByLabel(hide).uncheck();
   await page.getByRole("button", { name: "Save changes" }).click();
   await expect(page).toHaveURL(/saved=/);
 
@@ -3167,7 +3187,7 @@ test("founders share revenue from all payments, and visitors rank products by it
 
   // Unsharing takes the figures off the page and out of the rankings.
   await page.goto(`/dashboard/saas/${id}`);
-  await page.getByLabel(share).uncheck();
+  await page.getByLabel(hide).check();
   await page.getByRole("button", { name: "Save changes" }).click();
   await expect(page).toHaveURL(/saved=/);
   await page.goto(productPath);
@@ -3273,6 +3293,14 @@ test("founders connect Gumroad by approving read access to their sales", async (
     await page.reload();
     await expect(revenue.getByText("$592", { exact: true })).toBeVisible({ timeout: 1000 });
   }).toPass({ timeout: 30_000 });
+
+  // Nothing was hidden when the product was added, so visitors see the verified figures.
+  await page.goto(`/saas/gumroad-${run}`);
+  const figure = (label: string) =>
+    page.locator("dt", { hasText: label }).locator("xpath=following-sibling::dd[1]");
+  await expect(figure("Monthly recurring revenue")).toHaveText("$50");
+  await expect(figure("Revenue, all time")).toHaveText("$592");
+  await expect(page.getByText(/Verified with Gumroad/)).toBeVisible();
 
   // The outcome shows only on the way back from Gumroad.
   await page.goto(`/dashboard/saas/${id}`);

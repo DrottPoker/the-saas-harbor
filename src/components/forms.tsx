@@ -629,8 +629,9 @@ export function SaasForm({
   settings?: SaasSettings | null;
 }) {
   const [state, action] = useEditorAction(saveSaas);
-  const shared = (key: "share_mrr" | "share_revenue" | "share_customers" | "share_launch") =>
-    state.values ? !!state.values[key] : settings?.[key];
+  // Figures are public unless hidden, so a new product starts with every box clear.
+  const hidden = (key: "mrr" | "revenue" | "customers" | "launch") =>
+    state.values ? !!state.values[`hide_${key}`] : settings ? !settings[`share_${key}`] : false;
   const stack = state.values ? (state.values.tech?.split("\n") ?? []) : (saas?.tech_stack ?? []);
   return (
     <form action={action}>
@@ -712,23 +713,19 @@ export function SaasForm({
       </Section>
       <Section
         title="Visibility"
-        description="Revenue and customers come from your payment provider and are private unless you share them. Shared MRR is ranked on the leaderboard, and shared revenue in the revenue rankings."
+        description="Revenue and customers come from your payment provider and are public once verified, unless you hide them. Public MRR is ranked on the leaderboard, and public revenue in the revenue rankings."
       >
         <div className="grid gap-2.5">
+          <Share name="hide_mrr" label="Hide verified MRR" checked={hidden("mrr")} />
           <Share
-            name="share_mrr"
-            label="Show verified MRR publicly"
-            checked={shared("share_mrr")}
+            name="hide_revenue"
+            label="Hide verified revenue for the last 30 days, 12 months and all time"
+            checked={hidden("revenue")}
           />
           <Share
-            name="share_revenue"
-            label="Show verified revenue for the last 30 days, 12 months and all time publicly"
-            checked={shared("share_revenue")}
-          />
-          <Share
-            name="share_customers"
-            label="Show paying customer count publicly"
-            checked={shared("share_customers")}
+            name="hide_customers"
+            label="Hide paying customer count"
+            checked={hidden("customers")}
           />
         </div>
         <div className="grid gap-2.5 sm:max-w-xs">
@@ -740,11 +737,7 @@ export function SaasForm({
               defaultValue={state.values?.launched_on ?? settings?.launched_on ?? ""}
             />
           </Field>
-          <Share
-            name="share_launch"
-            label="Share launch date publicly"
-            checked={shared("share_launch")}
-          />
+          <Share name="hide_launch" label="Hide launch date" checked={hidden("launch")} />
         </div>
       </Section>
       <div className="grid gap-4">

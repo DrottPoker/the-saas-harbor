@@ -96,7 +96,7 @@ export default async function EditSaas({ params, searchParams }: Props) {
       <PageHeader
         className="mt-4 border-b"
         title={`Edit ${saas.data.name}`}
-        description="Product details are public. Verified figures stay private unless you share them."
+        description="Product details and verified figures are public. You can hide the figures."
       />
       {saas.data.hidden_at && (
         <ModerationNotice

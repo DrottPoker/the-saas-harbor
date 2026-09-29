@@ -88,7 +88,8 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
         </div>
         {!products?.length ? (
           <EmptyState title="No products yet" action={addButton}>
-            Add a product to list it in the directory. Revenue stays private unless you share it.
+            Add a product to list it in the directory. Verified revenue is public unless you hide
+            it.
           </EmptyState>
         ) : (
           <ul
