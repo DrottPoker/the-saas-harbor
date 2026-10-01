@@ -2,7 +2,7 @@
 -- in a rolled-back transaction.
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(15);
+select plan(17);
 
 insert into auth.users(id, email) values
   ('e4000000-0000-4000-8000-000000000001', 'user@feedback.test'),
@@ -38,8 +38,8 @@ select is_empty($$ select 1 from public.feedback $$, 'users do not read feedback
 select throws_ok(
   $$ select public.admin_set_feedback_handled(gen_random_uuid(), true) $$,
   '42501', 'Only admins can do this', 'users cannot handle feedback');
-select lives_ok($$ select public.submit_feedback('other', 'Third message this hour.', null) $$,
-  'a third message is fine');
+select lives_ok($$ select public.submit_feedback('other', 'Third message this hour.',
+  '/' || chr(9) || '/evil.example') $$, 'a third message is fine');
 select public.submit_feedback('other', 'Fourth message this hour.', null);
 select public.submit_feedback('other', 'Fifth message this hour.', null);
 select throws_ok($$ select public.submit_feedback('other', 'Sixth message this hour.', null) $$,
@@ -57,6 +57,9 @@ select results_eq(
   $$ values ('bug'::text, 'The chart on my product page is empty.'::text, '/dashboard'::text),
     ('suggestion', 'A dark mode for the badge would be nice.', null) $$,
   'admins read the feedback, trimmed and with only site paths');
+-- Browsers drop tabs and line breaks from an address, so /<tab>/evil.example would lead there.
+select is((select page from public.feedback where message = 'Third message this hour.'),
+  null::text, 'a page with a tab or line break is left out');
 select lives_ok(
   $$ select public.admin_set_feedback_handled(
        (select id from public.feedback where kind = 'bug'), true) $$,
@@ -70,6 +73,11 @@ select lives_ok(
        (select id from public.feedback where kind = 'bug'), false) $$,
   'admins can mark it new again');
 reset role;
+
+select throws_ok($$ insert into public.feedback(user_id, kind, message, page)
+  values ('e4000000-0000-4000-8000-000000000001', 'other', 'Written straight to the table.',
+    '/' || chr(10) || '/evil.example') $$, '23514', null,
+  'the table refuses such a page however it is written');
 
 delete from auth.users where id = 'e4000000-0000-4000-8000-000000000001';
 select is_empty($$ select 1 from public.feedback

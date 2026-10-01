@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { setFeedbackHandledAction } from "@/app/feedback-actions";
-import { FEEDBACK_KINDS, feedbackLabels, type FeedbackKind } from "@/lib/feedback";
+import { FEEDBACK_KINDS, feedbackLabels, feedbackPage, type FeedbackKind } from "@/lib/feedback";
 import type { Database } from "@/lib/supabase/database.types";
 import { Badge } from "../badge";
 import { LocalTime } from "../local-time";
@@ -59,9 +59,14 @@ export function FeedbackList({
                   {item.page ? (
                     <>
                       Sent from{" "}
-                      <Link href={item.page} className="font-medium text-foreground underline">
-                        {item.page}
-                      </Link>
+                      {/* Linked only while it is a plain path on this site, whatever is stored. */}
+                      {feedbackPage(item.page) ? (
+                        <Link href={item.page} className="font-medium text-foreground underline">
+                          {item.page}
+                        </Link>
+                      ) : (
+                        item.page
+                      )}
                     </>
                   ) : (
                     // Earlier feedback from the footer link, or a direct visit to the form.

@@ -17,6 +17,15 @@ describe("feedback", () => {
     expect(feedbackPage(`/${"a".repeat(300)}`)).toBeNull();
   });
 
+  it("refuses tabs, line breaks, spaces and backslashes, which browsers read their own way", () => {
+    // A browser drops the tab, so /<tab>/evil.example would be a link to evil.example.
+    for (const other of ["/\t/evil.example", "/\n/evil.example", "/\r/evil.example"])
+      expect(feedbackPage(other)).toBeNull();
+    expect(feedbackPage("/saas/a b")).toBeNull();
+    expect(feedbackPage("/saas/a\\b")).toBeNull();
+    expect(feedbackPage("/saas/a%20b")).toBe("/saas/a%20b");
+  });
+
   it("links to the form with the page, which sign-in may continue to", () => {
     const href = feedbackHref("/users/jane-doe");
     expect(href).toBe("/feedback?from=%2Fusers%2Fjane-doe");

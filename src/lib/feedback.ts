@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { hasUnsafeUrlCharacters } from "./domain";
 
 // Feedback from users to the admins. The database has the same kinds and limits
 // (public.submit_feedback).
@@ -37,11 +38,15 @@ export const feedbackSchema = z.object({
 
 /**
  * A path on this site that feedback was sent from, such as /dashboard, or null for anything else,
- * so the admin panel never links to another site.
+ * so the admin panel never links to another site. Browsers drop tabs and line breaks from an
+ * address, so a path holding them, spaces or backslashes is refused too: /<tab>/x.example would
+ * lead to x.example.
  */
 export function feedbackPage(value: string | null | undefined) {
   const page = (value ?? "").trim();
-  return page.length <= 300 && /^\/([^/\\].*)?$/.test(page) ? page : null;
+  return page.length <= 300 && /^\/([^/\\].*)?$/.test(page) && !hasUnsafeUrlCharacters(page)
+    ? page
+    : null;
 }
 
 /** The feedback page, remembering the page it was opened from. */
