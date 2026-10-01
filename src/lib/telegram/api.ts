@@ -1,4 +1,5 @@
 import "server-only";
+import { isSecureOrLocalUrl } from "../loopback";
 
 // The Telegram Bot API, for alerts to the owner's chat. TELEGRAM_API_BASE points the tests at a
 // fake server.
@@ -12,6 +13,9 @@ export function telegramConfig(): TelegramConfig | null {
   const chatId = process.env.TELEGRAM_CHAT_ID?.trim();
   if (!token || !chatId) return null;
   const base = (process.env.TELEGRAM_API_BASE || "https://api.telegram.org").replace(/\/$/, "");
+  // The token travels in the address, so an override must use https, or plain http to this
+  // machine, as the browser tests' fake server does.
+  if (!isSecureOrLocalUrl(base)) throw new Error("TELEGRAM_API_BASE must use https.");
   return { token, chatId, base };
 }
 

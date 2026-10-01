@@ -2,6 +2,7 @@ import "server-only";
 import { after } from "next/server";
 import nodemailer from "nodemailer";
 import { operator } from "../legal";
+import { isLoopbackHost } from "../loopback";
 import { siteUrl } from "../seo";
 import { adminClient } from "../supabase/admin";
 import { failureCode, serviceFailure } from "./failures";
@@ -27,7 +28,7 @@ function smtp() {
       port,
       secure: port === 465,
       // A remote server must switch to TLS before the password is sent. Local Mailpit has no TLS.
-      requireTLS: !["127.0.0.1", "localhost", "::1"].includes(host),
+      requireTLS: !isLoopbackHost(host),
       // One connection for the whole run.
       pool: true,
       maxConnections: 1,

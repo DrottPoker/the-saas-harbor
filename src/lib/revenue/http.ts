@@ -1,4 +1,5 @@
 import "server-only";
+import { isSecureOrLocalUrl } from "../loopback";
 import type { ProviderId } from "./catalog";
 import { VerificationError } from "./errors";
 
@@ -17,12 +18,12 @@ export class ProviderRequestError extends VerificationError {
 }
 
 /**
- * A provider's API origin, or the browser tests' fake server. An override must use https in
- * production, so a wrong setting cannot send keys in the clear.
+ * A provider's API origin, or the browser tests' fake server. An override must use https, or plain
+ * http to this machine, so a wrong setting cannot send keys in the clear.
  */
 export function apiBase(override: string | undefined, origin: string, name: string) {
   if (!override) return origin;
-  if (process.env.NODE_ENV === "production" && !override.startsWith("https://"))
+  if (!isSecureOrLocalUrl(override))
     throw new VerificationError(`${name} verification is not configured correctly on this server.`);
   return override.replace(/\/$/, "");
 }

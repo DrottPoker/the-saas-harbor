@@ -24,11 +24,15 @@ export function recordValue(token: string) {
 export type LookupResult = "found" | "missing" | "error";
 type TxtResolver = Pick<Resolver, "resolveTxt">;
 
-// The browser tests answer DNS from a local server; production always uses the system's resolver.
+// The browser tests answer DNS from a server on this machine. No other server replaces the
+// system's resolver, so a wrong setting cannot make a record appear.
+const LOCAL_DNS_SERVER = /^(127\.0\.0\.1|\[::1\])(:\d{1,5})?$/;
+
 function defaultResolver(): TxtResolver {
   const resolver = new Resolver({ timeout: 3000, tries: 2 });
-  const servers = process.env.DOMAIN_DNS_SERVERS;
-  if (servers && process.env.NODE_ENV !== "production") resolver.setServers(servers.split(","));
+  const servers = (process.env.DOMAIN_DNS_SERVERS ?? "").split(",").filter(Boolean);
+  if (servers.length && servers.every((server) => LOCAL_DNS_SERVER.test(server)))
+    resolver.setServers(servers);
   return resolver;
 }
 

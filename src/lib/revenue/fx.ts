@@ -1,4 +1,5 @@
 import "server-only";
+import { isSecureOrLocalUrl } from "../loopback";
 import { VerificationError } from "./errors";
 
 // Daily reference rates (Frankfurter, central-bank data, no API key). Returns units of each
@@ -6,9 +7,9 @@ import { VerificationError } from "./errors";
 export async function usdRates(currencies: string[]) {
   const quotes = [...new Set(currencies.map((c) => c.toLowerCase()))].filter((c) => c !== "usd");
   if (!quotes.length) return { rates: new Map<string, number>(), date: null };
-  // An override points at the browser tests' fake server; production uses https only.
+  // An override points at the browser tests' fake server: https, or plain http to this machine.
   const base = process.env.FX_API_BASE || "https://api.frankfurter.dev";
-  if (process.env.NODE_ENV === "production" && !base.startsWith("https://"))
+  if (!isSecureOrLocalUrl(base))
     throw new VerificationError("Exchange rates are not configured correctly on this server.");
   const url = new URL("/v2/rates", base);
   url.searchParams.set("base", "usd");
