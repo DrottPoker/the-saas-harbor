@@ -18,6 +18,8 @@ At the owner's request, adding and editing a product is one form: connecting the
 
 Later the same day, at the owner's request, the providers are a dropdown with their logos instead of chips: a Radix select (`ProviderChoice` in `revenue-connection.tsx`) whose closed field shows the chosen logo and name, with a hidden field carrying the choice and Connect later beside the label. The logos are small app-icon tiles in brand colors (`src/components/provider-logo.tsx`): Stripe, Paddle, Dodo Payments, RevenueCat and Gumroad from Simple Icons (CC0), Polar's mark from its brand kit (polar.sh/assets/brand), which follows the theme, and the app icons of Creem, Chargebee and Whop from their own sites, at 64 px and inline as data URIs (`provider-icons.ts`), since the site serves no static files besides its icons. The browser tests choose providers from the list, once by keyboard, and scan the form with a provider chosen in both themes. Axe is not run with the list open: Radix then hides the page beneath from screen readers while focus stays in the list, which Axe reports as focusable content inside aria-hidden.
 
+The keyboard test of the provider list failed in CI on 2026-10-01 (it passed locally and in the run before): the open list moves focus to its first option a moment after opening, and the arrow key was pressed before that. The test now waits for each option to have focus before the next key.
+
 The domain section's Name field now holds only `_thesaasharbor`, which its copy button copies, with the domain beside it as a suffix that is not copied: most DNS providers ask for the name without the domain. The hint gives the full name for providers that ask for it.
 
 ## The rest of the project review 2026-10-01

@@ -2879,7 +2879,11 @@ test("founders verify revenue through Paddle, Polar and Dodo Payments", async ({
     await providerList.focus();
     await page.keyboard.press("Enter");
     await expect(page.getByRole("option")).toHaveCount(9);
+    // The open list moves focus to its first option a moment later; keys pressed before then
+    // are lost.
+    await expect(page.getByRole("option", { name: "Stripe", exact: true })).toBeFocused();
     await page.keyboard.press("ArrowDown");
+    await expect(page.getByRole("option", { name: "Paddle", exact: true })).toBeFocused();
     await page.keyboard.press("Enter");
     await expect(providerList).toHaveText("Paddle");
     await expect(providerList).toBeFocused();
