@@ -25,52 +25,55 @@ const cronSecret = randomBytes(32).toString("base64");
 const extra = process.argv
   .slice(2)
   .map((arg) => (shell && /[\s"]/.test(arg) ? `"${arg.replaceAll('"', '\\"')}"` : arg));
-const result = spawnSync(npx, ["playwright", "test", ...extra], {
-  shell,
-  stdio: "inherit",
-  env: {
-    ...testEnv,
-    TEST_SUPABASE_URL: local.url,
-    TEST_SUPABASE_SECRET_KEY: local.secretKey,
-    TEST_MAILPIT_URL: local.mailpit,
-    TEST_CRON_SECRET: cronSecret,
-    NEXT_PUBLIC_SUPABASE_URL: local.url,
-    NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: local.publishableKey,
-    NEXT_PUBLIC_SITE_URL: "http://127.0.0.1:3002",
-    NEXT_DIST_DIR: ".next-e2e",
-    LOCAL_MAILPIT_URL: local.mailpit,
-    // Revenue verification against the fake provider APIs, with test-only secrets.
-    SUPABASE_SECRET_KEY: local.secretKey,
-    STRIPE_KEY_ENCRYPTION_KEY: randomBytes(32).toString("base64"),
-    CRON_SECRET: cronSecret,
-    REVENUE_ALLOW_TEST_KEYS: "true",
-    STRIPE_API_BASE: fakeProviders,
-    PADDLE_API_BASE: `${fakeProviders}/paddle`,
-    POLAR_API_BASE: `${fakeProviders}/polar`,
-    DODO_API_BASE: `${fakeProviders}/dodo`,
-    CREEM_API_BASE: `${fakeProviders}/creem`,
-    CHARGEBEE_API_BASE: `${fakeProviders}/chargebee`,
-    WHOP_API_BASE: `${fakeProviders}/whop`,
-    REVENUECAT_API_BASE: `${fakeProviders}/revenuecat`,
-    // Gumroad connects through OAuth, whose pages the fake server answers too.
-    GUMROAD_API_BASE: `${fakeProviders}/gumroad`,
-    GUMROAD_OAUTH_BASE: `${fakeProviders}/gumroad`,
-    GUMROAD_CLIENT_ID: "harbor-test-client",
-    GUMROAD_CLIENT_SECRET: randomBytes(16).toString("hex"),
-    FX_API_BASE: fakeProviders,
-    // Domain checks ask the fake server's DNS (tests/e2e/fake-site.mjs).
-    DOMAIN_DNS_SERVERS: "127.0.0.1:3053",
-    // Notification emails go to Mailpit, and message emails are due at once.
-    SMTP_HOST: "127.0.0.1",
-    SMTP_PORT: String(mailpitSmtpPort),
-    SMTP_USER: "",
-    SMTP_PASS: "",
-    EMAIL_FROM: "The SaaS Harbor <notifications@harbor.localhost>",
-    MESSAGE_EMAIL_DELAY_SECONDS: "0",
-    // Telegram alerts go to the fake server, never to a real chat.
-    TELEGRAM_API_BASE: `${fakeProviders}/telegram`,
-    TELEGRAM_BOT_TOKEN: TELEGRAM.token,
-    TELEGRAM_CHAT_ID: TELEGRAM.chatId,
-  },
-});
+const env = {
+  ...testEnv,
+  TEST_SUPABASE_URL: local.url,
+  TEST_SUPABASE_SECRET_KEY: local.secretKey,
+  TEST_MAILPIT_URL: local.mailpit,
+  TEST_CRON_SECRET: cronSecret,
+  NEXT_PUBLIC_SUPABASE_URL: local.url,
+  NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: local.publishableKey,
+  NEXT_PUBLIC_SITE_URL: "http://127.0.0.1:3002",
+  NEXT_DIST_DIR: ".next-e2e",
+  LOCAL_MAILPIT_URL: local.mailpit,
+  // Revenue verification against the fake provider APIs, with test-only secrets.
+  SUPABASE_SECRET_KEY: local.secretKey,
+  STRIPE_KEY_ENCRYPTION_KEY: randomBytes(32).toString("base64"),
+  CRON_SECRET: cronSecret,
+  REVENUE_ALLOW_TEST_KEYS: "true",
+  STRIPE_API_BASE: fakeProviders,
+  PADDLE_API_BASE: `${fakeProviders}/paddle`,
+  POLAR_API_BASE: `${fakeProviders}/polar`,
+  DODO_API_BASE: `${fakeProviders}/dodo`,
+  CREEM_API_BASE: `${fakeProviders}/creem`,
+  CHARGEBEE_API_BASE: `${fakeProviders}/chargebee`,
+  WHOP_API_BASE: `${fakeProviders}/whop`,
+  REVENUECAT_API_BASE: `${fakeProviders}/revenuecat`,
+  // Gumroad connects through OAuth, whose pages the fake server answers too.
+  GUMROAD_API_BASE: `${fakeProviders}/gumroad`,
+  GUMROAD_OAUTH_BASE: `${fakeProviders}/gumroad`,
+  GUMROAD_CLIENT_ID: "harbor-test-client",
+  GUMROAD_CLIENT_SECRET: randomBytes(16).toString("hex"),
+  FX_API_BASE: fakeProviders,
+  // Domain checks ask the fake server's DNS (tests/e2e/fake-site.mjs).
+  DOMAIN_DNS_SERVERS: "127.0.0.1:3053",
+  // Notification emails go to Mailpit, and message emails are due at once.
+  SMTP_HOST: "127.0.0.1",
+  SMTP_PORT: String(mailpitSmtpPort),
+  SMTP_USER: "",
+  SMTP_PASS: "",
+  EMAIL_FROM: "The SaaS Harbor <notifications@harbor.localhost>",
+  MESSAGE_EMAIL_DELAY_SECONDS: "0",
+  // Telegram alerts go to the fake server, never to a real chat.
+  TELEGRAM_API_BASE: `${fakeProviders}/telegram`,
+  TELEGRAM_BOT_TOKEN: TELEGRAM.token,
+  TELEGRAM_CHAT_ID: TELEGRAM.chatId,
+};
+// The tests run against a production build, as on Vercel: every page is compiled before the first
+// test, the Content Security Policy is the production one, and the server needs far less than the
+// development server, under which GitHub's runners kept shutting down. The build reads the same
+// environment, since it inlines the public variables.
+const build = spawnSync(npx, ["next", "build"], { shell, stdio: "inherit", env });
+if (build.status !== 0) process.exit(build.status ?? 1);
+const result = spawnSync(npx, ["playwright", "test", ...extra], { shell, stdio: "inherit", env });
 process.exit(result.status ?? 1);

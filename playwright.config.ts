@@ -1,6 +1,7 @@
 import { defineConfig, devices } from "@playwright/test";
-// Port 3002 keeps the test server clear of the regular dev server on 3001. The fake server on
-// 3011 replaces the payment providers, the exchange-rate service and Telegram
+// Port 3002 keeps the test server clear of the regular dev server on 3001. It serves the production
+// build that scripts/test-local.mjs makes first, as Vercel does (tests/e2e/next-server.mjs). The
+// fake server on 3011 replaces the payment providers, the exchange-rate service and Telegram
 // (tests/e2e/fake-providers.mjs).
 export default defineConfig({
   testDir: "./tests/e2e",
@@ -24,10 +25,10 @@ export default defineConfig({
       timeout: 30000,
     },
     {
-      command: "npx next dev --hostname 127.0.0.1 --port 3002",
+      command: "node tests/e2e/next-server.mjs",
       url: "http://127.0.0.1:3002",
       reuseExistingServer: false,
-      timeout: 120000,
+      timeout: 60000,
     },
   ],
 });

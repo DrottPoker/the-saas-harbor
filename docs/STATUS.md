@@ -8,6 +8,18 @@ The first release includes accounts, email confirmation and recovery, public mak
 
 Makers can message each other privately (see Messages below), and report products, profiles and messages to the admins, who decide in an admin panel (see Reports and moderation below). They get emails about unread messages and about decisions (see Email notifications below). Other forms of connection, such as following or contact lists, are not implemented.
 
+## Browser tests on a production build 2026-10-01
+
+CI had not passed since 2026-09-28: in every run after that, on `main` and `development`, the browser tests failed or GitHub stopped the runner, while they passed locally. Of the runs whose logs were read, seven ended when the runner received a shutdown signal while the development server compiled every page before the tests, and two when the first test waited more than 15 seconds for the sign-in dialog, which that warm-up did not compile. Measured locally, a development server with an empty cache used up to 12.6 GB of memory to compile the 64 pages, and a runner has 16 GB beside Supabase and Chromium.
+
+The browser tests now run against a production build, as on Vercel: `npm run test:e2e` builds into `.next-e2e` first, and `tests/e2e/next-server.mjs` serves it. The 64 pages answered within 2.4 seconds with about 400 MB, the warm-up is gone, and a full run takes about 5 minutes instead of 8.5. The tests now also see what Vercel serves: the production Content Security Policy, which has no `eval`, and prefetched links. Three things came up:
+
+- **A Next.js fault outside Vercel.** `next start` answers requests for an intercepted route with an empty `x-nextjs-rewritten-query` header, since its router compares the address's query with the rewrite destination's own, which has none (Next.js 16.3.8, and the same on the canary). The client then files a prefetched `/auth?mode=signup` as `/auth`, so Create one, Forgot password? and Back to sign in in the sign-in dialog changed only the address. Vercel routes these requests itself and sends no such header, so the site is not affected (checked on thesaasharbor.com); the test server leaves the header out the same way.
+- **Overrides on this machine.** A production build refused the overrides that point the tests at fake provider, exchange-rate and Telegram servers unless they used https, and ignored the tests' DNS server. Now an override must use https, or plain http to this machine, in every environment, and only DNS servers on this machine replace the system's (`src/lib/loopback.ts`, with unit tests). A wrong setting still cannot send keys in the clear, and the Telegram address, which carries the bot token, is held to the same rule; before, it was not checked at all.
+- **Accessibility scans during a transition.** A production build is fast enough that a scan measured a provider chip in the middle of changing color; the scans now wait for running transitions to finish.
+
+`npm run check` (469 unit tests) and `npm run test:e2e` (19 tests) pass.
+
 ## Fixes from the project review 2026-10-01
 
 At the owner's request, the whole project was reviewed for bugs, gaps and inconsistencies: the database, the payment providers, the Server Actions and routes, the public pages, the interface, and email, Telegram, the scripts and these documents. The owner chose to fix the four security findings first, then the bugs users notice and the revenue findings.

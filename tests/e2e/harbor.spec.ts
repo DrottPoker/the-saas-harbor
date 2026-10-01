@@ -132,6 +132,17 @@ function confirmLink(html: string) {
   return link;
 }
 async function expectAccessible(page: Page) {
+  // Axe measures colors as they are on screen, so it waits for transitions, such as a chip that
+  // changes color when another is chosen, to finish. Endless animations do not count.
+  await page.waitForFunction(() =>
+    document
+      .getAnimations()
+      .every(
+        (animation) =>
+          animation.playState !== "running" ||
+          animation.effect?.getTiming().iterations === Infinity,
+      ),
+  );
   const accessibility = await new AxeBuilder({ page })
     .withTags(["wcag2a", "wcag2aa", "wcag21aa"])
     .analyze();
@@ -147,42 +158,6 @@ async function expectAccessible(page: Page) {
 }
 
 test.describe.configure({ mode: "serial" });
-// The test server compiles each route on its first request, which can take longer than an
-// expectation waits when the machine is busy. Every route is requested once before the tests, so
-// their waits measure the app and not the compiler. None of these requests changes data.
-test.beforeAll(async ({ playwright }, info) => {
-  test.setTimeout(300000);
-  const client = await playwright.request.newContext({ baseURL: info.project.use.baseURL });
-  const id = randomUUID();
-  for (const path of [
-    ...["/", "/discover", "/newest", "/about", "/privacy", "/terms", "/account-deleted"],
-    ...["/auth", "/auth/confirm", `/saas/${id}`, `/users/${id}`, "/demo/metricfold", "/missing"],
-    ...["/auth/finish", "/auth/oauth/apple", "/auth/callback"],
-    ...["/dashboard", "/dashboard/profile", "/dashboard/reports", `/dashboard/saas/${id}`],
-    ...["/dashboard/settings", "/api/email/send", "/api/analytics", "/admin/analytics/data"],
-    ...["/messages", `/messages/${id}`, `/report/saas/${id}`, "/api/revenue/sync"],
-    ...["/api/domains/check", "/api/telegram/send"],
-    ...["/sitemap.xml", "/robots.txt", "/opengraph-image", "/llms.txt", "/indexnow.txt"],
-    ...["/favicon.ico", "/apple-icon", "/logo.png"],
-    ...[
-      "/categories",
-      "/categories/design",
-      "/tech",
-      "/tech/nextjs",
-      "/saas/any.md",
-      "/users/any.md",
-    ],
-    ...["/stats", "/stats/opengraph-image", "/feedback", "/list-your-saas", "/where-to-launch"],
-    ...["/saas/any/opengraph-image", "/users/any/opengraph-image", "/saas/any/badge.svg"],
-    ...["/saas/any/milestones/mrr-100", "/saas/any/milestones/mrr-100/opengraph-image"],
-    ...["", "/analytics", "/reports", "/feedback", "/products", "/accounts", "/log"].map(
-      (section) => `/admin${section}`,
-    ),
-    ...["reports", "products", "accounts"].map((section) => `/admin/${section}/${id}`),
-  ])
-    await client.get(path, { maxRedirects: 0 });
-  await client.dispose();
-});
 test.afterAll(async () => {
   const { data } = await admin.auth.admin.listUsers();
   for (const user of data.users.filter((user) =>
