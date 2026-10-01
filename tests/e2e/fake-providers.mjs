@@ -14,7 +14,8 @@
 // so it earns EUR 40), a one-time Checkout purchase of $12 with $2 of tax ($10), a one-time
 // payment refunded in full ($0), one partly refunded ($20 of $30), one lost in a dispute ($0),
 // and a failed and an uncaptured one, which do not count. Keys "two" and "three" cannot read
-// charges.
+// charges. Account "four" has a tax-inclusive price, whose latest invoice gives its share of
+// tax, and a subscription with a deleted coupon.
 import { createServer } from "node:http";
 import { handleBilling } from "./fake-billing.mjs";
 import { handleExtraBilling } from "./fake-billing-extra.mjs";
@@ -90,6 +91,43 @@ const accounts = {
       subscription("sub_fixture_5", "cus_5", "active", "eur", [price("price_multi", "usd", 5000)]),
     ],
     past_due: [],
+  },
+  // EUR 12 a month with 20% VAT included, EUR 10 without, and USD 20 a month with a coupon that
+  // was deleted, which Stripe no longer returns, so it is not counted: MRR $12.50.
+  rk_test_harborfixture0004: {
+    active: [
+      {
+        ...subscription("sub_vat", "cus_vat", "active", "eur", [
+          { ...price("price_vat", "eur", 1200), tax_behavior: "inclusive" },
+        ]),
+        latest_invoice: "in_vat",
+      },
+      subscription(
+        "sub_gone",
+        "cus_gone",
+        "active",
+        "usd",
+        [price("price_monthly", "usd", 2000)],
+        [{ ...half, id: "di_gone", source: { type: "coupon", coupon: "gone" } }],
+      ),
+    ],
+    past_due: [],
+  },
+};
+// The latest invoice of a tax-inclusive subscription, read for its share of tax.
+const vatInvoice = {
+  id: "in_vat",
+  object: "invoice",
+  lines: {
+    has_more: false,
+    data: [
+      {
+        id: "il_vat",
+        amount: 1200,
+        currency: "eur",
+        taxes: [{ amount: 200, tax_behavior: "inclusive" }],
+      },
+    ],
   },
 };
 const prices = Object.fromEntries(
@@ -336,6 +374,8 @@ createServer(async (request, response) => {
       403,
       stripeError("The provided key does not have the required permissions for this endpoint."),
     );
+  if (url.pathname === "/v1/invoices/in_vat" && key === "rk_test_harborfixture0004")
+    return send(response, 200, vatInvoice);
   if (url.pathname === "/v1/charges") return send(response, 200, listPage(url, fixtureCharges()));
   if (url.pathname === "/v1/disputes")
     return send(response, 200, {

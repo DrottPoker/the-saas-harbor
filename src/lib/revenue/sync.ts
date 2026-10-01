@@ -27,6 +27,8 @@ export type Verification = {
   mrrInvoiceCents: number | null;
   mrr30dAgoCents: number | null;
   historyNote: string | null;
+  /** What else MRR could not take into account, such as subscriptions with a deleted coupon. */
+  mrrNote: string | null;
   /** When the history was read, which a later verification may carry over; null when it was not. */
   historyAt: string | null;
   /** Revenue from payments, read about once a day and carried over in between. */
@@ -107,6 +109,7 @@ export async function verifyRevenue(
     mrrInvoiceCents: points ? toUsdCents(points.now, rates) : null,
     mrr30dAgoCents: points ? toUsdCents(points.before, rates) : null,
     historyNote: reading.historyNote,
+    mrrNote: reading.mrrNote ?? null,
     historyAt: history ? now.toISOString() : null,
     revenue: null,
   };

@@ -35,6 +35,7 @@ export function summary(result: Verification) {
   const notCounted = result.skippedItems
     ? ` ${result.skippedItems} ${result.skippedItems === 1 ? one : many} not counted.`
     : "";
+  const mrr = result.mrrNote ? ` ${result.mrrNote}` : "";
   const history = result.historyNote ? ` ${result.historyNote}` : "";
-  return `Verified MRR: ${formatUsd(result.mrrCents)} from ${customers}.${notCounted}${history}`;
+  return `Verified MRR: ${formatUsd(result.mrrCents)} from ${customers}.${notCounted}${mrr}${history}`;
 }

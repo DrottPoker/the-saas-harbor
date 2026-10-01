@@ -2,13 +2,16 @@ import { describe, expect, it } from "vitest";
 import { toUsdCents } from "../../src/lib/revenue/money";
 import {
   calculateMrr,
+  includesTax,
   intervalAmount,
   monthlyFactor,
+  untaxedShare,
   type StripeCoupon,
   type StripeDiscount,
   type StripePrice,
   type StripeSubscription,
 } from "../../src/lib/revenue/stripe/mrr";
+import { mrrNote } from "../../src/lib/revenue/stripe/index";
 import {
   parseRestrictedKey,
   STRIPE_KEY_PERMISSIONS,
@@ -230,6 +233,66 @@ describe("MRR", () => {
     ]);
     expect(result.byCurrency).toEqual({ usd: 1000, eur: 1000 });
     expect(result.customers).toBe(1);
+  });
+
+  it("takes tax out of a tax-inclusive price at the share its latest invoice shows", () => {
+    const inclusive = subscription({
+      id: "vat",
+      currency: "eur",
+      items: {
+        data: [{ id: "si", price: price({ currency: "eur", tax_behavior: "inclusive" }) }],
+        has_more: false,
+      },
+      discounts: [discount(coupon({ percent_off: 10 }))],
+    });
+    // EUR 10.00 a month with 20% VAT included and 10% off: EUR 9.00 charged, EUR 7.50 without tax.
+    expect(
+      calculateMrr([inclusive], new Map(), NOW, { untaxed: new Map([["vat", 1 / 1.2]]) }).byCurrency
+        .eur,
+    ).toBeCloseTo(750);
+    // A tax rate set by hand can include tax as well.
+    const byRate = subscription({ id: "rate", default_tax_rates: [{ inclusive: true }] });
+    expect(includesTax(byRate)).toBe(true);
+    expect(includesTax(subscription())).toBe(false);
+    // Without an invoice to read, the tax stays in and the founder is told.
+    const unread = calculateMrr([inclusive], new Map(), NOW);
+    expect(unread.byCurrency.eur).toBeCloseTo(900);
+    expect(unread.taxIncluded).toBe(1);
+  });
+
+  it("finds the untaxed share in an invoice's lines that included tax", () => {
+    expect(
+      untaxedShare([
+        { amount: 1200, taxes: [{ amount: 200, tax_behavior: "inclusive" }] },
+        { amount: 500, taxes: [{ amount: 100, tax_behavior: "exclusive" }] },
+      ]),
+    ).toBeCloseTo(1000 / 1200);
+    expect(untaxedShare([{ amount: 500, taxes: [] }])).toBe(1);
+    expect(untaxedShare([])).toBe(1);
+  });
+
+  it("leaves out a subscription whose coupon was deleted, and counts the rest", () => {
+    const gone: StripeDiscount = {
+      id: "di_gone",
+      start: NOW - 1,
+      end: null,
+      source: { type: "coupon", coupon: "gone" },
+    };
+    const result = calculateMrr(
+      [subscription({ id: "kept" }), subscription({ id: "discounted", discounts: [gone] })],
+      new Map(),
+      NOW,
+      { deleted: new Set(["gone"]) },
+    );
+    expect(result.byCurrency).toEqual({ usd: 1000 });
+    expect(result.deletedCoupons).toBe(1);
+    // It still belongs to the account, so another product cannot claim it.
+    expect(result.subscriptionIds).toEqual(["kept", "discounted"]);
+    expect(mrrNote(result.deletedCoupons, 0)).toBe(
+      "1 subscription has a coupon that was deleted in Stripe and can no longer be read, so it was not counted.",
+    );
+    expect(mrrNote(2, 3)).toContain("3 subscriptions' prices include tax");
+    expect(mrrNote(0, 0)).toBeNull();
   });
 });
 

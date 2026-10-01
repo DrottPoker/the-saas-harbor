@@ -89,6 +89,28 @@ async function invoiceHistory(key: string, now: Date) {
   }
 }
 
+/** What MRR left out or could not take tax out of, in words for the founder, or null. */
+export function mrrNote(deletedCoupons: number, taxIncluded: number) {
+  const notes: string[] = [];
+  if (deletedCoupons === 1)
+    notes.push(
+      "1 subscription has a coupon that was deleted in Stripe and can no longer be read, so it was not counted.",
+    );
+  else if (deletedCoupons)
+    notes.push(
+      `${deletedCoupons} subscriptions have coupons that were deleted in Stripe and can no longer be read, so they were not counted.`,
+    );
+  if (taxIncluded === 1)
+    notes.push(
+      "1 subscription's price includes tax that could not be taken out, since its latest invoice could not be read.",
+    );
+  else if (taxIncluded)
+    notes.push(
+      `${taxIncluded} subscriptions' prices include tax that could not be taken out, since their latest invoices could not be read.`,
+    );
+  return notes.length ? notes.join(" ") : null;
+}
+
 /**
  * Stripe: subscription MRR from a restricted key, history from paid invoices, and revenue from
  * charges.
@@ -97,12 +119,18 @@ export const stripe: ProviderAdapter = {
   id: "stripe",
   parseKey: ({ key }, options) => parseRestrictedKey(key, options),
   async read(key, livemode, { now, history }) {
-    const { subscriptions, coupons } = await fetchStripeAccountData(key);
-    const mrr = calculateMrr(subscriptions, coupons, Math.floor(now.getTime() / 1000));
+    const { subscriptions, coupons, deleted, untaxed } = await fetchStripeAccountData(key);
+    const { deletedCoupons, taxIncluded, ...mrr } = calculateMrr(
+      subscriptions,
+      coupons,
+      Math.floor(now.getTime() / 1000),
+      { untaxed, deleted },
+    );
     const { lines, note } = history ? await invoiceHistory(key, now) : { lines: null, note: null };
     return {
       livemode: livemode ?? key.startsWith("rk_live_"),
       ...mrr,
+      mrrNote: mrrNote(deletedCoupons, taxIncluded),
       lines,
       historyNote: note,
     };

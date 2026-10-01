@@ -15,6 +15,8 @@ export type ProviderReading = {
   subscriptionIds: string[];
   /** Usage-based items or subscriptions that could not be valued. */
   skippedItems: number;
+  /** What else MRR could not take into account, in words for the founder. */
+  mrrNote?: string | null;
   /** Paid recurring charges for the history, or null with a note when there are none to read. */
   lines: ServiceLine[] | null;
   historyNote: string | null;

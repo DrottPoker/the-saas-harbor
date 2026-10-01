@@ -89,6 +89,16 @@ describe("Stripe verification", () => {
     expect(result.historyNote).toMatch(/Invoices: Read/);
   });
 
+  it("takes tax out of a tax-inclusive price, and leaves out a deleted coupon's subscription", async () => {
+    const result = await verifyRevenue("stripe", "rk_test_harborfixture0004", false, new Date(), {
+      history: false,
+    });
+    // EUR 12 with EUR 2 of VAT included is EUR 10, $12.50 at 0.8 EUR to the dollar.
+    expect(result).toMatchObject({ mrrCents: 1250, customers: 1, currencies: { eur: 1000 } });
+    expect(result.subscriptionHashes).toHaveLength(2);
+    expect(result.mrrNote).toMatch(/coupon that was deleted in Stripe/);
+  });
+
   it("values a multi-currency price in the currency the subscription pays", async () => {
     const result = await verifyRevenue("stripe", "rk_test_harborfixture0003", false);
     expect(result).toMatchObject({

@@ -1,9 +1,11 @@
 // Monthly recurring revenue from Stripe subscriptions. Pure functions: no I/O, fully testable.
 // Definition: active and past-due subscriptions, recurring licensed items normalized to a month,
 // after forever and repeating discounts, before tax. Trials, paused collection, metered usage
-// and one-time discounts are excluded.
+// and one-time discounts are excluded. A price that includes tax is taken without it, at the share
+// the subscription's latest invoice shows.
 
 import { addTo, intervalMonths } from "../money";
+import type { StripeInvoiceLine } from "./history";
 
 export type StripeTier = {
   up_to: number | null;
@@ -27,6 +29,8 @@ export type StripePrice = {
     usage_type: "licensed" | "metered";
   } | null;
   transform_quantity: { divide_by: number; round: "up" | "down" } | null;
+  /** Whether the amount includes tax, for prices used with Stripe Tax. */
+  tax_behavior?: "inclusive" | "exclusive" | "unspecified" | null;
   /** Amounts in other currencies, present when the price is read with them expanded. */
   currency_options?: Record<
     string,
@@ -49,11 +53,15 @@ export type StripeDiscount = {
   source: { type: string; coupon: string | StripeCoupon | null };
 };
 
+/** A tax rate set by hand, which may be included in the price it is charged on. */
+export type StripeTaxRate = { inclusive: boolean };
+
 export type StripeSubscriptionItem = {
   id: string;
   price: StripePrice;
   quantity?: number | null;
   discounts?: (string | StripeDiscount)[];
+  tax_rates?: StripeTaxRate[] | null;
 };
 
 export type StripeSubscription = {
@@ -64,7 +72,36 @@ export type StripeSubscription = {
   pause_collection: unknown;
   discounts?: (string | StripeDiscount)[];
   items: { data: StripeSubscriptionItem[]; has_more: boolean };
+  default_tax_rates?: StripeTaxRate[] | null;
+  latest_invoice?: string | { id: string } | null;
 };
+
+/** Whether a subscription's prices include tax: through Stripe Tax or a tax rate set by hand. */
+export function includesTax(subscription: StripeSubscription) {
+  return (
+    !!subscription.default_tax_rates?.some((rate) => rate.inclusive) ||
+    subscription.items.data.some(
+      (item) =>
+        item.price.tax_behavior === "inclusive" || !!item.tax_rates?.some((rate) => rate.inclusive),
+    )
+  );
+}
+
+/**
+ * The share of a tax-inclusive charge that is not tax, from an invoice's lines: what the lines
+ * charged less the tax they included, over what they charged. 1 when nothing included tax.
+ */
+export function untaxedShare(lines: Pick<StripeInvoiceLine, "amount" | "taxes">[]) {
+  let charged = 0;
+  let tax = 0;
+  for (const line of lines) {
+    const included = (line.taxes ?? []).filter((t) => t.tax_behavior === "inclusive");
+    if (!included.length) continue;
+    charged += line.amount;
+    tax += included.reduce((sum, t) => sum + t.amount, 0);
+  }
+  return charged > 0 ? Math.max(0, charged - tax) / charged : 1;
+}
 
 export const COUNTED_STATUSES = ["active", "past_due"] as const;
 
@@ -108,9 +145,11 @@ export function monthlyFactor(recurring: NonNullable<StripePrice["recurring"]>) 
   return 1 / intervalMonths(recurring.interval, recurring.interval_count);
 }
 
+/** The coupons of discounts in effect, or null when one is a deleted coupon that cannot be read. */
 function activeCoupons(
   discounts: (string | StripeDiscount)[] | undefined,
   coupons: ReadonlyMap<string, StripeCoupon>,
+  deleted: ReadonlySet<string>,
   now: number,
 ) {
   const result: StripeCoupon[] = [];
@@ -118,6 +157,7 @@ function activeCoupons(
     if (typeof discount === "string") throw new Error(`Discount ${discount} was not expanded.`);
     if (discount.start > now || (discount.end !== null && discount.end <= now)) continue;
     const source = discount.source.coupon;
+    if (typeof source === "string" && deleted.has(source)) return null;
     const coupon = typeof source === "string" ? coupons.get(source) : source;
     if (!coupon) {
       if (source)
@@ -149,43 +189,79 @@ export type MrrBreakdown = {
   subscriptionIds: string[];
   /** Metered items that could not be valued. */
   skippedItems: number;
+  /** Subscriptions left out because a coupon they still have was deleted and cannot be read. */
+  deletedCoupons: number;
+  /** Tax-inclusive subscriptions counted with their tax, as no invoice gave its share. */
+  taxIncluded: number;
 };
 
 export function calculateMrr(
   subscriptions: StripeSubscription[],
   coupons: ReadonlyMap<string, StripeCoupon>,
   now = Math.floor(Date.now() / 1000),
+  {
+    untaxed = new Map(),
+    deleted = new Set(),
+  }: {
+    /** The untaxed share of each tax-inclusive subscription, by its id. */
+    untaxed?: ReadonlyMap<string, number>;
+    /** Coupons that were deleted, which Stripe no longer returns. */
+    deleted?: ReadonlySet<string>;
+  } = {},
 ): MrrBreakdown {
   const byCurrency: Record<string, number> = {};
   const payingCustomers = new Set<string>();
   const subscriptionIds: string[] = [];
   let skippedItems = 0;
+  let deletedCoupons = 0;
+  let taxIncluded = 0;
 
   for (const subscription of subscriptions) {
     if (!(COUNTED_STATUSES as readonly string[]).includes(subscription.status)) continue;
     if (subscription.pause_collection) continue;
     subscriptionIds.push(subscription.id);
     const currency = subscription.currency.toLowerCase();
-    const subscriptionCoupons = activeCoupons(subscription.discounts, coupons, now);
+    const subscriptionCoupons = activeCoupons(subscription.discounts, coupons, deleted, now);
+    const itemCoupons = subscription.items.data.map((item) =>
+      activeCoupons(item.discounts, coupons, deleted, now),
+    );
+    // A deleted coupon still discounts the subscription, by terms that can no longer be read.
+    if (!subscriptionCoupons || itemCoupons.some((found) => !found)) {
+      deletedCoupons++;
+      continue;
+    }
     let total = 0;
     let factor = 1;
-    for (const item of subscription.items.data) {
+    subscription.items.data.forEach((item, index) => {
       const recurring = item.price.recurring;
-      if (!recurring) continue;
+      if (!recurring) return;
       if (recurring.usage_type === "metered") {
         skippedItems++;
-        continue;
+        return;
       }
       factor = monthlyFactor(recurring);
       const amount = intervalAmount(item.price, quantityOf(item)) * factor;
-      total += applyCoupons(amount, currency, factor, activeCoupons(item.discounts, coupons, now));
-    }
+      total += applyCoupons(amount, currency, factor, itemCoupons[index]!);
+    });
     total = applyCoupons(total, currency, factor, subscriptionCoupons);
+    // Discounts apply to a tax-inclusive price, so its tax is taken out of what is left.
+    if (includesTax(subscription)) {
+      const share = untaxed.get(subscription.id);
+      if (share === undefined) taxIncluded++;
+      else total *= share;
+    }
     if (total > 0) {
       addTo(byCurrency, currency, total);
       const customer = subscription.customer;
       payingCustomers.add(typeof customer === "string" ? customer : customer.id);
     }
   }
-  return { byCurrency, customers: payingCustomers.size, subscriptionIds, skippedItems };
+  return {
+    byCurrency,
+    customers: payingCustomers.size,
+    subscriptionIds,
+    skippedItems,
+    deletedCoupons,
+    taxIncluded,
+  };
 }

@@ -1,6 +1,6 @@
 import "server-only";
 import type { StripeCoupon, StripePrice, StripeSubscription, StripeSubscriptionItem } from "./mrr";
-import { COUNTED_STATUSES } from "./mrr";
+import { COUNTED_STATUSES, includesTax, untaxedShare } from "./mrr";
 import { VerificationError } from "../errors";
 import { apiBase, MAX_PAGES, ProviderRequestError } from "../http";
 import { linePriceId, type StripeInvoice, type StripeInvoiceLine } from "./history";
@@ -50,7 +50,11 @@ async function stripeGet<T>(
     );
   if (response.status === 429)
     throw new ProviderRequestError("Stripe is rate limiting requests. Try again later.", 429);
-  throw new ProviderRequestError(`Stripe returned an error${detail ? `: ${detail}` : "."}`);
+  throw new ProviderRequestError(
+    `Stripe returned an error${detail ? `: ${detail}` : "."}`,
+    response.status,
+    path,
+  );
 }
 
 type List<T> = { data: T[]; has_more: boolean };
@@ -137,10 +141,39 @@ export function fetchCheckoutSessions(key: string, since: number, before: number
 export type StripeAccountData = {
   subscriptions: StripeSubscription[];
   coupons: Map<string, StripeCoupon>;
+  /** Coupons that were deleted: they still discount the subscriptions that have them. */
+  deleted: Set<string>;
+  /** The untaxed share of each tax-inclusive subscription, from its latest invoice. */
+  untaxed: Map<string, number>;
 };
 
+/** Tax-inclusive subscriptions whose latest invoice is read for its share of tax, at most. */
+const MAX_TAX_LOOKUPS = 200;
+
+// The untaxed share of each tax-inclusive subscription, from the lines of its latest invoice. A
+// key that cannot read invoices, or an account with more such subscriptions than one run reads,
+// leaves them out of the map, so they count with their tax and the founder is told.
+async function taxShares(key: string, subscriptions: StripeSubscription[]) {
+  const untaxed = new Map<string, number>();
+  const inclusive = subscriptions.filter(includesTax).slice(0, MAX_TAX_LOOKUPS);
+  for (const subscription of inclusive) {
+    const latest = subscription.latest_invoice;
+    const id = typeof latest === "string" ? latest : latest?.id;
+    if (!id) continue;
+    try {
+      const invoice = await stripeGet<StripeInvoice>(key, `/v1/invoices/${encodeURIComponent(id)}`);
+      untaxed.set(subscription.id, untaxedShare(invoice.lines.data));
+    } catch (error) {
+      if (error instanceof ProviderRequestError && error.status === 403) break;
+      throw error;
+    }
+  }
+  return untaxed;
+}
+
 // Reads everything MRR needs: counted subscriptions with discounts, then any coupons and tiered
-// prices they reference. Permissions: Subscriptions, Coupons and Prices, read only.
+// prices they reference, and the latest invoices of subscriptions whose prices include tax.
+// Permissions: Subscriptions, Coupons, Prices and Invoices, read only.
 export async function fetchStripeAccountData(key: string): Promise<StripeAccountData> {
   const subscriptions: StripeSubscription[] = [];
   for (const status of COUNTED_STATUSES) {
@@ -181,8 +214,17 @@ export async function fetchStripeAccountData(key: string): Promise<StripeAccount
   }
 
   const coupons = new Map<string, StripeCoupon>();
-  for (const id of couponIds)
-    coupons.set(id, await stripeGet<StripeCoupon>(key, `/v1/coupons/${encodeURIComponent(id)}`));
+  const deleted = new Set<string>();
+  for (const id of couponIds) {
+    try {
+      coupons.set(id, await stripeGet<StripeCoupon>(key, `/v1/coupons/${encodeURIComponent(id)}`));
+    } catch (error) {
+      // A deleted coupon keeps discounting the subscriptions that have it, but can no longer be
+      // read, so they are left out rather than failing the whole verification.
+      if (!(error instanceof ProviderRequestError && error.status === 404)) throw error;
+      deleted.add(id);
+    }
+  }
   for (const [id, prices] of tieredPrices) {
     const full = await stripeGet<StripePrice>(key, `/v1/prices/${encodeURIComponent(id)}`, [
       ["expand[]", "tiers"],
@@ -225,7 +267,7 @@ export async function fetchStripeAccountData(key: string): Promise<StripeAccount
       localized.set(`${item.price.id}:${currency}`, item.price);
     }
   }
-  return { subscriptions, coupons };
+  return { subscriptions, coupons, deleted, untaxed: await taxShares(key, subscriptions) };
 }
 
 // Reads paid invoices created since `since` (Unix seconds) with all their lines, and the prices
