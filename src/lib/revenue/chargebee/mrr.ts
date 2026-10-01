@@ -51,6 +51,9 @@ export type ChargebeeInvoice = {
   id: string;
   status: string;
   price_type: string;
+  /** Whether a subscription's billing made it; invoices for one-time charges are not. */
+  recurring?: boolean | null;
+  subscription_id?: string | null;
   currency_code: string;
   date: number;
   total?: number | null;

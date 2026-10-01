@@ -145,6 +145,7 @@ async function record(
     p_revenue_total_cents: verification.revenue?.totalCents ?? null,
     p_revenue_at: verification.revenue?.at ?? null,
     p_connected_at: connectedAt ?? null,
+    p_revenue_history: verification.revenue?.history ?? null,
   });
   const refused = changedDuringCheck(error?.message);
   if (refused) throw refused;
@@ -185,6 +186,7 @@ type LatestSnapshot = {
   revenue_30d_cents?: number | null;
   revenue_12m_cents?: number | null;
   revenue_total_cents?: number | null;
+  revenue_history?: unknown;
   revenue_at?: string | null;
 };
 
@@ -219,6 +221,7 @@ export function revenueToCarry(
     days30Cents: latest.revenue_30d_cents ?? null,
     months12Cents: latest.revenue_12m_cents ?? null,
     totalCents: latest.revenue_total_cents ?? null,
+    history: (latest.revenue_history ?? null) as RevenueFigures["history"],
     at: latest.revenue_at,
   };
 }
@@ -227,7 +230,7 @@ async function latestSnapshot(saasId: string) {
   const { data, error } = await adminClient()
     .from("revenue_snapshots")
     .select(
-      "provider, history, mrr_invoice_cents, mrr_30d_ago_cents, history_at, revenue_30d_cents, revenue_12m_cents, revenue_total_cents, revenue_at",
+      "provider, history, mrr_invoice_cents, mrr_30d_ago_cents, history_at, revenue_30d_cents, revenue_12m_cents, revenue_total_cents, revenue_history, revenue_at",
     )
     .eq("saas_id", saasId)
     .order("captured_at", { ascending: false })

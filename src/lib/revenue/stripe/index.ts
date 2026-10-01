@@ -16,11 +16,12 @@ import { parseRestrictedKey } from "./key";
 import { calculateMrr } from "./mrr";
 import {
   chargePayments,
+  factsOf,
   isPaid,
-  knownShares,
+  knownFacts,
   lostByCharge,
-  sharesOf,
-  untaxedShares,
+  paymentFacts,
+  type ChargeFacts,
   type StripeCharge,
   type StripeDispute,
 } from "./payments";
@@ -31,7 +32,7 @@ const INVOICE_LEAD = 35 * DAY;
 /** A Checkout Session is paid within a day of being created. */
 const SESSION_LEAD = 2 * DAY;
 /** Charges whose invoices and sessions are read in one go, so the lists stay within a run. */
-const SHARE_BATCH = 2000;
+const FACTS_BATCH = 2000;
 
 // The read permission each list needs, by the start of its path.
 const PERMISSIONS: [string, string][] = [
@@ -52,18 +53,17 @@ function permissionError(error: unknown) {
     : error;
 }
 
-/** The untaxed share of each charge that needs one, from its invoice or Checkout Session. */
-async function shares(key: string, needed: StripeCharge[]) {
-  const found = new Map<string, number>();
+/** The untaxed share and kind of each charge that needs them, from its invoice or session. */
+async function facts(key: string, needed: StripeCharge[]) {
+  const found = new Map<string, ChargeFacts>();
   const sorted = [...needed].sort((a, b) => a.created - b.created);
-  for (let start = 0; start < sorted.length; start += SHARE_BATCH) {
-    const batch = sorted.slice(start, start + SHARE_BATCH);
+  for (let start = 0; start < sorted.length; start += FACTS_BATCH) {
+    const batch = sorted.slice(start, start + FACTS_BATCH);
     const first = batch[0].created;
     const last = batch.at(-1)!.created + 1;
     const invoices = await fetchInvoicePayments(key, first - INVOICE_LEAD, last);
     const sessions = await fetchCheckoutSessions(key, first - SESSION_LEAD, last);
-    for (const [id, share] of sharesOf(batch, untaxedShares(invoices, sessions)))
-      found.set(id, share);
+    for (const [id, fact] of factsOf(batch, paymentFacts(invoices, sessions))) found.set(id, fact);
   }
   return found;
 }
@@ -143,10 +143,10 @@ export const stripe: ProviderAdapter = {
       for (const charge of charges)
         if (charge.disputed) disputes.push(...(await fetchDisputes(key, charge.id)));
       const lost = lostByCharge(disputes);
-      const known = knownShares(charges, lost, stored);
-      const found = known.needed.length ? await shares(key, known.needed) : new Map();
+      const known = knownFacts(charges, lost, stored);
+      const found = known.needed.length ? await facts(key, known.needed) : new Map();
       return {
-        payments: chargePayments(charges, lost, new Map([...known.shares, ...found])),
+        payments: chargePayments(charges, lost, new Map([...known.facts, ...found])),
         complete,
       };
     } catch (error) {

@@ -113,6 +113,25 @@ describe("filling a list", () => {
       all.filter((item) => item.mrr_cents == null).every((item) => item.revenue_30d_cents == null),
     ).toBe(true);
   });
+  it("has made-up revenue by month: the month-end MRR and a few percent of one-time sales", () => {
+    for (const row of all.filter((item) => item.revenue_history != null)) {
+      const months = row.revenue_history as {
+        month: string;
+        cents: number;
+        subscription_cents: number;
+        one_time_cents: number;
+      }[];
+      const mrr = row.mrr_history as { month: string; mrr_cents: number }[];
+      expect(months.map((month) => month.month)).toEqual(mrr.map((month) => month.month));
+      for (const [i, month] of months.entries()) {
+        expect(month.cents).toBe(month.subscription_cents + month.one_time_cents);
+        expect(Math.abs(month.subscription_cents - mrr[i].mrr_cents)).toBeLessThanOrEqual(50);
+        expect(month.one_time_cents).toBeGreaterThan(0);
+        expect(month.one_time_cents).toBeLessThan(month.subscription_cents * 0.2);
+      }
+      expect(row.revenue_12m_cents).toBe(months.reduce((sum, month) => sum + month.cents, 0));
+    }
+  });
   it("leaves only the room real products do not take", () => {
     expect(fill({ room: 3 })).toHaveLength(3);
     expect(fill({ room: 0 })).toEqual([]);

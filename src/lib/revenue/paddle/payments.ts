@@ -3,10 +3,11 @@
 // what the customer was charged without tax: the grand total, which leaves out credit from
 // earlier transactions, less its tax. Refunds and chargebacks are adjustments, which leave the
 // transaction's totals as they were and show in its adjusted totals, so what they took back
-// without tax is subtracted.
+// without tax is subtracted. A transaction of a subscription paid for it, unless it was made for
+// a one-time charge billed to the subscription.
 import { unixSeconds } from "../history";
 import { netOf } from "../payments";
-import type { ListedPayment } from "../types";
+import type { ListedPayment, PaymentKind } from "../types";
 import type { PaddleTransaction, PaddleTransactionTotals } from "./mrr";
 
 const amount = (value: string | undefined) => {
@@ -35,6 +36,12 @@ export function transactionFingerprint(transaction: PaddleTransaction) {
   return `${totals?.total ?? ""}:${totals?.tax ?? ""}`;
 }
 
+export function transactionKind(transaction: PaddleTransaction): PaymentKind {
+  return transaction.subscription_id && transaction.origin !== "subscription_charge"
+    ? "subscription"
+    : "one_time";
+}
+
 export function transactionPayments(transactions: PaddleTransaction[]): ListedPayment[] {
   return transactions.flatMap((transaction) => {
     const at = unixSeconds(transaction.billed_at);
@@ -45,6 +52,7 @@ export function transactionPayments(transactions: PaddleTransaction[]): ListedPa
         at,
         fingerprint: transactionFingerprint(transaction),
         value: { currency: transaction.currency_code, amount: transactionEarned(transaction) },
+        kind: transactionKind(transaction),
       },
     ];
   });

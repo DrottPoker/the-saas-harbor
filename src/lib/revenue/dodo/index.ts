@@ -11,7 +11,7 @@ import {
 } from "./client";
 import { parseDodoKey } from "./key";
 import { dodoMrr, taxIncludedSubscriptions, untaxedShare, type DodoListedPayment } from "./mrr";
-import { dodoEarned, dodoFingerprint } from "./payments";
+import { dodoEarned, dodoFingerprint, dodoKind } from "./payments";
 
 // Each tax-inclusive subscription costs two requests, and Dodo allows 240 a minute per business.
 const MAX_TAX_LOOKUPS = 200;
@@ -62,7 +62,13 @@ async function readPayments(
     for (const { payment, at } of newestFirst) {
       const fingerprint = dodoFingerprint(payment);
       if (stored(payment.payment_id)?.fingerprint === fingerprint) {
-        payments.push({ id: payment.payment_id, at, fingerprint, value: null });
+        payments.push({
+          id: payment.payment_id,
+          at,
+          fingerprint,
+          value: null,
+          kind: dodoKind(payment),
+        });
         continue;
       }
       if (requests++ >= maxPages) {
@@ -76,6 +82,7 @@ async function readPayments(
         at,
         fingerprint,
         value: { currency: payment.currency, amount: dodoEarned(detail) },
+        kind: dodoKind(payment),
       });
     }
     end = start;

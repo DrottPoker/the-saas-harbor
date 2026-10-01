@@ -29,9 +29,17 @@ export type ReadOptions = { allowTest: boolean; now: Date; history: boolean };
 export type KeyInput = { key: string; account: string };
 
 /**
+ * What a payment paid for: a subscription, a one-time purchase, or `unknown` where the provider
+ * gives daily totals only. A payment for a subscription counts as one whole, one-time items on
+ * the same charge included.
+ */
+export type PaymentKind = "subscription" | "one_time" | "unknown";
+
+/**
  * A paid payment as a provider lists it. The fingerprint changes whenever what the payment earned
  * could have, such as after a refund. `value` is what it earned, in minor units after discounts
  * and refunds and without tax, or null for a payment left unvalued because it is unchanged.
+ * `kind` is given whenever the payment is valued, and may be null for one left unvalued.
  */
 export type ListedPayment = {
   id: string;
@@ -39,6 +47,7 @@ export type ListedPayment = {
   at: number;
   fingerprint: string;
   value: { currency: string; amount: number } | null;
+  kind: PaymentKind | null;
 };
 
 /**
@@ -48,13 +57,17 @@ export type ListedPayment = {
  */
 export type PaymentRead = { payments: ListedPayment[]; complete: boolean; from?: number };
 
-/** A payment as stored: its fingerprint, and what it earned in minor units. */
-export type StoredPayment = { fingerprint: string; amount: number };
+/**
+ * A payment as stored: its fingerprint, what it earned in minor units, and its kind, null for one
+ * stored before kinds were read.
+ */
+export type StoredPayment = { fingerprint: string; amount: number; kind: PaymentKind | null };
 
 /**
  * A window of payments: paid from `since` (inclusive) to `before` (exclusive, or up to now), read
- * for at most `maxPages` pages. `stored` gives a payment of the last six months as stored, so a
- * provider whose valuation costs requests can skip unchanged payments, or scale a changed one.
+ * for at most `maxPages` pages. `stored` gives a payment of the last six months, or of a window
+ * read again for its kinds, as stored, so a provider whose valuation costs requests can skip
+ * unchanged payments, or scale a changed one.
  */
 export type PaymentOptions = {
   allowTest: boolean;

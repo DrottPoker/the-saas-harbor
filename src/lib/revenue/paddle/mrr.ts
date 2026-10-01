@@ -39,6 +39,8 @@ export type PaddleTransaction = {
   id: string;
   status: string;
   subscription_id: string | null;
+  /** Why it was made: `subscription_charge` for a one-time charge billed to a subscription. */
+  origin?: string | null;
   currency_code: string;
   billed_at: string | null;
   billing_period: PaddlePeriod | null;

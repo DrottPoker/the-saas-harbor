@@ -29,6 +29,9 @@ export type DodoListedPayment = {
   created_at: string;
   refund_status?: string | null;
   dispute_status?: string | null;
+  /** Empty for a one-time payment; a payment for several subscriptions lists them instead. */
+  subscription_id?: string | null;
+  subscription_ids?: string[] | null;
 };
 /** A payment as it is read alone, with its tax, refunds and disputes. */
 export type DodoPaymentDetail = DodoPayment & {

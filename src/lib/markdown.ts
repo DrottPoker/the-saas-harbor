@@ -1,7 +1,13 @@
 // Markdown versions of public pages for AI assistants, and llms.txt. They carry exactly what the
 // HTML pages show. Text makers wrote is escaped, so it cannot add headings, links or other
 // structure, and every file says which parts makers wrote.
-import { monthLabel, parseHistory, wholeUsd } from "./charts";
+import {
+  monthLabel,
+  parseHistory,
+  parseRevenueHistory,
+  wholeUsd,
+  type RevenuePoint,
+} from "./charts";
 import type { CategoryCount, Listing, Profile } from "./data";
 import { categorySlug, formatDate, formatUsd } from "./domain";
 import { REVENUE_WINDOWS, revenueRankingTitle, sharesRevenue } from "./revenue-figures";
@@ -70,12 +76,30 @@ function techStackLines(stack: readonly string[] | null | undefined) {
   ];
 }
 
+/** Revenue by month as a table, split into its parts only where every month is, as the chart. */
+function revenueTable(history: RevenuePoint[]) {
+  const split = history.every((point) => point.split);
+  return [
+    "",
+    "### Revenue by month",
+    "",
+    split ? "| Month | Subscriptions | One-time purchases | Revenue |" : "| Month | Revenue |",
+    split ? "| --- | ---: | ---: | ---: |" : "| --- | ---: |",
+    ...history.map(({ month, cents, split: parts }) =>
+      split && parts
+        ? `| ${monthLabel(month)} | ${wholeUsd(parts.subscription)} | ${wholeUsd(parts.oneTime)} | ${wholeUsd(cents)} |`
+        : `| ${monthLabel(month)} | ${wholeUsd(cents)} |`,
+    ),
+  ];
+}
+
 export function productMarkdown(item: Listing) {
   const base = siteUrl();
   const category = item.category ?? "Other";
   const verified = item.revenue_status === "verified" && item.mrr_cents != null;
   const revenueShared = sharesRevenue(item);
   const history = verified ? parseHistory(item.mrr_history) : null;
+  const revenueHistory = revenueShared ? parseRevenueHistory(item.revenue_history) : null;
   const domain = currentVerifiedDomain(item.website, item.verified_domain);
   const lines = [
     `# ${inline(item.name)}`,
@@ -128,6 +152,7 @@ export function productMarkdown(item: Listing) {
           ...history.map((point) => `| ${monthLabel(point.month)} | ${wholeUsd(point.cents)} |`),
         ]
       : []),
+    ...(revenueHistory ? revenueTable(revenueHistory) : []),
     "",
     `## About ${inline(item.name)}`,
     "",

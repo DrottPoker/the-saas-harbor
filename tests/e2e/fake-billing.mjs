@@ -104,6 +104,7 @@ function paddleTransaction(id, subscription, currency, price, period, totals, ad
     id,
     status: "completed",
     subscription_id: subscription,
+    origin: subscription ? "subscription_recurring" : "web",
     currency_code: currency,
     billed_at: iso(period[0]),
     billing_period: { starts_at: iso(period[0]), ends_at: iso(period[1]) },
@@ -497,12 +498,15 @@ function dodoPayments() {
     status: "succeeded",
     refund_status: null,
     dispute_status: null,
+    subscription_id: null,
     ...extra,
   });
   return [
-    ...monthStarts(6).map(([start], k) => payment(`pay_monthly_${k}`, start, 1500, "USD")),
-    payment("pay_yearly", now - 60 * DAY, 12000, "USD"),
-    payment("pay_eur", now - 20 * DAY, 2400, "EUR"),
+    ...monthStarts(6).map(([start], k) =>
+      payment(`pay_monthly_${k}`, start, 1500, "USD", { subscription_id: "sub_dodo_monthly" }),
+    ),
+    payment("pay_yearly", now - 60 * DAY, 12000, "USD", { subscription_id: "sub_dodo_yearly" }),
+    payment("pay_eur", now - 20 * DAY, 2400, "EUR", { subscription_id: "sub_dodo_eur" }),
     payment("pay_once", now - 4 * DAY, 3000, "USD"),
     payment("pay_refunded", now - 9 * DAY, 1000, "USD", { refund_status: "full" }),
     payment("pay_disputed", now - 11 * DAY, 2000, "USD", { dispute_status: "dispute_lost" }),

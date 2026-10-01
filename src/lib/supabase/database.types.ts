@@ -478,6 +478,7 @@ export type Database = {
           provider: string | null
           revenue_12m_cents: number | null
           revenue_30d_cents: number | null
+          revenue_history: Json | null
           revenue_total_cents: number | null
           saas_id: string
           verified_at: string | null
@@ -493,6 +494,7 @@ export type Database = {
           provider?: string | null
           revenue_12m_cents?: number | null
           revenue_30d_cents?: number | null
+          revenue_history?: Json | null
           revenue_total_cents?: number | null
           saas_id: string
           verified_at?: string | null
@@ -508,6 +510,7 @@ export type Database = {
           provider?: string | null
           revenue_12m_cents?: number | null
           revenue_30d_cents?: number | null
+          revenue_history?: Json | null
           revenue_total_cents?: number | null
           saas_id?: string
           verified_at?: string | null
@@ -742,6 +745,7 @@ export type Database = {
           revenue_12m_cents: number | null
           revenue_30d_cents: number | null
           revenue_at: string | null
+          revenue_history: Json | null
           revenue_total_cents: number | null
           saas_id: string
           seq: number
@@ -763,6 +767,7 @@ export type Database = {
           revenue_12m_cents?: number | null
           revenue_30d_cents?: number | null
           revenue_at?: string | null
+          revenue_history?: Json | null
           revenue_total_cents?: number | null
           saas_id: string
           seq?: never
@@ -784,6 +789,7 @@ export type Database = {
           revenue_12m_cents?: number | null
           revenue_30d_cents?: number | null
           revenue_at?: string | null
+          revenue_history?: Json | null
           revenue_total_cents?: number | null
           saas_id?: string
           seq?: never
@@ -1065,6 +1071,7 @@ export type Database = {
           rank: number | null
           revenue_12m_cents: number | null
           revenue_30d_cents: number | null
+          revenue_history: Json | null
           revenue_status: string | null
           revenue_total_cents: number | null
           slug: string | null
@@ -1114,6 +1121,7 @@ export type Database = {
           provider: string | null
           revenue_12m_cents: number | null
           revenue_30d_cents: number | null
+          revenue_history: Json | null
           revenue_status: string | null
           revenue_total_cents: number | null
           slug: string | null
@@ -1166,6 +1174,7 @@ export type Database = {
           rank_total: number | null
           revenue_12m_cents: number | null
           revenue_30d_cents: number | null
+          revenue_history: Json | null
           revenue_status: string | null
           revenue_total_cents: number | null
           slug: string | null
@@ -1427,7 +1436,10 @@ export type Database = {
           p_connected_at?: string
           p_days30: string
           p_from: string
+          p_kinds?: Json
           p_listed: string[]
+          p_months_from?: string
+          p_months_to?: string
           p_months12: string
           p_origin: boolean
           p_payments: Json
@@ -1455,6 +1467,7 @@ export type Database = {
           p_revenue_12m_cents?: number
           p_revenue_30d_cents?: number
           p_revenue_at?: string
+          p_revenue_history?: Json
           p_revenue_total_cents?: number
           p_saas_id: string
           p_subscription_hashes: string[]
@@ -1466,7 +1479,7 @@ export type Database = {
         Returns: undefined
       }
       revenue_read_state: {
-        Args: { p_from: string; p_saas_id: string }
+        Args: { p_from: string; p_months_from?: string; p_saas_id: string }
         Returns: Json
       }
       saas_domain_verification: {

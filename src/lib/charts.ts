@@ -36,6 +36,36 @@ export function parseHistory(value: unknown): MrrPoint[] | null {
   return parsed.data.map(({ month, mrr_cents }) => ({ month, cents: mrr_cents }));
 }
 
+const cents = z.number().int().nonnegative();
+const revenueSchema = z
+  .array(
+    z.object({
+      month: z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/),
+      cents,
+      subscription_cents: cents.optional(),
+      one_time_cents: cents.optional(),
+    }),
+  )
+  .min(1)
+  .max(36);
+
+/** A month of revenue, split into what subscriptions and one-time purchases paid where known. */
+export type RevenuePoint = MrrPoint & { split: { subscription: number; oneTime: number } | null };
+
+/** Reads stored revenue by month (oldest first). Anything malformed yields null. */
+export function parseRevenueHistory(value: unknown): RevenuePoint[] | null {
+  const parsed = revenueSchema.safeParse(value);
+  if (!parsed.success) return null;
+  return parsed.data.map(({ month, cents, subscription_cents, one_time_cents }) => ({
+    month,
+    cents,
+    split:
+      subscription_cents === undefined || one_time_cents === undefined
+        ? null
+        : { subscription: subscription_cents, oneTime: one_time_cents },
+  }));
+}
+
 function monthParts(month: string) {
   const [year, index] = month.split("-").map(Number);
   return { year, name: MONTHS[index - 1] };
@@ -111,34 +141,114 @@ export type ChartPoint = {
 };
 
 export type MrrChartModel = {
+  kind: "line";
   points: ChartPoint[];
   ticks: { y: number; label: string }[];
   summary: string;
 };
 
+/**
+ * Month labels for an axis: every month on wide plots; on narrow ones every other month, or every
+ * third in a history longer than six months, so labels with a year never touch, ending at the last.
+ */
+function monthAxis(months: string[]) {
+  const last = months.length - 1;
+  const step = months.length > 6 ? 3 : 2;
+  const wide = axisLabels(months, () => true);
+  const narrow = axisLabels(months, (i) => (last - i) % step === 0);
+  return months.map((month, i) => ({
+    month,
+    label: monthLabel(month),
+    axisLabel: wide[i]!,
+    narrowLabel: narrow[i],
+  }));
+}
+
 export function mrrChartModel(history: MrrPoint[]): MrrChartModel {
   const scale = niceScale(Math.max(...history.map((p) => p.cents)));
   const last = history.length - 1;
-  const months = history.map((p) => p.month);
-  const wide = axisLabels(months, () => true);
-  const narrow = axisLabels(months, (i) => (last - i) % 2 === 0);
+  const axis = monthAxis(history.map((p) => p.month));
   const points = history.map((p, i) => ({
-    month: p.month,
-    label: monthLabel(p.month),
-    axisLabel: wide[i]!,
-    narrowLabel: narrow[i],
+    ...axis[i]!,
     value: wholeUsd(p.cents),
     x: last === 0 ? 1 : i / last,
     y: 1 - p.cents / scale.max,
   }));
   const [first, end] = [points[0], points[last]];
   return {
+    kind: "line",
     points,
     ticks: scale.ticks.map((cents) => ({ y: 1 - cents / scale.max, label: compactUsd(cents) })),
     summary:
       last === 0
         ? `MRR was ${end.value} at the end of ${end.label}.`
         : `MRR at month end went from ${first.value} in ${first.label} to ${end.value} in ${end.label}.`,
+  };
+}
+
+/** A part of a month's revenue: its amount, and its share of the month's column. */
+export type RevenuePart = { value: string; share: number };
+
+/** A month's column: its total, and its parts where it is split. */
+export type RevenueBar = Omit<ChartPoint, "y"> & {
+  /** Height of the column as a fraction of the plot. */
+  height: number;
+  parts: { subscription: RevenuePart; oneTime: RevenuePart } | null;
+};
+
+export type RevenueChartModel = {
+  kind: "bars";
+  bars: RevenueBar[];
+  ticks: { y: number; label: string }[];
+  summary: string;
+  /** The period's total, and what subscriptions and one-time purchases paid of it. */
+  total: string;
+  totalParts: { subscription: string; oneTime: string } | null;
+};
+
+/**
+ * Revenue by month as columns, each in the middle of its month's band, split into subscriptions
+ * and one-time purchases only when every month is, so the parts read the same across the period.
+ */
+export function revenueChartModel(history: RevenuePoint[]): RevenueChartModel {
+  const scale = niceScale(Math.max(...history.map((p) => p.cents)));
+  const axis = monthAxis(history.map((p) => p.month));
+  const split = history.every((p) => p.split);
+  const sum = (part: (p: RevenuePoint) => number) => history.reduce((s, p) => s + part(p), 0);
+  const part = (amount: number, total: number) => ({
+    value: wholeUsd(amount),
+    share: total > 0 ? amount / total : 0,
+  });
+  const bars = history.map((p, i) => ({
+    ...axis[i]!,
+    value: wholeUsd(p.cents),
+    x: (i + 0.5) / history.length,
+    height: p.cents / scale.max,
+    parts:
+      split && p.split
+        ? {
+            subscription: part(p.split.subscription, p.cents),
+            oneTime: part(p.split.oneTime, p.cents),
+          }
+        : null,
+  }));
+  const total = wholeUsd(sum((p) => p.cents));
+  const [first, end] = [bars[0]!, bars.at(-1)!];
+  return {
+    kind: "bars",
+    bars,
+    ticks: scale.ticks.map((cents) => ({ y: 1 - cents / scale.max, label: compactUsd(cents) })),
+    summary:
+      bars.length === 1
+        ? `Revenue was ${end.value} in ${end.label}.`
+        : `Revenue by month from ${first.label} to ${end.label}, ${total} in total.`,
+    total,
+    totalParts: split
+      ? {
+          subscription: wholeUsd(sum((p) => p.split!.subscription)),
+          oneTime: wholeUsd(sum((p) => p.split!.oneTime)),
+        }
+      : null,
   };
 }
 

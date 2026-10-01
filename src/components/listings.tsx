@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { BadgeCheck } from "lucide-react";
-import { parseHistory } from "@/lib/charts";
+import { parseHistory, parseRevenueHistory } from "@/lib/charts";
 import { PAGE_SIZE, type Listing } from "@/lib/data";
 import { formatDate, formatUsd } from "@/lib/domain";
 import { revenueWindow, type Ranking } from "@/lib/revenue-figures";
@@ -12,9 +12,10 @@ import { Sparkline } from "./charts/sparkline";
 import { DemoLogo } from "./demo-logo";
 import { Button } from "./ui/button";
 
-// The trend column appears from lg; below that its cell is hidden and takes no track.
+// Phones show the rank, the product and its figure. The category and the second figure join from
+// md, the trend from lg and the verification date from xl; a hidden cell takes no track.
 const columns =
-  "md:grid-cols-[2.5rem_minmax(0,1fr)_10rem_8rem_7.5rem] md:gap-6 md:px-5 lg:grid-cols-[2.5rem_minmax(0,1fr)_9rem_6rem_8rem_7.5rem]";
+  "md:grid-cols-[2.5rem_minmax(0,1fr)_8rem_8rem_7rem] md:gap-6 md:px-5 lg:grid-cols-[2.5rem_minmax(0,1fr)_9rem_6rem_8rem_7rem] xl:grid-cols-[2.5rem_minmax(0,1fr)_9rem_6rem_8rem_7rem_7.5rem]";
 
 // Where a listing leads, and its logo. Demo products have their own pages and drawn logos.
 function href(item: Listing) {
@@ -31,9 +32,11 @@ function Logo({ item }: { item: Listing }) {
 }
 
 /**
- * The ranking, by verified MRR or by revenue over a window. With `demo`, the same table lists demo
- * products instead: unranked, under a Demo column, and with their launch date where real products
- * show when they were verified. Their pages carry the Demo tag.
+ * The ranking, by verified MRR or by revenue over a window. Each row also shows revenue of all
+ * time, or MRR in the ranking by all time, and a trend of the figure ranked by: MRR at month end,
+ * or revenue by month. With `demo`, the same table lists demo products instead: unranked, under a
+ * Demo column, and with their launch date where real products show when they were verified. Their
+ * pages carry the Demo tag.
  */
 export function Leaderboard({
   items,
@@ -49,6 +52,15 @@ export function Leaderboard({
   const List = demo ? "ul" : "ol";
   const span = revenueWindow(ranking);
   const figureName = span ? `Revenue, ${span.short.toLowerCase()}` : "MRR";
+  // The other headline figure: all time, unless that is the ranking.
+  const second =
+    ranking === "all"
+      ? { name: "MRR", demoName: "Demo MRR", column: "mrr_cents" as const }
+      : {
+          name: "Revenue, all time",
+          demoName: "Demo revenue, all time",
+          column: "revenue_total_cents" as const,
+        };
   return (
     <div className="overflow-hidden rounded-xl border bg-surface shadow-card">
       <div
@@ -61,15 +73,20 @@ export function Leaderboard({
         <span>{demo ? "" : "#"}</span>
         <span>Product</span>
         <span>Category</span>
-        <span className="hidden lg:block">{span ? "MRR, 12 months" : "12 months"}</span>
+        <span className="hidden lg:block">12 months</span>
         <span className="text-right">
           {demo ? `Demo ${span ? "revenue" : "MRR"}` : span ? figureName : "Verified MRR"}
         </span>
-        <span className="text-right">{demo ? "Launched" : "Verified"}</span>
+        <span className="text-right">{second.name}</span>
+        <span className="hidden text-right xl:block">{demo ? "Launched" : "Verified"}</span>
       </div>
       <List className="divide-y" aria-labelledby={labelledBy}>
         {items.map((item, index) => {
-          const history = parseHistory(item.mrr_history);
+          // The trend of what the list ranks by.
+          const history = span
+            ? parseRevenueHistory(item.revenue_history)
+            : parseHistory(item.mrr_history);
+          const secondCents = item[second.column];
           return (
             <li key={item.id}>
               <Link
@@ -121,7 +138,15 @@ export function Leaderboard({
                   </span>
                   {!span && item.mrr_growth_pct != null && <Growth pct={item.mrr_growth_pct} />}
                 </span>
-                <span className="hidden text-right text-sm text-muted-foreground tabular-nums md:block">
+                <span className="hidden text-right text-sm md:block">
+                  <span className="sr-only">{`${item.demo ? second.demoName : second.name} `}</span>
+                  {secondCents == null ? (
+                    <span className="text-faint-foreground">Not shared</span>
+                  ) : (
+                    <span className="tabular-nums">{formatUsd(secondCents)}</span>
+                  )}
+                </span>
+                <span className="hidden text-right text-sm text-muted-foreground tabular-nums xl:block">
                   <span className="sr-only">{item.demo ? "Launched " : "Verified "}</span>
                   {formatDate(item.demo ? item.launched_on : item.verified_at)}
                 </span>

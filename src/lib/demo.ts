@@ -308,28 +308,40 @@ export function demoHistory(product: { slug: string; mrr: number; start: number 
 }
 
 /**
- * Made-up revenue besides MRR: the last 30 days a little above MRR for one-time sales, the last 12
- * months the sum of the month-ends, and all time as much again for every year before, fading
- * toward the launch. Counted from the start of the month, so it stays the same all month, as the
- * history does.
+ * Made-up revenue besides MRR: each month of the history its month-end MRR from subscriptions and
+ * a varying few percent more from one-time sales, the last 30 days a little above MRR, the last 12
+ * months the sum of the months, and all time as much again for every year before, fading toward
+ * the launch. Counted from the start of the month, so it stays the same all month, as the history
+ * does.
  */
 export function demoRevenue(
   product: { slug: string; launched: string | null },
-  history: { mrr_cents: number }[],
+  history: { month: string; mrr_cents: number }[],
   mrrCents: number,
   now: Date,
 ) {
-  const extra = 1.04 + 0.08 * unit(`${product.slug}:once`);
-  const year = history.reduce((sum, point) => sum + point.mrr_cents, 0);
+  const extra = 0.04 + 0.08 * unit(`${product.slug}:once`);
+  // Whole dollars, like the made-up MRR.
+  const dollars = (cents: number) => Math.round(cents / 100) * 100;
+  const months = history.map(({ month, mrr_cents }) => {
+    const subscription = dollars(mrr_cents);
+    const oneTime = dollars(mrr_cents * extra * (0.4 + 1.2 * unit(`${product.slug}:${month}`)));
+    return {
+      month,
+      cents: subscription + oneTime,
+      subscription_cents: subscription,
+      one_time_cents: oneTime,
+    };
+  });
+  const year = months.reduce((sum, month) => sum + month.cents, 0);
   const month = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1);
   const launched = product.launched ? Date.parse(product.launched) : month;
   const earlierYears = Math.max(0, (month - launched) / (365.25 * 86_400_000) - 1);
-  // Whole dollars, like the made-up MRR.
-  const dollars = (cents: number) => Math.round(cents / 100) * 100;
   return {
-    revenue_30d_cents: dollars(mrrCents * extra),
-    revenue_12m_cents: dollars(year * extra),
-    revenue_total_cents: dollars(year * extra * (1 + earlierYears * 0.6)),
+    revenue_30d_cents: dollars(mrrCents * (1 + extra)),
+    revenue_12m_cents: year,
+    revenue_total_cents: dollars(year * (1 + earlierYears * 0.6)),
+    revenue_history: months,
   };
 }
 
@@ -341,7 +353,12 @@ function toListing(product: DemoProduct, now: Date): Listing {
   const revenue =
     history && mrrCents != null
       ? demoRevenue(product, history, mrrCents, now)
-      : { revenue_30d_cents: null, revenue_12m_cents: null, revenue_total_cents: null };
+      : {
+          revenue_30d_cents: null,
+          revenue_12m_cents: null,
+          revenue_total_cents: null,
+          revenue_history: null,
+        };
   return {
     id: `demo-${product.slug}`,
     slug: product.slug,

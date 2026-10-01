@@ -164,6 +164,11 @@ const line = (id, priceId, amount, currency, start, end, extra = {}) => ({
   pricing: { type: "price_details", price_details: { price: priceId } },
   ...extra.line,
 });
+const subscriptionParent = (subscription) => ({
+  type: "subscription_details",
+  subscription_details: { subscription },
+  quote_details: null,
+});
 function fixtureInvoices() {
   const now = new Date();
   const [y, m] = [now.getUTCFullYear(), now.getUTCMonth()];
@@ -189,6 +194,8 @@ function fixtureInvoices() {
       currency: "usd",
       total: 2900,
       total_excluding_tax: 2900,
+      billing_reason: k === 13 ? "subscription_create" : "subscription_cycle",
+      parent: subscriptionParent("sub_fixture_1"),
       lines: { data: lines, has_more: false },
     });
   }
@@ -200,6 +207,8 @@ function fixtureInvoices() {
     currency: "usd",
     total: 35000,
     total_excluding_tax: 35000,
+    billing_reason: "subscription_create",
+    parent: subscriptionParent("sub_fixture_2"),
     lines: {
       data: [
         line("il_yearly", "price_yearly", 60000, "usd", yearlyStart, yearlyStart + 365 * DAY, {
@@ -229,6 +238,8 @@ function fixtureInvoices() {
     currency: "eur",
     total: 4800,
     total_excluding_tax: 4000,
+    billing_reason: "subscription_create",
+    parent: subscriptionParent("sub_fixture_3"),
     lines: {
       data: [
         line("il_eur", "price_eur", 4000, "eur", eurStart, unix(Date.UTC(y, m + 1, 1)), {

@@ -62,8 +62,9 @@ export default function Privacy() {
               you grant, and the account details it needs, stored encrypted, and the results of
               verification, such as monthly recurring revenue, paying customers, totals per
               currency, revenue history and revenue over time. For each payment we store what it
-              earned, its currency and the day it was paid, without who paid it. One-way hashes of
-              subscription, payment or project IDs stop one account from verifying two products.
+              earned, its currency, the day it was paid and whether it paid for a subscription,
+              without who paid it. One-way hashes of subscription, payment or project IDs stop one
+              account from verifying two products.
             </li>
             <li>
               <strong className="font-medium text-foreground">Milestones.</strong> The MRR amounts

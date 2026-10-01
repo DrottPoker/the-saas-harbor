@@ -1,7 +1,8 @@
 // Revenue from Whop payments. Pure functions: no I/O, fully testable.
 // Every paid payment counts, a membership's or a one-time purchase. It earns its total without
 // tax, less what was refunded of it without tax, and nothing once a dispute is lost, which Whop
-// does not record as a refund. Amounts are in major units.
+// does not record as a refund. Amounts are in major units. A payment billed for a membership's
+// subscription paid for it; any other was a one-time purchase.
 import { unixSeconds } from "../history";
 import { toMinorUnits } from "../money";
 import { netOf } from "../payments";
@@ -30,6 +31,9 @@ export function whopPayments(payments: WhopPayment[]): ListedPayment[] {
         at,
         fingerprint: `${payment.substatus ?? ""}:${payment.refunded_amount?.amount ?? 0}`,
         value: { currency: payment.total.currency, amount: whopEarned(payment) },
+        kind: (payment.billing_reason ?? "").startsWith("subscription")
+          ? "subscription"
+          : "one_time",
       },
     ];
   });

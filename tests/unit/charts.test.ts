@@ -7,6 +7,8 @@ import {
   mrrChartModel,
   niceScale,
   parseHistory,
+  parseRevenueHistory,
+  revenueChartModel,
   sparklinePoints,
 } from "../../src/lib/charts";
 
@@ -91,6 +93,16 @@ describe("MRR chart model", () => {
       ["2025-11", "2025-12", "2026-01", "2026-02"].map((month) => ({ month, cents: 100 })),
     );
     expect(year.points.map((p) => p.narrowLabel)).toEqual([null, "Dec ’25", null, "Feb ’26"]);
+    // A longer history shows every third month, so labels with a year never touch.
+    const months = Array.from({ length: 12 }, (_, i) => ({
+      month: `${i < 3 ? 2025 : 2026}-${String(((i + 9) % 12) + 1).padStart(2, "0")}`,
+      cents: 100,
+    }));
+    expect(
+      mrrChartModel(months)
+        .points.map((p) => p.narrowLabel)
+        .filter(Boolean),
+    ).toEqual(["Dec ’25", "Mar ’26", "Jun", "Sep"]);
     expect(monthLabel("2026-01")).toBe("January 2026");
     expect(model.summary).toBe(
       "MRR at month end went from $0 in November 2025 to $29 in January 2026.",
@@ -103,6 +115,70 @@ describe("MRR chart model", () => {
     expect(model.points[0].x).toBe(1);
     expect(model.summary).toBe("MRR was $5 at the end of January 2026.");
   });
+});
+
+describe("stored revenue by month", () => {
+  it("reads months with their split, or their total only", () =>
+    expect(
+      parseRevenueHistory([
+        { month: "2026-07", cents: 1200, subscription_cents: 1000, one_time_cents: 200 },
+        { month: "2026-08", cents: 900 },
+      ]),
+    ).toEqual([
+      { month: "2026-07", cents: 1200, split: { subscription: 1000, oneTime: 200 } },
+      { month: "2026-08", cents: 900, split: null },
+    ]));
+
+  it("rejects anything malformed", () => {
+    for (const value of [
+      null,
+      [],
+      [{ month: "2026-08", mrr_cents: 1 }],
+      [{ month: "2026-08", cents: -1 }],
+      [{ month: "2026-08", cents: 1, subscription_cents: 0.5, one_time_cents: 0 }],
+    ])
+      expect(parseRevenueHistory(value)).toBeNull();
+  });
+});
+
+describe("revenue chart model", () => {
+  const split = (subscription: number, oneTime: number) => ({ subscription, oneTime });
+  const history = [
+    { month: "2026-06", cents: 0, split: split(0, 0) },
+    { month: "2026-07", cents: 1500, split: split(1000, 500) },
+    { month: "2026-08", cents: 3000, split: split(3000, 0) },
+  ];
+
+  it("centers a column in each month's band, zero at the bottom", () => {
+    const { bars } = revenueChartModel(history);
+    expect(bars.map((bar) => [bar.x, bar.height])).toEqual([
+      [1 / 6, 0],
+      [0.5, 0.5],
+      [5 / 6, 1],
+    ]);
+    expect(bars.map((bar) => bar.axisLabel)).toEqual(["Jun ’26", "Jul", "Aug"]);
+  });
+
+  it("splits each column into its parts, and totals the period", () => {
+    const model = revenueChartModel(history);
+    expect(model.bars[1].parts).toEqual({
+      subscription: { value: "$10", share: 2 / 3 },
+      oneTime: { value: "$5", share: 1 / 3 },
+    });
+    expect(model.bars[0].parts!.subscription.share).toBe(0);
+    expect(model.total).toBe("$45");
+    expect(model.totalParts).toEqual({ subscription: "$40", oneTime: "$5" });
+    expect(model.summary).toBe("Revenue by month from June 2026 to August 2026, $45 in total.");
+  });
+
+  it("shows totals only when any month has no split", () => {
+    const model = revenueChartModel([...history, { month: "2026-09", cents: 700, split: null }]);
+    expect(model.totalParts).toBeNull();
+    expect(model.bars.every((bar) => bar.parts === null)).toBe(true);
+  });
+
+  it("handles a single month", () =>
+    expect(revenueChartModel([history[1]]).summary).toBe("Revenue was $15 in July 2026."));
 });
 
 describe("sparkline", () => {

@@ -53,6 +53,7 @@ function listing(overrides: Partial<Listing> = {}): Listing {
     revenue_30d_cents: null,
     revenue_12m_cents: null,
     revenue_total_cents: null,
+    revenue_history: null,
     rank: 1,
     ...overrides,
   };
@@ -274,6 +275,27 @@ describe("markdown", () => {
     expect(text).toContain("- Revenue, last 12 months: $48,000");
     expect(text).toContain("- Revenue, all time: not shared");
     expect(text).toContain("- Verified with: Stripe");
+  });
+
+  it("lists revenue by month where it is shared, split where every month is", () => {
+    const months = [
+      { month: "2026-07", cents: 120_000, subscription_cents: 100_000, one_time_cents: 20_000 },
+      { month: "2026-08", cents: 150_000, subscription_cents: 110_000, one_time_cents: 40_000 },
+    ];
+    const shared = { revenue_30d_cents: 150_000, revenue_history: months };
+    expect(productMarkdown(listing({ revenue_history: months }))).not.toContain(
+      "### Revenue by month",
+    );
+    const split = productMarkdown(listing(shared));
+    expect(split).toContain(
+      "### Revenue by month\n\n| Month | Subscriptions | One-time purchases | Revenue |",
+    );
+    expect(split).toContain("| August 2026 | $1,100 | $400 | $1,500 |");
+    const total = productMarkdown(
+      listing({ ...shared, revenue_history: [months[0], { month: "2026-08", cents: 150_000 }] }),
+    );
+    expect(total).toContain("| Month | Revenue |");
+    expect(total).toContain("| July 2026 | $1,200 |");
   });
 
   it("says when the founder verified the website's domain", () => {

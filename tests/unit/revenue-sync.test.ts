@@ -381,8 +381,9 @@ describe("hourly verification", () => {
 });
 
 describe("revenue carried over", () => {
-  it("carries over figures from the same provider read less than two days ago", () => {
+  it("carries over figures and months from the same provider read less than two days ago", () => {
     const now = Date.parse("2026-09-25T12:00:00Z");
+    const months = [{ month: "2026-08", cents: 900, subscription_cents: 800, one_time_cents: 100 }];
     const latest = {
       provider: "paddle",
       history: null,
@@ -392,14 +393,17 @@ describe("revenue carried over", () => {
       revenue_30d_cents: 1000,
       revenue_12m_cents: null,
       revenue_total_cents: null,
+      revenue_history: months,
       revenue_at: "2026-09-24T00:00:00Z",
     };
     expect(revenueToCarry(latest, "paddle", now)).toEqual({
       days30Cents: 1000,
       months12Cents: null,
       totalCents: null,
+      history: months,
       at: "2026-09-24T00:00:00Z",
     });
+    expect(revenueToCarry({ ...latest, revenue_history: null }, "paddle", now)?.history).toBeNull();
     expect(revenueToCarry({ ...latest, revenue_at: "2026-09-23T11:00:00Z" }, "paddle", now)).toBe(
       null,
     );
@@ -450,13 +454,14 @@ describe("payments", () => {
         },
       ]),
     );
-    return { ...read, values };
+    const kinds = Object.fromEntries(read.payments.map((payment) => [payment.id, payment.kind]));
+    return { ...read, values, kinds };
   }
   const usd = (amount: number) => ({ currency: "usd", amount });
   const eur = (amount: number) => ({ currency: "eur", amount });
 
   it("reads Stripe charges after refunds and lost disputes, without tax", async () => {
-    const { complete, values } = await recent("stripe", "rk_test_harborfixture0001");
+    const { complete, values, kinds } = await recent("stripe", "rk_test_harborfixture0001");
     expect(complete).toBe(true);
     expect(values).toMatchObject({
       ch_monthly_0: usd(2900),
@@ -469,19 +474,33 @@ describe("payments", () => {
     });
     expect(values).not.toHaveProperty("ch_failed");
     expect(values).not.toHaveProperty("ch_auth");
+    // Charges of subscription invoices paid for subscriptions; Checkout and direct charges did not.
+    expect(kinds).toMatchObject({
+      ch_monthly_0: "subscription",
+      ch_yearly: "subscription",
+      ch_eur: "subscription",
+      ch_ebook: "one_time",
+      ch_partial: "one_time",
+    });
   });
 
   it("leaves unchanged Stripe charges unvalued and keeps a changed one's share of tax", async () => {
-    const stored = new Map([
-      ["ch_ebook", { fingerprint: "1200:0:0", amount: 1000 }],
+    const stored = new Map<string, StoredPayment>([
+      ["ch_ebook", { fingerprint: "1200:0:0", amount: 1000, kind: "one_time" }],
       // Stored while EUR 12 of it was refunded, a refund Stripe has since reversed.
-      ["ch_eur", { fingerprint: "4800:1200:0", amount: 3000 }],
+      ["ch_eur", { fingerprint: "4800:1200:0", amount: 3000, kind: "subscription" }],
+      // Stored before kinds were read: valued again with its invoice, which gives its kind.
+      ["ch_monthly_0", { fingerprint: "2900:0:0", amount: 2900, kind: null }],
     ]);
-    const { values } = await recent("stripe", "rk_test_harborfixture0001", {
+    const { values, kinds } = await recent("stripe", "rk_test_harborfixture0001", {
       stored: (id) => stored.get(id) ?? null,
     });
     expect(values.ch_ebook).toBeNull();
+    expect(kinds.ch_ebook).toBeNull();
     expect(values.ch_eur).toEqual(eur(4000));
+    expect(kinds.ch_eur).toBe("subscription");
+    expect(values.ch_monthly_0).toEqual(usd(2900));
+    expect(kinds.ch_monthly_0).toBe("subscription");
   });
 
   it("names the Stripe permission revenue needs", async () => {
@@ -491,7 +510,7 @@ describe("payments", () => {
   });
 
   it("reads Paddle transactions after adjustments, without tax", async () => {
-    const { complete, values } = await recent("paddle", PADDLE_KEYS.one);
+    const { complete, values, kinds } = await recent("paddle", PADDLE_KEYS.one);
     expect(complete).toBe(true);
     expect(values).toMatchObject({
       txn_monthly_0: usd(3000),
@@ -500,10 +519,11 @@ describe("payments", () => {
       txn_one_off: usd(9900),
       txn_refunded: usd(0),
     });
+    expect(kinds).toMatchObject({ txn_monthly_0: "subscription", txn_one_off: "one_time" });
   });
 
   it("reads Polar orders, one-time purchases included", async () => {
-    const { complete, values } = await recent("polar", POLAR_TOKENS.one);
+    const { complete, values, kinds } = await recent("polar", POLAR_TOKENS.one);
     expect(complete).toBe(true);
     expect(values).toMatchObject({
       ord_monthly_0: usd(2500),
@@ -512,10 +532,11 @@ describe("payments", () => {
       ord_once: usd(1500),
       ord_refunded: usd(0),
     });
+    expect(kinds).toMatchObject({ ord_monthly_0: "subscription", ord_once: "one_time" });
   });
 
   it("reads Dodo payments one at a time, and only those new or changed", async () => {
-    const { complete, values } = await recent("dodo", DODO_KEYS.one);
+    const { complete, values, kinds } = await recent("dodo", DODO_KEYS.one);
     expect(complete).toBe(true);
     expect(values).toMatchObject({
       pay_monthly_0: usd(1500),
@@ -525,10 +546,14 @@ describe("payments", () => {
       pay_refunded: usd(0),
       pay_disputed: usd(0),
     });
+    expect(kinds).toMatchObject({ pay_monthly_0: "subscription", pay_once: "one_time" });
+    // An unchanged payment is not read again, but the list still tells its kind.
     const again = await recent("dodo", DODO_KEYS.one, {
-      stored: (id) => (id === "pay_once" ? { fingerprint: "3000::", amount: 2500 } : null),
+      stored: (id) =>
+        id === "pay_once" ? { fingerprint: "3000::", amount: 2500, kind: null } : null,
     });
     expect(again.values.pay_once).toBeNull();
+    expect(again.kinds.pay_once).toBe("one_time");
   }, 30_000);
 
   it("goes on with Dodo payments in the next run once the requests of one run are spent", async () => {
@@ -541,7 +566,7 @@ describe("payments", () => {
   }, 30_000);
 
   it("reads Creem transactions after refunds, without tax", async () => {
-    const { complete, values } = await recent("creem", CREEM_KEYS.one);
+    const { complete, values, kinds } = await recent("creem", CREEM_KEYS.one);
     expect(complete).toBe(true);
     expect(values).toMatchObject({
       tran_monthly_0: usd(2500),
@@ -550,10 +575,11 @@ describe("payments", () => {
       tran_refund: eur(1000),
       tran_chargeback: usd(0),
     });
+    expect(kinds).toMatchObject({ tran_monthly_0: "subscription", tran_once: "one_time" });
   });
 
   it("reads Chargebee invoices with a payment, less cash refunds", async () => {
-    const { complete, values } = await recent("chargebee", chargebeeKey);
+    const { complete, values, kinds } = await recent("chargebee", chargebeeKey);
     expect(complete).toBe(true);
     expect(values).toMatchObject({
       "harbor-test:cb_inv_0": usd(2700),
@@ -561,10 +587,14 @@ describe("payments", () => {
       "harbor-test:cb_inv_once": usd(2000),
       "harbor-test:cb_inv_refunded": usd(0),
     });
+    expect(kinds).toMatchObject({
+      "harbor-test:cb_inv_0": "subscription",
+      "harbor-test:cb_inv_once": "one_time",
+    });
   });
 
   it("reads Whop payments after refunds, without tax", async () => {
-    const { complete, values } = await recent("whop", WHOP_KEYS.one);
+    const { complete, values, kinds } = await recent("whop", WHOP_KEYS.one);
     expect(complete).toBe(true);
     expect(values).toMatchObject({
       pay_w1_0: usd(1500),
@@ -573,10 +603,11 @@ describe("payments", () => {
       pay_w_once: usd(4000),
       pay_w_refund: usd(0),
     });
+    expect(kinds).toMatchObject({ pay_w1_0: "subscription", pay_w_once: "one_time" });
   });
 
   it("reads RevenueCat's revenue chart a day at a time", async () => {
-    const { complete, values, payments } = await recent(
+    const { complete, values, kinds, payments } = await recent(
       "revenuecat",
       revenueCatKey(REVENUECAT.keys.one),
       { livemode: true },
@@ -584,6 +615,7 @@ describe("payments", () => {
     expect(complete).toBe(true);
     const day = new Date(Date.now() - 10 * DAY * 1000).toISOString().slice(0, 10);
     expect(values[`projharbor1:${day}`]).toEqual(usd(500));
+    expect(kinds[`projharbor1:${day}`]).toBe("unknown");
     expect(payments.length).toBeGreaterThanOrEqual(183);
   });
 });

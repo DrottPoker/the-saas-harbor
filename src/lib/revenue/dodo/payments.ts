@@ -2,14 +2,20 @@
 // Every successful payment counts, a subscription's or a one-time purchase. Its total includes
 // tax, which only the payment read alone shows, with its refunds and disputes: it earns its total
 // without tax, less its successful refunds at the same untaxed share, and nothing once a dispute
-// is lost. The list shows whether a payment was refunded or disputed, which is its fingerprint.
+// is lost. The list shows whether a payment was refunded or disputed, which is its fingerprint,
+// and the subscription it paid for, which a one-time payment has none of.
 import { netOf } from "../payments";
+import type { PaymentKind } from "../types";
 import type { DodoListedPayment, DodoPaymentDetail } from "./mrr";
 
 const LOST = new Set(["dispute_lost", "dispute_accepted"]);
 
 export function dodoFingerprint(payment: DodoListedPayment) {
   return `${payment.total_amount}:${payment.refund_status ?? ""}:${payment.dispute_status ?? ""}`;
+}
+
+export function dodoKind(payment: DodoListedPayment): PaymentKind {
+  return payment.subscription_id || payment.subscription_ids?.length ? "subscription" : "one_time";
 }
 
 /** What a payment earned, from the payment read alone. */

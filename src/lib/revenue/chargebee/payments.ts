@@ -2,7 +2,8 @@
 // Every invoice with a payment counts, a subscription's or one for one-time charges. It earns
 // what was paid, at its untaxed share of the invoice total, so credits, write-offs and
 // adjustments that were not paid do not count. Cash refunds are refundable credit notes against
-// the invoice, taken off at their own untaxed share.
+// the invoice, taken off at their own untaxed share. A recurring invoice paid for a subscription;
+// any other was for one-time charges.
 import { netOf } from "../payments";
 import type { ListedPayment } from "../types";
 import type { ChargebeeCreditNote, ChargebeeInvoice } from "./mrr";
@@ -41,6 +42,7 @@ export function invoicePayments(
         currency: invoice.currency_code,
         amount: netOf(paid * untaxedShare(invoice.total ?? 0, invoice.tax ?? 0), back),
       },
+      kind: (invoice.recurring ?? !!invoice.subscription_id) ? "subscription" : "one_time",
     };
   });
 }

@@ -1,7 +1,9 @@
 // Revenue from payments: every paid payment, subscription or one-time, after discounts, less
 // refunds, before tax and the provider's fees, dated by the UTC day it was paid. Days and windows
-// of days, and how far a read of payments reaches. Pure functions.
-import type { PaymentRead } from "./types";
+// of days, how far a read of payments reaches, and revenue by month. Pure functions.
+import { monthEnds } from "./history";
+import { toUsdCents } from "./money";
+import type { PaymentKind, PaymentRead } from "./types";
 
 const DAY = 86_400;
 
@@ -45,6 +47,65 @@ export function revenueWindows(now: Date) {
 }
 
 /**
+ * The months of revenue by month, the same as the MRR history's: the twelve calendar months before
+ * the current one, oldest first. `from` is the first day of the oldest, `to` the first day of the
+ * current month.
+ */
+export function revenueMonths(now: Date) {
+  const months = monthEnds(now).map(({ month }) => month);
+  return {
+    months,
+    from: `${months[0]}-01`,
+    to: dayOf(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1) / 1000),
+  };
+}
+
+/** A month of revenue in USD cents, with what subscriptions and one-time purchases paid of it. */
+export type RevenueMonth = {
+  month: string;
+  cents: number;
+  subscription_cents?: number;
+  one_time_cents?: number;
+};
+
+/** Each month's totals per kind (payments without a kind under `unknown`) and currency. */
+export type MonthTotals = Record<string, Partial<Record<PaymentKind, Record<string, number>>>>;
+
+/**
+ * The months from `from` (a first day) on, with each month's revenue in USD cents. A month whose
+ * payments all have a kind is split into subscriptions and one-time purchases, and its revenue is
+ * their sum; a month with any payment of unknown kind has its total only.
+ */
+export function revenueHistory(
+  months: string[],
+  from: string,
+  totals: MonthTotals,
+  rates: ReadonlyMap<string, number>,
+): RevenueMonth[] {
+  return months
+    .filter((month) => `${month}-01` >= from)
+    .map((month) => {
+      const kinds = totals[month] ?? {};
+      const unknown = Object.values(kinds.unknown ?? {}).some((amount) => amount > 0);
+      if (unknown) {
+        const all: Record<string, number> = {};
+        for (const byCurrency of Object.values(kinds))
+          for (const [currency, amount] of Object.entries(byCurrency ?? {}))
+            all[currency] = (all[currency] ?? 0) + amount;
+        return { month, cents: toUsdCents(all, rates) };
+      }
+      const subscription = toUsdCents(kinds.subscription ?? {}, rates);
+      const oneTime = toUsdCents(kinds.one_time ?? {}, rates);
+      return {
+        month,
+        cents: subscription + oneTime,
+        subscription_cents: subscription,
+        one_time_cents: oneTime,
+      };
+    });
+}
+
+/**
  * The first day a read of the days before `before` covers completely: `since` when it was read to
  * the end, or the day it says it covers from. A list read newest first stops somewhere in its
  * oldest day, whose earlier payments the next page would hold, so that day is left for the next
@@ -65,8 +126,17 @@ export function netOf(amount: number, refunded = 0) {
   return Math.max(0, amount - refunded);
 }
 
-/** How far the stored payments reach: from `from` (or all time with `origin`) to `readAt`. */
-export type Coverage = { from: string | null; origin: boolean; readAt: string | null };
+/**
+ * How far the stored payments reach: from `from` (or all time with `origin`) to `readAt`, and the
+ * days of the payments in the months charted that were stored before kinds were read (`unsorted`,
+ * `to` exclusive), or null.
+ */
+export type Coverage = {
+  from: string | null;
+  origin: boolean;
+  readAt: string | null;
+  unsorted?: { from: string; to: string } | null;
+};
 
 /** A day range of payments read completely: `to` is exclusive, or null for up to now. */
 export type PaymentWindow = { from: string; to: string | null };
@@ -79,6 +149,8 @@ export type PaymentWindow = { from: string; to: string | null };
  * are not valued again. The stored payments still count where they reach the days listed now, and
  * older payments are then read too, so an account too large to list six months in one run still
  * gets back to its first payment; otherwise there is a gap, and older payments are read again.
+ * Once they reach the first payment, the payments of the months charted that were stored before
+ * kinds were read are read again instead, so each gets its kind.
  * Returns the windows read completely, the payments listed, and how far the payments then reach,
  * or null when the read covers no whole day. The payments include those of a day a read did not
  * finish: storing them spares valuing them again, while the day stays outside the windows, so
@@ -109,6 +181,16 @@ export async function collectPayments(
       windows.push({ from: covered, to: from });
       from = covered;
       origin = older.complete;
+    }
+  } else if (origin && stored.unsorted) {
+    // The recent read gives the kinds of the payments it lists.
+    const since = stored.unsorted.from;
+    const before = stored.unsorted.to < recentFrom ? stored.unsorted.to : recentFrom;
+    if (since < before) {
+      const again = await read(since, before, pages.older);
+      listed.push(...again.payments);
+      const covered = coveredFrom(again, since, before);
+      if (covered !== null) windows.push({ from: covered, to: before });
     }
   }
   return { windows, listed, from, origin };

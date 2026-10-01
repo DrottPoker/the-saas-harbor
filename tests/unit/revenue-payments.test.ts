@@ -2,10 +2,11 @@ import { describe, expect, it } from "vitest";
 import { invoicePayments, refundedByInvoice } from "../../src/lib/revenue/chargebee/payments";
 import { creemEarned, transactionPayments } from "../../src/lib/revenue/creem/payments";
 import type { CreemTransaction } from "../../src/lib/revenue/creem/mrr";
-import { dodoEarned, dodoFingerprint } from "../../src/lib/revenue/dodo/payments";
+import { dodoEarned, dodoFingerprint, dodoKind } from "../../src/lib/revenue/dodo/payments";
 import type { PaddleTransaction } from "../../src/lib/revenue/paddle/mrr";
 import {
   transactionEarned,
+  transactionKind,
   transactionPayments as paddlePayments,
 } from "../../src/lib/revenue/paddle/payments";
 import {
@@ -14,6 +15,8 @@ import {
   dayOf,
   dayStart,
   FIRST_DAY,
+  revenueHistory,
+  revenueMonths,
   revenueWindows,
   rereadFrom,
 } from "../../src/lib/revenue/payments";
@@ -22,15 +25,16 @@ import { orderPayments } from "../../src/lib/revenue/polar/payments";
 import { chartPayments } from "../../src/lib/revenue/revenuecat/payments";
 import {
   chargePayments,
+  factsOf,
   isPaid,
-  knownShares,
+  knownFacts,
   lostByCharge,
-  sharesOf,
+  paymentFacts,
   storedShare,
-  untaxedShares,
+  subscriptionInvoice,
   type StripeCharge,
 } from "../../src/lib/revenue/stripe/payments";
-import type { ListedPayment, PaymentRead } from "../../src/lib/revenue/types";
+import type { ListedPayment, PaymentRead, StoredPayment } from "../../src/lib/revenue/types";
 import type { WhopPayment } from "../../src/lib/revenue/whop/mrr";
 import { whopEarned, whopPayments } from "../../src/lib/revenue/whop/payments";
 
@@ -38,7 +42,13 @@ const NOW = new Date("2026-09-27T12:00:00Z");
 const at = (iso: string) => Date.parse(iso) / 1000;
 
 function payment(id: string, iso: string, amount = 1000): ListedPayment {
-  return { id, at: at(iso), fingerprint: String(amount), value: { currency: "usd", amount } };
+  return {
+    id,
+    at: at(iso),
+    fingerprint: String(amount),
+    value: { currency: "usd", amount },
+    kind: "subscription",
+  };
 }
 
 describe("days and windows", () => {
@@ -52,6 +62,51 @@ describe("days and windows", () => {
     expect(revenueWindows(NOW)).toEqual({ days30: "2026-08-29", months12: "2025-09-28" });
     // A year back from the 29th of February is the 28th, so the window starts on the 1st of March.
     expect(revenueWindows(new Date("2028-02-29T08:00:00Z")).months12).toBe("2027-03-01");
+  });
+
+  it("charts the twelve months before the current one, as the MRR history does", () => {
+    const { months, from, to } = revenueMonths(NOW);
+    expect(months).toHaveLength(12);
+    expect([months[0], months.at(-1)]).toEqual(["2025-09", "2026-08"]);
+    expect([from, to]).toEqual(["2025-09-01", "2026-09-01"]);
+    expect(revenueMonths(new Date("2027-01-01T00:00:00Z")).months.at(-1)).toBe("2026-12");
+  });
+});
+
+describe("revenueHistory", () => {
+  const rates = new Map([["eur", 0.8]]);
+  const months = ["2026-06", "2026-07", "2026-08"];
+
+  it("splits a month whose payments all have a kind, in USD at today's rates", () => {
+    expect(
+      revenueHistory(
+        months,
+        "2026-06-01",
+        {
+          "2026-07": { subscription: { usd: 1000, eur: 800 }, one_time: { usd: 500 } },
+          "2026-08": { subscription: { usd: 2000 } },
+        },
+        rates,
+      ),
+    ).toEqual([
+      { month: "2026-06", cents: 0, subscription_cents: 0, one_time_cents: 0 },
+      { month: "2026-07", cents: 2500, subscription_cents: 2000, one_time_cents: 500 },
+      { month: "2026-08", cents: 2000, subscription_cents: 2000, one_time_cents: 0 },
+    ]);
+  });
+
+  it("gives a month with any payment of unknown kind its total only", () => {
+    expect(
+      revenueHistory(
+        months,
+        "2026-07-01",
+        { "2026-07": { subscription: { usd: 1000 }, unknown: { eur: 400 } } },
+        rates,
+      ),
+    ).toEqual([
+      { month: "2026-07", cents: 1500 },
+      { month: "2026-08", cents: 0, subscription_cents: 0, one_time_cents: 0 },
+    ]);
   });
 });
 
@@ -227,6 +282,81 @@ describe("collectPayments", () => {
     });
   });
 
+  it("reads again the charted payments stored before kinds were read, once all are read", async () => {
+    const calls: [string, string | null][] = [];
+    const plan = await collectPayments(
+      {
+        from: FIRST_DAY,
+        origin: true,
+        readAt: "2026-09-26T12:00:00Z",
+        unsorted: { from: "2025-09-03", to: "2026-05-02" },
+      },
+      NOW,
+      async (since, before) => {
+        calls.push([since, before]);
+        return before === null
+          ? { payments: [], complete: true }
+          : { payments: [payment("old", "2025-11-01T10:00:00Z")], complete: true };
+      },
+      pages,
+    );
+    // The recent read gives the kinds from where it starts.
+    expect(calls).toEqual([
+      ["2026-03-28", null],
+      ["2025-09-03", "2026-03-28"],
+    ]);
+    expect(plan).toMatchObject({
+      windows: [
+        { from: "2026-03-28", to: null },
+        { from: "2025-09-03", to: "2026-03-28" },
+      ],
+      from: FIRST_DAY,
+      origin: true,
+    });
+    expect(plan!.listed.map((p) => p.id)).toEqual(["old"]);
+  });
+
+  it("reads older payments before those without a kind", async () => {
+    const calls: [string, string | null][] = [];
+    await collectPayments(
+      {
+        from: "2025-06-01",
+        origin: false,
+        readAt: "2026-09-26T12:00:00Z",
+        unsorted: { from: "2025-09-03", to: "2025-10-01" },
+      },
+      NOW,
+      async (since, before) => {
+        calls.push([since, before]);
+        return { payments: [], complete: before === null };
+      },
+      pages,
+    );
+    expect(calls).toEqual([
+      ["2026-03-28", null],
+      [FIRST_DAY, "2025-06-01"],
+    ]);
+  });
+
+  it("leaves payments without a kind to the recent read when it lists them", async () => {
+    let reads = 0;
+    await collectPayments(
+      {
+        from: FIRST_DAY,
+        origin: true,
+        readAt: "2026-09-26T12:00:00Z",
+        unsorted: { from: "2026-04-10", to: "2026-09-02" },
+      },
+      NOW,
+      async () => {
+        reads++;
+        return { payments: [], complete: true };
+      },
+      pages,
+    );
+    expect(reads).toBe(1);
+  });
+
   it("gives up when not even one day could be read", async () => {
     expect(
       await collectPayments(
@@ -261,19 +391,37 @@ describe("Stripe charges", () => {
     expect(isPaid(charge({ status: "failed" }))).toBe(false);
   });
 
-  it("takes the untaxed share from the invoice or Checkout Session", () => {
-    const shares = untaxedShares(
+  it("tells a subscription's invoice by its parent or why it was billed", () => {
+    const invoice = { id: "in_1", total: 1000, total_excluding_tax: 1000 };
+    expect(subscriptionInvoice({ ...invoice, parent: { type: "subscription_details" } })).toBe(
+      true,
+    );
+    expect(subscriptionInvoice({ ...invoice, billing_reason: "subscription_cycle" })).toBe(true);
+    expect(
+      subscriptionInvoice({
+        ...invoice,
+        billing_reason: "manual",
+        parent: { type: "quote_details" },
+      }),
+    ).toBe(false);
+    expect(subscriptionInvoice(invoice)).toBe(false);
+  });
+
+  it("takes the untaxed share and kind from the invoice or Checkout Session", () => {
+    const facts = paymentFacts(
       [
         {
           id: "in_1",
           total: 12000,
           total_excluding_tax: 10000,
+          billing_reason: "subscription_cycle",
           payments: { data: [{ payment: { type: "payment_intent", payment_intent: "pi_1" } }] },
         },
         {
           id: "in_old",
           total: 5000,
           total_excluding_tax: 5000,
+          billing_reason: "manual",
           payments: { data: [{ payment: { type: "charge", charge: "ch_old" } }] },
         },
       ],
@@ -287,20 +435,22 @@ describe("Stripe charges", () => {
         },
       ],
     );
-    expect(shares.get("pi_1")).toBeCloseTo(10000 / 12000);
-    expect(shares.get("ch_old")).toBe(1);
-    expect(shares.get("pi_2")).toBeCloseTo(0.8);
+    expect(facts.get("pi_1")).toEqual({ share: 10000 / 12000, kind: "subscription" });
+    expect(facts.get("ch_old")).toEqual({ share: 1, kind: "one_time" });
+    expect(facts.get("pi_2")!.share).toBeCloseTo(0.8);
+    expect(facts.get("pi_2")!.kind).toBe("one_time");
     const needed = [
       charge(),
       charge({ id: "ch_2", payment_intent: "pi_2" }),
       charge({ id: "ch_old", payment_intent: null }),
       charge({ id: "ch_direct", payment_intent: "pi_direct" }),
     ];
-    expect(Object.fromEntries(sharesOf(needed, shares))).toEqual({
-      ch_1: 10000 / 12000,
-      ch_2: 0.8,
-      ch_old: 1,
-      ch_direct: 1,
+    // A charge with neither an invoice nor a session was a one-time payment.
+    expect(Object.fromEntries(factsOf(needed, facts))).toEqual({
+      ch_1: { share: 10000 / 12000, kind: "subscription" },
+      ch_2: { share: 0.8, kind: "one_time" },
+      ch_old: { share: 1, kind: "one_time" },
+      ch_direct: { share: 1, kind: "one_time" },
     });
   });
 
@@ -312,32 +462,44 @@ describe("Stripe charges", () => {
     const [listed] = chargePayments(
       [charge({ amount_refunded: 1000 })],
       lost,
-      new Map([["ch_1", 10000 / 12000]]),
+      new Map([["ch_1", { share: 10000 / 12000, kind: "subscription" as const }]]),
     );
-    expect(listed).toMatchObject({ id: "ch_1", fingerprint: "12000:1000:2000" });
+    expect(listed).toMatchObject({
+      id: "ch_1",
+      fingerprint: "12000:1000:2000",
+      kind: "subscription",
+    });
     expect(listed.value!.amount).toBeCloseTo((12000 - 3000) * (10000 / 12000));
-    expect(chargePayments([charge()], new Map(), new Map())[0].value).toBeNull();
+    expect(chargePayments([charge()], new Map(), new Map())[0]).toMatchObject({
+      value: null,
+      kind: null,
+    });
   });
 
-  it("values only new and changed charges, keeping a changed one's share", () => {
-    const stored = new Map([
-      ["ch_same", { fingerprint: "12000:0:0", amount: 10000 }],
-      ["ch_refunded", { fingerprint: "12000:0:0", amount: 10000 }],
-      ["ch_zero", { fingerprint: "12000:12000:0", amount: 0 }],
+  it("values only new and changed charges, keeping a changed one's share and kind", () => {
+    const stored = new Map<string, StoredPayment>([
+      ["ch_same", { fingerprint: "12000:0:0", amount: 10000, kind: "subscription" }],
+      ["ch_refunded", { fingerprint: "12000:0:0", amount: 10000, kind: "one_time" }],
+      ["ch_zero", { fingerprint: "12000:12000:0", amount: 0, kind: "one_time" }],
+      // Stored before kinds were read, so its invoice or session is read again.
+      ["ch_unsorted", { fingerprint: "12000:0:0", amount: 10000, kind: null }],
     ]);
-    const { shares, needed } = knownShares(
+    const { facts, needed } = knownFacts(
       [
         charge({ id: "ch_same" }),
         charge({ id: "ch_refunded", amount_refunded: 6000 }),
         charge({ id: "ch_zero", amount_refunded: 6000 }),
+        charge({ id: "ch_unsorted" }),
         charge({ id: "ch_new" }),
       ],
       new Map(),
       (id) => stored.get(id) ?? null,
     );
-    expect(Object.fromEntries(shares)).toEqual({ ch_refunded: 10000 / 12000 });
-    expect(needed.map((c) => c.id)).toEqual(["ch_zero", "ch_new"]);
-    expect(storedShare({ fingerprint: "12000:0:0", amount: 12000 })).toBe(1);
+    expect(Object.fromEntries(facts)).toEqual({
+      ch_refunded: { share: 10000 / 12000, kind: "one_time" },
+    });
+    expect(needed.map((c) => c.id)).toEqual(["ch_zero", "ch_unsorted", "ch_new"]);
+    expect(storedShare({ fingerprint: "12000:0:0", amount: 12000, kind: null })).toBe(1);
   });
 });
 
@@ -376,7 +538,19 @@ describe("Paddle transactions", () => {
       id: "txn_1",
       at: at("2026-09-20T10:00:00Z"),
       fingerprint: "6000:1000",
+      kind: "one_time",
     });
+  });
+
+  it("counts a subscription's transaction for it, unless it billed a one-time charge", () => {
+    const renewal = {
+      ...transaction({}),
+      subscription_id: "sub_1",
+      origin: "subscription_recurring",
+    };
+    expect(transactionKind(renewal)).toBe("subscription");
+    expect(transactionKind({ ...renewal, origin: "subscription_charge" })).toBe("one_time");
+    expect(transactionKind(transaction({}))).toBe("one_time");
   });
 });
 
@@ -404,8 +578,14 @@ describe("Polar orders", () => {
         at: at("2026-09-20T10:00:00Z"),
         fingerprint: "4000:1500",
         value: { currency: "usd", amount: 2500 },
+        kind: "one_time",
       },
     ]);
+    expect(
+      orderPayments([
+        { ...order, billing_reason: "subscription_cycle", subscription_id: "sub_1" },
+      ])[0].kind,
+    ).toBe("subscription");
   });
 });
 
@@ -446,6 +626,21 @@ describe("Dodo Payments", () => {
       }),
     ).toBe("12000:partial:");
   });
+
+  it("counts a payment that names a subscription for it", () => {
+    const listed = {
+      payment_id: "pay_1",
+      total_amount: 1000,
+      currency: "USD",
+      created_at: "2026-09-20T10:00:00Z",
+    };
+    expect(dodoKind({ ...listed, subscription_id: "sub_1" })).toBe("subscription");
+    expect(
+      dodoKind({ ...listed, subscription_id: null, subscription_ids: ["sub_1", "sub_2"] }),
+    ).toBe("subscription");
+    expect(dodoKind({ ...listed, subscription_id: "" })).toBe("one_time");
+    expect(dodoKind(listed)).toBe("one_time");
+  });
 });
 
 describe("Creem transactions", () => {
@@ -481,6 +676,18 @@ describe("Creem transactions", () => {
     );
     expect(listed.map((p) => [p.id, p.at])).toEqual([["tran_1", at("2026-09-20T10:00:00Z")]]);
   });
+
+  it("counts a subscription's invoice for it, and a payment as a one-time purchase", () => {
+    const listed = transactionPayments(
+      [transaction(), transaction({ id: "tran_invoice", type: "invoice", subscription: "sub_1" })],
+      at("2026-03-28T00:00:00Z"),
+      null,
+    );
+    expect(listed.map((p) => [p.id, p.kind])).toEqual([
+      ["tran_1", "one_time"],
+      ["tran_invoice", "subscription"],
+    ]);
+  });
 });
 
 describe("Chargebee invoices", () => {
@@ -501,6 +708,7 @@ describe("Chargebee invoices", () => {
         {
           id: "1001",
           status: "paid",
+          recurring: true,
           price_type: "tax_exclusive",
           currency_code: "USD",
           date: at("2026-09-20T10:00:00Z"),
@@ -511,6 +719,7 @@ describe("Chargebee invoices", () => {
         {
           id: "1002",
           status: "paid",
+          recurring: false,
           price_type: "tax_exclusive",
           currency_code: "USD",
           date: at("2026-09-21T10:00:00Z"),
@@ -521,9 +730,9 @@ describe("Chargebee invoices", () => {
       ],
       refunded,
     );
-    expect(payments.map((p) => [p.id, p.fingerprint, p.value!.amount])).toEqual([
-      ["acme:1001", "12000:1000", 9000],
-      ["acme:1002", "3000:0", 3000],
+    expect(payments.map((p) => [p.id, p.fingerprint, p.value!.amount, p.kind])).toEqual([
+      ["acme:1001", "12000:1000", 9000, "subscription"],
+      ["acme:1002", "3000:0", 3000, "one_time"],
     ]);
   });
 });
@@ -551,7 +760,11 @@ describe("Whop payments", () => {
       id: "pay_1",
       fingerprint: "partially_refunded:60.00",
       value: { currency: "usd", amount: 5000 },
+      kind: "one_time",
     });
+    expect(whopPayments([{ ...paid, billing_reason: "subscription_cycle" }])[0].kind).toBe(
+      "subscription",
+    );
   });
 });
 
@@ -570,6 +783,7 @@ describe("RevenueCat revenue chart", () => {
         at: at("2026-09-20T00:00:00Z"),
         fingerprint: "12.5",
         value: { currency: "usd", amount: 1250 },
+        kind: "unknown",
       },
     ]);
   });

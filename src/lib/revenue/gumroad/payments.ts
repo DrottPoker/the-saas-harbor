@@ -2,8 +2,8 @@
 // The summary gives each day's sales, one-time purchases and memberships alike, in US cents after
 // discounts and without the tax Gumroad collects, less what was refunded of them. Its days follow
 // the seller's time zone. A token that can only view sales can read it, but not refunds or
-// disputes on their own, so each day counts as one payment of the account, and its figure is its
-// fingerprint, since refunds change it later.
+// disputes on their own, so each day counts as one payment of the account, of unknown kind, and
+// its figure is its fingerprint, since refunds change it later.
 import { dayStart } from "../payments";
 import type { ListedPayment } from "../types";
 
@@ -25,6 +25,7 @@ export function summaryPayments(
         at,
         fingerprint: String(day.net_cents),
         value: { currency: "usd", amount: day.net_cents },
+        kind: "unknown",
       },
     ];
   });

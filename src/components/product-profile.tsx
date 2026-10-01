@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { ArrowUpRight, BadgeCheck } from "lucide-react";
-import { parseHistory } from "@/lib/charts";
+import { parseHistory, parseRevenueHistory } from "@/lib/charts";
 import type { Listing, PageViewCounts } from "@/lib/data";
 import { categorySlug, formatDate, formatUsd } from "@/lib/domain";
 import { REVENUE_WINDOWS, sharesRevenue } from "@/lib/revenue-figures";
@@ -79,6 +79,10 @@ export function ProductProfile({
   const verified =
     (item.revenue_status === "verified" && item.mrr_cents != null) || (!demo && revenueShared);
   const history = parseHistory(item.mrr_history);
+  const revenueHistory = parseRevenueHistory(item.revenue_history);
+  // All time sits with MRR; the shorter windows follow in their own row.
+  const allTime = REVENUE_WINDOWS.find((window) => window.ranking === "all")!;
+  const windows = REVENUE_WINDOWS.filter((window) => window !== allTime);
   // Category pages list real products only, so demo products link to the filtered Browse list.
   const categoryHref = demo
     ? `/discover?category=${encodeURIComponent(item.category ?? "")}`
@@ -189,28 +193,43 @@ export function ProductProfile({
             </div>
           )}
         </div>
-        <dl className="grid divide-y border-t bg-subtle sm:grid-cols-3 sm:divide-x sm:divide-y-0">
+        {/* Hairlines between the figures are the border color showing through 1 px gaps, so
+            they hold in any number of rows. */}
+        <dl className="grid gap-px border-t bg-border sm:grid-cols-2 lg:grid-cols-4">
           <Metric
             label="Monthly recurring revenue"
             value={item.mrr_cents == null ? null : formatUsd(item.mrr_cents)}
             detail={item.mrr_growth_pct != null && <Growth pct={item.mrr_growth_pct} />}
+            className="bg-subtle"
+          />
+          <Metric
+            label={allTime.label}
+            value={item[allTime.column] == null ? null : formatUsd(item[allTime.column]!)}
+            className="bg-subtle"
           />
           <Metric
             label="Paying customers"
             value={item.customers?.toLocaleString("en-US") ?? null}
+            className="bg-subtle"
           />
-          <Metric label="Launched" value={item.launched_on ? formatDate(item.launched_on) : null} />
+          <Metric
+            label="Launched"
+            value={item.launched_on ? formatDate(item.launched_on) : null}
+            className="bg-subtle"
+          />
         </dl>
-        {/* Revenue besides MRR, one-time purchases included, shows only where it is shared. */}
+        {/* The shorter windows of revenue, one-time purchases included, show only where revenue
+            is shared. */}
         {revenueShared && (
-          <dl className="grid divide-y border-t bg-subtle sm:grid-cols-3 sm:divide-x sm:divide-y-0">
-            {REVENUE_WINDOWS.map(({ column, label }) => {
+          <dl className="grid gap-px border-t bg-border sm:grid-cols-2">
+            {windows.map(({ column, label }) => {
               const cents = item[column];
               return (
                 <Metric
                   key={column}
                   label={label}
                   value={cents == null ? null : formatUsd(cents)}
+                  className="bg-subtle"
                 />
               );
             })}
@@ -235,12 +254,16 @@ export function ProductProfile({
           width on wide screens. */}
       <div className="mt-8 grid gap-8 lg:grid-cols-[minmax(0,1fr)_18rem]">
         <div className="grid min-w-0 content-start gap-10">
-          {history && (
-            <RevenueHistory
-              history={history}
-              description={demo ? "Made-up figures for the last 12 months." : undefined}
-            />
-          )}
+          <RevenueHistory
+            history={history}
+            revenue={revenueHistory}
+            description={demo ? "Made-up figures for the last 12 months." : undefined}
+            revenueDescription={
+              demo
+                ? "Made-up figures for the last 12 months, after refunds and before tax."
+                : undefined
+            }
+          />
           <section>
             <h2 className="text-lg font-semibold">About {name}</h2>
             <p className="mt-3 leading-7 whitespace-pre-wrap text-foreground/85 [overflow-wrap:anywhere]">

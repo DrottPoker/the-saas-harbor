@@ -969,10 +969,11 @@ test("registration, email confirmation, profile and SaaS editing, storage, priva
     }),
   ).toBeVisible();
   await page.goto(productPath);
-  // Private figures read Not shared, and visitors are not told whether revenue was verified.
+  // Private figures read Not shared (MRR, revenue of all time, customers and the launch date),
+  // and visitors are not told whether revenue was verified.
   await expect(page.getByText(/Verified with Stripe/)).toHaveCount(0);
   await expect(page.getByText("Verified revenue")).toHaveCount(0);
-  await expect(page.getByText("Not shared", { exact: true })).toHaveCount(3);
+  await expect(page.getByText("Not shared", { exact: true })).toHaveCount(4);
   // Visible text only: the page source also carries framework references like "$104".
   expect(await page.locator("main").innerText()).not.toContain("$104");
   const { data: publicData } = await anon
@@ -3293,10 +3294,21 @@ test("founders share revenue from all payments, and visitors rank products by it
   await expect(figure("Revenue, all time")).toHaveText(figures.total);
   await expect(figure("Monthly recurring revenue")).toHaveText("Not shared");
   await expect(page.getByText(/Verified with Paddle through a read-only key/)).toBeVisible();
+  // Revenue by month covers the twelve months MRR would, in totals only while MRR is private,
+  // since what subscriptions paid each month is close to MRR.
+  await expect(page.getByRole("heading", { name: "Revenue by month" })).toBeVisible();
+  await expect(page.getByRole("tab")).toHaveCount(0);
+  const legend = page.getByRole("list", { name: "Legend" });
+  await expect(legend).toHaveCount(0);
+  await page.getByText("Show as table").click();
+  const revenueTable = page.getByRole("table", { name: "Revenue by month" });
+  await expect(revenueTable.locator("tbody tr")).toHaveCount(12);
+  await expect(revenueTable.locator("thead th")).toHaveText(["Month", "Revenue"]);
   // Search results show the revenue in place of the MRR the product keeps private.
   await expect(page).toHaveTitle(`${name}: ${figures.total} verified revenue | The SaaS Harbor`);
   const markdown = await (await page.request.get(`${productPath}.md`)).text();
   expect(markdown).toContain(`- Revenue, all time: ${figures.total}`);
+  expect(markdown).toContain("### Revenue by month\n\n| Month | Revenue |");
   // The revenue rankings hold a product now, so search engines get them.
   const origin = test.info().project.use.baseURL!;
   expect(await (await page.request.get("/sitemap.xml")).text()).toContain(
@@ -3315,6 +3327,9 @@ test("founders share revenue from all payments, and visitors rank products by it
   const row = page.getByRole("listitem").filter({ hasText: name });
   await expect(row).toContainText(figures.total);
   await expect(row).toContainText(/Rank \d+/);
+  // Its trend is revenue by month, and MRR stands beside it, here not shared.
+  await expect(row.locator("polyline")).toHaveCount(1);
+  await expect(row).toContainText("Not shared");
   for (const theme of ["dark", "light"] as const) {
     await setThemeCookie(page, theme);
     await page.reload();
@@ -3329,6 +3344,48 @@ test("founders share revenue from all payments, and visitors rank products by it
     .single();
   expect(ranked).toMatchObject({ revenue_total_cents: 164_900, mrr_cents: null });
   expect(ranked!.rank_total).toBeGreaterThan(0);
+
+  // With MRR shared too, the page switches between MRR and revenue by month, which then shows
+  // what subscriptions and one-time purchases paid.
+  const hideMrr = page.getByLabel("Hide verified MRR", { exact: true });
+  await page.goto(`/dashboard/saas/${id}`);
+  await hideMrr.uncheck();
+  await page.getByRole("button", { name: "Save changes" }).click();
+  await expect(page).toHaveURL(/saved=/);
+  await page.goto(productPath);
+  await expect(page.getByRole("tab", { name: "MRR" })).toHaveAttribute("aria-selected", "true");
+  await expect(page.getByRole("heading", { name: "MRR at month end" })).toBeVisible();
+  const revenueTab = page.getByRole("tab", { name: "Revenue" });
+  await revenueTab.click();
+  await expect(revenueTab).toHaveAttribute("aria-selected", "true");
+  await expect(page.getByRole("heading", { name: "Revenue by month" })).toBeVisible();
+  await expect(legend.getByText("Subscriptions", { exact: true })).toBeVisible();
+  await expect(legend.getByText("One-time purchases", { exact: true })).toBeVisible();
+  await page.getByText("Show as table").click();
+  await expect(revenueTable.locator("thead th")).toHaveText([
+    "Month",
+    "Subscriptions",
+    "One-time",
+    "Revenue",
+  ]);
+  // The arrow keys move between the tabs, as in any tab list.
+  await revenueTab.focus();
+  await page.keyboard.press("ArrowLeft");
+  await expect(page.getByRole("tab", { name: "MRR" })).toBeFocused();
+  await expect(page.getByRole("heading", { name: "MRR at month end" })).toBeVisible();
+  for (const theme of ["dark", "light"] as const) {
+    await setThemeCookie(page, theme);
+    await page.reload();
+    await page.getByRole("tab", { name: "Revenue" }).click();
+    await expectAccessible(page);
+  }
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expectNoHorizontalScroll(page);
+  await page.setViewportSize({ width: 1280, height: 720 });
+  await page.goto(`/dashboard/saas/${id}`);
+  await hideMrr.check();
+  await page.getByRole("button", { name: "Save changes" }).click();
+  await expect(page).toHaveURL(/saved=/);
 
   // Payments are read by the server alone.
   const { error: denied } = await anon.rpc("revenue_read_state", {

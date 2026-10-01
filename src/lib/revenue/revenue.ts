@@ -11,15 +11,27 @@ import {
 import { usdRates } from "./fx";
 import { MAX_PAGES } from "./http";
 import { toUsdCents } from "./money";
-import { collectPayments, dayOf, dayStart, rereadFrom, revenueWindows } from "./payments";
+import {
+  collectPayments,
+  dayOf,
+  dayStart,
+  rereadFrom,
+  revenueHistory,
+  revenueMonths,
+  revenueWindows,
+  type MonthTotals,
+  type RevenueMonth,
+} from "./payments";
 import { adapter } from "./providers";
-import type { ListedPayment, StoredPayment } from "./types";
+import type { ListedPayment, PaymentKind, StoredPayment } from "./types";
 
 /** Revenue in USD cents; a window is null until the stored payments cover it. */
 export type RevenueFigures = {
   days30Cents: number | null;
   months12Cents: number | null;
   totalCents: number | null;
+  /** Revenue by month over the months the MRR history covers, from the first one covered. */
+  history: RevenueMonth[] | null;
   /** When the payments were read. */
   at: string;
 };
@@ -36,10 +48,13 @@ type ReadState = {
   from: string | null;
   origin: boolean;
   read_at: string | null;
-  stored: Record<string, [string, number]>;
+  unsorted: { from: string; to: string } | null;
+  stored: Record<string, [string, number, PaymentKind | null]>;
 };
 
-type Totals = Record<"days30" | "months12" | "total", Record<string, number> | null>;
+type Totals = Record<"days30" | "months12" | "total", Record<string, number> | null> & {
+  months?: { from: string; totals: MonthTotals } | null;
+};
 
 /** The SHA-256 a payment is stored and claimed by, so equal ids of two providers never meet. */
 export function paymentHash(provider: ProviderId, id: string) {
@@ -49,7 +64,8 @@ export function paymentHash(provider: ProviderId, id: string) {
 /**
  * Reads a connection's payments and stores them: the last six months listed again, so refunds are
  * picked up and only new or changed payments are valued, then a part of the older ones until the
- * account's first payment. Returns the figures the stored payments cover. `connectedAt` names the
+ * account's first payment, or else the payments of the months charted that have no kind yet.
+ * Returns the figures and months the stored payments cover. `connectedAt` names the
  * connection whose key this is: payments are stored only while it is still the one connected.
  */
 export async function readRevenue(
@@ -65,9 +81,11 @@ export async function readRevenue(
 ): Promise<RevenueFigures> {
   const admin = adminClient();
   const reread = rereadFrom(now);
+  const months = revenueMonths(now);
   const { data, error } = await admin.rpc("revenue_read_state", {
     p_saas_id: saasId,
     p_from: reread,
+    p_months_from: months.from,
   });
   if (error) throw new Error("The revenue read state could not be loaded.");
   // No connection any more: the founder disconnected the provider since the run began.
@@ -80,7 +98,7 @@ export async function readRevenue(
 
   const stored = (id: string): StoredPayment | null => {
     const found = state.stored[paymentHash(provider, id)];
-    return found ? { fingerprint: found[0], amount: found[1] } : null;
+    return found ? { fingerprint: found[0], amount: found[1], kind: found[2] } : null;
   };
   const unchanged = (payment: ListedPayment) =>
     stored(payment.id)?.fingerprint === payment.fingerprint;
@@ -94,7 +112,7 @@ export async function readRevenue(
     });
 
   const plan = await collectPayments(
-    { from: state.from, origin: state.origin, readAt: state.read_at },
+    { from: state.from, origin: state.origin, readAt: state.read_at, unsorted: state.unsorted },
     now,
     read,
     { recent: MAX_PAGES, older: OLDER_PAGES },
@@ -109,7 +127,7 @@ export async function readRevenue(
   for (const payment of listed) byHash.set(paymentHash(provider, payment.id), payment);
   const changed = [...byHash].flatMap(([hash, payment]) => {
     if (unchanged(payment)) return [];
-    if (!payment.value) throw new Error("A changed payment was left unvalued.");
+    if (!payment.value || !payment.kind) throw new Error("A changed payment was left unvalued.");
     return [
       {
         hash,
@@ -117,9 +135,16 @@ export async function readRevenue(
         currency: payment.value.currency.toLowerCase(),
         amount: Math.max(0, Math.round(payment.value.amount)),
         fingerprint: payment.fingerprint,
+        kind: payment.kind,
       },
     ];
   });
+  // Unchanged payments whose kind the read tells, such as those stored before kinds were read.
+  const kinds = [...byHash].flatMap(([hash, payment]) =>
+    unchanged(payment) && payment.kind && payment.kind !== stored(payment.id)?.kind
+      ? [{ hash, kind: payment.kind }]
+      : [],
+  );
 
   const { days30, months12 } = revenueWindows(now);
   const { data: totals, error: recordError } = await admin.rpc("record_revenue_payments", {
@@ -133,6 +158,9 @@ export async function readRevenue(
     p_days30: days30,
     p_months12: months12,
     p_connected_at: connectedAt,
+    p_kinds: kinds,
+    p_months_from: months.from,
+    p_months_to: months.to,
   });
   const refused = changedDuringCheck(recordError?.message);
   if (refused) throw refused;
@@ -143,9 +171,12 @@ export async function readRevenue(
   if (recordError || !totals)
     throw new Error(`The payments could not be recorded: ${recordError?.message}`);
 
-  const figures = totals as Totals;
+  const { months: byMonth, ...figures } = totals as Totals;
   const currencies = new Set(
-    Object.values(figures).flatMap((byCurrency) => Object.keys(byCurrency ?? {})),
+    [
+      ...Object.values(figures),
+      ...Object.values(byMonth?.totals ?? {}).flatMap((kinds) => Object.values(kinds)),
+    ].flatMap((byCurrency) => Object.keys(byCurrency ?? {})),
   );
   const { rates } = await usdRates([...currencies]);
   const usd = (byCurrency: Record<string, number> | null) =>
@@ -154,6 +185,7 @@ export async function readRevenue(
     days30Cents: usd(figures.days30),
     months12Cents: usd(figures.months12),
     totalCents: usd(figures.total),
+    history: byMonth ? revenueHistory(months.months, byMonth.from, byMonth.totals, rates) : null,
     at: now.toISOString(),
   };
 }

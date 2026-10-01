@@ -2,9 +2,11 @@
 // A charge is every kind of payment: invoices, Checkout, Payment Links and direct payments. It
 // earns what was captured, less refunds and lost disputes, without tax. A charge does not carry
 // its tax, so the untaxed share comes from the invoice it paid or the Checkout Session that took
-// it; a charge with neither had no tax that Stripe recorded.
+// it; a charge with neither had no tax that Stripe recorded. The same invoice or session tells
+// whether it paid for a subscription: an invoice of a subscription did, while a one-off invoice,
+// a Checkout Session in payment mode and a charge with neither are one-time purchases.
 import { netOf } from "../payments";
-import type { ListedPayment, StoredPayment } from "../types";
+import type { ListedPayment, PaymentKind, StoredPayment } from "../types";
 
 export type StripeCharge = {
   id: string;
@@ -31,6 +33,8 @@ export type StripePaidInvoice = {
   id: string;
   total: number;
   total_excluding_tax: number | null;
+  billing_reason?: string | null;
+  parent?: { type: string } | null;
   payments?: {
     data: { payment: { type: string; payment_intent?: Ref; charge?: Ref } }[];
   } | null;
@@ -72,30 +76,47 @@ function kept(captured: number, refunded: number, lost: number) {
   return netOf(captured, refunded + lost);
 }
 
+/** What a charge's invoice or Checkout Session tells: its untaxed share, and what it paid for. */
+export type ChargeFacts = { share: number; kind: PaymentKind };
+
+/** Whether an invoice belongs to a subscription, by its parent or why it was billed. */
+export function subscriptionInvoice(invoice: StripePaidInvoice) {
+  return (
+    invoice.parent?.type === "subscription_details" ||
+    (invoice.billing_reason ?? "").startsWith("subscription")
+  );
+}
+
 /**
- * The untaxed share of each payment, by payment intent or charge id: an invoice's total without
- * tax against its total, or a Checkout Session's total without tax against its total. A ratio
- * holds in any currency, so a session shown in the buyer's currency gives the same share.
+ * The facts of each payment, by payment intent or charge id: an invoice's total without tax
+ * against its total, or a Checkout Session's total without tax against its total, and whether the
+ * invoice belongs to a subscription. A ratio holds in any currency, so a session shown in the
+ * buyer's currency gives the same share. A session has a payment intent in payment mode only, so
+ * it took a one-time purchase.
  */
-export function untaxedShares(invoices: StripePaidInvoice[], sessions: StripeCheckoutSession[]) {
-  const shares = new Map<string, number>();
+export function paymentFacts(invoices: StripePaidInvoice[], sessions: StripeCheckoutSession[]) {
+  const facts = new Map<string, ChargeFacts>();
   for (const invoice of invoices) {
-    if (invoice.total <= 0 || invoice.total_excluding_tax === null) continue;
-    const share = invoice.total_excluding_tax / invoice.total;
+    const share =
+      invoice.total > 0 && invoice.total_excluding_tax !== null
+        ? invoice.total_excluding_tax / invoice.total
+        : 1;
+    const kind = subscriptionInvoice(invoice) ? "subscription" : "one_time";
     for (const { payment } of invoice.payments?.data ?? []) {
       const id = idOf(payment.payment_intent) ?? idOf(payment.charge);
-      if (id) shares.set(id, share);
+      if (id) facts.set(id, { share, kind });
     }
   }
   for (const session of sessions) {
     const id = idOf(session.payment_intent);
     if (!id || session.payment_status !== "paid" || !session.amount_total) continue;
-    shares.set(
-      id,
-      (session.amount_total - (session.total_details?.amount_tax ?? 0)) / session.amount_total,
-    );
+    facts.set(id, {
+      share:
+        (session.amount_total - (session.total_details?.amount_tax ?? 0)) / session.amount_total,
+      kind: "one_time",
+    });
   }
-  return shares;
+  return facts;
 }
 
 /**
@@ -110,59 +131,68 @@ export function storedShare(stored: StoredPayment) {
 }
 
 /**
- * The untaxed shares that need no request: changed charges keep the share they were stored with.
- * Unchanged charges need none, and `needed` are the charges whose invoice or session must be read.
+ * The facts that need no request: changed charges keep the share and kind they were stored with.
+ * Unchanged charges need none, and `needed` are the charges whose invoice or session must be read,
+ * stored ones without a kind included.
  */
-export function knownShares(
+export function knownFacts(
   charges: StripeCharge[],
   lost: ReadonlyMap<string, number>,
   stored: (id: string) => StoredPayment | null,
 ) {
-  const shares = new Map<string, number>();
+  const facts = new Map<string, ChargeFacts>();
   const needed: StripeCharge[] = [];
   for (const charge of charges) {
     const previous = stored(charge.id);
-    if (previous?.fingerprint === chargeFingerprint(charge, lost.get(charge.id) ?? 0)) continue;
-    const share = previous ? storedShare(previous) : null;
+    if (!previous?.kind) {
+      needed.push(charge);
+      continue;
+    }
+    if (previous.fingerprint === chargeFingerprint(charge, lost.get(charge.id) ?? 0)) continue;
+    const share = storedShare(previous);
     if (share === null) needed.push(charge);
-    else shares.set(charge.id, share);
+    else facts.set(charge.id, { share, kind: previous.kind });
   }
-  return { shares, needed };
+  return { facts, needed };
 }
 
-/** Each needed charge's share, by its payment intent or its own id; 1 when it had no tax. */
-export function sharesOf(needed: StripeCharge[], untaxed: ReadonlyMap<string, number>) {
-  const shares = new Map<string, number>();
+/**
+ * Each needed charge's facts, by its payment intent or its own id. A charge with neither an
+ * invoice nor a session was a one-time payment without tax that Stripe recorded.
+ */
+export function factsOf(needed: StripeCharge[], found: ReadonlyMap<string, ChargeFacts>) {
+  const facts = new Map<string, ChargeFacts>();
   for (const charge of needed) {
     const intent = idOf(charge.payment_intent);
-    shares.set(
+    facts.set(
       charge.id,
-      (intent ? untaxed.get(intent) : undefined) ?? untaxed.get(charge.id) ?? 1,
+      (intent ? found.get(intent) : undefined) ??
+        found.get(charge.id) ?? { share: 1, kind: "one_time" },
     );
   }
-  return shares;
+  return facts;
 }
 
-/** The listed payments of paid charges, valued where a share is given and unvalued otherwise. */
+/** The listed payments of paid charges, valued where facts are given and unvalued otherwise. */
 export function chargePayments(
   charges: StripeCharge[],
   lost: ReadonlyMap<string, number>,
-  shares: ReadonlyMap<string, number>,
+  facts: ReadonlyMap<string, ChargeFacts>,
 ): ListedPayment[] {
   return charges.map((charge) => {
     const lostAmount = lost.get(charge.id) ?? 0;
-    const share = shares.get(charge.id);
+    const known = facts.get(charge.id);
     return {
       id: charge.id,
       at: charge.created,
       fingerprint: chargeFingerprint(charge, lostAmount),
-      value:
-        share === undefined
-          ? null
-          : {
-              currency: charge.currency,
-              amount: kept(charge.amount_captured, charge.amount_refunded, lostAmount) * share,
-            },
+      value: known
+        ? {
+            currency: charge.currency,
+            amount: kept(charge.amount_captured, charge.amount_refunded, lostAmount) * known.share,
+          }
+        : null,
+      kind: known?.kind ?? null,
     };
   });
 }

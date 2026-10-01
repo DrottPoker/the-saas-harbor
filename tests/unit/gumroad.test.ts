@@ -158,7 +158,7 @@ describe("Gumroad memberships", () => {
 });
 
 describe("Gumroad revenue", () => {
-  it("counts each day of the summary in the window as a payment of the account", () => {
+  it("counts each day of the summary in the window as a payment of the account, of unknown kind", () => {
     expect(
       summaryPayments(
         "gum_user",
@@ -177,6 +177,7 @@ describe("Gumroad revenue", () => {
         at: at("2026-09-01T00:00:00Z"),
         fingerprint: "2000",
         value: { currency: "usd", amount: 2000 },
+        kind: "unknown",
       },
     ]);
   });
