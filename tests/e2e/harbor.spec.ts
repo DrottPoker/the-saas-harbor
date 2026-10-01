@@ -3112,7 +3112,14 @@ test("founders verify their website's domain with a DNS record", async ({ page }
     "- Domain: not verified",
   );
   await page.goto(`/dashboard/saas/${id}`);
-  await expect(section.getByLabel("Name", { exact: true })).toHaveValue(record);
+  // The name to copy is the part DNS providers ask for; the domain they add shows beside it.
+  const recordName = section.getByLabel("Name", { exact: true });
+  await expect(recordName).toHaveValue("_thesaasharbor");
+  await expect(recordName).toHaveAccessibleDescription(
+    new RegExp(
+      `^\\.${domain.replaceAll(".", "\\.")} Enter _thesaasharbor as the name.*${record}\\.$`,
+    ),
+  );
   const value = await section.getByLabel("Value", { exact: true }).inputValue();
   expect(value).toMatch(/^thesaasharbor-verification=[0-9a-f]{32}$/);
 

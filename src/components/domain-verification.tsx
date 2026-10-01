@@ -69,12 +69,14 @@ export function DomainVerification({
                 <dd className="font-mono text-[13px]">TXT</dd>
               </div>
             </dl>
+            {/* Most DNS providers ask for the name without the domain, which they add. */}
             <CopyField
               id="dns_name"
               label="Name"
               copyLabel="Copy name"
-              value={record.name}
-              hint={`Some DNS providers add ${domain} themselves. Then enter only ${record.label}.`}
+              value={record.label}
+              suffix={`.${domain}`}
+              hint={`Enter ${record.label} as the name: your DNS provider adds .${domain} itself. If it asks for the full name, enter ${record.name}.`}
             />
             <CopyField id="dns_value" label="Value" copyLabel="Copy value" value={record.value} />
             <form action={action} className="grid gap-4">

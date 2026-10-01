@@ -14,6 +14,7 @@ export function CopyField({
   label,
   value,
   hint,
+  suffix,
   copyLabel = `Copy ${label}`,
   multiline = false,
 }: {
@@ -21,6 +22,8 @@ export function CopyField({
   label: string;
   value: string;
   hint?: string;
+  /** Text shown after the value but not copied, such as the domain after a DNS record's name. */
+  suffix?: string;
   /** The button's text, which names what it copies. */
   copyLabel?: string;
   multiline?: boolean;
@@ -45,18 +48,37 @@ export function CopyField({
       event.currentTarget.select(),
     className: cn("font-mono text-[13px]", multiline && "min-h-0"),
   };
+  const aside = (
+    <Button type="button" variant="ghost" size="sm" onClick={copy}>
+      {copied ? <Check /> : <Copy />}
+      <span aria-live="polite">{copied ? "Copied" : copyLabel}</span>
+    </Button>
+  );
+  if (suffix) {
+    // Field describes its one control, which here is the group, so the input names its hint and
+    // the suffix itself.
+    const described = [`${id}-suffix`, hint && `${id}-hint`].filter(Boolean).join(" ");
+    return (
+      <Field name={id} label={label} hint={hint} aside={aside}>
+        <div className="flex min-w-0">
+          <Input
+            {...shared}
+            aria-describedby={described}
+            className={cn(shared.className, "w-auto flex-1 rounded-r-none")}
+          />
+          <span
+            id={`${id}-suffix`}
+            title={suffix}
+            className="flex min-w-0 items-center truncate rounded-r-md border border-l-0 border-border-strong bg-subtle px-3 font-mono text-[13px] text-muted-foreground"
+          >
+            {suffix}
+          </span>
+        </div>
+      </Field>
+    );
+  }
   return (
-    <Field
-      name={id}
-      label={label}
-      hint={hint}
-      aside={
-        <Button type="button" variant="ghost" size="sm" onClick={copy}>
-          {copied ? <Check /> : <Copy />}
-          <span aria-live="polite">{copied ? "Copied" : copyLabel}</span>
-        </Button>
-      }
-    >
+    <Field name={id} label={label} hint={hint} aside={aside}>
       {multiline ? <Textarea {...shared} /> : <Input {...shared} />}
     </Field>
   );
