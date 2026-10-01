@@ -106,7 +106,7 @@ export function SaasForm({
     ? { tone: "error" as const, text: state.connectionError }
     : result;
   // Figures are public unless hidden, so a new product starts with every box clear.
-  const hidden = (key: "mrr" | "revenue" | "customers" | "launch") =>
+  const hidden = (key: "revenue" | "customers" | "launch") =>
     state.values ? !!state.values[`hide_${key}`] : settings ? !settings[`share_${key}`] : false;
   const stack = state.values ? (state.values.tech?.split("\n") ?? []) : (saas?.tech_stack ?? []);
   const verifying = !!provider && !connectsWithOAuth(provider);
@@ -212,14 +212,13 @@ export function SaasForm({
               Public figures
             </p>
             <p className="mt-1 text-[13px] text-muted-foreground">
-              Verified figures are public unless you hide them. Public MRR is ranked on the
-              leaderboard, and public revenue in the revenue rankings.
+              Verified figures are public unless you hide them. Public revenue is ranked on the
+              leaderboard, by MRR and by revenue over 30 days, 12 months and all time.
             </p>
           </div>
-          <Share name="hide_mrr" label="Hide verified MRR" checked={hidden("mrr")} />
           <Share
             name="hide_revenue"
-            label="Hide verified revenue for the last 30 days, 12 months and all time"
+            label="Hide verified revenue, MRR included"
             checked={hidden("revenue")}
           />
           <Share

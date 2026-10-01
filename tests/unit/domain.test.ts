@@ -70,10 +70,9 @@ describe("profile boundaries", () => {
     category: "Other",
     website: "https://example.com",
     launched_on: "2026-01-15",
-    share_mrr: true,
+    share_revenue: true,
     share_customers: false,
     share_launch: false,
-    share_revenue: false,
     tech_stack: ["nextjs", "supabase"],
   };
   it("takes a tech stack of known, unique technologies, up to the limit", () => {

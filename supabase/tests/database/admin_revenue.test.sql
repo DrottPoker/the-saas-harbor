@@ -18,16 +18,16 @@ set local role authenticated;
 select set_config('request.jwt.claim.sub', 'e9000000-0000-4000-8000-000000000001', true);
 select public.save_saas('e9100000-0000-4000-8000-000000000001', 'Private', 'Fixture',
   'A temporary fixture that is rolled back.', 'Other', 'https://example.com', null, null, false,
-  false, false, null, false);
+  false, false);
 select public.save_saas('e9100000-0000-4000-8000-000000000002', 'Shared', 'Fixture',
   'A temporary fixture that is rolled back.', 'Other', 'https://example.com', null, null, true,
-  false, false, null, true);
+  false, false);
 select public.save_saas('e9100000-0000-4000-8000-000000000003', 'Unconnected', 'Fixture',
   'A temporary fixture that is rolled back.', 'Other', 'https://example.com', null, null, true,
-  false, false, null, true);
+  false, false);
 select public.save_saas('e9100000-0000-4000-8000-000000000004', 'Disconnected', 'Fixture',
   'A temporary fixture that is rolled back.', 'Other', 'https://example.com', null, null, true,
-  false, false, null, true);
+  false, false);
 
 set local role service_role;
 select public.record_revenue_verification('e9100000-0000-4000-8000-000000000001', 'stripe',
@@ -72,19 +72,19 @@ select set_config('request.jwt.claim.sub', 'e9000000-0000-4000-8000-000000000002
 select public.admin_hide_saas('e9100000-0000-4000-8000-000000000001', 'spam', 'A fixture.', null);
 select results_eq(
   $$ select provider, status, stale, mrr_cents, revenue_30d_cents, revenue_12m_cents,
-       revenue_total_cents, share_mrr, share_revenue
+       revenue_total_cents, share_revenue
      from public.admin_revenue(array['e9100000-0000-4000-8000-000000000001'::uuid]) $$,
   $$ values ('stripe'::text, 'ok'::text, false, 5000::bigint, 6000::bigint, 50000::bigint,
-       90000::bigint, false, false) $$,
+       90000::bigint, false) $$,
   'admins read the latest private figures of a hidden product');
 select ok(
   (select verified_at > now() - interval '1 minute'
    from public.admin_revenue(array['e9100000-0000-4000-8000-000000000001'::uuid])),
   'with the time of the latest verification');
 select results_eq(
-  $$ select provider, stale, mrr_cents, revenue_30d_cents, share_mrr, share_revenue
+  $$ select provider, stale, mrr_cents, revenue_30d_cents, share_revenue
      from public.admin_revenue(array['e9100000-0000-4000-8000-000000000002'::uuid]) $$,
-  $$ values ('paddle'::text, true, 700::bigint, 800::bigint, true, true) $$,
+  $$ values ('paddle'::text, true, 700::bigint, 800::bigint, true) $$,
   'figures the site no longer shows are marked out of date');
 select is_empty(
   $$ select * from public.admin_revenue(array['e9100000-0000-4000-8000-000000000003',

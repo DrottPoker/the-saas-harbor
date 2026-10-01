@@ -62,7 +62,7 @@ const questions: FaqItem[] = [
   {
     question: "Do I have to share my revenue?",
     answer:
-      "No. Verified MRR, revenue, paying customers and the launch date are public by default, and you can hide each of them when you add the product or later.",
+      "No. Verified revenue, paying customers and the launch date are public by default, and you can hide each of them when you add the product or later. Hiding revenue hides MRR too.",
   },
   {
     question: "Which payment providers can verify revenue?",

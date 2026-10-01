@@ -1,6 +1,7 @@
 -- Revenue from payments: payments are stored per connection and claimed by one product, the
--- figures follow the founder's sharing choice and rank products per window, a new key starts
--- over, and the scheduled run reads payments daily, or hourly until they reach the first one.
+-- figures follow the founder's one revenue choice with MRR and rank products per window, a new
+-- key starts over, and the scheduled run reads payments daily, or hourly until they reach the
+-- first one.
 -- Runs in a rolled-back transaction.
 begin;
 create extension if not exists pgtap with schema extensions;
@@ -16,15 +17,16 @@ insert into public.profiles(id, name) values ('e8000000-0000-4000-8000-000000000
 set local role authenticated;
 select set_config('request.jwt.claim.sub', 'e8000000-0000-4000-8000-000000000001', true);
 select public.save_saas('e8100000-0000-4000-8000-000000000001', 'Revenue Alpha', 'Fixture',
-  'A temporary fixture that is rolled back.', 'Other', 'https://example.com', null, null, true,
-  false, false);
-select public.save_saas('e8100000-0000-4000-8000-000000000002', 'Revenue Beta', 'Fixture',
   'A temporary fixture that is rolled back.', 'Other', 'https://example.com', null, null, false,
+  false, false);
+-- Code deployed before the one choice sends the MRR choice last.
+select public.save_saas('e8100000-0000-4000-8000-000000000002', 'Revenue Beta', 'Fixture',
+  'A temporary fixture that is rolled back.', 'Other', 'https://example.com', null, null, true,
   false, false, null, true);
 select set_config('request.jwt.claim.sub', 'e8000000-0000-4000-8000-000000000002', true);
 select public.save_saas('e8100000-0000-4000-8000-000000000003', 'Revenue Gamma', 'Fixture',
   'A temporary fixture that is rolled back.', 'Other', 'https://example.com', null, null, true,
-  false, false, null, true);
+  false, false);
 
 set local role postgres;
 select results_eq(
@@ -33,17 +35,21 @@ select results_eq(
   $$ values ('e8100000-0000-4000-8000-000000000001'::uuid, false),
     ('e8100000-0000-4000-8000-000000000002'::uuid, true),
     ('e8100000-0000-4000-8000-000000000003'::uuid, true) $$,
-  'revenue is private until the founder shares it');
+  'one choice shares or hides all of a product''s revenue');
 
 set local role authenticated;
 select set_config('request.jwt.claim.sub', 'e8000000-0000-4000-8000-000000000001', true);
 select public.save_saas('e8100000-0000-4000-8000-000000000002', 'Revenue Beta', 'Fixture',
-  'A temporary fixture that is rolled back.', 'Other', 'https://example.com', null, null, false,
-  false, false);
+  'A temporary fixture that is rolled back.', 'Other', 'https://example.com', null, null, true,
+  false, false, null, false);
 set local role postgres;
 select is((select share_revenue from public.saas_settings
-  where saas_id = 'e8100000-0000-4000-8000-000000000002'), true,
-  'a save that leaves the choice out keeps it');
+  where saas_id = 'e8100000-0000-4000-8000-000000000002'), false,
+  'earlier code that hides MRR hides revenue too');
+set local role authenticated;
+select public.save_saas('e8100000-0000-4000-8000-000000000002', 'Revenue Beta', 'Fixture',
+  'A temporary fixture that is rolled back.', 'Other', 'https://example.com', null, null, true,
+  false, false);
 
 -- Connections for all three products.
 set local role service_role;
@@ -147,11 +153,12 @@ select results_eq(
     ('e8100000-0000-4000-8000-000000000003'::uuid, 0, 0, 0) $$,
   'visitors see revenue only where the founder shares it');
 select results_eq(
-  $$ select id, revenue_status from public.public_saas where id::text like 'e81%' order by id $$,
-  $$ values ('e8100000-0000-4000-8000-000000000001'::uuid, 'verified'),
-    ('e8100000-0000-4000-8000-000000000002'::uuid, 'private'),
-    ('e8100000-0000-4000-8000-000000000003'::uuid, 'verified') $$,
-  'sharing revenue does not share MRR');
+  $$ select id, revenue_status, mrr_cents from public.public_saas where id::text like 'e81%'
+     order by id $$,
+  $$ values ('e8100000-0000-4000-8000-000000000001'::uuid, 'private', null::bigint),
+    ('e8100000-0000-4000-8000-000000000002'::uuid, 'verified', 500),
+    ('e8100000-0000-4000-8000-000000000003'::uuid, 'verified', 0) $$,
+  'revenue is shared with its MRR, and hidden with it');
 select results_eq(
   $$ select id, rank_30d, rank_12m, rank_total from public.revenue_leaderboard
      where id::text like 'e81%' order by id $$,

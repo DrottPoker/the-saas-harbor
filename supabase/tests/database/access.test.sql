@@ -140,7 +140,7 @@ with removed as (
 select is((select count(*)::int from removed), 0, 'another owner cannot disconnect a product');
 select is_empty('select * from public.saas_settings', 'another owner cannot read settings');
 with changed as (
-  update public.saas_settings set share_mrr = true
+  update public.saas_settings set share_revenue = true
   where saas_id = 'c0000000-0000-4000-8000-000000000001' returning saas_id
 )
 select is(count(*)::int, 0, 'another owner cannot change visibility') from changed;
@@ -188,7 +188,7 @@ select ok(
 -- Owner one hides MRR on one product; the server records zero MRR on another.
 set local role authenticated;
 select set_config('request.jwt.claim.sub', 'b0000000-0000-4000-8000-000000000001', true);
-update public.saas_settings set share_mrr = false where saas_id = 'c0000000-0000-4000-8000-000000000003';
+update public.saas_settings set share_revenue = false where saas_id = 'c0000000-0000-4000-8000-000000000003';
 set local role service_role;
 select lives_ok(
   $$ select public.record_revenue_verification('c0000000-0000-4000-8000-000000000002', 'stripe', null, null,
@@ -281,7 +281,7 @@ select results_eq(
 );
 set local role authenticated;
 select set_config('request.jwt.claim.sub', 'b0000000-0000-4000-8000-000000000001', true);
-update public.saas_settings set share_mrr = false where saas_id = 'c0000000-0000-4000-8000-000000000004';
+update public.saas_settings set share_revenue = false where saas_id = 'c0000000-0000-4000-8000-000000000004';
 set local role anon;
 select set_config('request.jwt.claim.sub', '', true);
 select results_eq(
@@ -292,7 +292,7 @@ select results_eq(
 );
 set local role authenticated;
 select set_config('request.jwt.claim.sub', 'b0000000-0000-4000-8000-000000000001', true);
-update public.saas_settings set share_mrr = true where saas_id = 'c0000000-0000-4000-8000-000000000004';
+update public.saas_settings set share_revenue = true where saas_id = 'c0000000-0000-4000-8000-000000000004';
 reset role;
 update public.revenue_snapshots set captured_at = now() - interval '8 days'
   where saas_id = 'c0000000-0000-4000-8000-000000000004';

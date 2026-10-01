@@ -8,6 +8,16 @@ The first release includes accounts, email confirmation and recovery, public mak
 
 Makers can message each other privately (see Messages below), and report products, profiles and messages to the admins, who decide in an admin panel (see Reports and moderation below). They get emails about unread messages and about decisions (see Email notifications below). Other forms of connection, such as following or contact lists, are not implemented.
 
+## One choice for all revenue 2026-10-01
+
+At the owner's request, founders hide or share verified revenue with one box, Hide verified revenue, MRR included, instead of one for MRR and one for revenue over 30 days, 12 months and all time. Products that had hidden either now hide both (migration `20261001220000_one_revenue_choice.sql`): in production that hid one connected product that shared MRR but not revenue, which leaves the MRR leaderboard until its founder shares revenue again.
+
+- `saas_settings.share_revenue` is the choice and `share_mrr` is gone. `refresh_public_metrics` shares MRR, its history and growth, and revenue over every window and by month by it, so the split by month is public whenever revenue is, and `admin_revenue` returns the one choice.
+- `save_saas` takes `p_share_revenue` where `p_share_mrr` was. It still accepts `p_share_mrr` last, which the code deployed before this sends with its own `p_share_revenue`, and shares only when both do, so saving keeps working until the new code is live. Drop that parameter in a later migration.
+- How it works, the Free listing page's answer and the docs say revenue is shared or hidden as a whole. The local seed shares revenue where it shared MRR.
+
+pgTAP covers the one choice, a save from the earlier code that hides MRR, and the months with their split where revenue is shared. The browser tests use the one box; the revenue test shares it and finds MRR, the revenue figures, the chart tabs with the split and both rankings.
+
 ## Revenue by month and all-time revenue 2026-10-01
 
 At the owner's request, product pages and the leaderboard show revenue of all time, and product pages chart what one-time purchases brought in over the same twelve months as MRR, with a switch between the charts. The owner chose revenue by month split into subscriptions and one-time purchases over one-time purchases alone or totals alone, and a leaderboard trend that follows the ranking.
@@ -15,7 +25,7 @@ At the owner's request, product pages and the leaderboard show revenue of all ti
 - **Product page.** Revenue of all time sits beside MRR in the first row of the card (Not shared where it is not), with paying customers and the launch date; the last 30 days and 12 months follow in a second row when revenue is shared. The chart card has tabs for MRR and Revenue: revenue by month is a column per month, subscriptions in teal below and one-time purchases in amber above, with the period's total at the top, the month under the pointer or the arrow keys instead, a legend with each part's amount and a table view. The period chosen carries over between the tabs. `charts/history-chart.tsx` replaces `mrr-chart.tsx` and draws both charts; `/stats` keeps its MRR chart.
 - **Leaderboard.** Every row shows revenue of all time beside the ranked figure (MRR in the all-time ranking), and in the revenue rankings the trend line is revenue by month instead of MRR. The verification date now shows from 1280 px, so the product names keep their room.
 - **Payments.** Each stored payment records whether it paid for a subscription, as each provider tells it (see ARCHITECTURE, Revenue from payments). A payment for a subscription counts as one whole, one-time items charged with it included. RevenueCat and Gumroad give daily totals, so their months have no split. Payments stored before this have no kind; the next daily read lists those of the charted months again along with the recent ones, so existing products get their months and split within a day of deploying (an account too large for one read over a few runs).
-- **Privacy.** What subscriptions paid each month is close to MRR, so the split is public only when MRR is shared too; with MRR private, visitors see each month's total. The privacy policy names the new field, and How it works explains the chart and the split.
+- **Privacy.** What subscriptions paid each month is close to MRR, so the split was public only when MRR was shared too; with MRR private, visitors saw each month's total. Later the same day revenue became one choice with MRR (see above), so the split shows wherever revenue does. The privacy policy names the new field, and How it works explains the chart and the split.
 - **Colors.** A second chart color, `--chart-2`, the amber of the logo's light, and `--chart-1` moved from `#007e73` to `#00826c`, which the dataviz palette validator required for the chroma of a categorical color. Both pairs pass its lightness, chroma, contrast and color-vision checks in both themes.
 - **Narrow axes.** On phones the chart axes name every third month in a history longer than six months: every other month made "Nov '25" and "Jan '26" touch at 390 px, on the MRR line as well.
 

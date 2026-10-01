@@ -96,12 +96,12 @@ select is_empty($$ select 1 from public.saas_milestones
 -- Sharing it later reaches what the shared MRR has passed.
 set local role authenticated;
 select set_config('request.jwt.claim.sub', 'e7000000-0000-4000-8000-000000000001', true);
-update public.saas_settings set share_mrr = true
+update public.saas_settings set share_revenue = true
 where saas_id = 'e7100000-0000-4000-8000-000000000002';
 set local role postgres;
 select is((select count(*)::int from public.saas_milestones
   where saas_id = 'e7100000-0000-4000-8000-000000000002' and milestone like 'mrr-%'), 5,
-  'sharing MRR reaches the thresholds it has passed');
+  'sharing revenue reaches the thresholds its MRR has passed');
 
 -- Visitors see a product's milestones only while its MRR is verified and shared.
 set local role anon;
@@ -110,7 +110,7 @@ select is((select count(*)::int from public.saas_milestones
   'visitors see the milestones of a product with shared MRR');
 set local role authenticated;
 select set_config('request.jwt.claim.sub', 'e7000000-0000-4000-8000-000000000001', true);
-update public.saas_settings set share_mrr = false
+update public.saas_settings set share_revenue = false
 where saas_id = 'e7100000-0000-4000-8000-000000000001';
 set local role anon;
 select is_empty($$ select 1 from public.saas_milestones

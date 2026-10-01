@@ -465,10 +465,9 @@ export async function saveSaas(_state: SaveSaasState, form: FormData): Promise<S
         ),
       ),
       // Figures are shared unless their box asks to hide them.
-      share_mrr: !form.has("hide_mrr"),
+      share_revenue: !form.has("hide_revenue"),
       share_customers: !form.has("hide_customers"),
       share_launch: !form.has("hide_launch"),
-      share_revenue: !form.has("hide_revenue"),
       // One entry per ticked technology.
       tech_stack: form.getAll("tech").map(String),
     });
@@ -492,11 +491,10 @@ export async function saveSaas(_state: SaveSaasState, form: FormData): Promise<S
       p_website: fields.website,
       p_logo_path: uploaded || (form.has("remove_image") ? null : (existing?.logo_path ?? null)),
       p_launched_on: fields.launched_on || null,
-      p_share_mrr: fields.share_mrr,
+      p_share_revenue: fields.share_revenue,
       p_share_customers: fields.share_customers,
       p_share_launch: fields.share_launch,
       p_tech_stack: fields.tech_stack,
-      p_share_revenue: fields.share_revenue,
     });
     if (error)
       throw new Error(

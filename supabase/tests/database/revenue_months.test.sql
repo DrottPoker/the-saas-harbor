@@ -1,7 +1,7 @@
 -- Revenue by month: each stored payment has a kind, a read of payments returns each month's
 -- totals per kind from the first month the payments cover, payments stored before kinds were read
--- are found and sorted, and the months follow the founder's sharing choices, the split only with
--- MRR shared. Runs in a rolled-back transaction.
+-- are found and sorted, and the months, split included, follow the founder's revenue choice.
+-- Runs in a rolled-back transaction.
 begin;
 create extension if not exists pgtap with schema extensions;
 select plan(16);
@@ -10,13 +10,13 @@ insert into auth.users(id) values ('e9000000-0000-4000-8000-000000000001');
 insert into public.profiles(id, name) values ('e9000000-0000-4000-8000-000000000001', 'Months One');
 set local role authenticated;
 select set_config('request.jwt.claim.sub', 'e9000000-0000-4000-8000-000000000001', true);
--- Alpha shares MRR and revenue, Beta revenue only.
+-- Alpha shares its revenue, Beta keeps it private.
 select public.save_saas('e9100000-0000-4000-8000-000000000001', 'Months Alpha', 'Fixture',
   'A temporary fixture that is rolled back.', 'Other', 'https://example.com', null, null, true,
-  false, false, null, true);
+  false, false);
 select public.save_saas('e9100000-0000-4000-8000-000000000002', 'Months Beta', 'Fixture',
   'A temporary fixture that is rolled back.', 'Other', 'https://example.com', null, null, false,
-  false, false, null, true);
+  false, false);
 
 set local role service_role;
 select public.record_revenue_verification('e9100000-0000-4000-8000-000000000001', 'stripe',
@@ -158,13 +158,22 @@ select results_eq(
   $$ select id, revenue_history from public.public_saas where id::text like 'e91%' order by id $$,
   $$ values ('e9100000-0000-4000-8000-000000000001'::uuid,
       '[{"month": "2026-08", "cents": 900, "subscription_cents": 800, "one_time_cents": 100}]'::jsonb),
-    ('e9100000-0000-4000-8000-000000000002'::uuid,
-      '[{"month": "2026-08", "cents": 900}]'::jsonb) $$,
-  'visitors see the months where revenue is shared, split only where MRR is shared too');
+    ('e9100000-0000-4000-8000-000000000002'::uuid, null::jsonb) $$,
+  'visitors see the months, split, where revenue is shared');
 select is(
   (select revenue_history from public.revenue_leaderboard
-   where id = 'e9100000-0000-4000-8000-000000000002'),
-  '[{"month": "2026-08", "cents": 900}]'::jsonb, 'the revenue rankings carry the months');
+   where id = 'e9100000-0000-4000-8000-000000000001'),
+  '[{"month": "2026-08", "cents": 900, "subscription_cents": 800, "one_time_cents": 100}]'::jsonb,
+  'the revenue rankings carry the months');
+
+-- A verification older than a week hides the months like the other figures.
+set local role postgres;
+update public.public_metrics set verified_at = now() - interval '8 days'
+where saas_id = 'e9100000-0000-4000-8000-000000000001';
+set local role anon;
+select is((select revenue_history from public.public_saas
+  where id = 'e9100000-0000-4000-8000-000000000001'), null::jsonb,
+  'months from a stale verification are hidden');
 
 set local role authenticated;
 select set_config('request.jwt.claim.sub', 'e9000000-0000-4000-8000-000000000001', true);
@@ -174,14 +183,6 @@ set local role postgres;
 select is((select revenue_history from public.public_metrics
   where saas_id = 'e9100000-0000-4000-8000-000000000001'), null::jsonb,
   'months the founder keeps private are not projected');
-
--- A verification older than a week hides the months like the other figures.
-update public.public_metrics set verified_at = now() - interval '8 days'
-where saas_id = 'e9100000-0000-4000-8000-000000000002';
-set local role anon;
-select is((select revenue_history from public.public_saas
-  where id = 'e9100000-0000-4000-8000-000000000002'), null::jsonb,
-  'months from a stale verification are hidden');
 
 select * from finish();
 rollback;

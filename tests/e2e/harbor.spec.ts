@@ -68,12 +68,8 @@ async function fillProduct(page: Page, name: string) {
     .fill("This is an isolated local integration fixture and is removed after verification.");
   await page.getByLabel("Website", { exact: true }).fill("https://example.com");
 }
-const HIDE_FIGURES = [
-  "Hide verified MRR",
-  "Hide verified revenue for the last 30 days, 12 months and all time",
-  "Hide paying customer count",
-  "Hide launch date",
-];
+const HIDE_REVENUE = "Hide verified revenue, MRR included";
+const HIDE_FIGURES = [HIDE_REVENUE, "Hide paying customer count", "Hide launch date"];
 // Verified figures are public by default; tests that need them private tick every box.
 async function hideFigures(page: Page) {
   for (const label of HIDE_FIGURES) await page.getByLabel(label, { exact: true }).check();
@@ -988,7 +984,7 @@ test("registration, email confirmation, profile and SaaS editing, storage, priva
     expect(denied?.code, table).toBe("42501");
   }
   await page.goto(`/dashboard/saas/${productId}`);
-  await page.getByLabel("Hide verified MRR", { exact: true }).uncheck();
+  await page.getByLabel(HIDE_REVENUE, { exact: true }).uncheck();
   await page.getByRole("button", { name: "Save changes" }).click();
   await expect(page).toHaveURL(/saved=/);
   // Shared MRR reaches the badge, and the editor gives the code to embed it in either theme.
@@ -1168,7 +1164,7 @@ test("registration, email confirmation, profile and SaaS editing, storage, priva
     ),
   ).toBeVisible();
 
-  await page.getByLabel("Hide verified MRR", { exact: true }).check();
+  await page.getByLabel(HIDE_REVENUE, { exact: true }).check();
   await page.getByRole("button", { name: "Save changes" }).click();
   await expect(page).toHaveURL(/saved=/);
   await page.goto(`/?q=${encodeURIComponent(productName)}`);
@@ -1512,7 +1508,7 @@ test("a user deletes products, then their account and everything in it", async (
       p_website: "https://example.com",
       p_logo_path: logo && `${id}/${logo}`,
       p_launched_on: null,
-      p_share_mrr: true,
+      p_share_revenue: true,
       p_share_customers: false,
       p_share_launch: false,
     });
@@ -1837,7 +1833,7 @@ test("reports reach the admin panel, where admins hide products and suspend acco
     p_website: "https://example.com",
     p_logo_path: null,
     p_launched_on: null,
-    p_share_mrr: false,
+    p_share_revenue: false,
     p_share_customers: false,
     p_share_launch: false,
   });
@@ -2386,7 +2382,7 @@ test("visits are counted without cookies, and admins see them under Analytics", 
     p_website: "https://example.com",
     p_logo_path: null,
     p_launched_on: null,
-    p_share_mrr: false,
+    p_share_revenue: false,
     p_share_customers: false,
     p_share_launch: false,
   });
@@ -2790,7 +2786,7 @@ test("statistics add up the leaderboard's figures once five products share them"
     expect(saasError).toBeNull();
     await admin
       .from("saas_settings")
-      .insert({ saas_id: id, owner_id: maker, share_mrr: true, share_customers: true });
+      .insert({ saas_id: id, owner_id: maker, share_revenue: true, share_customers: true });
     const { error: verifyError } = await admin.rpc("record_revenue_verification", {
       p_saas_id: id,
       p_provider: "stripe",
@@ -3279,89 +3275,37 @@ test("founders share revenue from all payments, and visitors rank products by it
     "/?by=all",
   );
 
-  const hide = "Hide verified revenue for the last 30 days, 12 months and all time";
+  const hide = page.getByLabel(HIDE_REVENUE, { exact: true });
   await page.goto(`/dashboard/saas/${id}`);
-  await page.getByLabel(hide).uncheck();
+  await hide.uncheck();
   await page.getByRole("button", { name: "Save changes" }).click();
   await expect(page).toHaveURL(/saved=/);
 
-  // Shared revenue shows beside MRR, which stays private, with the verification.
+  // One choice shares all of the revenue: MRR, and revenue over each window, with the
+  // verification.
   await page.goto(productPath);
   const figure = (label: string) =>
     page.locator("dt", { hasText: label }).locator("xpath=following-sibling::dd[1]");
   await expect(figure("Revenue, last 30 days")).toHaveText(figures.days30);
   await expect(figure("Revenue, last 12 months")).toHaveText(figures.months12);
   await expect(figure("Revenue, all time")).toHaveText(figures.total);
-  await expect(figure("Monthly recurring revenue")).toHaveText("Not shared");
+  await expect(figure("Monthly recurring revenue")).toHaveText("$182.50");
   await expect(page.getByText(/Verified with Paddle through a read-only key/)).toBeVisible();
-  // Revenue by month covers the twelve months MRR would, in totals only while MRR is private,
-  // since what subscriptions paid each month is close to MRR.
-  await expect(page.getByRole("heading", { name: "Revenue by month" })).toBeVisible();
-  await expect(page.getByRole("tab")).toHaveCount(0);
-  const legend = page.getByRole("list", { name: "Legend" });
-  await expect(legend).toHaveCount(0);
-  await page.getByText("Show as table").click();
-  const revenueTable = page.getByRole("table", { name: "Revenue by month" });
-  await expect(revenueTable.locator("tbody tr")).toHaveCount(12);
-  await expect(revenueTable.locator("thead th")).toHaveText(["Month", "Revenue"]);
-  // Search results show the revenue in place of the MRR the product keeps private.
-  await expect(page).toHaveTitle(`${name}: ${figures.total} verified revenue | The SaaS Harbor`);
-  const markdown = await (await page.request.get(`${productPath}.md`)).text();
-  expect(markdown).toContain(`- Revenue, all time: ${figures.total}`);
-  expect(markdown).toContain("### Revenue by month\n\n| Month | Revenue |");
-  // The revenue rankings hold a product now, so search engines get them.
-  const origin = test.info().project.use.baseURL!;
-  expect(await (await page.request.get("/sitemap.xml")).text()).toContain(
-    `<loc>${origin}/?by=all</loc>`,
-  );
-  expect(markdown).toContain("- Monthly recurring revenue: not shared");
-
-  // The leaderboard ranks it by revenue, and not by MRR, which it does not share.
-  await page.goto(`/?by=all&q=${encodeURIComponent(name)}`);
-  await expect(page).toHaveTitle(/SaaS ranked by verified revenue, all time/);
-  await expect(
-    page
-      .getByRole("navigation", { name: "Rank by" })
-      .getByRole("link", { name: "Revenue, all time" }),
-  ).toHaveAttribute("aria-current", "page");
-  const row = page.getByRole("listitem").filter({ hasText: name });
-  await expect(row).toContainText(figures.total);
-  await expect(row).toContainText(/Rank \d+/);
-  // Its trend is revenue by month, and MRR stands beside it, here not shared.
-  await expect(row.locator("polyline")).toHaveCount(1);
-  await expect(row).toContainText("Not shared");
-  for (const theme of ["dark", "light"] as const) {
-    await setThemeCookie(page, theme);
-    await page.reload();
-    await expectAccessible(page);
-  }
-  await page.goto(`/?q=${encodeURIComponent(name)}`);
-  await expect(page.getByRole("heading", { name: "No matching products" })).toBeVisible();
-  const { data: ranked } = await anon
-    .from("revenue_leaderboard")
-    .select("rank_30d, rank_12m, rank_total, revenue_total_cents, mrr_cents")
-    .eq("id", id)
-    .single();
-  expect(ranked).toMatchObject({ revenue_total_cents: 164_900, mrr_cents: null });
-  expect(ranked!.rank_total).toBeGreaterThan(0);
-
-  // With MRR shared too, the page switches between MRR and revenue by month, which then shows
+  await expect(page).toHaveTitle(`${name}: $182.50 verified MRR | The SaaS Harbor`);
+  // The chart switches between MRR and revenue by month over the same twelve months, split into
   // what subscriptions and one-time purchases paid.
-  const hideMrr = page.getByLabel("Hide verified MRR", { exact: true });
-  await page.goto(`/dashboard/saas/${id}`);
-  await hideMrr.uncheck();
-  await page.getByRole("button", { name: "Save changes" }).click();
-  await expect(page).toHaveURL(/saved=/);
-  await page.goto(productPath);
   await expect(page.getByRole("tab", { name: "MRR" })).toHaveAttribute("aria-selected", "true");
   await expect(page.getByRole("heading", { name: "MRR at month end" })).toBeVisible();
   const revenueTab = page.getByRole("tab", { name: "Revenue" });
   await revenueTab.click();
   await expect(revenueTab).toHaveAttribute("aria-selected", "true");
   await expect(page.getByRole("heading", { name: "Revenue by month" })).toBeVisible();
+  const legend = page.getByRole("list", { name: "Legend" });
   await expect(legend.getByText("Subscriptions", { exact: true })).toBeVisible();
   await expect(legend.getByText("One-time purchases", { exact: true })).toBeVisible();
   await page.getByText("Show as table").click();
+  const revenueTable = page.getByRole("table", { name: "Revenue by month" });
+  await expect(revenueTable.locator("tbody tr")).toHaveCount(12);
   await expect(revenueTable.locator("thead th")).toHaveText([
     "Month",
     "Subscriptions",
@@ -3382,10 +3326,48 @@ test("founders share revenue from all payments, and visitors rank products by it
   await page.setViewportSize({ width: 390, height: 844 });
   await expectNoHorizontalScroll(page);
   await page.setViewportSize({ width: 1280, height: 720 });
-  await page.goto(`/dashboard/saas/${id}`);
-  await hideMrr.check();
-  await page.getByRole("button", { name: "Save changes" }).click();
-  await expect(page).toHaveURL(/saved=/);
+  const markdown = await (await page.request.get(`${productPath}.md`)).text();
+  expect(markdown).toContain("- Monthly recurring revenue: $182.50");
+  expect(markdown).toContain(`- Revenue, all time: ${figures.total}`);
+  expect(markdown).toContain(
+    "### Revenue by month\n\n| Month | Subscriptions | One-time purchases | Revenue |",
+  );
+  // The revenue rankings hold a product now, so search engines get them.
+  const origin = test.info().project.use.baseURL!;
+  expect(await (await page.request.get("/sitemap.xml")).text()).toContain(
+    `<loc>${origin}/?by=all</loc>`,
+  );
+
+  // The leaderboard ranks it by revenue, with revenue by month as its trend and MRR beside it.
+  await page.goto(`/?by=all&q=${encodeURIComponent(name)}`);
+  await expect(page).toHaveTitle(/SaaS ranked by verified revenue, all time/);
+  await expect(
+    page
+      .getByRole("navigation", { name: "Rank by" })
+      .getByRole("link", { name: "Revenue, all time" }),
+  ).toHaveAttribute("aria-current", "page");
+  const row = page.getByRole("listitem").filter({ hasText: name });
+  await expect(row).toContainText(figures.total);
+  await expect(row).toContainText(/Rank \d+/);
+  await expect(row.locator("polyline")).toHaveCount(1);
+  await expect(row).toContainText("$182.50");
+  for (const theme of ["dark", "light"] as const) {
+    await setThemeCookie(page, theme);
+    await page.reload();
+    await expectAccessible(page);
+  }
+  // And by MRR, with revenue of all time beside it.
+  await page.goto(`/?q=${encodeURIComponent(name)}`);
+  const mrrRow = page.getByRole("listitem").filter({ hasText: name });
+  await expect(mrrRow).toContainText("$182.50");
+  await expect(mrrRow).toContainText(figures.total);
+  const { data: ranked } = await anon
+    .from("revenue_leaderboard")
+    .select("rank_30d, rank_12m, rank_total, revenue_total_cents, mrr_cents")
+    .eq("id", id)
+    .single();
+  expect(ranked).toMatchObject({ revenue_total_cents: 164_900, mrr_cents: 18_250 });
+  expect(ranked!.rank_total).toBeGreaterThan(0);
 
   // Payments are read by the server alone.
   const { error: denied } = await anon.rpc("revenue_read_state", {
@@ -3396,7 +3378,7 @@ test("founders share revenue from all payments, and visitors rank products by it
 
   // Unsharing takes the figures off the page and out of the rankings.
   await page.goto(`/dashboard/saas/${id}`);
-  await page.getByLabel(hide).check();
+  await hide.check();
   await page.getByRole("button", { name: "Save changes" }).click();
   await expect(page).toHaveURL(/saved=/);
   await page.goto(productPath);

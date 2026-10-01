@@ -954,7 +954,6 @@ export type Database = {
           saas_id: string
           share_customers: boolean
           share_launch: boolean
-          share_mrr: boolean
           share_revenue: boolean
           updated_at: string
         }
@@ -964,7 +963,6 @@ export type Database = {
           saas_id: string
           share_customers?: boolean
           share_launch?: boolean
-          share_mrr?: boolean
           share_revenue?: boolean
           updated_at?: string
         }
@@ -974,7 +972,6 @@ export type Database = {
           saas_id?: string
           share_customers?: boolean
           share_launch?: boolean
-          share_mrr?: boolean
           share_revenue?: boolean
           updated_at?: string
         }
@@ -1325,7 +1322,6 @@ export type Database = {
           revenue_30d_cents: number
           revenue_total_cents: number
           saas_id: string
-          share_mrr: boolean
           share_revenue: boolean
           stale: boolean
           status: string
@@ -1534,8 +1530,8 @@ export type Database = {
           p_name: string
           p_share_customers: boolean
           p_share_launch: boolean
-          p_share_mrr: boolean
-          p_share_revenue?: boolean
+          p_share_mrr?: boolean
+          p_share_revenue: boolean
           p_tagline: string
           p_tech_stack?: string[]
           p_website: string

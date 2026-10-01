@@ -48,7 +48,7 @@ function revenueRows(revenue: AdminRevenue): [string, React.ReactNode][] {
         ? `${formatDate(revenue.verified_at)}${revenue.stale ? ", out of date and not shown on the site" : ""}`
         : "Not yet",
     ],
-    ["MRR", figure(revenue.mrr_cents, revenue.share_mrr, "Not verified yet")],
+    ["MRR", figure(revenue.mrr_cents, revenue.share_revenue, "Not verified yet")],
     ...REVENUE_WINDOWS.map(({ column, short }): [string, React.ReactNode] => [
       `Revenue, ${short.toLowerCase()}`,
       figure(revenue[column], revenue.share_revenue, "Not read yet"),

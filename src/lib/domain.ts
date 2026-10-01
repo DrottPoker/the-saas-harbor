@@ -178,10 +178,10 @@ export const saasSchema = z.object({
       (v) => !v || (v >= "1970-01-01" && v <= latestDate()),
       "Enter a launch date between 1970 and today.",
     ),
-  share_mrr: z.boolean(),
+  /** MRR and revenue from payments are shared or hidden together. */
+  share_revenue: z.boolean(),
   share_customers: z.boolean(),
   share_launch: z.boolean(),
-  share_revenue: z.boolean(),
   tech_stack: z
     .array(z.string())
     .max(TECH_STACK_MAX, `Choose up to ${TECH_STACK_MAX} technologies.`)
