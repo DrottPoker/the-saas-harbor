@@ -40,7 +40,7 @@ Sales, escrow, company profiles and payment providers other than Stripe, Paddle,
 
 ## Run locally
 
-Requires Node.js 22.14 or later (see `.nvmrc`), npm and Docker Desktop. Dependencies have exact versions and a lockfile, and `.npmrc` keeps new installs exact.
+Requires Node.js 24 (see `.nvmrc`), npm and Docker Desktop. Dependencies have exact versions and a lockfile, and `.npmrc` keeps new installs exact.
 
 Development and tests run the whole backend locally: Supabase (PostgreSQL, Auth, Storage) runs in Docker through the Supabase CLI. Production uses Supabase Cloud (see [Production](#production)).
 

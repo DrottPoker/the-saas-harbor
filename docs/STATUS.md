@@ -43,6 +43,8 @@ The owner then decided the findings about privacy:
 
 Both migrations were applied to production on 2026-10-01, before the code, and `npx supabase db diff --linked` reports no changes; the cleanup found no account to delete there. `npm run check` (466 unit tests), `npm run build`, the 676 pgTAP tests and `npm run test:e2e` (19 tests) pass, and the revenue browser tests passed again after the change for checks that outlive their connection.
 
+- **One Node.js version.** `engines` allowed any Node.js from 22.14, so Vercel most likely ran Node 24 while CI and `.nvmrc` used 22. At the owner's choice, everything now uses Node 24 LTS: `.nvmrc` says 24, `engines` 24.x and `@types/node` 24.19.0. `npm run check`, `npm run build` and the pgTAP tests pass on Node 24.21.0; the browser tests have not run on it yet.
+
 Not fixed yet, from the same review: files more than five folders deep survive account deletion, disconnecting a payment provider deletes through the service role rather than under RLS, and smaller copy, SEO, accessibility and documentation slips.
 
 ## Figures public by default 2026-09-29
