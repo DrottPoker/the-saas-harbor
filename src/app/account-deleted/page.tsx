@@ -14,8 +14,8 @@ export default function AccountDeleted() {
       />
       <div className="grid gap-4 border-t pt-8 leading-7 text-foreground/85">
         <p>
-          If you connected a payment provider, you can also delete the keys you created there. We no
-          longer have a copy of them.
+          If you connected a payment provider, you can also delete the keys you created there or
+          revoke the access you granted. We no longer have a copy of them.
         </p>
         <p>
           Pages that were public can still show up in search engines for a while, until they update.

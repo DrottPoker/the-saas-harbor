@@ -42,8 +42,7 @@ export default function Privacy() {
               </strong>{" "}
               If you sign in with Google or GitHub, that service sends us your account ID there,
               email address, name and the address of your profile picture, and for GitHub your
-              username. They are stored with your account and used to sign you in. An account
-              created this way that does not finish sign-up is deleted after a few days.
+              username. They are stored with your account and used to sign you in.
             </li>
             <li>
               <strong className="font-medium text-foreground">Profile.</strong> Your username, which
@@ -110,17 +109,17 @@ export default function Privacy() {
 
         <Section id="revenue" title="What we read from your payment provider">
           <p>
-            With the key you provide, our server reads what it needs to verify revenue from the
-            account you connect, such as subscriptions, invoices, payments, transactions, sales,
-            refunds, disputes, products, prices, discounts and plans, depending on the provider.
-            These records can include details about your customers, such as names, email addresses
-            and countries. We use the records to calculate the figures described above, and do not
-            store your customers&apos; details.
+            With the key you provide or the access you grant, our server reads what it needs to
+            verify revenue from the account you connect, such as subscriptions, invoices, payments,
+            transactions, sales, refunds, disputes, products, prices, discounts and plans, depending
+            on the provider. These records can include details about your customers, such as names,
+            email addresses and countries. We use the records to calculate the figures described
+            above, and do not store your customers&apos; details.
           </p>
           <p>
-            Disconnecting deletes the stored key. Earlier verification results stay in your private
-            history until you delete the product or your account. You can also revoke the key with
-            your payment provider.
+            Disconnecting deletes the stored key or access. Earlier verification results stay in
+            your private history until you delete the product or your account. You can also revoke
+            the key or access with your payment provider.
           </p>
         </Section>
 
@@ -212,11 +211,13 @@ export default function Privacy() {
               email address, when you joined and signed in and from which country, how you found the
               site and how far you have come with the service, the latest verified MRR and revenue
               of your products, including the figures you keep private, reports, decisions,
-              feedback, and messages that are reported. Alerts about new accounts, with the username
-              and how the account was created, new products, reports, with the reason and your
-              explanation, and feedback, with its text, are also sent to the admins&apos; chat on
-              Telegram. So is a notice with your name when you write to the site&apos;s own account,
-              but never the message.
+              feedback, and messages that are reported. Alerts are also sent to the admins&apos;
+              chat on Telegram: about new accounts, with the name and username, how the account was
+              created and whether its email address is confirmed; about new products, with their
+              name, tagline, category and founder; about reports, with who sent them, what or whom
+              they are about, the reason and the explanation; and about feedback, with who sent it,
+              from which page, and its text. So is a notice with your name and username when you
+              write to the site&apos;s own account, but never the message.
             </li>
             <li>
               <strong className="font-medium text-foreground">Service providers:</strong> our
@@ -246,19 +247,22 @@ export default function Privacy() {
         <Section id="cookies" title="Cookies">
           <p>
             The site uses cookies to keep you signed in and to remember whether you chose the light
-            or dark theme.
+            or dark theme. Short-lived cookies also carry a sign-in with Google or GitHub, or a
+            connection to Gumroad, from its start to its end.
           </p>
         </Section>
 
         <Section id="retention" title="How long we keep it">
           <p>
-            We keep your data while you have an account. When you delete a product or your account,
-            the data that belongs to it is deleted, apart from what is needed for longer, such as
-            reports and decisions that are still relevant, and copies in backups until those backups
-            expire. The site statistics are kept apart from accounts for up to 25 months. Records of
-            sent emails and other technical records are kept for a short time. Alerts sent to admins
-            on Telegram stay in their chat until they are deleted there. Information that was public
-            may already have been copied by others, such as search engines.
+            We keep your data while you have an account. An account whose sign-up is not finished,
+            such as one whose email address is not confirmed, is deleted after about a week. When
+            you delete a product or your account, the data that belongs to it is deleted, apart from
+            what is needed for longer, such as reports and decisions that are still relevant, and
+            copies in backups until those backups expire. The site statistics are kept apart from
+            accounts for up to 25 months. Records of sent emails and other technical records are
+            kept for a short time. Alerts sent to admins on Telegram stay in their chat until they
+            are deleted there. Information that was public may already have been copied by others,
+            such as search engines.
           </p>
           <p>
             We use technical and organisational measures to protect your data, such as encryption of

@@ -85,8 +85,8 @@ export default function Terms() {
 
         <LegalSection id="revenue" title="Revenue figures">
           <p>
-            Revenue figures are read from your payment provider through a read-only key you provide,
-            and are calculated as described in{" "}
+            Revenue figures are read from your payment provider through a read-only key you provide
+            or read-only access you grant, and are calculated as described in{" "}
             <Link className={legalLink} href="/about">
               How it works
             </Link>
@@ -100,10 +100,10 @@ export default function Terms() {
             any information yourself before you rely on it.
           </p>
           <p>
-            You are responsible for the keys you provide: that you are allowed to share them, and
-            that they have only the read permissions described on the site. Your payment
-            provider&apos;s own terms apply to your account there, and we are not responsible for
-            the provider or its services.
+            You are responsible for the keys you provide and the access you grant: that you are
+            allowed to share them, and that they have only the read permissions described on the
+            site. Your payment provider&apos;s own terms apply to your account there, and we are not
+            responsible for the provider or its services.
           </p>
         </LegalSection>
 
