@@ -201,7 +201,7 @@ export function Conversation({
     setMessages((list) => mergeMessages(list, data));
   }
 
-  const [state, send] = useActionState<SendState & { draft?: string }, FormData>(
+  const [state, send, sending] = useActionState<SendState & { draft?: string }, FormData>(
     async (previous, form) => {
       const result = await sendMessageAction(other.id, previous, form);
       const sent = result.message;
@@ -327,11 +327,14 @@ export function Conversation({
                 maxLength={MESSAGE_MAX_LENGTH}
                 placeholder={`Write to ${other.name}`}
                 defaultValue={state.draft}
+                // One message at a time: while it is sent, the field cannot change, since the reset
+                // after sending would wipe what was typed, and the shortcut sends nothing more.
+                readOnly={sending}
                 className="max-h-40 min-h-10 resize-none"
                 onKeyDown={(event) => {
                   if (event.key === "Enter" && (event.metaKey || event.ctrlKey)) {
                     event.preventDefault();
-                    event.currentTarget.form?.requestSubmit();
+                    if (!sending) event.currentTarget.form?.requestSubmit();
                   }
                 }}
               />
