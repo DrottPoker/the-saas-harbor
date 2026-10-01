@@ -74,9 +74,11 @@ select is(
   jsonb_build_object('provider', 'paddle', 'from', current_date - 183, 'origin', false,
     'read_at', (select revenue_read_at from public.revenue_connections
       where saas_id = 'e8100000-0000-4000-8000-000000000002'),
+    'connected_at', (select connected_at from public.revenue_connections
+      where saas_id = 'e8100000-0000-4000-8000-000000000002'),
     'stored', jsonb_build_object(repeat('a', 64), jsonb_build_array('a1', 1000),
       repeat('b', 64), jsonb_build_array('b1', 2000))),
-  'the read state gives how far payments reach and the payments from a day on');
+  'the read state gives the connection, how far payments reach and the payments from a day on');
 
 -- The next read reaches the first payment. A payment the window no longer lists is gone, and
 -- a changed one is replaced.

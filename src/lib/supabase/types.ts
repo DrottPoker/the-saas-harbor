@@ -101,6 +101,7 @@ export type Database = Omit<GeneratedDatabase, "public"> & {
           | "p_revenue_12m_cents"
           | "p_revenue_total_cents"
           | "p_revenue_at"
+          | "p_connected_at"
         >;
         Returns: undefined;
       };

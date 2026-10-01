@@ -4,7 +4,7 @@ import { after } from "next/server";
 import { adminClient } from "@/lib/supabase/admin";
 import { providerName, type ProviderId } from "./catalog";
 import { decryptProviderKey, encryptProviderKey } from "./crypto";
-import { makerMessage, VerificationError } from "./errors";
+import { makerMessage, REPLACED_DURING_CHECK, VerificationError } from "./errors";
 import { usdRates } from "./fx";
 import { monthEnds, mrrAt } from "./history";
 import { toUsdCents } from "./money";
@@ -112,10 +112,13 @@ export async function verifyRevenue(
   };
 }
 
+// Stores a verification: with a new key, or for the connection read (`connectedAt`), which the
+// database checks is still the one connected, so a run that read a key replaced since stores
+// nothing.
 async function record(
   saasId: string,
   verification: Verification,
-  newKey?: { encrypted: string; hint: string },
+  { newKey, connectedAt }: { newKey?: { encrypted: string; hint: string }; connectedAt?: string },
 ) {
   const { error } = await adminClient().rpc("record_revenue_verification", {
     p_saas_id: saasId,
@@ -136,7 +139,10 @@ async function record(
     p_revenue_12m_cents: verification.revenue?.months12Cents ?? null,
     p_revenue_total_cents: verification.revenue?.totalCents ?? null,
     p_revenue_at: verification.revenue?.at ?? null,
+    p_connected_at: connectedAt ?? null,
   });
+  if (error?.message.includes("connection changed"))
+    throw new VerificationError(REPLACED_DURING_CHECK);
   if (error?.message.includes("already verify another SaaS"))
     throw new VerificationError(
       `This ${providerName(verification.provider)} account already verifies another SaaS on The SaaS Harbor.`,
@@ -149,8 +155,7 @@ async function record(
 export async function connectProvider(saasId: string, provider: ProviderId, key: ParsedKey) {
   const verification = await verifyRevenue(provider, key.key, key.livemode);
   await record(saasId, verification, {
-    encrypted: encryptProviderKey(key.key, saasId),
-    hint: key.hint,
+    newKey: { encrypted: encryptProviderKey(key.key, saasId), hint: key.hint },
   });
   after(async () => {
     try {
@@ -271,6 +276,7 @@ export async function syncConnection(
       try {
         verification.revenue = await readRevenue(saasId, provider, key, connection.livemode, {
           allowTest: allowTestKeys(),
+          connectedAt: connection.connected_at,
         });
       } catch (cause) {
         await admin
@@ -279,7 +285,7 @@ export async function syncConnection(
           .eq("saas_id", saasId)
           .eq("connected_at", connection.connected_at);
       }
-    await record(saasId, verification);
+    await record(saasId, verification, { connectedAt: connection.connected_at });
     return verification;
   } catch (cause) {
     // A failure is recorded on the connection that was read, not on a key connected since.

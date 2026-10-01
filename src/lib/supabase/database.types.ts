@@ -1448,6 +1448,7 @@ export type Database = {
       }
       record_revenue_payments: {
         Args: {
+          p_connected_at?: string
           p_days30: string
           p_from: string
           p_listed: string[]
@@ -1462,6 +1463,7 @@ export type Database = {
       }
       record_revenue_verification: {
         Args: {
+          p_connected_at?: string
           p_currencies: Json
           p_customers: number
           p_encrypted_key: string

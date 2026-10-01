@@ -3,7 +3,7 @@
 -- rolled-back transaction.
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(13);
+select plan(16);
 
 -- Existing local connections count as just checked, so only the fixtures are due.
 update public.revenue_connections set last_checked_at = now(), revenue_checked_at = now();
@@ -64,6 +64,29 @@ select is((select count(*)::int from public.revenue_snapshots
 select is((select mrr_cents from public.public_metrics
   where saas_id = 'd7100000-0000-4000-8000-000000000001'), 1700::bigint,
   'the projection follows the latest snapshot');
+
+-- A run stores what it read only while the connection it read is still the one connected, so a
+-- run that read a key replaced since stores nothing.
+set local role postgres;
+update public.revenue_connections set connected_at = now() - interval '1 minute'
+where saas_id = 'd7100000-0000-4000-8000-000000000001';
+set local role service_role;
+select throws_ok(
+  $$ select public.record_revenue_verification('d7100000-0000-4000-8000-000000000001', 'stripe',
+    null, null, true, 9999, 9, '{"usd": 9999}', null, array[repeat('1', 64)], null, null, null,
+    null, p_connected_at => now()) $$,
+  '40001', 'The connection changed during the check',
+  'a run that read a key replaced since stores no verification');
+select lives_ok(
+  $$ select public.record_revenue_verification('d7100000-0000-4000-8000-000000000001', 'stripe',
+    null, null, true, 1800, 2, '{"usd": 1800}', null, array[repeat('1', 64)], null, null, null,
+    null, p_connected_at => now() - interval '1 minute') $$,
+  'a run that read the connected key stores its figures');
+select throws_ok(
+  $$ select public.record_revenue_payments('d7100000-0000-4000-8000-000000000001', 'stripe',
+    '[]', '{}', '[]', current_date, false, current_date - 29, current_date - 364, now()) $$,
+  '40001', 'The connection changed during the check',
+  'nor payments');
 
 -- The scheduled run claims connections not verified or checked within the interval.
 set local role service_role;

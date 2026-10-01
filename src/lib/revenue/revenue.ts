@@ -2,7 +2,7 @@ import "server-only";
 import { createHash } from "node:crypto";
 import { adminClient } from "@/lib/supabase/admin";
 import { providerName, type ProviderId } from "./catalog";
-import { VerificationError } from "./errors";
+import { REPLACED_DURING_CHECK, VerificationError } from "./errors";
 import { usdRates } from "./fx";
 import { MAX_PAGES } from "./http";
 import { toUsdCents } from "./money";
@@ -27,6 +27,7 @@ const OLDER_PAGES = 100;
 
 type ReadState = {
   provider: string;
+  connected_at: string;
   from: string | null;
   origin: boolean;
   read_at: string | null;
@@ -43,14 +44,19 @@ export function paymentHash(provider: ProviderId, id: string) {
 /**
  * Reads a connection's payments and stores them: the last six months listed again, so refunds are
  * picked up and only new or changed payments are valued, then a part of the older ones until the
- * account's first payment. Returns the figures the stored payments cover.
+ * account's first payment. Returns the figures the stored payments cover. `connectedAt` names the
+ * connection whose key this is: payments are stored only while it is still the one connected.
  */
 export async function readRevenue(
   saasId: string,
   provider: ProviderId,
   key: string,
   livemode: boolean,
-  { allowTest, now = new Date() }: { allowTest: boolean; now?: Date },
+  {
+    allowTest,
+    connectedAt,
+    now = new Date(),
+  }: { allowTest: boolean; connectedAt: string; now?: Date },
 ): Promise<RevenueFigures> {
   const admin = adminClient();
   const reread = rereadFrom(now);
@@ -62,6 +68,8 @@ export async function readRevenue(
   const state = data as ReadState;
   if (state.provider !== provider)
     throw new VerificationError("The product is connected to another provider.");
+  if (Date.parse(state.connected_at) !== Date.parse(connectedAt))
+    throw new VerificationError(REPLACED_DURING_CHECK);
 
   const stored = (id: string): StoredPayment | null => {
     const found = state.stored[paymentHash(provider, id)];
@@ -117,7 +125,10 @@ export async function readRevenue(
     p_origin: origin,
     p_days30: days30,
     p_months12: months12,
+    p_connected_at: connectedAt,
   });
+  if (recordError?.message.includes("connection changed"))
+    throw new VerificationError(REPLACED_DURING_CHECK);
   if (recordError?.message.includes("already verify another SaaS"))
     throw new VerificationError(
       `Payments of this ${providerName(provider)} account already verify another SaaS on The SaaS Harbor.`,

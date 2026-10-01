@@ -4,6 +4,10 @@
  */
 export class VerificationError extends Error {}
 
+/** A run that read a key the founder has replaced since; what it read is not stored. */
+export const REPLACED_DURING_CHECK =
+  "The key was replaced during the check, so this result was not stored.";
+
 /** The words a maker sees for a failure: its own message when it has one written for them. */
 export function makerMessage(error: unknown) {
   if (error instanceof VerificationError) return error.message;
