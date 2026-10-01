@@ -830,6 +830,8 @@ test("registration, email confirmation, profile and SaaS editing, storage, priva
   await connect.click();
   const revenue = page.locator("#revenue");
   await expect(revenue.getByText("Connected to Stripe")).toBeVisible();
+  // The answer stays after the form gives way to the connected provider.
+  await expect(revenue.getByRole("status").filter({ hasText: "Stripe connected." })).toBeVisible();
   await expect(revenue.getByText("Test mode")).toBeVisible();
   await expect(revenue.getByText("$104", { exact: true })).toBeVisible();
   await expect(revenue.getByText("3", { exact: true })).toBeVisible();
@@ -1169,6 +1171,9 @@ test("registration, email confirmation, profile and SaaS editing, storage, priva
   await page.getByRole("button", { name: "Disconnect" }).click();
   await page.getByRole("button", { name: "Confirm disconnect" }).click();
   await expect(page.getByLabel("Restricted key", { exact: true })).toBeVisible();
+  await expect(
+    page.getByRole("status").filter({ hasText: "Disconnected. The stored key was deleted." }),
+  ).toBeVisible();
   const { count: remaining } = await admin
     .from("revenue_connections")
     .select("saas_id", { count: "exact", head: true })

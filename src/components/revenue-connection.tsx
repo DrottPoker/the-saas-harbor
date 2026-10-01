@@ -296,15 +296,29 @@ function ConnectForm({
   replace,
   initial = "stripe",
   oauthReady,
+  onStart,
+  onConnected,
 }: {
   saasId: string;
   replace: boolean;
   initial?: ProviderId;
   /** The providers connected through OAuth that this server is set up for. */
   oauthReady: ProviderId[];
+  /** When a connection is tried, such as to clear an earlier result shown elsewhere. */
+  onStart?: () => void;
+  /**
+   * The result of a first connection, which the section shows: this form gives way to the
+   * connected provider as soon as the page has the connection, and its own result goes with it.
+   */
+  onConnected?: (result: ActionState) => void;
 }) {
   const [provider, setProvider] = useState<ProviderId>(initial);
-  const [state, action] = useEditorAction(connectProviderAction.bind(null, saasId, provider));
+  const [state, action] = useEditorAction(async (previous, form) => {
+    onStart?.();
+    const result = await connectProviderAction(saasId, provider, previous, form);
+    if (result.success) onConnected?.(result);
+    return result;
+  });
   const group = useId();
   const { name, keyLabel, newKeyLabel, placeholder } = PROVIDERS[provider];
   const account = providerAccount(provider);
@@ -433,20 +447,28 @@ function Connected({
   connection,
   snapshot,
   oauthReady,
+  outcome,
+  onOutcome,
 }: {
   saasId: string;
   connection: RevenueConnection;
   snapshot: RevenueSnapshot | null;
   oauthReady: ProviderId[];
+  /** The result of connecting, or of disconnecting, kept by the section. */
+  outcome: ActionState;
+  onOutcome: (result: ActionState) => void;
 }) {
-  const [refreshState, refresh] = useActionState<ActionState>(
-    refreshRevenueAction.bind(null, saasId),
-    {},
-  );
-  const [disconnectState, disconnect] = useActionState<ActionState>(
-    disconnectProviderAction.bind(null, saasId),
-    {},
-  );
+  const [refreshState, refresh] = useActionState<ActionState>(async () => {
+    onOutcome({});
+    return refreshRevenueAction(saasId);
+  }, {});
+  // Disconnecting removes this card once the page has caught up, so its result goes to the section.
+  const [disconnectState, disconnect] = useActionState<ActionState>(async () => {
+    onOutcome({});
+    const result = await disconnectProviderAction(saasId);
+    if (result.success) onOutcome(result);
+    return result;
+  }, {});
   const [confirming, setConfirming] = useState(false);
   const ok = connection.status === "ok";
   const provider = isProviderId(connection.provider) ? connection.provider : "stripe";
@@ -520,6 +542,7 @@ function Connected({
           )}
         </div>
       </div>
+      <Feedback state={outcome} />
       <Feedback state={refreshState} />
       <Feedback state={disconnectState} />
       <details className="text-sm">
@@ -527,7 +550,13 @@ function Connected({
           Replace the key or change the provider
         </summary>
         <div className="pt-4">
-          <ConnectForm saasId={saasId} replace initial={provider} oauthReady={oauthReady} />
+          <ConnectForm
+            saasId={saasId}
+            replace
+            initial={provider}
+            oauthReady={oauthReady}
+            onStart={() => onOutcome({})}
+          />
         </div>
       </details>
     </div>
@@ -551,6 +580,9 @@ export function RevenueConnectionSection({
   /** How connecting through OAuth just went, in words for the founder. */
   oauthResult: { tone: "success" | "error"; text: string } | null;
 }) {
+  // What the first connection or a disconnection found, such as items that were not counted. The
+  // form that did it is replaced as soon as the page has the change, so the result is kept here.
+  const [outcome, setOutcome] = useState<ActionState>({});
   return (
     <div id="revenue" className="mt-2 scroll-mt-6 border-t pt-8">
       <Section
@@ -569,9 +601,20 @@ export function RevenueConnectionSection({
             connection={connection}
             snapshot={snapshot}
             oauthReady={oauthReady}
+            outcome={outcome}
+            onOutcome={setOutcome}
           />
         ) : (
-          <ConnectForm saasId={saasId} replace={false} oauthReady={oauthReady} />
+          <>
+            <Feedback state={outcome} />
+            <ConnectForm
+              saasId={saasId}
+              replace={false}
+              oauthReady={oauthReady}
+              onStart={() => setOutcome({})}
+              onConnected={setOutcome}
+            />
+          </>
         )}
       </Section>
     </div>
