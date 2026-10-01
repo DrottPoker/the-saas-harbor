@@ -154,7 +154,7 @@ export function siteImage() {
   return new ImageResponse(
     <OgCard
       title="Free exposure for small SaaS"
-      subtitle="A public page for your product, a place on the leaderboard and other founders to meet."
+      subtitle="A public page for your product, a place on the leaderboard and messages from other users."
       picture={<OgMark size={160} />}
       figures={[
         ["Cost", "Free"],

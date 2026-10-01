@@ -23,15 +23,19 @@ async function movedAddress(request: NextRequest, config: ReturnType<typeof supa
       auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
     });
     const id = address.toLowerCase();
+    // A product's name, and so its slug, can look like an id; the page with that slug wins.
+    const either = `slug.eq.${id},id.eq.${id}`;
     const { data } =
       kind === "saas"
-        ? await client.from("public_saas").select("slug").eq("id", id).maybeSingle()
-        : await client.from("profiles").select("slug").eq("id", id).maybeSingle();
-    slug = data?.slug ?? null;
+        ? await client.from("public_saas").select("id, slug").or(either).limit(2)
+        : await client.from("profiles").select("id, slug").or(either).limit(2);
+    const rows: { id: string | null; slug: string | null }[] = data ?? [];
+    slug = (rows.find((row) => row.slug === id) ?? rows.find((row) => row.id === id))?.slug ?? null;
   } else if (address !== address.toLowerCase()) {
     slug = address.toLowerCase();
   }
-  if (!slug) return null;
+  // Never to the address itself, which would loop.
+  if (!slug || slug === address) return null;
   const url = request.nextUrl.clone();
   url.pathname = `/${kind}/${slug}`;
   return url;

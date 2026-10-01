@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { notFound } from "next/navigation";
 import { Search } from "lucide-react";
 import { demoRows, listings, rankSort, type Sort } from "@/lib/data";
 import { categories } from "@/lib/domain";
@@ -97,17 +98,37 @@ export async function Explore({
     search,
     tech: tech?.slug,
   });
+  // A page past the last one does not exist, so it answers 404 and search engines drop it.
+  if (page > 1 && !error && !rows.length) notFound();
   // Demo products name no technologies, so a technology filter leaves them out.
   const demo = error || tech ? [] : await demoRows({ sort, category, search, page, count });
   const meta = mode === "newest" ? "joined" : "maker";
   const filtered = !!category || !!search || !!tech || page > 1;
-  function url(nextCategory: string, nextPage = 1, nextRanking = ranking) {
+  // An address of this list that changes only what a link names: the ranking, the category, the
+  // technology, the search or the page. Every other choice stays, and the page starts at one.
+  function url(
+    change: {
+      ranking?: Ranking;
+      category?: string;
+      tech?: string;
+      search?: string;
+      page?: number;
+    } = {},
+  ) {
+    const next = {
+      ranking,
+      category,
+      tech: tech?.slug ?? "",
+      search,
+      page: 1,
+      ...change,
+    };
     const query = new URLSearchParams();
-    if (nextRanking !== "mrr") query.set("by", nextRanking);
-    if (nextCategory) query.set("category", nextCategory);
-    if (tech) query.set("tech", tech.slug);
-    if (search) query.set("q", search);
-    if (nextPage > 1) query.set("page", String(nextPage));
+    if (next.ranking !== "mrr") query.set("by", next.ranking);
+    if (next.category) query.set("category", next.category);
+    if (next.tech) query.set("tech", next.tech);
+    if (next.search) query.set("q", next.search);
+    if (next.page > 1) query.set("page", String(next.page));
     return `${path}${query.size ? `?${query}` : ""}`;
   }
 
@@ -163,7 +184,7 @@ export async function Explore({
           {RANKINGS.map((item) => (
             <Link
               key={item.ranking}
-              href={url(category, 1, item.ranking)}
+              href={url({ ranking: item.ranking })}
               aria-current={ranking === item.ranking ? "page" : undefined}
               className={categoryChip}
             >
@@ -176,7 +197,7 @@ export async function Explore({
         {["", ...categories].map((item) => (
           <Link
             key={item || "all"}
-            href={url(item)}
+            href={url({ category: item })}
             aria-current={category === item ? "page" : undefined}
             className={categoryChip}
           >
@@ -196,7 +217,7 @@ export async function Explore({
             </Link>
           </span>
           <Link
-            href={`${path}${category ? `?category=${encodeURIComponent(category)}` : ""}`}
+            href={url({ tech: "" })}
             className="underline underline-offset-2 hover:text-foreground"
           >
             Show all technologies
@@ -212,7 +233,7 @@ export async function Explore({
             title="No matching products"
             action={
               <Button asChild variant="outline" size="sm">
-                <Link href={path}>Clear filters</Link>
+                <Link href={url({ category: "", tech: "", search: "" })}>Clear filters</Link>
               </Button>
             }
           >
@@ -241,7 +262,7 @@ export async function Explore({
               ) : (
                 <ListingGrid items={rows} meta={meta} />
               )}
-              <ResultsFooter page={page} count={count} href={(next) => url(category, next)} />
+              <ResultsFooter page={page} count={count} href={(next) => url({ page: next })} />
             </>
           )}
           {!!demo.length && (

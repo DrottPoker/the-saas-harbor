@@ -12,14 +12,14 @@ import { groupTechStack, technologies } from "./tech";
 import { currentVerifiedDomain } from "./website-domain";
 
 /**
- * Maker text as plain Markdown text, line breaks kept. Characters that make emphasis, code,
- * links, HTML or tables are escaped everywhere, and those that start a heading, list or rule
- * only at the start of a line.
+ * Maker text as plain Markdown text, line breaks kept. Characters that make emphasis, code
+ * (tilde fences included), links, HTML or tables are escaped everywhere, and those that start a
+ * heading, list or rule only at the start of a line.
  */
 export function escapeMarkdown(text: string) {
   return text
     .replace(/\r\n?/g, "\n")
-    .replace(/[\\`*_[\]<>|]/g, "\\$&")
+    .replace(/[\\`*_~[\]<>|]/g, "\\$&")
     .replace(/^(\s*)([#+=-])/gm, "$1\\$2")
     .replace(/^(\s*\d+)([.)])/gm, "$1\\$2")
     .trim();
@@ -93,7 +93,7 @@ export function productMarkdown(item: Listing) {
             : "- Domain: not verified",
         ]
       : []),
-    ...(item.launched_on ? [`- Launched: ${formatDate(item.launched_on)}`] : []),
+    `- Launched: ${item.launched_on ? formatDate(item.launched_on) : "not shared"}`,
     ...(item.created_at ? [`- Listed: ${formatDate(item.created_at)}`] : []),
     "",
     "## Revenue",
@@ -104,9 +104,7 @@ export function productMarkdown(item: Listing) {
     ...(verified && item.mrr_growth_pct != null
       ? [`- Change over 30 days: ${growthText(item.mrr_growth_pct)}`]
       : []),
-    ...(item.customers != null
-      ? [`- Paying customers: ${item.customers.toLocaleString("en-US")}`]
-      : []),
+    `- Paying customers: ${item.customers?.toLocaleString("en-US") ?? "not shared"}`,
     // Revenue besides MRR, one-time purchases included, only where it is shared.
     ...(revenueShared
       ? REVENUE_WINDOWS.map(({ column, label }) => {
@@ -165,12 +163,8 @@ export function makerMarkdown(
     ...(profile.location ? [`- Location: ${inline(profile.location)}`] : []),
     ...links.map(([label, url]) => `- ${label}: ${autolink(url!)}`),
     `- Products: ${products.length}`,
-    ...(totals.mrr != null
-      ? [`- Verified MRR across shared products: ${formatUsd(totals.mrr)}`]
-      : []),
-    ...(totals.customers != null
-      ? [`- Paying customers across shared products: ${totals.customers.toLocaleString("en-US")}`]
-      : []),
+    `- Verified MRR across shared products: ${totals.mrr == null ? "not shared" : formatUsd(totals.mrr)}`,
+    `- Paying customers across shared products: ${totals.customers?.toLocaleString("en-US") ?? "not shared"}`,
     "",
     "## Products",
     "",

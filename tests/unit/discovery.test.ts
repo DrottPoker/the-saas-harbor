@@ -237,6 +237,10 @@ describe("markdown", () => {
       "\\# Title\n\\- item\n1\\. first\n\\[link\\](https://x.example) \\*bold\\* \\<b\\>",
     );
     expect(escapeMarkdown("Up 20% - in 3 months")).toBe("Up 20% - in 3 months");
+    // A tilde fence would open a code block that swallows the rest of the file.
+    expect(escapeMarkdown("~~~\nnot code ~~struck~~")).toBe(
+      "\\~\\~\\~\nnot code \\~\\~struck\\~\\~",
+    );
   });
 
   it("describes a product with its shared figures and history", () => {
@@ -302,9 +306,13 @@ describe("markdown", () => {
         mrr_cents: null,
         customers: null,
         mrr_growth_pct: null,
+        launched_on: null,
       }),
     );
     expect(text).toContain("- Monthly recurring revenue: not shared");
+    // Every figure the page shows says so, as on the HTML page, rather than going missing.
+    expect(text).toContain("- Paying customers: not shared");
+    expect(text).toContain("- Launched: not shared");
     expect(text).not.toContain("MRR at month end");
     expect(text).not.toContain("$");
     expect(text).not.toContain("Verified with");
@@ -353,6 +361,9 @@ describe("markdown", () => {
     expect(text).toContain("\\# Not a heading\n\\- not a list");
     expect(text).toContain("- Founder, QueryBird (Jan 2024 - Present");
     expect(text).toContain("## Skills\n\nSQL, Go");
+    const unshared = makerMarkdown(profile(), [], [], { mrr: null, customers: null });
+    expect(unshared).toContain("- Verified MRR across shared products: not shared");
+    expect(unshared).toContain("- Paying customers across shared products: not shared");
   });
 
   it("guides AI assistants through the site", () => {

@@ -7,7 +7,7 @@ import { Button } from "./ui/button";
 const gains = [
   "A public page for your product",
   "A dofollow link to your website once you verify revenue",
-  "Page views and messages from other founders",
+  "Page views and messages from other users",
   "A place on the leaderboard, if you connect your revenue",
 ];
 
@@ -29,7 +29,7 @@ export async function FounderHeader() {
         </h1>
         <p className="mt-4 max-w-2xl text-base text-muted-foreground sm:text-lg">
           Every SaaS is welcome, verified or not. You get a public page with a link to your site,
-          and other founders can find you and write to you. Connecting your payment provider is
+          and other users can find you and write to you. Connecting your payment provider is
           optional and puts you on the leaderboard.
         </p>
         <div className="mt-6 flex flex-wrap items-center gap-x-6 gap-y-3">

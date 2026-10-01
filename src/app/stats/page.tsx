@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { BarList } from "@/components/charts/bar-list";
 import { Growth } from "@/components/charts/growth";
@@ -20,7 +21,14 @@ import {
 const description =
   "Monthly recurring revenue across the products that share it, verified through their payment providers.";
 
-export const metadata = pageMetadata({ title: "Statistics", description, path: "/stats" });
+// Until enough products share verified MRR there are no figures for search engines.
+export async function generateMetadata(): Promise<Metadata> {
+  const stats = await directoryStats();
+  return {
+    ...pageMetadata({ title: "Statistics", description, path: "/stats" }),
+    ...(stats.ranked < STATS_MINIMUM && { robots: { index: false } }),
+  };
+}
 
 const products = (count: number) =>
   `${count.toLocaleString("en-US")} ${count === 1 ? "product" : "products"}`;

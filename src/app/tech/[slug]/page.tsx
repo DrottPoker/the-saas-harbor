@@ -94,7 +94,7 @@ export default async function TechPage({ params }: Props) {
                   : `Products built with ${tech.name}`}
               </h2>
               <p className="mt-1 mb-4 text-sm text-muted-foreground">
-                Listed without shared, verified revenue, A to Z.
+                Not on the MRR leaderboard, A to Z.
               </p>
               <ListingGrid items={rest.rows} meta="maker" />
               {rest.count > PAGE_SIZE && (

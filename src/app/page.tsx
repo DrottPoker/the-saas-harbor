@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Explore } from "@/components/explore";
 import { JsonLd } from "@/components/json-ld";
-import { revenueRankedCount } from "@/lib/data";
+import { revenueRankedCounts } from "@/lib/data";
 import { firstValues, type SearchParams } from "@/lib/params";
 import { rankingFrom, revenueRankingTitle, revenueWindow } from "@/lib/revenue-figures";
 import { listMetadata, SITE_NAME } from "@/lib/seo";
@@ -30,7 +30,7 @@ export async function generateMetadata({ searchParams }: Props): Promise<Metadat
     params,
   );
   // An empty revenue ranking has nothing for search engines yet.
-  if (revenue && !metadata.robots && !(await revenueRankedCount()))
+  if (revenue && !metadata.robots && !(await revenueRankedCounts()).get(revenue.ranking))
     metadata.robots = { index: false };
   // An absolute title adds the name itself, whether or not the root layout's template applies to
   // this page (it does since the @modal slot sits beside it).

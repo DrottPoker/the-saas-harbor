@@ -3,7 +3,7 @@ import { cache } from "react";
 import { publicClient } from "./supabase/server";
 import { demoFill, demoListings, type DemoDetails } from "./demo";
 import { categories, containsPattern } from "./domain";
-import type { Ranking } from "./revenue-figures";
+import { REVENUE_WINDOWS, type Ranking } from "./revenue-figures";
 import { parseStats } from "./stats";
 import type { Database } from "./supabase/database.types";
 export type Listing = Database["public"]["Views"]["public_saas"]["Row"] & {
@@ -174,17 +174,24 @@ export const techCounts = cache(async () => {
 });
 
 /**
- * How many products the revenue rankings hold. Revenue is shared for every window at once, so each
- * ranking holds the same products.
+ * How many products each revenue ranking holds. A product is in a ranking once it has that
+ * window's revenue, and the windows can differ: one whose payments are not read back to the first
+ * has no all-time figure yet.
  */
-export const revenueRankedCount = cache(async () => {
+export const revenueRankedCounts = cache(async () => {
   const client = publicClient();
   if (!client) throw new Error("Supabase is not configured.");
-  const { count, error } = await client
-    .from("revenue_leaderboard")
-    .select("id", { count: "exact", head: true });
-  if (error) throw new Error("The revenue rankings could not be loaded.");
-  return count ?? 0;
+  const counts = await Promise.all(
+    REVENUE_WINDOWS.map(async ({ ranking }) => {
+      const { count, error } = await client
+        .from("revenue_leaderboard")
+        .select("id", { count: "exact", head: true })
+        .not(REVENUE_RANKS[rankSort(ranking) as keyof typeof REVENUE_RANKS], "is", null);
+      if (error) throw new Error("The revenue rankings could not be loaded.");
+      return [ranking, count ?? 0] as const;
+    }),
+  );
+  return new Map<Ranking, number>(counts);
 });
 
 /**
