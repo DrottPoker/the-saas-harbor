@@ -174,8 +174,12 @@ function paddleTransactions() {
   return transactions;
 }
 
+/** The subscription filter of each transactions request, for the tests to inspect. */
+const paddleSubscriptionFilters = [];
+
 function paddle(url, request, send) {
   const [, , env, ...rest] = url.pathname.split("/");
+  if (url.pathname === "/paddle/requests") return send(200, paddleSubscriptionFilters.splice(0));
   const path = `/${rest.join("/")}`;
   const error = (status, code, detail) =>
     send(status, { error: { type: "request_error", code, detail }, meta: { request_id: "fake" } });
@@ -212,7 +216,14 @@ function paddle(url, request, send) {
     if (Number.isNaN(since)) return error(400, "invalid_time_query_parameter", "billed_at");
     const before = Date.parse(url.searchParams.get("billed_at[LT]") ?? "") || Infinity;
     const billed = (t) => Date.parse(t.billed_at);
-    const listed = paddleTransactions().filter((t) => billed(t) >= since && billed(t) < before);
+    const subscriptions = url.searchParams.get("subscription_id")?.split(",");
+    paddleSubscriptionFilters.push(subscriptions ?? null);
+    const listed = paddleTransactions().filter(
+      (t) =>
+        billed(t) >= since &&
+        billed(t) < before &&
+        (!subscriptions || subscriptions.includes(t.subscription_id)),
+    );
     if (url.searchParams.get("order_by") === "billed_at[DESC]")
       listed.sort((a, b) => billed(b) - billed(a));
     return page(listed);

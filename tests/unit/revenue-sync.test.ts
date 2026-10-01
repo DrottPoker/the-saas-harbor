@@ -133,6 +133,18 @@ describe("Paddle verification", () => {
     expect(sortedMonths(result.history)).toBe(true);
   });
 
+  it("reads the last month for all, and older charges only for the subscriptions that need them", async () => {
+    await fetch(`${base}/paddle/requests`);
+    const result = await verifyRevenue("paddle", PADDLE_KEYS.one, false, new Date(), {
+      history: false,
+    });
+    expect(result).toMatchObject({ mrrCents: 18_250, customers: 3, skippedItems: 1 });
+    // The yearly, the past-due and the imported subscription have no full charge in the last
+    // month, so their own charges are asked for; the monthly one's is there.
+    const filters = (await (await fetch(`${base}/paddle/requests`)).json()) as (string[] | null)[];
+    expect(filters).toEqual([null, ["sub_paddle_yearly", "sub_paddle_eur", "sub_paddle_imported"]]);
+  });
+
   it("names the missing permission", async () => {
     await expect(verifyRevenue("paddle", PADDLE_KEYS.noperm, false)).rejects.toThrow(
       /missing a read permission/,

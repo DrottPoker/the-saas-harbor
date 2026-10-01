@@ -97,11 +97,20 @@ export function fetchSubscriptions(key: string, livemode: boolean) {
   });
 }
 
-/** Paid transactions billed since `since` (Unix seconds). Permission: Transactions, read. */
-export function fetchTransactions(key: string, livemode: boolean, since: number) {
+/**
+ * Paid transactions billed since `since` (Unix seconds), of the given subscriptions only when
+ * there are some. Permission: Transactions, read.
+ */
+export function fetchTransactions(
+  key: string,
+  livemode: boolean,
+  since: number,
+  subscriptionIds: string[] = [],
+) {
   return listAll<PaddleTransaction>(key, livemode, "/transactions", {
     status: "paid,completed",
     "billed_at[GTE]": new Date(since * 1000).toISOString(),
+    ...(subscriptionIds.length ? { subscription_id: subscriptionIds.join(",") } : {}),
     order_by: "billed_at[ASC]",
     per_page: "30",
   });

@@ -108,6 +108,37 @@ const counted = (subscription: PaddleSubscription) =>
   (COUNTED_STATUSES as readonly string[]).includes(subscription.status);
 
 /**
+ * The start of the transactions read for every subscription: a month and a few days back, which
+ * holds the latest charge of each monthly subscription that is paid up.
+ */
+export function recentWindowStart(now: Date) {
+  return Math.floor(now.getTime() / 1000) - 35 * DAY;
+}
+
+/**
+ * The counted subscriptions without a paid charge for a full billing period among `transactions`:
+ * those on longer cycles, past due, or changed in the middle of a period, whose latest full
+ * charge is older.
+ */
+export function withoutFullCharge(
+  subscriptions: PaddleSubscription[],
+  transactions: PaddleTransaction[],
+) {
+  const charged = new Set(
+    transactions.flatMap((transaction) =>
+      transaction.subscription_id &&
+      unixSeconds(transaction.billed_at) !== null &&
+      fullPeriodLines(transaction).length
+        ? [transaction.subscription_id]
+        : [],
+    ),
+  );
+  return subscriptions.filter(
+    (subscription) => counted(subscription) && !charged.has(subscription.id),
+  );
+}
+
+/**
  * Transactions billed since this instant hold every counted subscription's latest full charge:
  * the period before the current one, which a past-due subscription has not paid yet.
  */
