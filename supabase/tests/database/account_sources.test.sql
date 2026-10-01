@@ -3,7 +3,7 @@
 -- account's page read it; deleting the account deletes it. Runs in a rolled-back transaction.
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(16);
+select plan(17);
 
 insert into auth.users(id, email, created_at, email_confirmed_at) values
   ('ea000000-0000-4000-8000-000000000001', 'new@sources.test', now() - interval '5 minutes',
@@ -47,10 +47,14 @@ select ok(not public.record_account_source('ea000000-0000-4000-8000-000000000003
   '198.51.100.7', 'Another UA'), 'a browser without visits today gives none');
 reset role;
 select results_eq(
-  $$ select entry_path, referrer, utm_campaign, visit_started_at < now() - interval '2 hours'
+  $$ select entry_path, referrer, utm_campaign
      from private.account_sources where user_id = 'ea000000-0000-4000-8000-000000000001' $$,
-  $$ values ('/list-your-saas'::text, 'reddit.com'::text, 'launch-sources'::text, true) $$,
+  $$ values ('/list-your-saas'::text, 'reddit.com'::text, 'launch-sources'::text) $$,
   'the visit that came from somewhere wins over a later direct one');
+-- Nothing in it finds the visit's page views in the site statistics, such as when it began.
+select columns_are('private', 'account_sources', array['user_id', 'entry_path', 'referrer',
+  'utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content', 'recorded_at'],
+  'a source keeps where the visit came from, and nothing that ties it to the statistics');
 
 -- The funnel by source, on the accounts moved to a quiet day of their own.
 update auth.users set created_at = '2001-02-01 00:00+00',

@@ -1218,7 +1218,6 @@ export type Database = {
           source_channel: string
           source_entry_path: string
           source_name: string
-          source_visit_at: string
         }[]
       }
       admin_accounts: {
