@@ -8,15 +8,16 @@ type Bucket = ReturnType<SupabaseClient<Database>["storage"]["from"]>;
 const BUCKET = "profile-images";
 const IMAGES_FAILED = "Your images could not be deleted, so the account was kept. Try again.";
 
-// Every file path under the maker's folder, including any subfolders.
-async function filesUnder(bucket: Bucket, prefix: string, depth = 0): Promise<string[]> {
+// Every file path under the maker's folder, including subfolders at any depth: uploads now go only
+// directly in the folder, but files from before that rule may sit deeper.
+async function filesUnder(bucket: Bucket, prefix: string): Promise<string[]> {
   const { data, error } = await bucket.list(prefix, { limit: 1000 });
   if (error) throw new Error(IMAGES_FAILED);
   const paths: string[] = [];
   for (const entry of data) {
     const path = `${prefix}/${entry.name}`;
     if (entry.id) paths.push(path);
-    else if (depth < 5) paths.push(...(await filesUnder(bucket, path, depth + 1)));
+    else paths.push(...(await filesUnder(bucket, path)));
   }
   return paths;
 }

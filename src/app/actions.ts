@@ -21,8 +21,10 @@ import {
   type ActionState,
 } from "@/lib/domain";
 import { addressAcceptsMail } from "@/lib/email-domain";
+import { sendQueuedEmails } from "@/lib/email/outbox";
 import { announceProduct, announceRemovedProduct } from "@/lib/indexnow";
 import { termsUpdated } from "@/lib/legal";
+import { siteUrl } from "@/lib/seo";
 import { sendQueuedTelegramAlerts } from "@/lib/telegram/outbox";
 import {
   recordSignInCountry,
@@ -99,9 +101,8 @@ export async function authenticate(
   if (mode === "signup" && form.get("terms") !== "on")
     return { error: "Tick the box to accept the Terms of Service." };
   const client = await serverClient();
-  const origin = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3001";
   // Both emails link to the confirm page, which verifies the token in whichever browser opens it.
-  const confirm = `${origin}/auth/confirm`;
+  const confirm = `${siteUrl()}/auth/confirm`;
   if (mode === "signup") {
     const { username, problem: taken } = await usernameProblem(client, value(form, "username"));
     if (taken) return { error: taken };
@@ -482,8 +483,10 @@ export async function saveSaas(_state: ActionState, form: FormData): Promise<Act
     return { error: message(error) };
   }
   // Search engines that take IndexNow notices hear about the page at once.
-  announceProduct(savedId, previousSlug);
+  announceProduct(client, savedId, previousSlug);
   if (!existed) sendQueuedTelegramAlerts();
+  // Sharing MRR can reach a milestone, whose email goes out now rather than on the next run.
+  sendQueuedEmails();
   revalidatePath("/", "layout");
   // New products continue to revenue verification; edits return to the dashboard.
   redirect(

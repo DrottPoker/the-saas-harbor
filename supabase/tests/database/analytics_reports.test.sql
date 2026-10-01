@@ -2,7 +2,7 @@
 -- the periods, and every admin report. Runs in a rolled-back transaction, from no page views.
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(54);
+select plan(52);
 
 delete from private.page_views;
 delete from private.outbound_clicks;
@@ -21,8 +21,6 @@ select throws_ok(
   $$ select public.track_page_view('203.0.113.9', 'UA', '/', null, null, null, null, null, null,
      null, null, null, 'desktop', 'Chrome', null, 'Windows', null) $$,
   '42501', null, 'visitors cannot record page views directly');
-select throws_ok($$ select public.track_engagement('203.0.113.9', 'UA', 1, 1000) $$,
-  '42501', null, 'visitors cannot report page time directly');
 select throws_ok(
   $$ select public.track_outbound_click('203.0.113.9', 'UA', '/', 'https://example.com/', 'example.com') $$,
   '42501', null, 'visitors cannot record link clicks directly');
@@ -53,18 +51,18 @@ select results_eq(
      (true, false, null, null, null, null, 'en', '18', '18') $$,
   'a visit continues within 30 minutes, and only its first page keeps where it came from');
 
--- Page time: only the same visitor, never shorter, at most an hour.
+-- Page time: never shorter, at most an hour. The first page view gets a key, as the page gives one.
+update private.page_views set key = '7d4f1c7e-0000-4000-8000-0000000000aa'
+where id = (select id from ids where name = 'first');
 set local role service_role;
-select is(public.track_engagement('203.0.113.9', 'Browser A',
-  (select id from ids where name = 'first'), 15000), true, 'the visitor reports page time');
-select is(public.track_engagement('203.0.113.9', 'Browser B',
-  (select id from ids where name = 'first'), 60000), false, 'another visitor cannot');
-select public.track_engagement('203.0.113.9', 'Browser A', (select id from ids where name = 'first'), 5000);
+select is(public.track_page_time('7d4f1c7e-0000-4000-8000-0000000000aa', 15000), true,
+  'the page reports its time');
+select public.track_page_time('7d4f1c7e-0000-4000-8000-0000000000aa', 5000);
 reset role;
 select is((select engaged_ms from private.page_views where id = (select id from ids where name = 'first')),
   15000, 'a later, shorter report does not shorten it');
 set local role service_role;
-select public.track_engagement('203.0.113.9', 'Browser A', (select id from ids where name = 'first'), 99999999);
+select public.track_page_time('7d4f1c7e-0000-4000-8000-0000000000aa', 99999999);
 reset role;
 select is((select engaged_ms from private.page_views where id = (select id from ids where name = 'first')),
   3600000, 'page time is at most an hour');

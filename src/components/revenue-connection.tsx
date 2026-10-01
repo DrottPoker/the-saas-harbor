@@ -472,6 +472,8 @@ function Connected({
   const [confirming, setConfirming] = useState(false);
   const ok = connection.status === "ok";
   const provider = isProviderId(connection.provider) ? connection.provider : "stripe";
+  // A provider connected through OAuth gave access the founder approved, not a key they pasted.
+  const oauth = connectsWithOAuth(provider);
   return (
     <div className="grid gap-4">
       <div className="rounded-xl border bg-surface shadow-card">
@@ -491,7 +493,7 @@ function Connected({
               )}
             </p>
             <p className="text-sm text-muted-foreground [overflow-wrap:anywhere]">
-              Key {connection.key_hint}
+              {oauth ? "Read access" : "Key"} {connection.key_hint}
               {connection.last_synced_at &&
                 ` · Last verified ${formatDate(connection.last_synced_at)}`}
             </p>
@@ -547,7 +549,7 @@ function Connected({
       <Feedback state={disconnectState} />
       <details className="text-sm">
         <summary className="cursor-pointer text-muted-foreground hover:text-foreground">
-          Replace the key or change the provider
+          {oauth ? "Reconnect or change the provider" : "Replace the key or change the provider"}
         </summary>
         <div className="pt-4">
           <ConnectForm

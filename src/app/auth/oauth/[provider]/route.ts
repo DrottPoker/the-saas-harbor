@@ -7,6 +7,7 @@ import {
   OAUTH_FLOW_SECONDS,
 } from "@/lib/auth";
 import { safeNext } from "@/lib/domain";
+import { siteUrl } from "@/lib/seo";
 import { cookieOptions } from "@/lib/supabase/config";
 import { enabledProviders } from "@/lib/supabase/providers";
 import { currentUser, serverClient } from "@/lib/supabase/server";
@@ -26,13 +27,12 @@ export async function GET(
   const confirming = request.nextUrl.searchParams.get("confirm") === "delete";
   const user = confirming ? await currentUser() : null;
   if (confirming && !user) return to("/auth");
-  const site = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3001";
   const client = await serverClient();
   // The code verifier for the exchange afterwards goes into a cookie on this response.
   const { data, error } = await client.auth.signInWithOAuth({
     provider,
     options: {
-      redirectTo: `${site}/auth/callback`,
+      redirectTo: `${siteUrl()}/auth/callback`,
       skipBrowserRedirect: true,
       // Google lets the user choose an account, starting with the one being confirmed.
       queryParams:

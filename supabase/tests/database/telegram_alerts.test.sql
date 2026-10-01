@@ -2,7 +2,7 @@
 -- alerts go with the account and the feedback. Runs in a rolled-back transaction.
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(16);
+select plan(18);
 
 -- Sign-up sets created_at and the provider; the username arrives as user metadata.
 insert into auth.users(id, email, created_at, email_confirmed_at, raw_app_meta_data,
@@ -119,6 +119,22 @@ select results_eq(
      where kind = 'signup' and user_id = 'a7000000-0000-4000-8000-000000000001' $$,
   $$ values ('skipped'::text, 'Too old to send'::text) $$,
   'an alert that waited a day is skipped rather than sent late');
+
+-- Without Telegram set up nothing is claimed, so the daily job gives up and deletes alerts itself.
+insert into private.telegram_alerts(kind, user_id, created_at)
+values ('signup', 'a7000000-0000-4000-8000-000000000003', now() - interval '2 days');
+select private.prune_telegram_alerts();
+select results_eq(
+  $$ select status, last_error from pgtap_alerts
+     where user_id = 'a7000000-0000-4000-8000-000000000003' $$,
+  $$ values ('skipped'::text, 'Too old to send'::text) $$,
+  'the daily job gives up an alert that waited a day');
+update private.telegram_alerts set processed_at = now() - interval '8 days'
+  where user_id = 'a7000000-0000-4000-8000-000000000003';
+select private.prune_telegram_alerts();
+select is_empty($$ select 1 from pgtap_alerts
+    where user_id = 'a7000000-0000-4000-8000-000000000003' $$,
+  'and deletes one handled more than seven days ago');
 
 -- Alerts go with the feedback and with the account.
 set local role authenticated;

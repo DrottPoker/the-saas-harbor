@@ -52,7 +52,7 @@ select results_eq(
     ('messages', 'SELECT'), ('moderation_log', 'SELECT'), ('notification_settings', 'SELECT'),
     ('profile_experience', 'DELETE,INSERT,SELECT'), ('profiles', 'SELECT'),
     ('public_metrics', 'SELECT'), ('public_saas', 'SELECT'), ('reports', 'SELECT'),
-    ('revenue_leaderboard', 'SELECT'), ('revenue_snapshots', 'SELECT'), ('saas', 'DELETE,SELECT'), ('saas_milestones', 'SELECT'),
+    ('revenue_connections', 'DELETE'), ('revenue_leaderboard', 'SELECT'), ('revenue_snapshots', 'SELECT'), ('saas', 'DELETE,SELECT'), ('saas_milestones', 'SELECT'),
     ('saas_settings', 'INSERT,SELECT,UPDATE'), ('tech_counts', 'SELECT') $$,
   'makers hold only the table privileges the app uses');
 select is_empty($$ select * from pgtap_column_privileges where role = 'anon' $$,
@@ -71,7 +71,7 @@ select results_eq(
   'visitors run only the functions public pages need');
 select results_eq(
   $$ select functions from pgtap_function_privileges where role = 'authenticated' $$,
-  $$ values ('admin_account,admin_accounts,admin_analytics,admin_analytics_behavior,admin_analytics_breakdown,admin_analytics_funnel,admin_analytics_heatmap,admin_analytics_live,admin_analytics_overview,admin_analytics_platform,admin_analytics_sources,admin_dismiss_report,admin_funnel_accounts,admin_hide_saas,admin_restore_account,admin_restore_saas,admin_revenue,admin_set_feedback_handled,admin_suspend_account,begin_domain_check,begin_revenue_check,check_username,complete_signup,delete_account,directory_stats,is_admin,mark_conversation_read,record_sign_in_country,saas_domain_verification,saas_page_view_counts,saas_slug_redirect,save_notification_settings,save_profile,save_saas,send_message,set_username,submit_feedback,submit_report,unread_message_count,username_change_available_at'::text) $$,
+  $$ values ('admin_account,admin_accounts,admin_analytics_behavior,admin_analytics_breakdown,admin_analytics_funnel,admin_analytics_heatmap,admin_analytics_live,admin_analytics_overview,admin_analytics_platform,admin_analytics_sources,admin_dismiss_report,admin_funnel_accounts,admin_hide_saas,admin_restore_account,admin_restore_saas,admin_revenue,admin_set_feedback_handled,admin_suspend_account,begin_domain_check,begin_revenue_check,check_username,claim_index_notice,complete_signup,delete_account,directory_stats,is_admin,mark_conversation_read,record_sign_in_country,saas_domain_verification,saas_page_view_counts,saas_slug_redirect,save_notification_settings,save_profile,save_saas,send_message,set_username,submit_feedback,submit_report,unread_message_count,username_change_available_at'::text) $$,
   'makers run only the functions the app calls');
 
 select * from finish();

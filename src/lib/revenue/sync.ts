@@ -1,7 +1,9 @@
 import "server-only";
 import { createHash } from "node:crypto";
 import { after } from "next/server";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { adminClient } from "@/lib/supabase/admin";
+import type { Database } from "@/lib/supabase/types";
 import { providerName, type ProviderId } from "./catalog";
 import { decryptProviderKey, encryptProviderKey } from "./crypto";
 import { changedDuringCheck, makerMessage, VerificationError } from "./errors";
@@ -302,8 +304,12 @@ export async function syncConnection(
   }
 }
 
-export async function disconnectProvider(saasId: string) {
-  const { error } = await adminClient().from("revenue_connections").delete().eq("saas_id", saasId);
+/**
+ * Deletes a product's connection with its key, through the founder's own session: RLS lets only the
+ * owner delete it. Its subscription claims and payments go with it.
+ */
+export async function disconnectProvider(client: SupabaseClient<Database>, saasId: string) {
+  const { error } = await client.from("revenue_connections").delete().eq("saas_id", saasId);
   if (error)
     throw new VerificationError("The provider could not be disconnected. Please try again.");
 }

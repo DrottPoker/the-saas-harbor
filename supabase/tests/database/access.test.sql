@@ -1,7 +1,7 @@
 -- Grants, RLS, storage ownership, verified revenue and ranking. Runs in a rolled-back transaction.
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(120);
+select plan(124);
 
 insert into auth.users(id) values
   ('b0000000-0000-4000-8000-000000000001'),
@@ -72,6 +72,16 @@ select throws_ok(
   '42501', null, 'owner cannot upload into another user''s image folder'
 );
 select throws_ok(
+  $$ insert into storage.objects(bucket_id, name)
+    values ('profile-images', 'b0000000-0000-4000-8000-000000000001/a/b/c/d/e/f/deep.png') $$,
+  '42501', null, 'owner cannot upload into a subfolder, which account deletion might miss'
+);
+select throws_ok(
+  $$ insert into storage.objects(bucket_id, name)
+    values ('profile-images', 'b0000000-0000-4000-8000-000000000001/notes.txt') $$,
+  '42501', null, 'owner uploads only images named as the app names them'
+);
+select throws_ok(
   $$ update public.saas set owner_id = 'b0000000-0000-4000-8000-000000000002'
     where id = 'c0000000-0000-4000-8000-000000000001' $$,
   '42501', null, 'owner cannot transfer a SaaS to another user'
@@ -123,6 +133,11 @@ select throws_ok(
 select set_config('request.jwt.claim.sub', 'b0000000-0000-4000-8000-000000000002', true);
 select is_empty('select * from public.revenue_snapshots', 'another owner cannot read verified history');
 select is_empty('select saas_id from public.revenue_connections', 'another owner cannot see connections');
+with removed as (
+  delete from public.revenue_connections
+  where saas_id = 'c0000000-0000-4000-8000-000000000001' returning saas_id
+)
+select is((select count(*)::int from removed), 0, 'another owner cannot disconnect a product');
 select is_empty('select * from public.saas_settings', 'another owner cannot read settings');
 with changed as (
   update public.saas_settings set share_mrr = true
@@ -202,8 +217,14 @@ reset role;
 update public.revenue_snapshots set captured_at = now() - interval '8 days'
   where saas_id = 'c0000000-0000-4000-8000-000000000002';
 select private.refresh_public_metrics('c0000000-0000-4000-8000-000000000002');
-set local role service_role;
-delete from public.revenue_connections where saas_id = 'c0000000-0000-4000-8000-000000000001';
+set local role authenticated;
+select set_config('request.jwt.claim.sub', 'b0000000-0000-4000-8000-000000000001', true);
+with removed as (
+  delete from public.revenue_connections
+  where saas_id = 'c0000000-0000-4000-8000-000000000001' returning saas_id
+)
+select is((select count(*)::int from removed), 1,
+  'an owner disconnects their own product through their session');
 
 set local role anon;
 select set_config('request.jwt.claim.sub', '', true);

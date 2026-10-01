@@ -1,7 +1,9 @@
 import "server-only";
 import { after } from "next/server";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { siteUrl } from "./seo";
 import { publicClient } from "./supabase/server";
+import type { Database } from "./supabase/types";
 
 // IndexNow (indexnow.org) tells Bing, Yandex, Seznam, Naver and the other search engines that take
 // part that a page was added, changed or removed, instead of waiting for them to read the sitemap
@@ -44,15 +46,22 @@ export async function notifySearchEngines(paths: string[]) {
 }
 
 /**
- * After the response, announces a saved product's page. It is read as a visitor would read it, so a
- * hidden product, or one whose founder is suspended, is never announced. A renamed product's earlier
- * address is announced too, since it now redirects.
+ * After the response, announces a saved product's page, at most once an hour per product: the
+ * database keeps the time through the founder's session (`claim_index_notice`), so saving again and
+ * again sends no more. The page is read as a visitor would read it, so a hidden product, or one
+ * whose founder is suspended, is never announced. A renamed product's earlier address is announced
+ * too, since it now redirects.
  */
-export function announceProduct(id: string, previousSlug: string | null) {
+export function announceProduct(
+  founder: SupabaseClient<Database>,
+  id: string,
+  previousSlug: string | null,
+) {
   if (!enabled()) return;
   after(async () => {
+    const { data: due } = await founder.rpc("claim_index_notice", { p_saas: id });
     const client = publicClient();
-    if (!client) return;
+    if (!due || !client) return;
     const { data } = await client.from("public_saas").select("slug").eq("id", id).maybeSingle();
     if (!data?.slug) return;
     await notifySearchEngines([

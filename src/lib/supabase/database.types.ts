@@ -1236,10 +1236,6 @@ export type Database = {
           suspended_at: string
         }[]
       }
-      admin_analytics: {
-        Args: { p_bucket: string; p_from: string; p_to: string }
-        Returns: Json
-      }
       admin_analytics_behavior: {
         Args: { p_range: string; p_tz: string }
         Returns: Json
@@ -1346,10 +1342,6 @@ export type Database = {
         Returns: undefined
       }
       check_username: { Args: { p_username: string }; Returns: string }
-      claim_due_connections: {
-        Args: { p_interval: string; p_limit: number }
-        Returns: string[]
-      }
       claim_due_domain_checks: {
         Args: { p_limit: number }
         Returns: {
@@ -1375,6 +1367,7 @@ export type Database = {
           name: string
         }[]
       }
+      claim_index_notice: { Args: { p_saas: string }; Returns: boolean }
       claim_telegram_alerts: {
         Args: { p_limit: number }
         Returns: {
@@ -1428,22 +1421,6 @@ export type Database = {
           p_website: string
         }
         Returns: string
-      }
-      record_page_view: {
-        Args: {
-          p_browser: string
-          p_country: string
-          p_device: string
-          p_ip: string
-          p_os: string
-          p_path: string
-          p_referrer: string
-          p_user_agent: string
-          p_utm_campaign: string
-          p_utm_medium: string
-          p_utm_source: string
-        }
-        Returns: boolean
       }
       record_revenue_payments: {
         Args: {
@@ -1589,15 +1566,6 @@ export type Database = {
           p_target: string
         }
         Returns: string
-      }
-      track_engagement: {
-        Args: {
-          p_engaged_ms: number
-          p_id: number
-          p_ip: string
-          p_user_agent: string
-        }
-        Returns: boolean
       }
       track_outbound_click: {
         Args: {

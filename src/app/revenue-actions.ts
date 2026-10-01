@@ -5,7 +5,7 @@ import { unstable_rethrow } from "next/navigation";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { ActionState } from "@/lib/domain";
 import { sendQueuedEmails } from "@/lib/email/outbox";
-import { isProviderId, providerName } from "@/lib/revenue/catalog";
+import { connectsWithOAuth, isProviderId, providerName } from "@/lib/revenue/catalog";
 import { makerMessage, VerificationError } from "@/lib/revenue/errors";
 import { adapter } from "@/lib/revenue/providers";
 import { summary } from "@/lib/revenue/summary";
@@ -89,10 +89,20 @@ export async function refreshRevenueAction(saasId: string): Promise<ActionState>
 
 export async function disconnectProviderAction(saasId: string): Promise<ActionState> {
   try {
-    await requireOwnedSaas(saasId);
-    await disconnectProvider(saasId);
+    const client = await requireOwnedSaas(saasId);
+    const { data: connection } = await client
+      .from("revenue_connections")
+      .select("provider")
+      .eq("saas_id", saasId)
+      .maybeSingle();
+    await disconnectProvider(client, saasId);
     revalidatePath("/", "layout");
-    return { success: "Disconnected. The stored key was deleted." };
+    // Gumroad gave access the founder approved rather than a key they pasted.
+    const oauth =
+      !!connection && isProviderId(connection.provider) && connectsWithOAuth(connection.provider);
+    return {
+      success: `Disconnected. The stored ${oauth ? "access" : "key"} was deleted.`,
+    };
   } catch (error) {
     return failure(error);
   }
