@@ -1,34 +1,17 @@
 import "server-only";
 import { Resolver } from "node:dns/promises";
-import { isIP } from "node:net";
 import { adminClient } from "./supabase/admin";
+import { websiteDomain } from "./website-domain";
 
 // Founders prove that they control their product's domain with a DNS TXT record, a token per
 // product (migration 20260926100000). The founder's check and the daily check of verified domains
 // look the record up here; only the result is stored, through record_domain_check.
 
+export { websiteDomain };
+
 /** The record's name is this label in front of the product's domain. */
 export const RECORD_LABEL = "_thesaasharbor";
 const VALUE_PREFIX = "thesaasharbor-verification=";
-
-/**
- * The domain of a product's website, which the record goes on: its host in lowercase, without
- * www. and a final dot (an international name in its ASCII form). Null for an address that cannot
- * carry records of its own: an IP address or a name without a dot, such as localhost.
- */
-export function websiteDomain(website: string | null | undefined) {
-  try {
-    const host = new URL(website ?? "").hostname
-      .toLowerCase()
-      .replace(/\.$/, "")
-      .replace(/^www\./, "");
-    if (!host.includes(".") || isIP(host) || host.startsWith("[") || host.endsWith(".localhost"))
-      return null;
-    return host;
-  } catch {
-    return null;
-  }
-}
 
 export function recordName(domain: string) {
   return `${RECORD_LABEL}.${domain}`;

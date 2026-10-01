@@ -5,6 +5,7 @@ import {
   recordValue,
   websiteDomain,
 } from "../../src/lib/domain-verification";
+import { currentVerifiedDomain } from "../../src/lib/website-domain";
 
 const token = "0123456789abcdef0123456789abcdef";
 const failure = (code: string) => Object.assign(new Error(code), { code });
@@ -37,6 +38,27 @@ describe("a website's domain", () => {
     "",
     null,
   ])("does not exist for %s", (website) => expect(websiteDomain(website)).toBeNull());
+});
+
+describe("the verified domain a page shows", () => {
+  it("is the stored one while it is still the website's domain", () => {
+    expect(currentVerifiedDomain("https://www.example.com/pricing", "example.com")).toBe(
+      "example.com",
+    );
+    expect(currentVerifiedDomain("https://bücher.example/", "xn--bcher-kva.example")).toBe(
+      "xn--bcher-kva.example",
+    );
+  });
+
+  it("is none once the website is on another domain, however it is written", () => {
+    expect(currentVerifiedDomain("https://victim.example/", "evil.example")).toBeNull();
+    // Browsers read this as evil.example, so a mark for victim.example does not belong to it.
+    expect(currentVerifiedDomain("https://evil.example\\@victim.example", "victim.example")).toBe(
+      null,
+    );
+    expect(currentVerifiedDomain("https://example.com/", null)).toBeNull();
+    expect(currentVerifiedDomain(null, "example.com")).toBeNull();
+  });
 });
 
 describe("the record", () => {

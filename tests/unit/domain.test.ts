@@ -87,6 +87,18 @@ describe("profile boundaries", () => {
     expect(stack(technologies.slice(0, TECH_STACK_MAX).map((tech) => tech.slug))).toBe(true);
     expect(stack(technologies.slice(0, TECH_STACK_MAX + 1).map((tech) => tech.slug))).toBe(false);
   });
+  it("takes a website without spaces, control characters or backslashes", () => {
+    const website = (value: string) => saasSchema.safeParse({ ...product, website: value }).success;
+    expect(website("https://example.com/pricing?plan=pro#team")).toBe(true);
+    expect(website("  https://example.com  ")).toBe(true);
+    // Browsers read https://a.example\@b.example as a.example, other parsers as b.example.
+    expect(website("https://evil.example\\@victim.example")).toBe(false);
+    expect(website("https://exa mple.com")).toBe(false);
+    expect(website("https://exa\tmple.com")).toBe(false);
+    expect(website("https://example.com/\n")).toBe(true);
+    expect(website("https://example.com/a\nb")).toBe(false);
+    expect(website("https://example.com/\u0085")).toBe(false);
+  });
   it("rejects invalid calendar dates", () =>
     expect(saasSchema.safeParse({ ...product, launched_on: "2026-02-30" }).success).toBe(false));
   it("takes launch dates from 1970 until today, wherever today is", () => {

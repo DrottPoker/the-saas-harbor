@@ -6,6 +6,7 @@ import { categorySlug, formatDate, formatUsd } from "@/lib/domain";
 import { REVENUE_WINDOWS, sharesRevenue } from "@/lib/revenue-figures";
 import { providerAccess, providerName } from "@/lib/revenue/catalog";
 import { websiteRel } from "@/lib/seo";
+import { currentVerifiedDomain } from "@/lib/website-domain";
 import { PersonAvatar, ProductLogo } from "./avatars";
 import { Badge } from "./badge";
 import { Growth } from "./charts/growth";
@@ -72,6 +73,7 @@ export function ProductProfile({
   const demo = item.demo;
   const name = item.name ?? "SaaS";
   const site = hostname(item.website);
+  const domainVerified = !demo && !!currentVerifiedDomain(item.website, item.verified_domain);
   // Public reads carry only figures that are verified and shared; the rest read Not shared.
   const revenueShared = sharesRevenue(item);
   const verified =
@@ -137,7 +139,7 @@ export function ProductProfile({
                   Verified revenue
                 </Badge>
               )}
-              {!demo && item.verified_domain && (
+              {domainVerified && (
                 <Badge className="gap-1">
                   <BadgeCheck aria-hidden="true" className="size-3.5 text-brand" />
                   Domain verified
@@ -277,7 +279,7 @@ export function ProductProfile({
             {site && !demo && (
               <div className="flex justify-between gap-4">
                 <dt className="text-muted-foreground">Domain</dt>
-                {item.verified_domain ? (
+                {domainVerified ? (
                   <dd className="flex items-center gap-1.5 text-right">
                     <BadgeCheck aria-hidden="true" className="size-4 shrink-0 text-brand" />
                     Verified

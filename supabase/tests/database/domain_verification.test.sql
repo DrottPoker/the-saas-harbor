@@ -1,10 +1,11 @@
 -- Domain verification: every product has a token that only its founder reads, the founder's
 -- checks are their own and limited, only the server records a result, a missing record removes
--- the mark after three days, a new website removes it at once, and the daily check claims only
--- verified domains that are due. Runs in a rolled-back transaction.
+-- the mark after three days, a new website removes it at once, the daily check claims only
+-- verified domains that are due, and hosts are read as browsers read them. Runs in a rolled-back
+-- transaction.
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(25);
+select plan(28);
 
 insert into auth.users(id) values
   ('ad000000-0000-4000-8000-000000000001'),
@@ -128,8 +129,19 @@ set local role authenticated;
 select throws_ok($$ select * from public.claim_due_domain_checks(10) $$, '42501', null,
   'makers cannot claim checks');
 
--- 7. The token goes with the product.
+-- 7. The host is read as browsers read it, and a website holds no characters they read
+-- differently.
 set local role postgres;
+select is(private.website_host('https://evil.example' || chr(92) || '@victim.example/'),
+  'evil.example', 'a backslash ends the host, as in browsers');
+select is(private.website_host('https://dom' || chr(9) || 'ain-test.example' || chr(10) || '/'),
+  'domain-test.example', 'tabs and line breaks are dropped, as browsers drop them');
+select throws_ok($$ update public.saas
+  set website = 'https://evil.example' || chr(92) || '@domain-test.example/'
+  where id = 'ad100000-0000-4000-8000-000000000001' $$, '23514', null,
+  'a website with a backslash is refused');
+
+-- 8. The token goes with the product.
 delete from public.saas where id = 'ad100000-0000-4000-8000-000000000001';
 select is_empty($$ select * from private.saas_domains
   where saas_id = 'ad100000-0000-4000-8000-000000000001' $$, 'deleting the product removes its token');

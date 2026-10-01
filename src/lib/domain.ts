@@ -52,6 +52,20 @@ export function formatDate(value: string | null) {
     timeZone: "UTC",
   }).format(new Date(value));
 }
+/**
+ * Whether an address or path holds spaces, control characters or backslashes. A valid one never
+ * needs them, and browsers read them differently from other parsers: a backslash ends the host,
+ * and tabs and line breaks are dropped.
+ */
+export function hasUnsafeUrlCharacters(value: string) {
+  return (
+    /[\s\\]/.test(value) ||
+    [...value].some((char) => {
+      const code = char.charCodeAt(0);
+      return code < 32 || (code >= 127 && code < 160);
+    })
+  );
+}
 const optionalUrl = z
   .string()
   .trim()
@@ -59,15 +73,16 @@ const optionalUrl = z
   .refine(
     (value) =>
       !value ||
-      (() => {
-        try {
-          const url = new URL(value);
-          return ["http:", "https:"].includes(url.protocol) && !url.username && !url.password;
-        } catch {
-          return false;
-        }
-      })(),
-    "Use a full http:// or https:// URL without credentials.",
+      (!hasUnsafeUrlCharacters(value) &&
+        (() => {
+          try {
+            const url = new URL(value);
+            return ["http:", "https:"].includes(url.protocol) && !url.username && !url.password;
+          } catch {
+            return false;
+          }
+        })()),
+    "Use a full http:// or https:// URL without spaces or credentials.",
   );
 // A link to a profile on one site, such as LinkedIn: https, the right host and a path.
 function profileLink(host: RegExp, site: string, example: string) {

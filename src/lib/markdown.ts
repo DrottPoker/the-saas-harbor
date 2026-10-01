@@ -9,6 +9,7 @@ import { providerList, providerName } from "./revenue/catalog";
 import { rolePeriod, sortRoles, type ProfileExperience } from "./profile";
 import { SITE_DESCRIPTION, SITE_NAME, siteUrl } from "./seo";
 import { groupTechStack, technologies } from "./tech";
+import { currentVerifiedDomain } from "./website-domain";
 
 /**
  * Maker text as plain Markdown text, line breaks kept. Characters that make emphasis, code,
@@ -75,6 +76,7 @@ export function productMarkdown(item: Listing) {
   const verified = item.revenue_status === "verified" && item.mrr_cents != null;
   const revenueShared = sharesRevenue(item);
   const history = verified ? parseHistory(item.mrr_history) : null;
+  const domain = currentVerifiedDomain(item.website, item.verified_domain);
   const lines = [
     `# ${inline(item.name)}`,
     "",
@@ -86,8 +88,8 @@ export function productMarkdown(item: Listing) {
     ...(item.website ? [`- Website: ${autolink(item.website)}`] : []),
     ...(item.website
       ? [
-          item.verified_domain
-            ? `- Domain: ${hostText(item.verified_domain)}, verified with a DNS record, last checked ${formatDate(item.domain_verified_at)}`
+          domain
+            ? `- Domain: ${hostText(domain)}, verified with a DNS record, last checked ${formatDate(item.domain_verified_at)}`
             : "- Domain: not verified",
         ]
       : []),

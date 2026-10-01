@@ -20,6 +20,7 @@ import {
 import { currentUser, requireUser } from "@/lib/supabase/server";
 import { firstValues, type SearchParams } from "@/lib/params";
 import { siteUrl } from "@/lib/seo";
+import { currentVerifiedDomain } from "@/lib/website-domain";
 
 type Props = {
   params: Promise<{ id: string }>;
@@ -125,7 +126,7 @@ export default async function EditSaas({ params, searchParams }: Props) {
               ? { name: recordName(domain), label: RECORD_LABEL, value: recordValue(token) }
               : null
           }
-          verifiedDomain={saas.data.verified_domain}
+          verifiedDomain={currentVerifiedDomain(saas.data.website, saas.data.verified_domain)}
           verifiedAt={saas.data.domain_verified_at}
           missingSince={verification.data?.missing_since ?? null}
         />
