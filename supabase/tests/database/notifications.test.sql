@@ -2,7 +2,7 @@
 -- completion. Runs in a rolled-back transaction.
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(32);
+select plan(33);
 
 insert into auth.users(id, email) values
   ('a1000000-0000-4000-8000-000000000001', 'writer@notify.test'),
@@ -110,6 +110,17 @@ select public.complete_email((select max(id) from pgtap_outbox where kind = 'mes
   'Connection refused');
 select is((select status from pgtap_outbox where kind = 'message' order by id desc limit 1),
   'failed', 'after five attempts an email is given up');
+-- A failure of the service, such as an outage or refused credentials, puts the email back
+-- without counting the attempt that claimed it.
+update private.email_outbox set status = 'pending', processed_at = null, attempts = 3
+  where id = (select max(id) from pgtap_outbox where kind = 'message');
+select public.complete_email((select max(id) from pgtap_outbox where kind = 'message'), 'deferred',
+  'Connection refused');
+select results_eq(
+  $$ select status, attempts, processed_at is null, send_after > now(), last_error
+     from pgtap_outbox where kind = 'message' order by id desc limit 1 $$,
+  $$ values ('pending'::text, 2, true, true, 'Connection refused'::text) $$,
+  'an outage puts the email back without counting the attempt');
 select throws_ok($$ select public.complete_email(1, 'lost', null) $$, 'P0001', null,
   'unknown outcomes are refused');
 

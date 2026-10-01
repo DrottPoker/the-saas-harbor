@@ -4,6 +4,7 @@ import nodemailer from "nodemailer";
 import { operator } from "../legal";
 import { siteUrl } from "../seo";
 import { adminClient } from "../supabase/admin";
+import { failureCode, serviceFailure } from "./failures";
 import { renderEmail } from "./templates";
 
 // claim_emails locks an email for two minutes. A run claims nothing new after one minute, and each
@@ -52,7 +53,7 @@ function messageDelay() {
  * Addresses and message text are never logged.
  */
 export async function deliverEmails(limit = 25) {
-  const result = { configured: false, sent: 0, skipped: 0, failed: 0 };
+  const result = { configured: false, sent: 0, skipped: 0, failed: 0, deferred: 0 };
   const mail = smtp();
   if (!mail) return result;
   result.configured = true;
@@ -69,14 +70,19 @@ export async function deliverEmails(limit = 25) {
       const row = data[0];
       if (!row) break;
       const email = renderEmail(row, { origin: siteUrl(), contact: operator.email });
-      let status: "sent" | "skipped" | "failed" = "skipped";
+      let status: "sent" | "skipped" | "failed" | "deferred" = "skipped";
       let problem: string | null = "Nothing to send any more";
+      let failure: unknown = null;
       if (email) {
         try {
           await mail.transport.sendMail({ from: mail.from, to: row.email, ...email });
           [status, problem] = ["sent", null];
         } catch (cause) {
-          [status, problem] = ["failed", cause instanceof Error ? cause.message : "Sending failed"];
+          // A server that cannot be reached, refuses the credentials or asks to try later puts the
+          // email back without counting an attempt, so an outage does not use them all up.
+          failure = cause;
+          status = serviceFailure(cause) ? "deferred" : "failed";
+          problem = cause instanceof Error ? cause.message : "Sending failed";
         }
       }
       const { error: completeError } = await admin.rpc("complete_email", {
@@ -86,6 +92,12 @@ export async function deliverEmails(limit = 25) {
       });
       if (completeError) throw new Error("A sent email could not be recorded.");
       result[status]++;
+      // The rest would meet the same server, so they wait for a later run. Only the code is
+      // logged, never an address.
+      if (status === "deferred") {
+        console.error(`Sending notification emails paused: ${failureCode(failure)}`);
+        break;
+      }
     }
   } finally {
     mail.transport.close();

@@ -2,7 +2,7 @@
 -- alerts go with the account and the feedback. Runs in a rolled-back transaction.
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(15);
+select plan(16);
 
 -- Sign-up sets created_at and the provider; the username arrives as user metadata.
 insert into auth.users(id, email, created_at, email_confirmed_at, raw_app_meta_data,
@@ -96,6 +96,17 @@ select public.complete_telegram_alert(a.id, 'failed', 'Bad Request: chat not fou
 from pgtap_alerts a where a.kind = 'feedback';
 select is((select a.status from pgtap_alerts a where a.kind = 'feedback'), 'failed',
   'an alert that failed five times is given up');
+
+-- A failure of Telegram or the setup puts the alert back without counting the attempt that
+-- claimed it, and waits as long as Telegram asks.
+update private.telegram_alerts set status = 'pending', processed_at = null, attempts = 3
+  where kind = 'feedback' and user_id = 'a7000000-0000-4000-8000-000000000001';
+select public.complete_telegram_alert(a.id, 'deferred', 'Too Many Requests: retry after 120', 120)
+from pgtap_alerts a where a.kind = 'feedback';
+select ok((select a.status = 'pending' and a.attempts = 2 and a.processed_at is null
+    and a.locked_until is null and a.send_after > now() + interval '110 seconds'
+  from pgtap_alerts a where a.kind = 'feedback'),
+  'an outage or a rate limit puts the alert back without counting the attempt');
 
 -- Alerts that waited a day, such as while Telegram was not configured, are not sent late.
 update private.telegram_alerts set created_at = now() - interval '2 days', locked_until = null

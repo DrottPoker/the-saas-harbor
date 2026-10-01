@@ -228,4 +228,29 @@ describe("the Telegram client", () => {
     expect((offline as TelegramError).message).toBe("Telegram could not be reached");
     expect((offline as TelegramError).message).not.toContain("secret-token");
   });
+
+  it("tells failures of Telegram or the setup from failures of one alert", async () => {
+    const answer = (status: number, description: string) =>
+      vi.fn(async () => Response.json({ ok: false, description }, { status }));
+    const service = async (fetch: ReturnType<typeof answer>) => {
+      vi.stubGlobal("fetch", fetch);
+      return ((await sendTelegramMessage(config, "Hi").catch((cause) => cause)) as TelegramError)
+        .service;
+    };
+    expect(await service(answer(429, "Too Many Requests: retry after 31"))).toBe(true);
+    expect(await service(answer(502, "Bad Gateway"))).toBe(true);
+    expect(await service(answer(401, "Unauthorized"))).toBe(true);
+    expect(await service(answer(403, "Forbidden: bot was blocked by the user"))).toBe(true);
+    expect(await service(answer(400, "Bad Request: chat not found"))).toBe(true);
+    expect(await service(answer(400, "Bad Request: can't parse entities"))).toBe(false);
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => {
+        throw new TypeError("fetch failed");
+      }),
+    );
+    expect(
+      ((await sendTelegramMessage(config, "Hi").catch((cause) => cause)) as TelegramError).service,
+    ).toBe(true);
+  });
 });

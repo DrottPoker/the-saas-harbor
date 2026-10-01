@@ -15,12 +15,18 @@ export function telegramConfig(): TelegramConfig | null {
   return { token, chatId, base };
 }
 
-/** A refused or failed request, with Telegram's reason and, when rate limited, the wait in seconds. */
+/**
+ * A refused or failed request, with Telegram's reason and, when rate limited, the wait in seconds.
+ * `service` is true when the failure belongs to Telegram or the setup rather than to this alert:
+ * Telegram could not be reached, failed, asked to slow down, or refused the token or the chat.
+ */
 export class TelegramError extends Error {
   readonly retryAfter: number | null;
-  constructor(message: string, retryAfter: number | null = null) {
+  readonly service: boolean;
+  constructor(message: string, retryAfter: number | null = null, service = false) {
     super(message);
     this.retryAfter = retryAfter;
+    this.service = service;
   }
 }
 
@@ -43,15 +49,20 @@ export async function sendTelegramMessage(config: TelegramConfig, html: string) 
       cache: "no-store",
     });
   } catch {
-    throw new TelegramError("Telegram could not be reached");
+    throw new TelegramError("Telegram could not be reached", null, true);
   }
   const answer = (await response.json().catch(() => null)) as Answer | null;
   if (response.ok && answer?.ok === true) return;
   const retryAfter = answer?.parameters?.retry_after;
+  const description = typeof answer?.description === "string" ? answer.description : "";
+  const { status } = response;
   throw new TelegramError(
-    typeof answer?.description === "string"
-      ? answer.description.slice(0, 200)
-      : `Telegram answered with HTTP ${response.status}`,
+    description ? description.slice(0, 200) : `Telegram answered with HTTP ${status}`,
     typeof retryAfter === "number" && retryAfter > 0 ? Math.ceil(retryAfter) : null,
+    // A bad token answers 401 or 404, a chat the bot cannot write to 403 or "chat not found".
+    status === 429 ||
+      status >= 500 ||
+      [401, 403, 404].includes(status) ||
+      /chat not found/i.test(description),
   );
 }

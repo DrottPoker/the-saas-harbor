@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { authTemplates } from "../../src/lib/email/auth-templates";
+import { failureCode, serviceFailure } from "../../src/lib/email/failures";
 import { renderEmail, type ClaimedEmail } from "../../src/lib/email/templates";
 
 const settings = { origin: "https://harbor.example", contact: "help@harbor.example" };
@@ -214,4 +215,35 @@ describe("milestone emails", () => {
     expect(
       renderEmail(row("milestone", { ...milestone, name: "<b>Tide</b>" }), settings)!.html,
     ).not.toContain("<b>Tide</b>"));
+});
+
+describe("sending failures", () => {
+  const failure = (props: Record<string, unknown>) => Object.assign(new Error("failed"), props);
+
+  it("put the email back when the server cannot be reached, refuses the login or asks to wait", () => {
+    for (const code of [
+      "ECONNECTION",
+      "ETIMEDOUT",
+      "ESOCKET",
+      "EAUTH",
+      "ECONNREFUSED",
+      "EAI_AGAIN",
+    ])
+      expect(serviceFailure(failure({ code })), code).toBe(true);
+    expect(serviceFailure(failure({ code: "EENVELOPE", responseCode: 451 }))).toBe(true);
+    expect(serviceFailure(failure({ responseCode: 421 }))).toBe(true);
+  });
+
+  it("count against the email when the server refuses it", () => {
+    expect(serviceFailure(failure({ code: "EENVELOPE", responseCode: 550 }))).toBe(false);
+    expect(serviceFailure(failure({ code: "EMESSAGE" }))).toBe(false);
+    expect(serviceFailure(new Error("failed"))).toBe(false);
+    expect(serviceFailure(null)).toBe(false);
+  });
+
+  it("are logged by their codes only, never a message that may hold an address", () => {
+    expect(failureCode(failure({ code: "EAUTH", responseCode: 535 }))).toBe("EAUTH 535");
+    expect(failureCode(failure({ code: "lena@example.com" }))).toBe("unknown");
+    expect(failureCode("lena@example.com")).toBe("unknown");
+  });
 });

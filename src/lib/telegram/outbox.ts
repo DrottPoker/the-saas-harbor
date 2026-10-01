@@ -15,7 +15,7 @@ const RUN_MS = 30_000;
  * Without TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID it claims nothing, and alerts wait for a day.
  */
 export async function deliverTelegramAlerts(limit = 25) {
-  const result = { configured: false, sent: 0, skipped: 0, failed: 0 };
+  const result = { configured: false, sent: 0, skipped: 0, failed: 0, deferred: 0 };
   const config = telegramConfig();
   if (!config) return result;
   result.configured = true;
@@ -27,7 +27,7 @@ export async function deliverTelegramAlerts(limit = 25) {
     const row = data[0];
     if (!row) break;
     const message = renderAlert(row, siteUrl());
-    let status: "sent" | "skipped" | "failed" = "skipped";
+    let status: "sent" | "skipped" | "failed" | "deferred" = "skipped";
     let problem: string | null = "Nothing to send any more";
     let retryAfter: number | null = null;
     if (message) {
@@ -35,9 +35,12 @@ export async function deliverTelegramAlerts(limit = 25) {
         await sendTelegramMessage(config, message);
         [status, problem] = ["sent", null];
       } catch (cause) {
-        status = "failed";
-        problem = cause instanceof TelegramError ? cause.message : "Sending failed";
-        retryAfter = cause instanceof TelegramError ? cause.retryAfter : null;
+        const error = cause instanceof TelegramError ? cause : null;
+        // An outage, a rate limit or a refused token or chat puts the alert back without counting
+        // an attempt; a failure of this alert counts.
+        status = error?.service ? "deferred" : "failed";
+        problem = error ? error.message : "Sending failed";
+        retryAfter = error?.retryAfter ?? null;
       }
     }
     const { error: completeError } = await admin.rpc("complete_telegram_alert", {
@@ -48,8 +51,12 @@ export async function deliverTelegramAlerts(limit = 25) {
     });
     if (completeError) throw new Error("A sent Telegram alert could not be recorded.");
     result[status]++;
-    // Telegram asked to slow down, so the rest waits for a later run.
-    if (retryAfter !== null) break;
+    // The rest would meet the same failure, or Telegram asked to slow down, so they wait for a
+    // later run.
+    if (status === "deferred") {
+      console.error(`Sending Telegram alerts paused: ${problem}`);
+      break;
+    }
   }
   return result;
 }
