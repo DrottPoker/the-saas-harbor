@@ -55,6 +55,11 @@ async function openAccountMenu(page: Page, name: string) {
   await page.getByRole("banner").getByRole("button", { name, exact: true }).click();
   return page.getByRole("menu");
 }
+/** Chooses a payment provider in the product form's list, which shows each provider's logo. */
+async function chooseProvider(page: Page, name: string) {
+  await page.locator("#revenue").getByRole("combobox", { name: "Payment provider" }).click();
+  await page.getByRole("option", { name, exact: true }).click();
+}
 async function fillProduct(page: Page, name: string) {
   await page.getByLabel("Product name", { exact: true }).fill(name);
   await page.getByLabel("Tagline").fill("A product created only by the local integration test.");
@@ -787,14 +792,14 @@ test("registration, email confirmation, profile and SaaS editing, storage, priva
   // and Connect later leaves it for another time.
   const revenue = page.locator("#revenue");
   await expect(revenue.getByText("Optional", { exact: true })).toBeVisible();
-  await revenue.getByRole("radio", { name: "Stripe" }).check();
+  await chooseProvider(page, "Stripe");
   await expect(page.getByRole("button", { name: "Add SaaS and verify revenue" })).toBeVisible();
   await revenue.getByRole("button", { name: "Connect later" }).click();
   await expect(revenue.getByLabel("Restricted key", { exact: true })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Add SaaS", exact: true })).toBeVisible();
 
   // Stripe's key form opens with the read permissions filled in.
-  await revenue.getByRole("radio", { name: "Stripe" }).check();
+  await chooseProvider(page, "Stripe");
   await expect(
     page.getByRole("link", { name: "Create a read-only key in Stripe" }),
   ).toHaveAttribute(
@@ -821,7 +826,7 @@ test("registration, email confirmation, profile and SaaS editing, storage, priva
       hasText: /^The product was added, but Stripe was not connected\. .*missing a read permission/,
     }),
   ).toBeVisible();
-  await expect(revenue.getByRole("radio", { name: "Stripe" })).toBeChecked();
+  await expect(revenue.getByRole("combobox", { name: "Payment provider" })).toHaveText("Stripe");
   await expect(stripeKey).toHaveValue("");
   await stripeKey.fill("rk_test_harborfixture0001");
   await page.getByRole("button", { name: "Save and verify revenue" }).click();
@@ -1173,7 +1178,7 @@ test("registration, email confirmation, profile and SaaS editing, storage, priva
   // One Stripe account can verify one product only.
   await page.goto("/dashboard/saas/new");
   await fillProduct(page, `Second ${run}`);
-  await page.locator("#revenue").getByRole("radio", { name: "Stripe" }).check();
+  await chooseProvider(page, "Stripe");
   await page.getByLabel("Restricted key", { exact: true }).fill("rk_test_harborfixture0002");
   await page.getByRole("button", { name: "Add SaaS and verify revenue" }).click();
   await expect(page).toHaveURL(/connection=1/);
@@ -1193,7 +1198,9 @@ test("registration, email confirmation, profile and SaaS editing, storage, priva
   await page.goto(`/dashboard/saas/${productId}`);
   await page.getByRole("button", { name: "Disconnect" }).click();
   await page.getByRole("button", { name: "Confirm disconnect" }).click();
-  await expect(page.locator("#revenue").getByRole("radio", { name: "Stripe" })).toBeVisible();
+  await expect(
+    page.locator("#revenue").getByRole("combobox", { name: "Payment provider" }),
+  ).toHaveText("Choose your payment provider");
   await expect(
     page.getByRole("status").filter({ hasText: "Disconnected. The stored key was deleted." }),
   ).toBeVisible();
@@ -1215,7 +1222,7 @@ test("registration, email confirmation, profile and SaaS editing, storage, priva
     "noopener nofollow",
   );
   await page.goto(`/dashboard/saas/${secondId}`);
-  await page.locator("#revenue").getByRole("radio", { name: "Stripe" }).check();
+  await chooseProvider(page, "Stripe");
   await page.getByLabel("Restricted key", { exact: true }).fill("rk_test_harborfixture0002");
   await page.getByRole("button", { name: "Save and verify revenue" }).click();
   await expect(page.locator("#revenue").getByText("Connected to Stripe")).toBeVisible();
@@ -2862,11 +2869,20 @@ test("founders verify revenue through Paddle, Polar and Dodo Payments", async ({
   userIds.push(created.user.id);
   await login(page, address, secret);
   const revenue = page.locator("#revenue");
-  // The product form with a provider's key fields open, in both themes.
+  // The provider list works from the keyboard. The page is scanned with a provider's key fields
+  // open, in both themes; while the list is open, Radix hides the page beneath from screen
+  // readers and keeps focus in the list, which Axe cannot tell.
+  const providerList = revenue.getByRole("combobox", { name: "Payment provider" });
   for (const theme of ["dark", "light"] as const) {
     await setThemeCookie(page, theme);
     await page.goto("/dashboard/saas/new");
-    await revenue.getByRole("radio", { name: "Paddle" }).check();
+    await providerList.focus();
+    await page.keyboard.press("Enter");
+    await expect(page.getByRole("option")).toHaveCount(9);
+    await page.keyboard.press("ArrowDown");
+    await page.keyboard.press("Enter");
+    await expect(providerList).toHaveText("Paddle");
+    await expect(providerList).toBeFocused();
     await expectAccessible(page);
   }
   await fillProduct(page, `Providers ${run}`);
@@ -2899,7 +2915,7 @@ test("founders verify revenue through Paddle, Polar and Dodo Payments", async ({
   // Polar: a new token switches the provider.
   await page.goto(`/dashboard/saas/${id}`);
   await revenue.getByText("Replace the key or change the provider").click();
-  await revenue.getByRole("radio", { name: "Polar" }).check();
+  await chooseProvider(page, "Polar");
   await revenue.getByLabel("New organization access token", { exact: true }).fill(POLAR_TOKENS.one);
   await page.getByRole("button", { name: "Save and verify revenue" }).click();
   await expect(revenue.getByText("Connected to Polar")).toBeVisible();
@@ -2910,7 +2926,7 @@ test("founders verify revenue through Paddle, Polar and Dodo Payments", async ({
 
   // Dodo Payments: MRR without history, and the founder is told why.
   await revenue.getByText("Replace the key or change the provider").click();
-  await revenue.getByRole("radio", { name: "Dodo Payments" }).check();
+  await chooseProvider(page, "Dodo Payments");
   await revenue.getByLabel("New API key", { exact: true }).fill(DODO_KEYS.one);
   await page.getByRole("button", { name: "Save and verify revenue" }).click();
   await expect(revenue.getByText("Connected to Dodo Payments")).toBeVisible();
@@ -2959,7 +2975,7 @@ test("founders verify revenue through Creem, Chargebee, Whop and RevenueCat", as
   const revenue = page.locator("#revenue");
 
   // Creem: subscriptions valued by their products, without included tax.
-  await revenue.getByRole("radio", { name: "Creem" }).check();
+  await chooseProvider(page, "Creem");
   await expect(
     revenue.getByRole("link", { name: "Open Creem's developer settings" }),
   ).toBeVisible();
@@ -2972,7 +2988,7 @@ test("founders verify revenue through Creem, Chargebee, Whop and RevenueCat", as
   // Chargebee asks for the site as well, and keeps it when the key is wrong, with the rest of the
   // form, which was saved. The connection that was there stays until a key is accepted.
   await revenue.getByText("Replace the key or change the provider").click();
-  await revenue.getByRole("radio", { name: "Chargebee" }).check();
+  await chooseProvider(page, "Chargebee");
   await revenue
     .getByLabel("Site", { exact: true })
     .fill(`https://${CHARGEBEE.site}.chargebee.com/`);
@@ -3002,7 +3018,7 @@ test("founders verify revenue through Creem, Chargebee, Whop and RevenueCat", as
 
   // Whop refuses a key that can do more than read.
   await revenue.getByText("Replace the key or change the provider").click();
-  await revenue.getByRole("radio", { name: "Whop" }).check();
+  await chooseProvider(page, "Whop");
   await revenue.getByLabel("New API key", { exact: true }).fill(WHOP_KEYS.writer);
   await page.getByRole("button", { name: "Save and verify revenue" }).click();
   await expect(
@@ -3015,7 +3031,7 @@ test("founders verify revenue through Creem, Chargebee, Whop and RevenueCat", as
 
   // RevenueCat reads its charts, and the product page names it.
   await revenue.getByText("Replace the key or change the provider").click();
-  await revenue.getByRole("radio", { name: "RevenueCat" }).check();
+  await chooseProvider(page, "RevenueCat");
   await revenue
     .getByLabel("Project ID", { exact: true })
     .fill(`https://app.revenuecat.com/projects/${REVENUECAT.project}/overview`);
@@ -3197,7 +3213,7 @@ test("founders share revenue from all payments, and visitors rank products by it
   await fillProduct(page, name);
   await hideFigures(page);
   const revenue = page.locator("#revenue");
-  await revenue.getByRole("radio", { name: "Paddle" }).check();
+  await chooseProvider(page, "Paddle");
   await revenue.getByLabel("API key", { exact: true }).fill(PADDLE_KEYS.one);
   await page.getByRole("button", { name: "Add SaaS and verify revenue" }).click();
   await expect(revenue.getByText("Connected to Paddle")).toBeVisible();
@@ -3385,13 +3401,13 @@ test("founders connect Gumroad by approving read access to their sales", async (
   for (const theme of ["dark", "light"] as const) {
     await setThemeCookie(page, theme);
     await page.goto("/dashboard/saas/new");
-    await revenue.getByRole("radio", { name: "Gumroad" }).check();
+    await chooseProvider(page, "Gumroad");
     await expectAccessible(page);
   }
 
   // There is no token to paste, only access to approve, which follows the save.
   await expect(revenue.getByText(/That is the only access asked for/)).toBeVisible();
-  await expect(revenue.locator("input:not([type=radio]):not([type=checkbox])")).toHaveCount(0);
+  await expect(revenue.locator("input:not([type=hidden]):not([type=checkbox])")).toHaveCount(0);
   await fillProduct(page, `Gumroad ${run}`);
   await page.getByRole("button", { name: "Add SaaS and connect Gumroad" }).click();
   await expect(page).toHaveURL(/\/dashboard\/saas\/[0-9a-f-]{36}\?connection=1/);

@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { startTransition, useActionState, useState } from "react";
-import { CircleAlert, CircleCheck, ExternalLink } from "lucide-react";
+import { Check, ChevronDown, CircleAlert, CircleCheck, ExternalLink } from "lucide-react";
+import { Select } from "radix-ui";
 import { disconnectProviderAction, refreshRevenueAction } from "@/app/revenue-actions";
 import { formatDate, formatUsd, type ActionState } from "@/lib/domain";
 import type { RevenueConnection, RevenueSnapshot } from "@/lib/data";
@@ -18,9 +19,10 @@ import { STRIPE_KEY_PERMISSIONS, stripeKeyCreationUrl } from "@/lib/revenue/stri
 import { SITE_NAME } from "@/lib/seo";
 import { cn } from "@/lib/utils";
 import { Feedback, Field, Section } from "./forms";
+import { ProviderLogo } from "./provider-logo";
 import { Notice } from "./shell";
 import { Button } from "./ui/button";
-import { Input } from "./ui/input";
+import { fieldClasses, Input } from "./ui/input";
 
 const resources = STRIPE_KEY_PERMISSIONS.map(({ resource }) => resource);
 const permissionList = `${resources.slice(0, -1).join(", ")} and ${resources.at(-1)}`;
@@ -204,8 +206,9 @@ const noHistory: Record<ProviderId, string> = {
 };
 
 /**
- * The payment providers to choose from. The choice is part of the product form, so saving the form
- * connects the chosen provider; with none chosen, the form saves the product alone.
+ * The payment providers to choose from, with their logos. The choice is part of the product form,
+ * so saving the form connects the chosen provider; with none chosen, the form saves the product
+ * alone. The list is a Radix select, so a hidden field carries the choice.
  */
 function ProviderChoice({
   value,
@@ -220,41 +223,70 @@ function ProviderChoice({
   clearLabel: string;
 }) {
   return (
-    <fieldset className="grid gap-2">
-      <legend className="mb-2 text-sm font-medium">Payment provider</legend>
-      <div className="flex flex-wrap gap-2">
-        {PROVIDER_IDS.map((id) => (
-          <label
-            key={id}
-            className={cn(
-              "relative cursor-pointer rounded-full border bg-surface px-3 py-1 text-[13px] text-muted-foreground transition-colors hover:border-border-strong hover:text-foreground",
-              "has-[:checked]:border-foreground has-[:checked]:bg-foreground has-[:checked]:text-background",
-              "has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-brand has-[:focus-visible]:ring-offset-2",
-            )}
+    <Field
+      name="provider"
+      label="Payment provider"
+      aside={
+        onClear && (
+          <button
+            type="button"
+            onClick={onClear}
+            className="-my-1.5 py-1.5 text-[13px] leading-none text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
           >
-            <input
-              type="radio"
-              name="provider"
-              value={id}
-              checked={value === id}
-              onChange={() => onChange(id)}
-              // Covers the whole chip, so a click anywhere on it reaches the radio button itself.
-              className="absolute inset-0 cursor-pointer appearance-none rounded-full opacity-0"
-            />
-            {PROVIDERS[id].name}
-          </label>
-        ))}
-      </div>
-      {onClear && (
-        <button
-          type="button"
-          onClick={onClear}
-          className="mt-1 w-fit text-[13px] text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
+            {clearLabel}
+          </button>
+        )
+      }
+    >
+      <Select.Root
+        value={value ?? ""}
+        onValueChange={(next) => {
+          if (isProviderId(next)) onChange(next);
+        }}
+      >
+        <Select.Trigger
+          id="provider"
+          className={cn(
+            fieldClasses,
+            "flex h-10 items-center gap-2.5 text-left data-placeholder:text-faint-foreground",
+          )}
         >
-          {clearLabel}
-        </button>
-      )}
-    </fieldset>
+          <Select.Value placeholder="Choose your payment provider" />
+          <Select.Icon className="ml-auto">
+            <ChevronDown aria-hidden="true" className="size-4 text-muted-foreground" />
+          </Select.Icon>
+        </Select.Trigger>
+        <Select.Portal>
+          <Select.Content
+            position="popper"
+            sideOffset={6}
+            className="z-50 max-h-(--radix-select-content-available-height) w-(--radix-select-trigger-width) overflow-hidden rounded-lg border bg-surface p-1 text-foreground shadow-float"
+          >
+            <Select.Viewport>
+              {PROVIDER_IDS.map((id) => (
+                <Select.Item
+                  key={id}
+                  value={id}
+                  className="flex cursor-default items-center gap-2.5 rounded-md px-2 py-2 text-sm outline-none select-none data-highlighted:bg-muted"
+                >
+                  {/* The logo is part of the item's text, so the closed list shows it too. */}
+                  <Select.ItemText>
+                    <span className="flex items-center gap-2.5">
+                      <ProviderLogo provider={id} />
+                      {PROVIDERS[id].name}
+                    </span>
+                  </Select.ItemText>
+                  <Select.ItemIndicator className="ml-auto">
+                    <Check aria-hidden="true" className="size-4 text-muted-foreground" />
+                  </Select.ItemIndicator>
+                </Select.Item>
+              ))}
+            </Select.Viewport>
+          </Select.Content>
+        </Select.Portal>
+      </Select.Root>
+      <input type="hidden" name="provider" value={value ?? ""} />
+    </Field>
   );
 }
 
