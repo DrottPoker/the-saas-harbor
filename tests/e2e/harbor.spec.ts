@@ -248,6 +248,8 @@ test("anonymous navigation, private route protection and responsive empty state"
   await expect(dialog.getByText("details", { exact: true })).toHaveCount(0);
   await page.keyboard.press("Escape");
   await expect(page.getByRole("dialog")).toHaveCount(0);
+  // Focus goes back to the link that opened the dialog.
+  await expect(page.getByRole("banner").getByRole("link", { name: "Sign in" })).toBeFocused();
   await expect(page).toHaveURL("/");
   await page.goto("/dashboard/saas/new");
   await expect(page).toHaveURL("/auth?mode=signup");
@@ -345,14 +347,10 @@ test("anonymous navigation, private route protection and responsive empty state"
   await expect(page).toHaveURL(/\/auth$/);
   await page.goto(`/discover?category=Design&q=missing-${run}`);
   await expect(page.getByRole("heading", { name: "No matching products" })).toBeVisible();
-  // A page past the last one is empty rather than an error, and a repeated search reads its first.
-  // Later pages are pages of their own for search engines, and searches stay out of results.
-  await page.goto("/discover?page=999");
-  await expect(page.getByRole("heading", { name: "No matching products" })).toBeVisible();
-  await expect(page.locator('link[rel="canonical"]')).toHaveAttribute(
-    "href",
-    `${origin}/discover?page=999`,
-  );
+  // A page past the last one does not exist, and a repeated search reads its first. Searches stay
+  // out of search results.
+  expect((await page.goto("/discover?page=999"))?.status()).toBe(404);
+  await expect(page.getByRole("heading", { name: "Page not found" })).toBeVisible();
   await page.goto(`/?q=missing-${run}&q=other`);
   await expect(page.getByRole("heading", { name: "No matching products" })).toBeVisible();
   await expect(page.locator('meta[name="robots"]')).toHaveAttribute("content", "noindex, follow");
@@ -569,6 +567,8 @@ test("registration, email confirmation, profile and SaaS editing, storage, priva
   // Then the username and the Terms are asked for, in the same place, and the account is created.
   const username = page.getByLabel("Username");
   await expect(username).toBeFocused();
+  // Its hint is read with it.
+  await expect(username).toHaveAccessibleDescription(/used as your profile address/);
   await username.fill("admin");
   // The box is required, and the server refuses a sign-up without it too.
   await expect(terms).toHaveAttribute("required", "");
@@ -840,6 +840,25 @@ test("registration, email confirmation, profile and SaaS editing, storage, priva
   const moved = await page.request.get(`/saas/${productId}`, { maxRedirects: 0 });
   expect(moved.status()).toBe(308);
   expect(moved.headers().location).toMatch(new RegExp(`${productPath}$`));
+  // A product named after its own id keeps that address instead of redirecting to itself.
+  const lookalike = randomUUID();
+  const { error: lookalikeError } = await admin.from("saas").insert({
+    id: lookalike,
+    owner_id: firstUserId,
+    name: lookalike,
+    tagline: "A product named like an id.",
+    description: "A local fixture, removed with its owner after the test.",
+    category: "Analytics",
+    website: "https://example.com",
+  });
+  expect(lookalikeError).toBeNull();
+  const lookalikePage = await page.request.get(`/saas/${lookalike}`, { maxRedirects: 0 });
+  expect(lookalikePage.status()).toBe(200);
+  const lookalikeUpper = await page.request.get(`/saas/${lookalike.toUpperCase()}`, {
+    maxRedirects: 0,
+  });
+  expect(lookalikeUpper.headers().location).toMatch(new RegExp(`/saas/${lookalike}$`));
+  await admin.from("saas").delete().eq("id", lookalike);
   await expect(page.locator('link[rel="canonical"]')).toHaveAttribute(
     "href",
     `${origin}${productPath}`,
@@ -924,6 +943,13 @@ test("registration, email confirmation, profile and SaaS editing, storage, priva
   expect(await (await page.request.get("/sitemap.xml")).text()).toContain(
     `<loc>${origin}/tech/nextjs</loc>`,
   );
+  // Each group of technologies is a region named by its heading, spaces and all.
+  await page.goto("/tech");
+  await expect(
+    page.getByRole("region", { name: "Hosting and infrastructure" }).getByRole("link", {
+      name: /Vercel/,
+    }),
+  ).toBeVisible();
   await page.goto(productPath);
   // Private figures read Not shared, and visitors are not told whether revenue was verified.
   await expect(page.getByText(/Verified with Stripe/)).toHaveCount(0);
@@ -1423,20 +1449,31 @@ test("a user deletes products, then their account and everything in it", async (
   const id = created.user.id;
   userIds.push(id);
 
-  // A profile with a photo, an image in a subfolder, and three products: one with its own logo
-  // and a verified Stripe connection, one whose logo is the profile photo, and one that stays
+  // A profile with a photo, an image deep in a subfolder, and three products: one with its own
+  // logo and a verified Stripe connection, one whose logo is the profile photo, and one that stays
   // until the account goes.
   const maker = createClient(url, publicKey, {
     auth: { persistSession: false, autoRefreshToken: false },
   });
   await maker.auth.signInWithPassword({ email: leavingEmail, password: leavingPassword });
   const images = maker.storage.from("profile-images");
-  for (const file of ["avatar.png", "logo.png", "nested/old.png"]) {
+  for (const file of ["avatar.png", "logo.png"]) {
     const { error: uploadError } = await images.upload(`${id}/${file}`, png, {
       contentType: "image/png",
     });
     if (uploadError) throw new Error("Unable to upload fixture images.");
   }
+  // Makers upload only directly into their folder; a file from before that rule may sit deeper
+  // than the five levels account deletion used to list.
+  const deep = `${id}/a/b/c/d/e/f`;
+  const { error: nestedError } = await images.upload(`${deep}/old.png`, png, {
+    contentType: "image/png",
+  });
+  expect(nestedError).not.toBeNull();
+  const { error: legacyError } = await admin.storage
+    .from("profile-images")
+    .upload(`${deep}/old.png`, png, { contentType: "image/png" });
+  if (legacyError) throw new Error("Unable to upload the legacy fixture image.");
   const { error: profileError } = await maker
     .from("profiles")
     .update({ name: "Leaving Maker", avatar_path: `${id}/avatar.png` })
@@ -1516,7 +1553,7 @@ test("a user deletes products, then their account and everything in it", async (
     expect(readError, table).toBeNull();
     expect(rows, table).toEqual([]);
   }
-  expect(await files(id)).toEqual(expect.arrayContaining(["avatar.png", "nested"]));
+  expect(await files(id)).toEqual(expect.arrayContaining(["avatar.png", "a"]));
   expect(await files(id)).not.toContain("logo.png");
   await page.goto(`/saas/${ownLogo}`);
   await expect(page.getByRole("heading", { name: "Page not found" })).toBeVisible();
@@ -1561,7 +1598,7 @@ test("a user deletes products, then their account and everything in it", async (
     expect(readError, table).toBeNull();
     expect(rows, table).toEqual([]);
   }
-  for (const folder of [id, `${id}/nested`]) expect(await files(folder), folder).toEqual([]);
+  for (const folder of [id, deep]) expect(await files(folder), folder).toEqual([]);
   await page.goto(`/saas/${staying}`);
   await expect(page.getByRole("heading", { name: "Page not found" })).toBeVisible();
   await page.goto("/dashboard");
@@ -2253,6 +2290,25 @@ test("visits are counted without cookies, and admins see them under Analytics", 
     link.click();
   }, `https://example-${run}.test/pricing?ref=harbor`);
   expect((await click).status()).toBe(204);
+  // A dialog over the page counts as a page of its own. Closing it continues the view of the page
+  // beneath rather than counting that page again, so the next page view reports its time.
+  const privacyKey = next.request().postDataJSON().key;
+  sent = first.beacon("pageview");
+  await first.page.getByRole("banner").getByRole("link", { name: "Sign in" }).click();
+  await expect(first.page.getByRole("dialog", { name: "Sign in" })).toBeVisible();
+  expect((await sent).request().postDataJSON().path).toBe("/auth");
+  const counted: string[] = [];
+  first.page.on("request", (request) => {
+    if (new URL(request.url()).pathname === "/api/analytics")
+      counted.push(request.postDataJSON()?.type);
+  });
+  await first.page.keyboard.press("Escape");
+  await expect(first.page).toHaveURL("/privacy");
+  await first.page.waitForTimeout(1500);
+  expect(counted).not.toContain("pageview");
+  sent = first.beacon("pageview");
+  await first.page.getByRole("contentinfo").getByRole("link", { name: "Terms" }).click();
+  expect((await sent).request().postDataJSON().previous?.key).toBe(privacyKey);
   expect(await first.context.cookies()).toEqual([]);
   await first.context.close();
 
@@ -2676,8 +2732,11 @@ test("statistics add up the leaderboard's figures once five products share them"
   watchPolicy(page, violations);
   const { data: before } = await anon.from("leaderboard").select("id");
   if (before!.length < 5) {
+    // Without figures, the page stays out of search engines and the sitemap.
     await page.goto("/stats");
     await expect(page.getByRole("heading", { name: "Not enough products yet" })).toBeVisible();
+    await expect(page.locator('meta[name="robots"]')).toHaveAttribute("content", "noindex");
+    expect(await (await page.request.get("/sitemap.xml")).text()).not.toContain("/stats</loc>");
   }
 
   const { data: created, error } = await admin.auth.admin.createUser({
@@ -2757,6 +2816,10 @@ test("statistics add up the leaderboard's figures once five products share them"
   expect(card.status()).toBe(200);
   expect(card.headers()["content-type"]).toBe("image/png");
   expect(await (await page.request.get("/sitemap.xml")).text()).toContain("/stats</loc>");
+  await expect(page.locator('meta[name="robots"]')).toHaveAttribute(
+    "content",
+    "max-image-preview:large, max-snippet:-1",
+  );
 
   for (const theme of ["dark", "light"] as const) {
     await setThemeCookie(page, theme);
@@ -3157,6 +3220,11 @@ test("founders share revenue from all payments, and visitors rank products by it
   expect(await page.locator("main").innerText()).not.toContain(figures.total);
   await page.goto(`/?by=all&q=${encodeURIComponent(name)}`);
   await expect(page.getByRole("heading", { name: "No matching products" })).toBeVisible();
+  // Clearing the search keeps the ranking.
+  await expect(page.getByRole("link", { name: "Clear filters" })).toHaveAttribute(
+    "href",
+    "/?by=all",
+  );
 
   const hide = "Hide verified revenue for the last 30 days, 12 months and all time";
   await page.goto(`/dashboard/saas/${id}`);
@@ -3313,6 +3381,9 @@ test("founders connect Gumroad by approving read access to their sales", async (
     ),
   ).toBeVisible();
   await expect(revenue.getByText("Connected to Gumroad")).toBeVisible();
+  // The founder approved access rather than pasting a key.
+  await expect(revenue.getByText(/^Read access …0001/)).toBeVisible();
+  await expect(revenue.getByText("Reconnect or change the provider")).toBeVisible();
   const { data: stored } = await admin
     .from("revenue_connections")
     .select("provider, key_hint, livemode, encrypted_key")
