@@ -8,7 +8,7 @@ select plan(15);
 insert into auth.users(id, email, created_at, email_confirmed_at, raw_app_meta_data,
   raw_user_meta_data) values
   ('a7000000-0000-4000-8000-000000000001', 'newcomer@telegram.test', now(), null,
-    '{"provider": "email"}', '{"username": "tgnewcomer"}'),
+    '{"provider": "email"}', '{"username": "tgnewcomer", "terms_version": "2026-09-27"}'),
   ('a7000000-0000-4000-8000-000000000002', 'googler@telegram.test', now(), now(),
     '{"provider": "google"}', '{}'),
   ('a7000000-0000-4000-8000-000000000003', 'veteran@telegram.test', now() - interval '3 days',

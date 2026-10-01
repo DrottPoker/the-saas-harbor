@@ -10,6 +10,22 @@ import { ensureLocalSupabase } from "./local-supabase.mjs";
 const removeOnly = process.argv.includes("--remove");
 const DOMAIN = "demo.harbor.test";
 const PASSWORD = "harbor-demo-password";
+// Sign-up sends the username and the accepted version of the Terms, from which the database
+// creates the profile; the version is the current one in src/lib/legal.ts.
+const TERMS_VERSION = readFileSync(new URL("../src/lib/legal.ts", import.meta.url), "utf8").match(
+  /termsUpdated = "(\d{4}-\d{2}-\d{2})"/,
+)?.[1];
+if (!TERMS_VERSION) throw new Error("Could not read the Terms version from src/lib/legal.ts.");
+/** What sign-up sends for a demo account: a username made from the name, and the Terms. */
+function signup(name) {
+  const username = name
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+  return { username, terms_version: TERMS_VERSION };
+}
 
 const makers = [
   {
@@ -493,6 +509,7 @@ for (const maker of makers) {
     email,
     password: PASSWORD,
     email_confirm: true,
+    user_metadata: signup(maker.name),
   });
   if (error || !created.user) throw new Error(`Could not create ${email}.`);
   const userId = created.user.id;
@@ -583,6 +600,7 @@ const { error: moderatorError } = await admin.auth.admin.createUser({
   email: `admin@${DOMAIN}`,
   password: PASSWORD,
   email_confirm: true,
+  user_metadata: signup("Harbor Admin"),
 });
 if (moderatorError) throw new Error(`Could not create admin@${DOMAIN}.`);
 const { error: grantError } = await admin.rpc("set_admin", {

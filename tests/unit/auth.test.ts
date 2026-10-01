@@ -2,7 +2,6 @@ import { describe, expect, it } from "vitest";
 import {
   authNeedsFullPage,
   confirmationMethod,
-  createdWithProvider,
   decodeOAuthFlow,
   encodeOAuthFlow,
   oauthError,
@@ -48,18 +47,6 @@ describe("confirmationMethod", () => {
     expect(confirmationMethod({ identities: identities("apple") })).toBe("password");
     expect(confirmationMethod({ identities: [] })).toBe("password");
     expect(confirmationMethod({})).toBe("password");
-  });
-});
-
-describe("createdWithProvider", () => {
-  it("follows the provider the account was created with", () => {
-    expect(createdWithProvider({ app_metadata: { provider: "google" } })).toBe(true);
-    expect(createdWithProvider({ app_metadata: { provider: "github" } })).toBe(true);
-    expect(
-      createdWithProvider({ app_metadata: { provider: "email", providers: ["email", "github"] } }),
-    ).toBe(false);
-    expect(createdWithProvider({ app_metadata: { provider: "apple" } })).toBe(false);
-    expect(createdWithProvider({ app_metadata: {} })).toBe(false);
   });
 });
 

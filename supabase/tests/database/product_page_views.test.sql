@@ -11,6 +11,9 @@ delete from private.analytics_salts;
 insert into auth.users(id) values
   ('e7000000-0000-4000-8000-000000000001'),
   ('e7000000-0000-4000-8000-000000000002');
+insert into public.profiles(id, name) values
+  ('e7000000-0000-4000-8000-000000000001', 'Viewcount Founder'),
+  ('e7000000-0000-4000-8000-000000000002', 'Viewcount Visitor');
 
 set local role authenticated;
 select set_config('request.jwt.claim.sub', 'e7000000-0000-4000-8000-000000000001', true);

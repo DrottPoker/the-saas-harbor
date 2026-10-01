@@ -7,6 +7,10 @@ select plan(27);
 insert into auth.users(id) values
   ('f0000000-0000-4000-8000-000000000001'),
   ('f0000000-0000-4000-8000-000000000002');
+-- Profiles made without a username, as by the admin API, get a slug from their name.
+insert into public.profiles(id, name) values
+  ('f0000000-0000-4000-8000-000000000001', 'Slugtest Maker'),
+  ('f0000000-0000-4000-8000-000000000002', 'Slugtest Maker');
 
 -- Products get a slug from their name, unique per kind.
 set local role authenticated;
@@ -17,12 +21,12 @@ select public.save_saas('f1000000-0000-4000-8000-000000000001', 'Slugtest Alpha'
 select is((select slug from public.saas where id = 'f1000000-0000-4000-8000-000000000001'),
   'slugtest-alpha', 'a product gets a slug from its name');
 select ok(
-  (select slug ~ '^harbor-maker(-[0-9]+)?$' from public.profiles
+  (select slug ~ '^slugtest-maker(-[0-9]+)?$' from public.profiles
     where id = 'f0000000-0000-4000-8000-000000000001'),
-  'a maker without a name yet gets a slug from the default name');
+  'a profile made without a username gets a slug from its name');
 select public.save_profile('Slugtest Zoë Ångström', '', '', '', '', '', '', '', '', '{}', null, '[]');
 select ok(
-  (select slug ~ '^harbor-maker(-[0-9]+)?$' from public.profiles
+  (select slug ~ '^slugtest-maker(-[0-9]+)?$' from public.profiles
     where id = 'f0000000-0000-4000-8000-000000000001'),
   'naming the profile keeps its username (usernames.test.sql)');
 
@@ -101,7 +105,7 @@ select is(public.saas_slug_redirect('slugtest-alpha'), null, 'a slug in use neve
 
 select public.save_profile('Slugtest Someone Else', '', '', '', '', '', '', '', '', '{}', null, '[]');
 select ok(
-  (select slug ~ '^harbor-maker(-[0-9]+)?$' from public.profiles
+  (select slug ~ '^slugtest-maker(-[0-9]+)?$' from public.profiles
     where id = 'f0000000-0000-4000-8000-000000000001'),
   'renaming a user keeps their username');
 reset role;

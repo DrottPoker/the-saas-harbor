@@ -10,6 +10,9 @@ delete from public.public_metrics;
 insert into auth.users(id) values
   ('b7000000-0000-4000-8000-000000000001'),
   ('b7000000-0000-4000-8000-000000000002');
+insert into public.profiles(id, name) values
+  ('b7000000-0000-4000-8000-000000000001', 'Stats Founder One'),
+  ('b7000000-0000-4000-8000-000000000002', 'Stats Founder Two');
 
 set local role authenticated;
 select set_config('request.jwt.claim.sub', 'b7000000-0000-4000-8000-000000000001', true);

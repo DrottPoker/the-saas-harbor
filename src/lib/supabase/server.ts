@@ -5,7 +5,6 @@ import { createClient, type User } from "@supabase/supabase-js";
 import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { countryCode } from "@/lib/analytics";
-import { createdWithProvider } from "@/lib/auth";
 import { cookieOptions, supabaseConfig } from "./config";
 import type { Database } from "./types";
 
@@ -56,11 +55,11 @@ export const unreadMessageCount = cache(async () => {
   return error || typeof data !== "number" ? 0 : data;
 });
 /**
- * Whether the user has finished sign-up. Accounts created through Google or GitHub have no
- * profile until they choose a username and accept the Terms.
+ * Whether the user has finished sign-up, which creates the profile. Accounts created through
+ * Google or GitHub, or straight through the Auth API without the Terms, have no profile until they
+ * choose a username and accept the Terms.
  */
 export async function hasFinishedSignup(client: Client, user: User) {
-  if (!createdWithProvider(user)) return true;
   const { data, error } = await client
     .from("profiles")
     .select("id")

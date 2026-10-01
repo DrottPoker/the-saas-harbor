@@ -61,14 +61,6 @@ export function confirmationMethod(user: Pick<User, "identities">): "password" |
   return provider && !providers.includes("email") ? provider : "password";
 }
 
-/**
- * Whether the account was created through Google or GitHub, so it chooses a username and accepts
- * the Terms after its first sign-in. Accounts created with an email address did both at sign-up.
- */
-export function createdWithProvider(user: Pick<User, "app_metadata">) {
-  return isOAuthProvider(user.app_metadata?.provider);
-}
-
 // A sign-in with a provider remembers, in a short-lived cookie, which provider it went to, where
 // it continues afterwards, and for a confirmation before deleting the account, which account has
 // to come back.

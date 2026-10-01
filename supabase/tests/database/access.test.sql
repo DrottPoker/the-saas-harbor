@@ -6,6 +6,9 @@ select plan(120);
 insert into auth.users(id) values
   ('b0000000-0000-4000-8000-000000000001'),
   ('b0000000-0000-4000-8000-000000000002');
+insert into public.profiles(id, name) values
+  ('b0000000-0000-4000-8000-000000000001', 'SQL Test One'),
+  ('b0000000-0000-4000-8000-000000000002', 'SQL Test Two');
 
 -- Owner one: three products with different visibility choices.
 set local role authenticated;

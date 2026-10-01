@@ -36,6 +36,13 @@ const png = Buffer.from(
   "base64",
 );
 
+/**
+ * What sign-up sends as user metadata, for accounts made through the admin API: the username and
+ * the accepted Terms, from which the database creates the profile.
+ */
+function signup(username: string) {
+  return { username, terms_version: termsUpdated };
+}
 async function login(page: Page, address: string, pass: string) {
   await page.goto("/auth");
   await page.getByLabel("Email address").fill(address);
@@ -1212,6 +1219,7 @@ test("another owner cannot read private history, edit SaaS, or overwrite images"
     email: secondEmail,
     password: secondPassword,
     email_confirm: true,
+    user_metadata: signup(`second-${run}`),
   });
   if (error || !data.user) throw new Error("Unable to create isolated second owner.");
   userIds.push(data.user.id);
@@ -1388,6 +1396,7 @@ test("a user deletes products, then their account and everything in it", async (
     email: leavingEmail,
     password: leavingPassword,
     email_confirm: true,
+    user_metadata: signup(`leaving-${run}`),
   });
   if (error || !created.user) throw new Error("Unable to create the leaving maker.");
   const id = created.user.id;
@@ -1407,15 +1416,11 @@ test("a user deletes products, then their account and everything in it", async (
     });
     if (uploadError) throw new Error("Unable to upload fixture images.");
   }
-  const { error: profileError } = await maker.from("profiles").insert({
-    id,
-    name: "Leaving Maker",
-    bio: "",
-    website: "",
-    social_url: "",
-    avatar_path: `${id}/avatar.png`,
-  });
-  if (profileError) throw new Error("Unable to create the fixture profile.");
+  const { error: profileError } = await maker
+    .from("profiles")
+    .update({ name: "Leaving Maker", avatar_path: `${id}/avatar.png` })
+    .eq("id", id);
+  if (profileError) throw new Error("Unable to fill in the fixture profile.");
   async function product(name: string, logo: string | null, verified: boolean) {
     const productId = randomUUID();
     const { error: saveError } = await maker.rpc("save_saas", {
@@ -2166,6 +2171,7 @@ test("visits are counted without cookies, and admins see them under Analytics", 
     email: address,
     password: secret,
     email_confirm: true,
+    user_metadata: signup(`analytics-${run}`),
   });
   if (error || !data.user) throw new Error("Unable to create an analytics fixture.");
   userIds.push(data.user.id);
@@ -2264,6 +2270,7 @@ test("visits are counted without cookies, and admins see them under Analytics", 
     email: founderEmail,
     password: founderSecret,
     email_confirm: true,
+    user_metadata: signup(`founder-${run}`),
   });
   if (founderError || !founderUser.user) throw new Error("Unable to create a founder fixture.");
   userIds.push(founderUser.user.id);
@@ -2751,6 +2758,7 @@ test("founders verify revenue through Paddle, Polar and Dodo Payments", async ({
     email: address,
     password: secret,
     email_confirm: true,
+    user_metadata: signup(`providers-${run}`),
   });
   if (error || !created.user) throw new Error("Unable to create the provider maker.");
   userIds.push(created.user.id);
@@ -2836,6 +2844,7 @@ test("founders verify revenue through Creem, Chargebee, Whop and RevenueCat", as
     email: address,
     password: secret,
     email_confirm: true,
+    user_metadata: signup(`more-providers-${run}`),
   });
   if (error || !created.user) throw new Error("Unable to create the provider maker.");
   userIds.push(created.user.id);
@@ -2947,6 +2956,7 @@ test("founders verify their website's domain with a DNS record", async ({ page }
     email: address,
     password: secret,
     email_confirm: true,
+    user_metadata: signup(`domain-${run}`),
   });
   if (error || !created.user) throw new Error("Unable to create the domain maker.");
   userIds.push(created.user.id);
@@ -3065,6 +3075,7 @@ test("founders share revenue from all payments, and visitors rank products by it
     email: address,
     password: secret,
     email_confirm: true,
+    user_metadata: signup(`revenue-${run}`),
   });
   if (error || !created.user) throw new Error("Unable to create the revenue maker.");
   userIds.push(created.user.id);
@@ -3251,6 +3262,7 @@ test("founders connect Gumroad by approving read access to their sales", async (
     email: address,
     password: secret,
     email_confirm: true,
+    user_metadata: signup(`gumroad-${run}`),
   });
   if (error || !created.user) throw new Error("Unable to create the Gumroad maker.");
   userIds.push(created.user.id);

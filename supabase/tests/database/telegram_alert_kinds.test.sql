@@ -6,11 +6,11 @@ select plan(14);
 
 insert into auth.users(id, email, created_at, raw_app_meta_data, raw_user_meta_data) values
   ('a8000000-0000-4000-8000-000000000001', 'owner@alerts.test', now(), '{"provider": "email"}',
-    '{"username": "tgowner"}'),
+    '{"username": "tgowner", "terms_version": "2026-09-27"}'),
   ('a8000000-0000-4000-8000-000000000002', 'writer@alerts.test', now(), '{"provider": "email"}',
-    '{"username": "tgwriter"}'),
+    '{"username": "tgwriter", "terms_version": "2026-09-27"}'),
   ('a8000000-0000-4000-8000-000000000003', 'other@alerts.test', now(), '{"provider": "email"}',
-    '{"username": "tgother"}');
+    '{"username": "tgother", "terms_version": "2026-09-27"}');
 create temp view pgtap_alerts as
   select a.* from private.telegram_alerts a
   where a.user_id::text like 'a8000000-%' and a.kind <> 'signup';

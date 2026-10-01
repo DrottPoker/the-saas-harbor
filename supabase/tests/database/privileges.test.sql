@@ -60,8 +60,7 @@ select is_empty($$ select * from pgtap_column_privileges where role = 'anon' $$,
 select results_eq(
   $$ select relation, privilege, columns from pgtap_column_privileges
      where role = 'authenticated' order by 1, 2 $$,
-  $$ values ('profiles'::text, 'INSERT'::text, 'avatar_path,bio,github_url,headline,id,linkedin_url,location,name,skills,social_url,website,x_url'),
-    ('profiles', 'UPDATE', 'avatar_path,bio,github_url,headline,linkedin_url,location,name,skills,social_url,updated_at,website,x_url'),
+  $$ values ('profiles'::text, 'UPDATE'::text, 'avatar_path,bio,github_url,headline,linkedin_url,location,name,skills,social_url,updated_at,website,x_url'),
     ('revenue_connections', 'SELECT', 'connected_at,key_hint,last_error,last_synced_at,livemode,owner_id,provider,revenue_checked_at,revenue_from,revenue_note,revenue_origin,revenue_read_at,saas_id,status'),
     ('saas', 'INSERT', 'category,description,id,logo_path,name,owner_id,tagline,tech_stack,website'),
     ('saas', 'UPDATE', 'category,description,logo_path,name,tagline,tech_stack,updated_at,website') $$,
