@@ -2,7 +2,7 @@
 -- what they say, and that they never carry a message. Runs in a rolled-back transaction.
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(14);
+select plan(15);
 
 insert into auth.users(id, email, created_at, raw_app_meta_data, raw_user_meta_data) values
   ('a8000000-0000-4000-8000-000000000001', 'owner@alerts.test', now(), '{"provider": "email"}',
@@ -52,6 +52,20 @@ select public.send_message('a8000000-0000-4000-8000-000000000001', 'Secret offer
 reset role;
 select is((select count(*)::int from pgtap_alerts where kind = 'message'), 2,
   'a message after the account read the conversation queues a new alert');
+
+-- Reading exactly up to the alerted message, without replying, counts as reading it too.
+set local role authenticated;
+select set_config('request.jwt.claim.sub', 'a8000000-0000-4000-8000-000000000001', true);
+select public.mark_conversation_read(c.id, (select max(m.created_at) from public.messages m
+  where m.conversation_id = c.id))
+from public.conversations c
+where c.user_a in ('a8000000-0000-4000-8000-000000000001', 'a8000000-0000-4000-8000-000000000002')
+  and c.user_b in ('a8000000-0000-4000-8000-000000000001', 'a8000000-0000-4000-8000-000000000002');
+select set_config('request.jwt.claim.sub', 'a8000000-0000-4000-8000-000000000002', true);
+select public.send_message('a8000000-0000-4000-8000-000000000001', 'Secret offer four');
+reset role;
+select is((select count(*)::int from pgtap_alerts where kind = 'message'), 3,
+  'after reading just up to the alerted message, the next message queues a new alert');
 
 -- A new product and a new report each queue an alert.
 insert into public.saas(id, owner_id, name, tagline, description, category, website) values
