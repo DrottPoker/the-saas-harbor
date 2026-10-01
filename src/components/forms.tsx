@@ -134,15 +134,12 @@ export function Share({
 export function Section({
   id,
   title,
-  tag,
   description,
   children,
 }: {
   /** An anchor, such as the one a redirect scrolls to. */
   id?: string;
   title: string;
-  /** A word beside the title, such as Optional. */
-  tag?: string;
   description: string;
   children: React.ReactNode;
 }) {
@@ -152,14 +149,7 @@ export function Section({
       className="grid scroll-mt-6 gap-5 border-t py-8 first-of-type:border-t-0 first-of-type:pt-0 md:grid-cols-[13rem_minmax(0,1fr)] md:gap-10"
     >
       <div>
-        <div className="flex flex-wrap items-center gap-2">
-          <h2 className="font-semibold">{title}</h2>
-          {tag && (
-            <span className="rounded-full border px-2 py-0.5 text-xs text-muted-foreground">
-              {tag}
-            </span>
-          )}
-        </div>
+        <h2 className="font-semibold">{title}</h2>
         <p className="mt-1 text-sm text-muted-foreground">{description}</p>
       </div>
       <div className="grid gap-5">{children}</div>

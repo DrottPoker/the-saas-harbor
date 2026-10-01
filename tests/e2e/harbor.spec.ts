@@ -791,7 +791,7 @@ test("registration, email confirmation, profile and SaaS editing, storage, priva
   // The payment provider is part of the same form, and optional: choosing one asks for its key,
   // and Connect later leaves it for another time.
   const revenue = page.locator("#revenue");
-  await expect(revenue.getByText("Optional", { exact: true })).toBeVisible();
+  await expect(revenue.getByText(/You can also do this later\./)).toBeVisible();
   await chooseProvider(page, "Stripe");
   await expect(page.getByRole("button", { name: "Add SaaS and verify revenue" })).toBeVisible();
   await revenue.getByRole("button", { name: "Connect later" }).click();
