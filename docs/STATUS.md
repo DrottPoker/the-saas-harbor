@@ -8,6 +8,12 @@ The first release includes accounts, email confirmation and recovery, public mak
 
 Makers can message each other privately (see Messages below), and report products, profiles and messages to the admins, who decide in an admin panel (see Reports and moderation below). They get emails about unread messages and about decisions (see Email notifications below). Other forms of connection, such as following or contact lists, are not implemented.
 
+## Fixes from the project review 2026-10-01
+
+At the owner's request, the whole project was reviewed for bugs, gaps and inconsistencies: the database, the payment providers, the Server Actions and routes, the public pages, the interface, and email, Telegram, the scripts and these documents. The owner chose to fix the four security findings first, then the bugs users notice and the revenue findings.
+
+- **Dependencies.** Next.js 16.3.8 and nodemailer 10.0.13 fix security advisories published on 2026-09-30 that `npm audit` did not report yet. For Next.js these include GHSA-mcj8-r9mp-w47p, which concerns a root-level catch-all, such as the `@modal` slot, together with static routes; for nodemailer GHSA-4ffr-jq9g-5ffx and GHSA-g73g-hqqh-jr95. A high advisory in `brace-expansion`, which ESLint uses, is fixed in the lockfile. `npm run check`, `npm run build` and `npm run test:e2e` (19 tests) pass.
+
 ## Figures public by default 2026-09-29
 
 At the owner's request, a new product shares its verified MRR, revenue, paying customers and launch date unless the founder hides them. The Visibility section of the product form now has a Hide box for each figure instead of a Show box, all clear on a new product; existing products keep their choices and show them as ticked Hide boxes. The dashboard, the product editor, the page for founders, the about page and the privacy policy (updated 2026-09-29) say that figures are public unless hidden. The database columns still default to private, for rows written without a choice. The browser tests check that a new product's boxes are clear and a failed save keeps ticked ones, hide the figures where they test private revenue, and show a Gumroad product's figures to visitors without any change.
