@@ -54,7 +54,9 @@ export async function AuthPanel({ searchParams }: { searchParams: SearchParams }
     <div className="grid gap-5">
       {error && <Notice tone="error">{error}</Notice>}
       {supabaseConfig() ? (
-        <AuthForm mode={mode} next={safeNext(params.next)} providers={providers} />
+        // Keyed by the form, so switching between sign-in, sign-up and reset, which changes only
+        // the query, starts a fresh form instead of carrying over the last one's result.
+        <AuthForm key={mode} mode={mode} next={safeNext(params.next)} providers={providers} />
       ) : (
         <Notice tone="error">
           Authentication is not configured. Follow the Supabase setup in README.md.

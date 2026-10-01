@@ -248,9 +248,29 @@ test("anonymous navigation, private route protection and responsive empty state"
   await expect(page.getByRole("dialog", { name: "Sign in" })).toBeVisible();
   await expect(page).toHaveURL(/\/auth$/);
   await expectAccessible(page);
+  // Each form starts afresh: a failed sign-in's error does not follow to the reset form.
+  const dialog = page.getByRole("dialog");
+  await dialog.getByLabel("Email address").fill(`nobody-${run}@example.test`);
+  await dialog.getByLabel("Password", { exact: true }).fill("not-the-password");
+  await dialog.getByRole("button", { name: "Sign in", exact: true }).click();
+  await expect(dialog.getByRole("alert")).toContainText("Unable to sign in");
+  await dialog.getByRole("link", { name: "Forgot password?" }).click();
+  await expect(page.getByRole("dialog", { name: "Reset your password" })).toBeVisible();
+  await expect(dialog.getByRole("alert")).toHaveCount(0);
+  await dialog.getByRole("link", { name: "Back to sign in" }).click();
+  await expect(page.getByRole("dialog", { name: "Sign in" })).toBeVisible();
+  await expect(dialog.getByRole("alert")).toHaveCount(0);
   await page.getByRole("dialog").getByRole("link", { name: "Create one" }).click();
   await expect(page.getByRole("dialog", { name: "Create your account" })).toBeVisible();
   await expect(page).toHaveURL("/auth?mode=signup");
+  // Going back from the username step shows the details again, without a leftover notice.
+  await dialog.getByLabel("Email address").fill(`back-${run}@example.test`);
+  await dialog.getByLabel("Password", { exact: true }).fill(randomBytes(12).toString("hex"));
+  await dialog.getByRole("button", { name: "Continue" }).click();
+  await expect(dialog.getByLabel("Username")).toBeVisible();
+  await dialog.getByRole("button", { name: "Back" }).click();
+  await expect(dialog.getByLabel("Email address")).toBeVisible();
+  await expect(dialog.getByText("details", { exact: true })).toHaveCount(0);
   await page.keyboard.press("Escape");
   await expect(page.getByRole("dialog")).toHaveCount(0);
   await expect(page).toHaveURL("/");
@@ -261,6 +281,18 @@ test("anonymous navigation, private route protection and responsive empty state"
     "href",
     "/auth",
   );
+  // On the full page, another form loads as a page too, not as a dialog over this one.
+  await page.getByRole("main").getByRole("link", { name: "Sign in" }).click();
+  await expect(page).toHaveURL("/auth");
+  await expect(page.getByRole("heading", { name: "Sign in", level: 1 })).toBeVisible();
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+  // Switching forms keeps where sign-in continues.
+  await page.goto("/auth?next=%2Fmessages");
+  for (const [name, href] of [
+    ["Create one", "/auth?mode=signup&next=%2Fmessages"],
+    ["Forgot password?", "/auth?mode=reset&next=%2Fmessages"],
+  ])
+    await expect(page.getByRole("main").getByRole("link", { name })).toHaveAttribute("href", href);
   // Crawlers get the sitemap and stay out of private areas.
   const origin = test.info().project.use.baseURL!;
   const robots = await (await page.request.get("/robots.txt")).text();

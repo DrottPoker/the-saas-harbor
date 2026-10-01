@@ -270,6 +270,12 @@ export function AuthForm({
   useEffect(() => {
     if (sent) sentHeading.current?.focus();
   }, [sent]);
+  // Switching between the forms keeps where sign-in continues.
+  const continuing = next ? `next=${encodeURIComponent(next)}` : "";
+  const authHref = (form?: "signup" | "reset") => {
+    const query = [form && `mode=${form}`, continuing].filter(Boolean).join("&");
+    return query ? `/auth?${query}` : "/auth";
+  };
 
   const submit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -277,7 +283,8 @@ export function AuthForm({
     if (!choosing)
       startChecking(async () => {
         const result = await checkSignupDetails({}, data);
-        setDetails(result);
+        // Only a refusal is shown; passing the first step simply opens the second.
+        setDetails(result.success ? {} : result);
         if (result.success) setStep("username");
       });
     else startTransition(() => action(data));
@@ -311,7 +318,7 @@ export function AuthForm({
           wrong.
         </p>
         <Button asChild variant="outline" className="h-10 w-full">
-          <Link href="/auth" replace>
+          <Link href={authHref()} replace>
             Go to sign in
           </Link>
         </Button>
@@ -319,7 +326,7 @@ export function AuthForm({
     );
 
   const withProviders = providers.length > 0 && (mode === "login" || (signup && !choosing));
-  const query = next ? `?next=${encodeURIComponent(next)}` : "";
+  const query = continuing && `?${continuing}`;
   return (
     <div className="grid gap-5">
       {withProviders && (
@@ -386,7 +393,7 @@ export function AuthForm({
                   // the padding keeps the link easy to tap.
                   <Link
                     className="-my-1.5 py-1.5 text-[13px] leading-none text-muted-foreground hover:text-foreground"
-                    href="/auth?mode=reset"
+                    href={authHref("reset")}
                     replace
                   >
                     Forgot password?
@@ -416,7 +423,7 @@ export function AuthForm({
               No account yet?{" "}
               <Link
                 className="font-medium text-foreground hover:underline"
-                href="/auth?mode=signup"
+                href={authHref("signup")}
                 replace
               >
                 Create one
@@ -425,7 +432,11 @@ export function AuthForm({
           ) : signup && !choosing ? (
             <>
               Already have an account?{" "}
-              <Link className="font-medium text-foreground hover:underline" href="/auth" replace>
+              <Link
+                className="font-medium text-foreground hover:underline"
+                href={authHref()}
+                replace
+              >
                 Sign in
               </Link>
             </>
@@ -438,7 +449,7 @@ export function AuthForm({
               Back
             </button>
           ) : (
-            <Link className="font-medium text-foreground hover:underline" href="/auth" replace>
+            <Link className="font-medium text-foreground hover:underline" href={authHref()} replace>
               Back to sign in
             </Link>
           )}

@@ -26,7 +26,8 @@ const SIGNED_IN_AREAS = [
 /**
  * Whether /auth opened from `from` (the Next-Url of a navigation inside the site) must be the full
  * page rather than the dialog. Such a page sends a visitor to /auth, and a dialog would open over
- * that same page, which sends them to /auth again, without end.
+ * that same page, which sends them to /auth again, without end. The full sign-in page itself
+ * switches forms as a page too, rather than opening a dialog over the form it shows.
  */
 export function authNeedsFullPage(from: string | null) {
   if (!from) return false;
@@ -36,7 +37,9 @@ export function authNeedsFullPage(from: string | null) {
   } catch {
     return false;
   }
-  return SIGNED_IN_AREAS.some((area) => pathname === area || pathname.startsWith(`${area}/`));
+  return [...SIGNED_IN_AREAS, "/auth"].some(
+    (area) => pathname === area || pathname.startsWith(`${area}/`),
+  );
 }
 
 /**

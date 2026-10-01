@@ -99,8 +99,12 @@ describe("the sign-in dialog", () => {
       expect(authNeedsFullPage(from), from).toBe(true);
     expect(authNeedsFullPage("http://127.0.0.1:3001/admin/reports")).toBe(true);
   });
+  it("switches forms as a page on the full sign-in page, rather than opening over it", () => {
+    for (const from of ["/auth", "/auth?mode=signup", "/auth/confirm", "/auth/finish"])
+      expect(authNeedsFullPage(from), from).toBe(true);
+  });
   it("opens over public pages", () => {
-    for (const from of [null, "", "/", "/saas/tidewise", "/dashboards", "/reporting", "/auth"])
+    for (const from of [null, "", "/", "/saas/tidewise", "/dashboards", "/reporting", "/authors"])
       expect(authNeedsFullPage(from), String(from)).toBe(false);
   });
 });
