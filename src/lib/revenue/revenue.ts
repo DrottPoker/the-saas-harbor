@@ -2,7 +2,12 @@ import "server-only";
 import { createHash } from "node:crypto";
 import { adminClient } from "@/lib/supabase/admin";
 import { providerName, type ProviderId } from "./catalog";
-import { REPLACED_DURING_CHECK, VerificationError } from "./errors";
+import {
+  changedDuringCheck,
+  DISCONNECTED_DURING_CHECK,
+  REPLACED_DURING_CHECK,
+  VerificationError,
+} from "./errors";
 import { usdRates } from "./fx";
 import { MAX_PAGES } from "./http";
 import { toUsdCents } from "./money";
@@ -64,7 +69,9 @@ export async function readRevenue(
     p_saas_id: saasId,
     p_from: reread,
   });
-  if (error || !data) throw new Error("The revenue read state could not be loaded.");
+  if (error) throw new Error("The revenue read state could not be loaded.");
+  // No connection any more: the founder disconnected the provider since the run began.
+  if (!data) throw new VerificationError(DISCONNECTED_DURING_CHECK);
   const state = data as ReadState;
   if (state.provider !== provider)
     throw new VerificationError("The product is connected to another provider.");
@@ -127,8 +134,8 @@ export async function readRevenue(
     p_months12: months12,
     p_connected_at: connectedAt,
   });
-  if (recordError?.message.includes("connection changed"))
-    throw new VerificationError(REPLACED_DURING_CHECK);
+  const refused = changedDuringCheck(recordError?.message);
+  if (refused) throw refused;
   if (recordError?.message.includes("already verify another SaaS"))
     throw new VerificationError(
       `Payments of this ${providerName(provider)} account already verify another SaaS on The SaaS Harbor.`,

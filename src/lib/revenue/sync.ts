@@ -4,7 +4,7 @@ import { after } from "next/server";
 import { adminClient } from "@/lib/supabase/admin";
 import { providerName, type ProviderId } from "./catalog";
 import { decryptProviderKey, encryptProviderKey } from "./crypto";
-import { makerMessage, REPLACED_DURING_CHECK, VerificationError } from "./errors";
+import { changedDuringCheck, makerMessage, VerificationError } from "./errors";
 import { usdRates } from "./fx";
 import { monthEnds, mrrAt } from "./history";
 import { toUsdCents } from "./money";
@@ -144,8 +144,8 @@ async function record(
     p_revenue_at: verification.revenue?.at ?? null,
     p_connected_at: connectedAt ?? null,
   });
-  if (error?.message.includes("connection changed"))
-    throw new VerificationError(REPLACED_DURING_CHECK);
+  const refused = changedDuringCheck(error?.message);
+  if (refused) throw refused;
   if (error?.message.includes("already verify another SaaS"))
     throw new VerificationError(
       `This ${providerName(verification.provider)} account already verifies another SaaS on The SaaS Harbor.`,
