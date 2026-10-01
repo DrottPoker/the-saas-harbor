@@ -3,22 +3,39 @@
 -- rolled-back transaction.
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(17);
+select plan(19);
 
--- Google creates the users without a username or Terms version in their metadata.
-insert into auth.users(id, email, raw_app_meta_data, raw_user_meta_data, created_at) values
+-- Google creates the users without a username or Terms version in their metadata, with the email
+-- address confirmed.
+insert into auth.users(id, email, raw_app_meta_data, raw_user_meta_data, created_at,
+  email_confirmed_at) values
   ('e4000000-0000-4000-8000-000000000001', 'new@google.test',
-   '{"provider": "google", "providers": ["google"]}', '{"full_name": "New User"}', now()),
+   '{"provider": "google", "providers": ["google"]}', '{"full_name": "New User"}', now(), now()),
   ('e4000000-0000-4000-8000-000000000002', 'finished@google.test',
-   '{"provider": "google", "providers": ["google"]}', '{}', now() - interval '30 days'),
+   '{"provider": "google", "providers": ["google"]}', '{}', now() - interval '30 days',
+   now() - interval '30 days'),
   ('e4000000-0000-4000-8000-000000000003', 'stale@google.test',
-   '{"provider": "google", "providers": ["google"]}', '{}', now() - interval '8 days'),
+   '{"provider": "google", "providers": ["google"]}', '{}', now() - interval '8 days',
+   now() - interval '8 days'),
   ('e4000000-0000-4000-8000-000000000004', 'recent@google.test',
-   '{"provider": "google", "providers": ["google"]}', '{}', now() - interval '6 days'),
+   '{"provider": "google", "providers": ["google"]}', '{}', now() - interval '6 days',
+   now() - interval '6 days'),
   ('e4000000-0000-4000-8000-000000000005', 'email@google.test',
-   '{"provider": "email", "providers": ["email"]}', '{}', now() - interval '30 days'),
+   '{"provider": "email", "providers": ["email"]}', '{}', now() - interval '30 days',
+   now() - interval '30 days'),
   ('e4000000-0000-4000-8000-000000000006', 'images@google.test',
-   '{"provider": "google", "providers": ["google"]}', '{}', now() - interval '30 days');
+   '{"provider": "google", "providers": ["google"]}', '{}', now() - interval '30 days',
+   now() - interval '30 days');
+-- Email sign-ups with a username and the Terms, whose address was never confirmed.
+insert into auth.users(id, email, raw_app_meta_data, raw_user_meta_data, created_at) values
+  ('e4000000-0000-4000-8000-000000000007', 'unconfirmed@google.test',
+   '{"provider": "email", "providers": ["email"]}',
+   '{"username": "googletest-unconfirmed", "terms_version": "2026-09-27"}',
+   now() - interval '8 days'),
+  ('e4000000-0000-4000-8000-000000000008', 'pending@google.test',
+   '{"provider": "email", "providers": ["email"]}',
+   '{"username": "googletest-pending", "terms_version": "2026-09-27"}',
+   now() - interval '2 days');
 insert into storage.objects(bucket_id, name, owner_id) values
   ('profile-images', 'e4000000-0000-4000-8000-000000000006/photo.png',
    'e4000000-0000-4000-8000-000000000006');
@@ -79,17 +96,23 @@ select is_empty(
      where user_id = 'e4000000-0000-4000-8000-000000000001' $$,
   'with its Terms record');
 
--- Sign-ups never finished.
-select is(private.delete_unfinished_signups(), 1, 'one unfinished sign-up is removed');
+-- Sign-ups never finished: no profile, or an email address never confirmed, after seven days.
+select is(private.delete_unfinished_signups(), 3, 'three unfinished sign-ups are removed');
 select is_empty(
   $$ select 1 from auth.users where id = 'e4000000-0000-4000-8000-000000000003' $$,
   'a Google sign-up unfinished for more than seven days is deleted');
+select is_empty(
+  $$ select 1 from auth.users where id in ('e4000000-0000-4000-8000-000000000005',
+     'e4000000-0000-4000-8000-000000000007') $$,
+  'so are an email account without a profile and one whose address was never confirmed');
+select is(public.check_username('googletest-unconfirmed'), null,
+  'which frees its username');
 select results_eq(
   $$ select count(*)::int from auth.users where id in ('e4000000-0000-4000-8000-000000000002',
-     'e4000000-0000-4000-8000-000000000004', 'e4000000-0000-4000-8000-000000000005',
-     'e4000000-0000-4000-8000-000000000006') $$,
+     'e4000000-0000-4000-8000-000000000004', 'e4000000-0000-4000-8000-000000000006',
+     'e4000000-0000-4000-8000-000000000008') $$,
   $$ values (4) $$,
-  'finished, recent, email and image-owning accounts stay');
+  'finished, recent and image-owning accounts stay, and one that may still confirm its address');
 
 select * from finish();
 rollback;
