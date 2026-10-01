@@ -5,16 +5,11 @@ import { unstable_rethrow } from "next/navigation";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { ActionState } from "@/lib/domain";
 import { sendQueuedEmails } from "@/lib/email/outbox";
-import { connectsWithOAuth, isProviderId, providerName } from "@/lib/revenue/catalog";
+import { connectsWithOAuth, isProviderId } from "@/lib/revenue/catalog";
+import { beginRevenueCheck } from "@/lib/revenue/connect";
 import { makerMessage, VerificationError } from "@/lib/revenue/errors";
-import { adapter } from "@/lib/revenue/providers";
 import { summary } from "@/lib/revenue/summary";
-import {
-  allowTestKeys,
-  connectProvider,
-  disconnectProvider,
-  syncConnection,
-} from "@/lib/revenue/sync";
+import { disconnectProvider, syncConnection } from "@/lib/revenue/sync";
 import { requireUser } from "@/lib/supabase/server";
 import type { Database } from "@/lib/supabase/types";
 
@@ -31,52 +26,16 @@ async function requireOwnedSaas(saasId: string) {
   return client as SupabaseClient<Database>;
 }
 
-// Every check, successful or not, counts against the limits in begin_revenue_check: a refresh at
-// most every five minutes per product, and 20 checks an hour per maker.
-async function beginCheck(client: SupabaseClient<Database>, saasId: string, refresh: boolean) {
-  const { error } = await client.rpc("begin_revenue_check", { p_saas: saasId, p_refresh: refresh });
-  if (error?.code === "P0001") throw new VerificationError(`${error.message}.`);
-  if (error) throw new Error(`The revenue check could not start: ${error.message}`);
-}
-
 // Redirects, such as to sign-in, pass through; failures show only words written for makers.
 function failure(error: unknown): ActionState {
   unstable_rethrow(error);
   return { error: makerMessage(error) };
 }
 
-// The provider is bound on the client with the SaaS id, so it is checked here like any input.
-export async function connectProviderAction(
-  saasId: string,
-  provider: string,
-  _state: ActionState,
-  form: FormData,
-): Promise<ActionState> {
-  try {
-    const client = await requireOwnedSaas(saasId);
-    if (!isProviderId(provider)) throw new VerificationError("Choose a payment provider.");
-    const key = adapter(provider).parseKey(
-      {
-        key: String(form.get("provider_key") ?? ""),
-        account: String(form.get("provider_account") ?? ""),
-      },
-      { allowTest: allowTestKeys() },
-    );
-    await beginCheck(client, saasId, false);
-    const result = await connectProvider(saasId, provider, key);
-    // A verification may reach a milestone, which queues an email.
-    sendQueuedEmails();
-    revalidatePath("/", "layout");
-    return { success: `${providerName(provider)} connected. ${summary(result)}` };
-  } catch (error) {
-    return failure(error);
-  }
-}
-
 export async function refreshRevenueAction(saasId: string): Promise<ActionState> {
   try {
     const client = await requireOwnedSaas(saasId);
-    await beginCheck(client, saasId, true);
+    await beginRevenueCheck(client, saasId, true);
     const result = await syncConnection(saasId);
     sendQueuedEmails();
     revalidatePath("/", "layout");

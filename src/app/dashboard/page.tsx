@@ -65,6 +65,12 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
           Saved. The public product page is up to date.
         </Notice>
       )}
+      {params.added && (
+        <Notice tone="success" className="mb-6">
+          Product added. Its page is public. You can connect your payment provider from Edit at any
+          time.
+        </Notice>
+      )}
       {params.deleted && (
         <Notice tone="success" className="mb-6">
           Product deleted. It has left the directory and the leaderboard.

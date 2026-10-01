@@ -107,7 +107,7 @@ The owner can get an alert in Telegram for every new account (the username, how 
 
 ### Revenue verification
 
-In a product's editor, the maker chooses the payment provider and creates a key that can only read, following the steps shown in a box that links to the page where the key is made:
+In the product form, when adding a product or editing it, the maker can choose the payment provider in the optional Verified revenue section right after the product's details, and paste a key that can only read, following the steps shown in a box that links to the page where the key is made. One save adds or updates the product and verifies the key; a key the provider refuses never loses the product:
 
 | Provider      | Key                                                    | Access                                                                                     |
 | ------------- | ------------------------------------------------------ | ------------------------------------------------------------------------------------------ |
@@ -121,7 +121,7 @@ In a product's editor, the maker chooses the payment provider and creates a key 
 | RevenueCat    | V2 secret API key, `sk_`, with the project ID          | Charts & metrics read only, no other access                                                |
 | Gumroad       | No key: the founder approves access on Gumroad (OAuth) | View sales (`view_sales`) only                                                             |
 
-Gumroad's own access tokens can do anything on the account, so the editor has no key field for it: Connect with Gumroad sends the founder to Gumroad to approve read access to their sales, and Gumroad sends them back with a code that the server exchanges for a token that can only view sales. A pasted token is refused. The site's OAuth application with Gumroad needs `GUMROAD_CLIENT_ID` and `GUMROAD_CLIENT_SECRET`; without them the editor says Gumroad is not set up. Create it on Gumroad under Settings → Advanced → Applications, with `https://thesaasharbor.com/api/gumroad/callback` as the redirect URI, and `http://localhost:3001/api/gumroad/callback` on its own line to try it locally (then open the app at `localhost:3001`, not `127.0.0.1`, so the session cookie comes back with the founder).
+Gumroad's own access tokens can do anything on the account, so the form has no key field for it: saving the form with Gumroad chosen sends the founder to Gumroad to approve read access to their sales, and Gumroad sends them back with a code that the server exchanges for a token that can only view sales. A pasted token is refused. The site's OAuth application with Gumroad needs `GUMROAD_CLIENT_ID` and `GUMROAD_CLIENT_SECRET`; without them the editor says Gumroad is not set up. Create it on Gumroad under Settings → Advanced → Applications, with `https://thesaasharbor.com/api/gumroad/callback` as the redirect URI, and `http://localhost:3001/api/gumroad/callback` on its own line to try it locally (then open the app at `localhost:3001`, not `127.0.0.1`, so the session cookie comes back with the founder).
 
 Whop and RevenueCat keys are checked on every verification: Whop's permissions must all be reads, and a RevenueCat key must be refused everything outside its charts. RevenueCat gives only its own MRR chart, which differs a little from the site's definition (see ARCHITECTURE). Stripe needs Charges, Checkout Sessions and Disputes for revenue beyond MRR only: a key without them verifies MRR, and the editor names the permission that is missing.
 

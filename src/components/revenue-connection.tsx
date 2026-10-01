@@ -1,13 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useActionState, useId, useState } from "react";
+import { startTransition, useActionState, useState } from "react";
 import { CircleAlert, CircleCheck, ExternalLink } from "lucide-react";
-import {
-  connectProviderAction,
-  disconnectProviderAction,
-  refreshRevenueAction,
-} from "@/app/revenue-actions";
+import { disconnectProviderAction, refreshRevenueAction } from "@/app/revenue-actions";
 import { formatDate, formatUsd, type ActionState } from "@/lib/domain";
 import type { RevenueConnection, RevenueSnapshot } from "@/lib/data";
 import {
@@ -21,11 +17,10 @@ import {
 import { STRIPE_KEY_PERMISSIONS, stripeKeyCreationUrl } from "@/lib/revenue/stripe/key";
 import { SITE_NAME } from "@/lib/seo";
 import { cn } from "@/lib/utils";
-import { Actions, Feedback, Field, Section, Submit } from "./forms";
+import { Feedback, Field, Section } from "./forms";
 import { Notice } from "./shell";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
-import { useEditorAction } from "./use-editor-action";
 
 const resources = STRIPE_KEY_PERMISSIONS.map(({ resource }) => resource);
 const permissionList = `${resources.slice(0, -1).join(", ")} and ${resources.at(-1)}`;
@@ -160,7 +155,7 @@ const guides: Record<ProviderId, Guide> = {
     },
     reads: "your products, memberships and sales",
     steps: [
-      <>Choose {strong("Connect with Gumroad")} below, and sign in to Gumroad if it asks.</>,
+      "Save with the button at the end of the form. Gumroad opens, and asks you to sign in if you are not.",
       <>
         Approve {strong("View your sales")}. That is the only access asked for: it cannot change
         products, refund sales or email your customers.
@@ -208,15 +203,21 @@ const noHistory: Record<ProviderId, string> = {
   gumroad: "No revenue history: the Gumroad account has more sales than one verification reads.",
 };
 
-// Outside the key form, so the reset after each submission leaves the choice as it was.
+/**
+ * The payment providers to choose from. The choice is part of the product form, so saving the form
+ * connects the chosen provider; with none chosen, the form saves the product alone.
+ */
 function ProviderChoice({
-  name,
   value,
   onChange,
+  onClear,
+  clearLabel,
 }: {
-  name: string;
-  value: ProviderId;
+  value: ProviderId | null;
   onChange: (provider: ProviderId) => void;
+  /** Leaves the provider unchosen again; without it, nothing offers that. */
+  onClear?: () => void;
+  clearLabel: string;
 }) {
   return (
     <fieldset className="grid gap-2">
@@ -233,7 +234,7 @@ function ProviderChoice({
           >
             <input
               type="radio"
-              name={name}
+              name="provider"
               value={id}
               checked={value === id}
               onChange={() => onChange(id)}
@@ -244,144 +245,91 @@ function ProviderChoice({
           </label>
         ))}
       </div>
+      {onClear && (
+        <button
+          type="button"
+          onClick={onClear}
+          className="mt-1 w-fit text-[13px] text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
+        >
+          {clearLabel}
+        </button>
+      )}
     </fieldset>
   );
 }
 
+const privacyLink = (
+  <Link href="/privacy#revenue" className="font-medium text-foreground underline">
+    How we handle payment provider data
+  </Link>
+);
+
 /**
- * Connecting a provider that asks the founder to approve access instead of pasting a key: a link
- * to the start of the OAuth flow, which is a plain navigation.
+ * What the chosen provider needs: the key, and the site or project for some, with the steps to
+ * make it. A provider connected through OAuth needs nothing here: its approval follows the save.
  */
-function OAuthConnect({
-  saasId,
+function ProviderFields({
   provider,
   replace,
-  ready,
+  oauthReady,
+  values,
 }: {
-  saasId: string;
   provider: ProviderId;
   replace: boolean;
-  ready: boolean;
-}) {
-  const { name } = PROVIDERS[provider];
-  const guide = guides[provider];
-  return (
-    <div className="grid gap-4">
-      <KeyGuide guide={guide} />
-      {ready ? (
-        <Actions>
-          <Button asChild>
-            {/* A plain link: a prefetch must never start a connection. */}
-            <a href={`/api/${provider}/connect?saas=${saasId}`}>
-              {replace ? `Connect another ${name} account` : `Connect with ${name}`}
-            </a>
-          </Button>
-        </Actions>
-      ) : (
-        <Notice>{name} is not set up on this server yet.</Notice>
-      )}
-      <p className="text-[13px] text-muted-foreground">
-        The access {name} grants is encrypted and only used to read {guide.reads}. You can remove it
-        in {name} at any time.{" "}
-        <Link href="/privacy#revenue" className="font-medium text-foreground underline">
-          How we handle payment provider data
-        </Link>
-      </p>
-    </div>
-  );
-}
-
-function ConnectForm({
-  saasId,
-  replace,
-  initial = "stripe",
-  oauthReady,
-  onStart,
-  onConnected,
-}: {
-  saasId: string;
-  replace: boolean;
-  initial?: ProviderId;
-  /** The providers connected through OAuth that this server is set up for. */
   oauthReady: ProviderId[];
-  /** When a connection is tried, such as to clear an earlier result shown elsewhere. */
-  onStart?: () => void;
-  /**
-   * The result of a first connection, which the section shows: this form gives way to the
-   * connected provider as soon as the page has the connection, and its own result goes with it.
-   */
-  onConnected?: (result: ActionState) => void;
+  /** What the form sent last, after a failed save. Keys are never among them. */
+  values?: Record<string, string>;
 }) {
-  const [provider, setProvider] = useState<ProviderId>(initial);
-  const [state, action] = useEditorAction(async (previous, form) => {
-    onStart?.();
-    const result = await connectProviderAction(saasId, provider, previous, form);
-    if (result.success) onConnected?.(result);
-    return result;
-  });
-  const group = useId();
   const { name, keyLabel, newKeyLabel, placeholder } = PROVIDERS[provider];
-  const account = providerAccount(provider);
   const guide = guides[provider];
   if (connectsWithOAuth(provider))
     return (
       <div className="grid gap-4">
-        <ProviderChoice name={group} value={provider} onChange={setProvider} />
-        <OAuthConnect
-          saasId={saasId}
-          provider={provider}
-          replace={replace}
-          ready={oauthReady.includes(provider)}
-        />
+        <KeyGuide guide={guide} />
+        {!oauthReady.includes(provider) && (
+          <Notice>{name} is not set up on this server yet.</Notice>
+        )}
+        <p className="text-[13px] text-muted-foreground">
+          The access {name} grants is encrypted and only used to read {guide.reads}. You can remove
+          it in {name} at any time. {privacyLink}
+        </p>
       </div>
     );
+  const account = providerAccount(provider);
   return (
     <div className="grid gap-4">
-      <ProviderChoice name={group} value={provider} onChange={setProvider} />
-      <form action={action} className="grid gap-4">
-        <KeyGuide guide={guide} />
-        {/* Names the provider in the submitted values, so a typed site or project returns only
-            to the provider it was typed for. */}
-        <input type="hidden" name="provider" value={provider} />
-        {account && (
-          <Field name="provider_account" label={account.label}>
-            <Input
-              key={provider}
-              id="provider_account"
-              name="provider_account"
-              autoComplete="off"
-              spellCheck={false}
-              placeholder={account.placeholder}
-              defaultValue={
-                state.values?.provider === provider ? state.values.provider_account : undefined
-              }
-              required
-            />
-          </Field>
-        )}
-        <Field name="provider_key" label={replace ? newKeyLabel : keyLabel}>
+      <KeyGuide guide={guide} />
+      {account && (
+        <Field name="provider_account" label={account.label}>
           <Input
-            id="provider_key"
-            name="provider_key"
-            type="password"
+            // Another provider's site or project never carries over.
+            key={provider}
+            id="provider_account"
+            name="provider_account"
             autoComplete="off"
             spellCheck={false}
-            placeholder={placeholder}
+            placeholder={account.placeholder}
+            defaultValue={values?.provider === provider ? values.provider_account : undefined}
             required
           />
         </Field>
-        <p className="text-[13px] text-muted-foreground">
-          The key is encrypted and only used to read {guide.reads}. You can revoke it in {name} at
-          any time.{" "}
-          <Link href="/privacy#revenue" className="font-medium text-foreground underline">
-            How we handle payment provider data
-          </Link>
-        </p>
-        <Feedback state={state} />
-        <Actions>
-          <Submit>{replace ? "Replace and verify" : "Connect and verify"}</Submit>
-        </Actions>
-      </form>
+      )}
+      <Field name="provider_key" label={replace ? newKeyLabel : keyLabel}>
+        <Input
+          key={provider}
+          id="provider_key"
+          name="provider_key"
+          type="password"
+          autoComplete="off"
+          spellCheck={false}
+          placeholder={placeholder}
+          required
+        />
+      </Field>
+      <p className="text-[13px] text-muted-foreground">
+        The key is encrypted and only used to read {guide.reads}. You can revoke it in {name} at any
+        time. {privacyLink}
+      </p>
     </div>
   );
 }
@@ -442,28 +390,28 @@ function RevenueFigures({
   );
 }
 
+// Inside the product form, so refreshing and disconnecting are buttons that call their actions
+// rather than forms of their own.
 function Connected({
   saasId,
   connection,
   snapshot,
-  oauthReady,
   outcome,
   onOutcome,
 }: {
   saasId: string;
   connection: RevenueConnection;
   snapshot: RevenueSnapshot | null;
-  oauthReady: ProviderId[];
-  /** The result of connecting, or of disconnecting, kept by the section. */
+  /** The result of a disconnection, kept by the section. */
   outcome: ActionState;
   onOutcome: (result: ActionState) => void;
 }) {
-  const [refreshState, refresh] = useActionState<ActionState>(async () => {
+  const [refreshState, refresh, refreshing] = useActionState<ActionState>(async () => {
     onOutcome({});
     return refreshRevenueAction(saasId);
   }, {});
   // Disconnecting removes this card once the page has caught up, so its result goes to the section.
-  const [disconnectState, disconnect] = useActionState<ActionState>(async () => {
+  const [disconnectState, disconnect, disconnecting] = useActionState<ActionState>(async () => {
     onOutcome({});
     const result = await disconnectProviderAction(saasId);
     if (result.success) onOutcome(result);
@@ -525,18 +473,29 @@ function Connected({
         )}
         <RevenueFigures connection={connection} snapshot={snapshot} />
         <div className="flex flex-wrap items-center justify-end gap-2 border-t p-4">
-          <form action={refresh}>
-            <Submit className="h-8 px-3 text-[13px]">Refresh now</Submit>
-          </form>
+          <Button
+            type="button"
+            size="sm"
+            disabled={refreshing}
+            onClick={() => startTransition(refresh)}
+          >
+            {refreshing ? "Refreshing..." : "Refresh now"}
+          </Button>
           {confirming ? (
-            <form action={disconnect} className="flex gap-2">
+            <>
               <Button type="button" variant="ghost" size="sm" onClick={() => setConfirming(false)}>
                 Keep connected
               </Button>
-              <Button type="submit" variant="destructive" size="sm">
-                Confirm disconnect
+              <Button
+                type="button"
+                variant="destructive"
+                size="sm"
+                disabled={disconnecting}
+                onClick={() => startTransition(disconnect)}
+              >
+                {disconnecting ? "Disconnecting..." : "Confirm disconnect"}
               </Button>
-            </form>
+            </>
           ) : (
             <Button type="button" variant="ghost" size="sm" onClick={() => setConfirming(true)}>
               Disconnect
@@ -547,78 +506,115 @@ function Connected({
       <Feedback state={outcome} />
       <Feedback state={refreshState} />
       <Feedback state={disconnectState} />
-      <details className="text-sm">
-        <summary className="cursor-pointer text-muted-foreground hover:text-foreground">
-          {oauth ? "Reconnect or change the provider" : "Replace the key or change the provider"}
-        </summary>
-        <div className="pt-4">
-          <ConnectForm
-            saasId={saasId}
-            replace
-            initial={provider}
-            oauthReady={oauthReady}
-            onStart={() => onOutcome({})}
-          />
-        </div>
-      </details>
     </div>
   );
 }
 
-export function RevenueConnectionSection({
+/**
+ * Revenue verification as a section of the product form, right after the product's details. It
+ * is optional: choosing a provider and pasting its key makes saving the form verify the revenue
+ * too. A connected product shows its figures here, with a way to replace the key.
+ */
+export function RevenueSection({
   saasId,
   connection,
   snapshot,
-  created,
   oauthReady,
-  oauthResult,
+  result,
+  provider,
+  onProvider,
+  values,
+  children,
 }: {
   saasId: string;
   connection: RevenueConnection | null;
   snapshot: RevenueSnapshot | null;
-  created: boolean;
   /** The providers connected through OAuth that this server is set up for. */
   oauthReady: ProviderId[];
-  /** How connecting through OAuth just went, in words for the founder. */
-  oauthResult: { tone: "success" | "error"; text: string } | null;
+  /** How the last connection went, in words for the founder. */
+  result: { tone: "success" | "error"; text: string } | null;
+  provider: ProviderId | null;
+  onProvider: (provider: ProviderId | null) => void;
+  /** What the form sent last, after a failed save. */
+  values?: Record<string, string>;
+  /** What visitors see of the figures. */
+  children: React.ReactNode;
 }) {
-  // What the first connection or a disconnection found, such as items that were not counted. The
-  // form that did it is replaced as soon as the page has the change, so the result is kept here.
+  // What a disconnection found. The card that did it is replaced as soon as the page has the
+  // change, so the result is kept here.
   const [outcome, setOutcome] = useState<ActionState>({});
+  // A replacement that failed comes back with its provider chosen, so its fields stay open.
+  const [replacing, setReplacing] = useState(() => !!connection && provider !== null);
+  const current = connection && isProviderId(connection.provider) ? connection.provider : null;
   return (
-    <div id="revenue" className="mt-2 scroll-mt-6 border-t pt-8">
-      <Section
-        title="Revenue verification"
-        description="MRR and paying customers are read from your payment provider with a read-only key and refreshed every hour, and revenue from all its payments every day. They cannot be typed in."
-      >
-        {created && !connection && (
-          <Notice tone="success">
-            Product added. Connect your payment provider to verify its revenue.
-          </Notice>
-        )}
-        {oauthResult && <Notice tone={oauthResult.tone}>{oauthResult.text}</Notice>}
-        {connection ? (
+    <Section
+      id="revenue"
+      title="Verified revenue"
+      tag="Optional"
+      description="Connect your payment provider with a read-only key to verify MRR and paying customers. Verified MRR is ranked on the leaderboard, and the link to your website is followed by search engines. You can also do this later."
+    >
+      {result && <Notice tone={result.tone}>{result.text}</Notice>}
+      {connection ? (
+        <>
           <Connected
             saasId={saasId}
             connection={connection}
             snapshot={snapshot}
-            oauthReady={oauthReady}
             outcome={outcome}
             onOutcome={setOutcome}
           />
-        ) : (
-          <>
-            <Feedback state={outcome} />
-            <ConnectForm
-              saasId={saasId}
+          {replacing ? (
+            <div className="grid gap-4">
+              <ProviderChoice
+                value={provider}
+                onChange={onProvider}
+                onClear={() => {
+                  onProvider(null);
+                  setReplacing(false);
+                }}
+                clearLabel="Keep the current connection"
+              />
+              {provider && (
+                <ProviderFields
+                  provider={provider}
+                  replace
+                  oauthReady={oauthReady}
+                  values={values}
+                />
+              )}
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={() => setReplacing(true)}
+              className="w-fit text-left text-sm text-muted-foreground hover:text-foreground"
+            >
+              {current && connectsWithOAuth(current)
+                ? "Reconnect or change the provider"
+                : "Replace the key or change the provider"}
+            </button>
+          )}
+        </>
+      ) : (
+        <div className="grid gap-4">
+          <Feedback state={outcome} />
+          <ProviderChoice
+            value={provider}
+            onChange={onProvider}
+            onClear={provider ? () => onProvider(null) : undefined}
+            clearLabel="Connect later"
+          />
+          {provider && (
+            <ProviderFields
+              provider={provider}
               replace={false}
               oauthReady={oauthReady}
-              onStart={() => setOutcome({})}
-              onConnected={setOutcome}
+              values={values}
             />
-          </>
-        )}
-      </Section>
-    </div>
+          )}
+        </div>
+      )}
+      {children}
+    </Section>
   );
 }

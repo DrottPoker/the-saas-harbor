@@ -19,10 +19,8 @@ import {
   confirmEmailLinkAction,
   finishSignupAction,
   saveEmailSettingsAction,
-  saveSaas,
 } from "@/app/actions";
 import {
-  categories,
   PASSWORD_MAX_LENGTH,
   PASSWORD_MIN_LENGTH,
   USERNAME_MAX_LENGTH,
@@ -30,15 +28,12 @@ import {
   type ActionState,
 } from "@/lib/domain";
 import { PROVIDER_NAMES, type OAuthProvider } from "@/lib/auth";
-import type { Saas, SaasSettings } from "@/lib/data";
-import { TECH_STACK_MAX, techGroups, technologies } from "@/lib/tech";
 import { cn } from "@/lib/utils";
 import { PersonAvatar, ProductLogo } from "./avatars";
 import { ProviderButton } from "./provider-button";
 import { Notice } from "./shell";
 import { Button } from "./ui/button";
-import { Input, fieldClasses } from "./ui/input";
-import { Textarea } from "./ui/textarea";
+import { Input } from "./ui/input";
 import { Label } from "./ui/label";
 
 export function Submit({
@@ -137,18 +132,34 @@ export function Share({
 }
 // Settings-style section: title and explanation on the left, fields on the right.
 export function Section({
+  id,
   title,
+  tag,
   description,
   children,
 }: {
+  /** An anchor, such as the one a redirect scrolls to. */
+  id?: string;
   title: string;
+  /** A word beside the title, such as Optional. */
+  tag?: string;
   description: string;
   children: React.ReactNode;
 }) {
   return (
-    <section className="grid gap-5 border-t py-8 first-of-type:border-t-0 first-of-type:pt-0 md:grid-cols-[13rem_minmax(0,1fr)] md:gap-10">
+    <section
+      id={id}
+      className="grid scroll-mt-6 gap-5 border-t py-8 first-of-type:border-t-0 first-of-type:pt-0 md:grid-cols-[13rem_minmax(0,1fr)] md:gap-10"
+    >
       <div>
-        <h2 className="font-semibold">{title}</h2>
+        <div className="flex flex-wrap items-center gap-2">
+          <h2 className="font-semibold">{title}</h2>
+          {tag && (
+            <span className="rounded-full border px-2 py-0.5 text-xs text-muted-foreground">
+              {tag}
+            </span>
+          )}
+        </div>
         <p className="mt-1 text-sm text-muted-foreground">{description}</p>
       </div>
       <div className="grid gap-5">{children}</div>
@@ -611,190 +622,6 @@ export function FinishSignupForm({ next }: { next?: string | null }) {
       <Submit className="h-10 w-full" pendingLabel="Creating your account...">
         Create account
       </Submit>
-    </form>
-  );
-}
-
-/**
- * The technologies a product is built with, one checkbox each, in groups that open when something
- * in them is ticked. `key` mounts the boxes again after a failed save, so they show what was sent.
- */
-function TechStackField({ stack }: { stack: string[] }) {
-  const chosen = new Set(stack);
-  return (
-    <div key={stack.join()} className="grid gap-2">
-      {techGroups.map((group) => {
-        const items = technologies.filter((tech) => tech.group === group);
-        return (
-          <details
-            key={group}
-            open={items.some((tech) => chosen.has(tech.slug))}
-            className="group rounded-lg border bg-surface shadow-control"
-          >
-            <summary className="cursor-pointer rounded-lg px-4 py-2.5 text-sm font-medium select-none hover:bg-subtle">
-              {group}
-            </summary>
-            <fieldset className="flex flex-wrap gap-1.5 border-t px-4 py-3">
-              <legend className="sr-only">{group}</legend>
-              {items.map((tech) => (
-                <label
-                  key={tech.slug}
-                  className="flex items-center gap-2 rounded-full border bg-background px-3 py-1 text-[13px] text-muted-foreground has-checked:border-foreground has-checked:text-foreground"
-                >
-                  <input
-                    type="checkbox"
-                    name="tech"
-                    value={tech.slug}
-                    defaultChecked={chosen.has(tech.slug)}
-                    className="size-3.5 accent-brand"
-                  />
-                  {tech.name}
-                </label>
-              ))}
-            </fieldset>
-          </details>
-        );
-      })}
-    </div>
-  );
-}
-
-export function SaasForm({
-  id,
-  saas,
-  settings,
-}: {
-  id: string;
-  saas?: Saas;
-  settings?: SaasSettings | null;
-}) {
-  const [state, action, pending] = useEditorAction(saveSaas);
-  // Figures are public unless hidden, so a new product starts with every box clear.
-  const hidden = (key: "mrr" | "revenue" | "customers" | "launch") =>
-    state.values ? !!state.values[`hide_${key}`] : settings ? !settings[`share_${key}`] : false;
-  const stack = state.values ? (state.values.tech?.split("\n") ?? []) : (saas?.tech_stack ?? []);
-  return (
-    // Submitted from onSubmit rather than the action prop, so React does not reset the form after
-    // a failed save: a reset would clear a chosen logo and the remove box, which no saved value
-    // brings back. A successful save leaves the page.
-    <form
-      onSubmit={(event) => {
-        event.preventDefault();
-        const data = new FormData(event.currentTarget);
-        startTransition(() => action(data));
-      }}
-    >
-      <input type="hidden" name="id" value={id} />
-      <Section
-        title="Product"
-        description="Shown on the public product page and in listings. Fields marked * are required."
-      >
-        <div className="grid gap-5 sm:grid-cols-2">
-          <Field name="name" label="Product name" required>
-            <Input
-              id="name"
-              name="name"
-              required
-              minLength={2}
-              maxLength={80}
-              defaultValue={state.values?.name ?? saas?.name}
-            />
-          </Field>
-          <Field name="category" label="Category">
-            <select
-              id="category"
-              name="category"
-              defaultValue={state.values?.category ?? saas?.category ?? "Productivity"}
-              className={cn(fieldClasses, "h-10")}
-            >
-              {categories.map((category) => (
-                <option key={category}>{category}</option>
-              ))}
-            </select>
-          </Field>
-        </div>
-        <Field name="tagline" label="Tagline" hint="One sentence, up to 140 characters." required>
-          <Input
-            id="tagline"
-            name="tagline"
-            required
-            minLength={5}
-            maxLength={140}
-            defaultValue={state.values?.tagline ?? saas?.tagline}
-            placeholder="What does it help people do?"
-          />
-        </Field>
-        <Field name="description" label="Description" required>
-          <Textarea
-            id="description"
-            name="description"
-            required
-            minLength={20}
-            maxLength={5000}
-            rows={6}
-            defaultValue={state.values?.description ?? saas?.description}
-            placeholder="Who it is for, what it does, and what makes it different."
-          />
-        </Field>
-        <Field name="website" label="Website" required>
-          <Input
-            id="website"
-            name="website"
-            type="url"
-            required
-            maxLength={500}
-            defaultValue={state.values?.website ?? saas?.website}
-            placeholder="https://"
-          />
-        </Field>
-      </Section>
-      <Section title="Logo" description="A square logo works best.">
-        <ImageField label="Upload logo" current={saas?.logo_path} name={saas?.name ?? ""} />
-      </Section>
-      <Section
-        title="Tech stack"
-        description={`What the product is built with, up to ${TECH_STACK_MAX}. Shown on its page, with links to other products built with the same.`}
-      >
-        <TechStackField stack={stack} />
-      </Section>
-      <Section
-        title="Visibility"
-        description="Revenue and customers come from your payment provider and are public once verified, unless you hide them. Public MRR is ranked on the leaderboard, and public revenue in the revenue rankings."
-      >
-        <div className="grid gap-2.5">
-          <Share name="hide_mrr" label="Hide verified MRR" checked={hidden("mrr")} />
-          <Share
-            name="hide_revenue"
-            label="Hide verified revenue for the last 30 days, 12 months and all time"
-            checked={hidden("revenue")}
-          />
-          <Share
-            name="hide_customers"
-            label="Hide paying customer count"
-            checked={hidden("customers")}
-          />
-        </div>
-        <div className="grid gap-2.5 sm:max-w-xs">
-          <Field name="launched_on" label="Launch date">
-            <Input
-              id="launched_on"
-              name="launched_on"
-              type="date"
-              defaultValue={state.values?.launched_on ?? settings?.launched_on ?? ""}
-            />
-          </Field>
-          <Share name="hide_launch" label="Hide launch date" checked={hidden("launch")} />
-        </div>
-      </Section>
-      <div className="grid gap-4">
-        <Feedback state={state} />
-        <Actions>
-          <Button asChild variant="ghost">
-            <Link href="/dashboard">Cancel</Link>
-          </Button>
-          <Submit pending={pending}>{saas ? "Save changes" : "Add SaaS"}</Submit>
-        </Actions>
-      </div>
     </form>
   );
 }

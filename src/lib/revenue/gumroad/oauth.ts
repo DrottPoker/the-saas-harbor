@@ -18,31 +18,6 @@ const SCOPE = "view_sales";
 export const GUMROAD_FLOW_COOKIE = "harbor_gumroad_flow";
 export const GUMROAD_FLOW_SECONDS = 600;
 
-/**
- * The cookie that carries the outcome back to the product's editor for a minute: a message
- * written for the founder, never text from the address, which anyone could craft.
- */
-export const GUMROAD_RESULT_COOKIE = "harbor_gumroad_result";
-export type GumroadResult = { saasId: string; tone: "success" | "error"; text: string };
-
-export function encodeGumroadResult(result: GumroadResult) {
-  return Buffer.from(JSON.stringify(result)).toString("base64url");
-}
-
-export function decodeGumroadResult(value: string | undefined): GumroadResult | null {
-  if (!value) return null;
-  try {
-    const result = JSON.parse(Buffer.from(value, "base64url").toString("utf8")) as GumroadResult;
-    return typeof result.saasId === "string" &&
-      (result.tone === "success" || result.tone === "error") &&
-      typeof result.text === "string"
-      ? result
-      : null;
-  } catch {
-    return null;
-  }
-}
-
 /** This site's OAuth application with Gumroad, or null when it is not set up. */
 export function gumroadClient() {
   const id = process.env.GUMROAD_CLIENT_ID;

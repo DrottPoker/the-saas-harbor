@@ -12,10 +12,13 @@ import {
   type GumroadSubscriber,
 } from "../../src/lib/revenue/gumroad/mrr";
 import {
+  connectionResultPath,
+  decodeConnectionResult,
+  encodeConnectionResult,
+} from "../../src/lib/revenue/connection-result";
+import {
   decodeGumroadFlow,
-  decodeGumroadResult,
   encodeGumroadFlow,
-  encodeGumroadResult,
   gumroadAuthorizeUrl,
   newGumroadFlow,
   readOnlyScopes,
@@ -215,12 +218,20 @@ describe("Gumroad OAuth", () => {
     expect(decodeGumroadFlow(encodeGumroadFlow(flow))).toEqual(flow);
     expect(decodeGumroadFlow("not-json")).toBeNull();
     expect(decodeGumroadFlow(Buffer.from('{"state":""}').toString("base64url"))).toBeNull();
-    const result = { saasId: "saas-1", tone: "error" as const, text: "Try again." };
-    expect(decodeGumroadResult(encodeGumroadResult(result))).toEqual(result);
-    expect(
-      decodeGumroadResult(
-        Buffer.from('{"saasId":"a","tone":"bold","text":"x"}').toString("base64url"),
-      ),
-    ).toBeNull();
+    const result = {
+      saasId: "saas-1",
+      provider: "gumroad" as const,
+      tone: "error" as const,
+      text: "Try again.",
+      at: 1,
+    };
+    expect(decodeConnectionResult(encodeConnectionResult(result))).toEqual(result);
+    const crafted = (value: object) =>
+      decodeConnectionResult(Buffer.from(JSON.stringify(value)).toString("base64url"));
+    expect(crafted({ ...result, tone: "bold" })).toBeNull();
+    expect(crafted({ ...result, provider: "paypal" })).toBeNull();
+    expect(crafted({ ...result, at: "now" })).toBeNull();
+    expect(decodeConnectionResult("not-json")).toBeNull();
+    expect(connectionResultPath("saas-1")).toBe("/dashboard/saas/saas-1?connection=1#revenue");
   });
 });

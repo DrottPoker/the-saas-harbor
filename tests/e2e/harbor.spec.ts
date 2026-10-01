@@ -782,15 +782,19 @@ test("registration, email confirmation, profile and SaaS editing, storage, priva
   ).toBeVisible();
   expect(await logo.evaluate((input: HTMLInputElement) => input.files?.[0]?.name)).toBe("logo.png");
   await website.fill("https://example.com");
-  await page.getByRole("button", { name: "Add SaaS", exact: true }).click();
-  // New products continue straight to Stripe verification.
-  await expect(page).toHaveURL(/\/dashboard\/saas\/[0-9a-f-]{36}\?created=1/);
-  productId = new URL(page.url()).pathname.split("/").at(-1)!;
-  await expect(
-    page.getByText("Product added. Connect your payment provider to verify its revenue."),
-  ).toBeVisible();
+
+  // The payment provider is part of the same form, and optional: choosing one asks for its key,
+  // and Connect later leaves it for another time.
+  const revenue = page.locator("#revenue");
+  await expect(revenue.getByText("Optional", { exact: true })).toBeVisible();
+  await revenue.getByRole("radio", { name: "Stripe" }).check();
+  await expect(page.getByRole("button", { name: "Add SaaS and verify revenue" })).toBeVisible();
+  await revenue.getByRole("button", { name: "Connect later" }).click();
+  await expect(revenue.getByLabel("Restricted key", { exact: true })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Add SaaS", exact: true })).toBeVisible();
 
   // Stripe's key form opens with the read permissions filled in.
+  await revenue.getByRole("radio", { name: "Stripe" }).check();
   await expect(
     page.getByRole("link", { name: "Create a read-only key in Stripe" }),
   ).toHaveAttribute(
@@ -798,24 +802,33 @@ test("registration, email confirmation, profile and SaaS editing, storage, priva
     "https://dashboard.stripe.com/apikeys/create?name=The+SaaS+Harbor&permissions%5B%5D=rak_subscription_read&permissions%5B%5D=rak_invoice_read&permissions%5B%5D=rak_coupon_read&permissions%5B%5D=rak_plan_read&permissions%5B%5D=rak_charge_read&permissions%5B%5D=rak_checkout_session_read&permissions%5B%5D=rak_dispute_read",
   );
 
-  // Revenue can only come from a read-only Stripe key, and the key is never echoed back.
-  const stripeKey = page.getByLabel("Restricted key", { exact: true });
-  const connect = page.getByRole("button", { name: "Connect and verify" });
+  // Revenue can only come from a read-only Stripe key. A key in the wrong form saves nothing.
+  const stripeKey = revenue.getByLabel("Restricted key", { exact: true });
   await stripeKey.fill(`sk_live_${"x".repeat(24)}`);
-  await connect.click();
-  await expect(page.getByRole("alert").filter({ hasText: "Use a restricted key" })).toBeVisible();
-  await expect(stripeKey).toHaveValue("");
-  await stripeKey.fill("rk_test_harbornoperm00001");
-  await connect.click();
+  await page.getByRole("button", { name: "Add SaaS and verify revenue" }).click();
   await expect(
-    page.getByRole("alert").filter({ hasText: "missing a read permission" }),
+    revenue.getByRole("alert").filter({ hasText: "Use a restricted key" }),
   ).toBeVisible();
+  await expect(page).toHaveURL(/\/dashboard\/saas\/new$/);
+  // A key the provider refuses still adds the product, whose editor says what went wrong, with
+  // Stripe chosen for another key. The key is never written back.
+  await stripeKey.fill("rk_test_harbornoperm00001");
+  await page.getByRole("button", { name: "Add SaaS and verify revenue" }).click();
+  await expect(page).toHaveURL(/\/dashboard\/saas\/[0-9a-f-]{36}\?connection=1/);
+  productId = new URL(page.url()).pathname.split("/").at(-1)!;
+  await expect(
+    revenue.getByRole("alert").filter({
+      hasText: /^The product was added, but Stripe was not connected\. .*missing a read permission/,
+    }),
+  ).toBeVisible();
+  await expect(revenue.getByRole("radio", { name: "Stripe" })).toBeChecked();
+  await expect(stripeKey).toHaveValue("");
   await stripeKey.fill("rk_test_harborfixture0001");
-  await connect.click();
-  const revenue = page.locator("#revenue");
+  await page.getByRole("button", { name: "Save and verify revenue" }).click();
   await expect(revenue.getByText("Connected to Stripe")).toBeVisible();
-  // The answer stays after the form gives way to the connected provider.
+  // The answer shows with the connected provider.
   await expect(revenue.getByRole("status").filter({ hasText: "Stripe connected." })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Save changes" })).toBeVisible();
   await expect(revenue.getByText("Test mode")).toBeVisible();
   await expect(revenue.getByText("$104", { exact: true })).toBeVisible();
   await expect(revenue.getByText("3", { exact: true })).toBeVisible();
@@ -1160,11 +1173,11 @@ test("registration, email confirmation, profile and SaaS editing, storage, priva
   // One Stripe account can verify one product only.
   await page.goto("/dashboard/saas/new");
   await fillProduct(page, `Second ${run}`);
-  await page.getByRole("button", { name: "Add SaaS", exact: true }).click();
-  await expect(page).toHaveURL(/created=1/);
-  const secondId = new URL(page.url()).pathname.split("/").at(-1)!;
+  await page.locator("#revenue").getByRole("radio", { name: "Stripe" }).check();
   await page.getByLabel("Restricted key", { exact: true }).fill("rk_test_harborfixture0002");
-  await page.getByRole("button", { name: "Connect and verify" }).click();
+  await page.getByRole("button", { name: "Add SaaS and verify revenue" }).click();
+  await expect(page).toHaveURL(/connection=1/);
+  const secondId = new URL(page.url()).pathname.split("/").at(-1)!;
   await expect(
     page.getByRole("alert").filter({ hasText: "already verifies another SaaS" }),
   ).toBeVisible();
@@ -1180,7 +1193,7 @@ test("registration, email confirmation, profile and SaaS editing, storage, priva
   await page.goto(`/dashboard/saas/${productId}`);
   await page.getByRole("button", { name: "Disconnect" }).click();
   await page.getByRole("button", { name: "Confirm disconnect" }).click();
-  await expect(page.getByLabel("Restricted key", { exact: true })).toBeVisible();
+  await expect(page.locator("#revenue").getByRole("radio", { name: "Stripe" })).toBeVisible();
   await expect(
     page.getByRole("status").filter({ hasText: "Disconnected. The stored key was deleted." }),
   ).toBeVisible();
@@ -1202,8 +1215,9 @@ test("registration, email confirmation, profile and SaaS editing, storage, priva
     "noopener nofollow",
   );
   await page.goto(`/dashboard/saas/${secondId}`);
+  await page.locator("#revenue").getByRole("radio", { name: "Stripe" }).check();
   await page.getByLabel("Restricted key", { exact: true }).fill("rk_test_harborfixture0002");
-  await page.getByRole("button", { name: "Connect and verify" }).click();
+  await page.getByRole("button", { name: "Save and verify revenue" }).click();
   await expect(page.locator("#revenue").getByText("Connected to Stripe")).toBeVisible();
   // This key cannot read invoices, so MRR is verified without history and the maker is told why.
   await expect(page.getByText(/No revenue history yet/)).toBeVisible();
@@ -2847,31 +2861,36 @@ test("founders verify revenue through Paddle, Polar and Dodo Payments", async ({
   if (error || !created.user) throw new Error("Unable to create the provider maker.");
   userIds.push(created.user.id);
   await login(page, address, secret);
-  await page.goto("/dashboard/saas/new");
+  const revenue = page.locator("#revenue");
+  // The product form with a provider's key fields open, in both themes.
+  for (const theme of ["dark", "light"] as const) {
+    await setThemeCookie(page, theme);
+    await page.goto("/dashboard/saas/new");
+    await revenue.getByRole("radio", { name: "Paddle" }).check();
+    await expectAccessible(page);
+  }
   await fillProduct(page, `Providers ${run}`);
   await hideFigures(page);
-  await page.getByRole("button", { name: "Add SaaS", exact: true }).click();
-  await expect(page).toHaveURL(/created=1/);
+
+  // Paddle: each subscription is valued by its latest full charge, without tax. The product and
+  // its revenue are saved together.
+  await expect(revenue.getByText("Give it Read for Subscriptions and Transactions")).toBeVisible();
+  await revenue.getByLabel("API key", { exact: true }).fill(`pdl_live_apikey_${"a".repeat(50)}`);
+  await page.getByRole("button", { name: "Add SaaS and verify revenue" }).click();
+  await expect(
+    revenue.getByRole("alert").filter({ hasText: "Paste a Paddle API key" }),
+  ).toBeVisible();
+  await revenue.getByLabel("API key", { exact: true }).fill(PADDLE_KEYS.one);
+  await page.getByRole("button", { name: "Add SaaS and verify revenue" }).click();
+  await expect(revenue.getByText("Connected to Paddle")).toBeVisible();
   const id = new URL(page.url()).pathname.split("/").at(-1)!;
-  const revenue = page.locator("#revenue");
+  await expect(revenue.getByText("$182.50", { exact: true })).toBeVisible();
+  // The editor of a connected product, in both themes.
   for (const theme of ["dark", "light"] as const) {
     await setThemeCookie(page, theme);
     await page.reload();
     await expectAccessible(page);
   }
-
-  // Paddle: each subscription is valued by its latest full charge, without tax.
-  await revenue.getByRole("radio", { name: "Paddle" }).check();
-  await expect(revenue.getByText("Give it Read for Subscriptions and Transactions")).toBeVisible();
-  await revenue.getByLabel("API key", { exact: true }).fill(`pdl_live_apikey_${"a".repeat(50)}`);
-  await revenue.getByRole("button", { name: "Connect and verify" }).click();
-  await expect(
-    revenue.getByRole("alert").filter({ hasText: "Paste a Paddle API key" }),
-  ).toBeVisible();
-  await revenue.getByLabel("API key", { exact: true }).fill(PADDLE_KEYS.one);
-  await revenue.getByRole("button", { name: "Connect and verify" }).click();
-  await expect(revenue.getByText("Connected to Paddle")).toBeVisible();
-  await expect(revenue.getByText("$182.50", { exact: true })).toBeVisible();
   await page.goto(`/saas/providers-${run}`);
   // MRR is not shared, so visitors see Not shared and no verification details.
   await expect(page.getByText(/Verified with Paddle/)).toHaveCount(0);
@@ -2882,17 +2901,18 @@ test("founders verify revenue through Paddle, Polar and Dodo Payments", async ({
   await revenue.getByText("Replace the key or change the provider").click();
   await revenue.getByRole("radio", { name: "Polar" }).check();
   await revenue.getByLabel("New organization access token", { exact: true }).fill(POLAR_TOKENS.one);
-  await revenue.getByRole("button", { name: "Replace and verify" }).click();
+  await page.getByRole("button", { name: "Save and verify revenue" }).click();
   await expect(revenue.getByText("Connected to Polar")).toBeVisible();
   await expect(
     revenue.getByText(/^Polar connected\. Verified MRR: \$59\.17 from 3 paying customers\./),
   ).toBeVisible();
   await expect(revenue.getByText("$59.17", { exact: true })).toBeVisible();
 
-  // Dodo Payments, from the same open form: MRR without history, and the maker is told why.
+  // Dodo Payments: MRR without history, and the founder is told why.
+  await revenue.getByText("Replace the key or change the provider").click();
   await revenue.getByRole("radio", { name: "Dodo Payments" }).check();
   await revenue.getByLabel("New API key", { exact: true }).fill(DODO_KEYS.one);
-  await revenue.getByRole("button", { name: "Replace and verify" }).click();
+  await page.getByRole("button", { name: "Save and verify revenue" }).click();
   await expect(revenue.getByText("Connected to Dodo Payments")).toBeVisible();
   await expect(revenue.getByText("$50", { exact: true })).toBeVisible();
   await expect(
@@ -2936,9 +2956,6 @@ test("founders verify revenue through Creem, Chargebee, Whop and RevenueCat", as
   await page.goto("/dashboard/saas/new");
   await fillProduct(page, `More providers ${run}`);
   await hideFigures(page);
-  await page.getByRole("button", { name: "Add SaaS", exact: true }).click();
-  await expect(page).toHaveURL(/created=1/);
-  const id = new URL(page.url()).pathname.split("/").at(-1)!;
   const revenue = page.locator("#revenue");
 
   // Creem: subscriptions valued by their products, without included tax.
@@ -2947,11 +2964,13 @@ test("founders verify revenue through Creem, Chargebee, Whop and RevenueCat", as
     revenue.getByRole("link", { name: "Open Creem's developer settings" }),
   ).toBeVisible();
   await revenue.getByLabel("API key", { exact: true }).fill(CREEM_KEYS.one);
-  await revenue.getByRole("button", { name: "Connect and verify" }).click();
+  await page.getByRole("button", { name: "Add SaaS and verify revenue" }).click();
   await expect(revenue.getByText("Connected to Creem")).toBeVisible();
+  const id = new URL(page.url()).pathname.split("/").at(-1)!;
   await expect(revenue.getByText("$35.42", { exact: true })).toBeVisible();
 
-  // Chargebee asks for the site as well, and keeps it when the key is wrong.
+  // Chargebee asks for the site as well, and keeps it when the key is wrong, with the rest of the
+  // form, which was saved. The connection that was there stays until a key is accepted.
   await revenue.getByText("Replace the key or change the provider").click();
   await revenue.getByRole("radio", { name: "Chargebee" }).check();
   await revenue
@@ -2960,15 +2979,19 @@ test("founders verify revenue through Creem, Chargebee, Whop and RevenueCat", as
   await revenue
     .getByLabel("New read-only API key", { exact: true })
     .fill("test_wrongkey0000000000");
-  await revenue.getByRole("button", { name: "Replace and verify" }).click();
+  await page.getByRole("button", { name: "Save and verify revenue" }).click();
   await expect(
-    revenue.getByRole("alert").filter({ hasText: "Chargebee rejected the key" }),
+    revenue.getByRole("alert").filter({
+      hasText:
+        /^Your changes were saved, but Chargebee was not connected\. Chargebee rejected the key/,
+    }),
   ).toBeVisible();
   await expect(revenue.getByLabel("Site", { exact: true })).toHaveValue(
     `https://${CHARGEBEE.site}.chargebee.com/`,
   );
+  await expect(revenue.getByText("Connected to Creem")).toBeVisible();
   await revenue.getByLabel("New read-only API key", { exact: true }).fill(CHARGEBEE.key);
-  await revenue.getByRole("button", { name: "Replace and verify" }).click();
+  await page.getByRole("button", { name: "Save and verify revenue" }).click();
   await expect(revenue.getByText("Connected to Chargebee")).toBeVisible();
   await expect(
     revenue.getByText(
@@ -2978,24 +3001,26 @@ test("founders verify revenue through Creem, Chargebee, Whop and RevenueCat", as
   await expect(revenue.getByText(`Key ${CHARGEBEE.site} · …ebee`)).toBeVisible();
 
   // Whop refuses a key that can do more than read.
+  await revenue.getByText("Replace the key or change the provider").click();
   await revenue.getByRole("radio", { name: "Whop" }).check();
   await revenue.getByLabel("New API key", { exact: true }).fill(WHOP_KEYS.writer);
-  await revenue.getByRole("button", { name: "Replace and verify" }).click();
+  await page.getByRole("button", { name: "Save and verify revenue" }).click();
   await expect(
     revenue.getByRole("alert").filter({ hasText: "The key can do more than read" }),
   ).toBeVisible();
   await revenue.getByLabel("New API key", { exact: true }).fill(WHOP_KEYS.one);
-  await revenue.getByRole("button", { name: "Replace and verify" }).click();
+  await page.getByRole("button", { name: "Save and verify revenue" }).click();
   await expect(revenue.getByText("Connected to Whop")).toBeVisible();
   await expect(revenue.getByText("$36.67", { exact: true })).toBeVisible();
 
   // RevenueCat reads its charts, and the product page names it.
+  await revenue.getByText("Replace the key or change the provider").click();
   await revenue.getByRole("radio", { name: "RevenueCat" }).check();
   await revenue
     .getByLabel("Project ID", { exact: true })
     .fill(`https://app.revenuecat.com/projects/${REVENUECAT.project}/overview`);
   await revenue.getByLabel("New secret API key", { exact: true }).fill(REVENUECAT.keys.one);
-  await revenue.getByRole("button", { name: "Replace and verify" }).click();
+  await page.getByRole("button", { name: "Save and verify revenue" }).click();
   await expect(revenue.getByText("Connected to RevenueCat")).toBeVisible();
   await expect(revenue.getByText("$150", { exact: true })).toBeVisible();
   await expect(revenue.getByText("42", { exact: true })).toBeVisible();
@@ -3052,8 +3077,11 @@ test("founders verify their website's domain with a DNS record", async ({ page }
   await fillProduct(page, `Domain ${run}`);
   await page.getByLabel("Website", { exact: true }).fill(`https://www.${domain}/`);
   await page.getByRole("button", { name: "Add SaaS", exact: true }).click();
-  await expect(page).toHaveURL(/created=1/);
-  const id = new URL(page.url()).pathname.split("/").at(-1)!;
+  // Without a payment provider, a new product returns to the dashboard.
+  await expect(page).toHaveURL(/\/dashboard\?added=/);
+  await expect(page.getByRole("status").filter({ hasText: "Product added." })).toBeVisible();
+  const id = new URL(page.url()).searchParams.get("added")!;
+  await page.goto(`/dashboard/saas/${id}`);
   const productPath = `/saas/domain-${run}`;
   const section = page.locator("#domain");
   await expect(section.getByText(`${domain} is not verified yet.`)).toBeVisible();
@@ -3168,15 +3196,12 @@ test("founders share revenue from all payments, and visitors rank products by it
   const name = `Revenue ${run}`;
   await fillProduct(page, name);
   await hideFigures(page);
-  await page.getByRole("button", { name: "Add SaaS", exact: true }).click();
-  await expect(page).toHaveURL(/created=1/);
-  const id = new URL(page.url()).pathname.split("/").at(-1)!;
   const revenue = page.locator("#revenue");
-
   await revenue.getByRole("radio", { name: "Paddle" }).check();
   await revenue.getByLabel("API key", { exact: true }).fill(PADDLE_KEYS.one);
-  await revenue.getByRole("button", { name: "Connect and verify" }).click();
+  await page.getByRole("button", { name: "Add SaaS and verify revenue" }).click();
   await expect(revenue.getByText("Connected to Paddle")).toBeVisible();
+  const id = new URL(page.url()).pathname.split("/").at(-1)!;
   // Payments are read after connecting, not while the founder waits.
   await expect(revenue.getByText("Not read yet", { exact: true })).toHaveCount(3);
   await expect(
@@ -3356,25 +3381,21 @@ test("founders connect Gumroad by approving read access to their sales", async (
   if (error || !created.user) throw new Error("Unable to create the Gumroad maker.");
   userIds.push(created.user.id);
   await login(page, address, secret);
-  await page.goto("/dashboard/saas/new");
-  await fillProduct(page, `Gumroad ${run}`);
-  await page.getByRole("button", { name: "Add SaaS", exact: true }).click();
-  await expect(page).toHaveURL(/created=1/);
-  const id = new URL(page.url()).pathname.split("/").at(-1)!;
   const revenue = page.locator("#revenue");
-
-  // There is no token to paste, only access to approve.
-  await revenue.getByRole("radio", { name: "Gumroad" }).check();
-  await expect(revenue.getByText(/That is the only access asked for/)).toBeVisible();
-  await expect(revenue.locator("input:not([type=radio])")).toHaveCount(0);
   for (const theme of ["dark", "light"] as const) {
     await setThemeCookie(page, theme);
-    await page.reload();
+    await page.goto("/dashboard/saas/new");
     await revenue.getByRole("radio", { name: "Gumroad" }).check();
     await expectAccessible(page);
   }
-  await revenue.getByRole("link", { name: "Connect with Gumroad" }).click();
-  await expect(page).toHaveURL(new RegExp(`/dashboard/saas/${id}\\?gumroad=1`));
+
+  // There is no token to paste, only access to approve, which follows the save.
+  await expect(revenue.getByText(/That is the only access asked for/)).toBeVisible();
+  await expect(revenue.locator("input:not([type=radio]):not([type=checkbox])")).toHaveCount(0);
+  await fillProduct(page, `Gumroad ${run}`);
+  await page.getByRole("button", { name: "Add SaaS and connect Gumroad" }).click();
+  await expect(page).toHaveURL(/\/dashboard\/saas\/[0-9a-f-]{36}\?connection=1/);
+  const id = new URL(page.url()).pathname.split("/").at(-1)!;
   await expect(
     revenue.getByText(
       "Gumroad connected. Verified MRR: $50 from 3 paying customers. 1 subscriber without a recent charge was not counted.",

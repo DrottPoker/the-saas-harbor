@@ -8,6 +8,14 @@ The first release includes accounts, email confirmation and recovery, public mak
 
 Makers can message each other privately (see Messages below), and report products, profiles and messages to the admins, who decide in an admin panel (see Reports and moderation below). They get emails about unread messages and about decisions (see Email notifications below). Other forms of connection, such as following or contact lists, are not implemented.
 
+## Payment provider in the product form 2026-10-01
+
+At the owner's request, adding and editing a product is one form: connecting the payment provider is no longer a second step after saving. A Verified revenue section, marked Optional, follows the product's details, with the provider chips, the steps for the chosen provider's key and the key fields, and the Hide boxes for the figures under Public figures; the launch date moved to the product's details. Nothing is chosen at first, and Connect later clears a choice. The save button says what it does: Add SaaS, Add SaaS and verify revenue, or Add SaaS and connect Gumroad (Save changes and Save and ... when editing).
+
+`saveSaas` checks the provider and the key's form before saving anything, saves the product, then verifies the key (`src/lib/revenue/connect.ts`). A key the provider refuses never loses the product: a new product's editor opens with the reason and the provider chosen again, and an existing product's editor keeps the form, site and key included, and scrolls to the reason. Gumroad's approval starts after the save as a plain navigation. The outcome cookie is shared by keys and Gumroad (`connection-result.ts`, `?connection=1` instead of `?gumroad=1`). A connected product's figures, Refresh now and Disconnect show in the same section; replacing the key goes through the form's save. `connectProviderAction` is gone. A new product saved without a provider returns to the dashboard with Product added.
+
+`npm run check` (469 unit tests) and `npm run test:e2e` (19 tests, with the Axe scans of the form with key fields open and of a connected product's editor in both themes) pass. The browser test server logs `The destination stream closed early` many times, in tests that do not touch the form as well; the tests pass.
+
 ## The rest of the project review 2026-10-01
 
 At the owner's request, the remaining findings of the review were fixed as well:

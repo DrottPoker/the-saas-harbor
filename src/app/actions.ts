@@ -1,6 +1,6 @@
 "use server";
 
-import { redirect, RedirectType } from "next/navigation";
+import { redirect, RedirectType, unstable_rethrow } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { deleteAccount, deleteSignedInAccount } from "@/lib/account";
@@ -24,6 +24,17 @@ import { addressAcceptsMail } from "@/lib/email-domain";
 import { sendQueuedEmails } from "@/lib/email/outbox";
 import { announceProduct, announceRemovedProduct } from "@/lib/indexnow";
 import { termsUpdated } from "@/lib/legal";
+import { PROVIDERS } from "@/lib/revenue/catalog";
+import {
+  beginRevenueCheck,
+  chosenConnection,
+  keepConnectionResult,
+  type ChosenConnection,
+} from "@/lib/revenue/connect";
+import { connectionResultPath } from "@/lib/revenue/connection-result";
+import { makerMessage } from "@/lib/revenue/errors";
+import { summary } from "@/lib/revenue/summary";
+import { connectProvider } from "@/lib/revenue/sync";
 import { siteUrl } from "@/lib/seo";
 import { sendQueuedTelegramAlerts } from "@/lib/telegram/outbox";
 import {
@@ -423,8 +434,25 @@ export async function saveProfile(_state: ActionState, form: FormData): Promise<
   return unsaved ? { error: unsaved } : { success: "Profile saved." };
 }
 
-export async function saveSaas(_state: ActionState, form: FormData): Promise<ActionState> {
+export type SaveSaasState = ActionState & {
+  /** Where the browser goes next when the action cannot redirect there itself. */
+  location?: string;
+  /** Why the chosen payment provider was not connected, shown at the revenue section. */
+  connectionError?: string;
+};
+
+// Saves a product, and connects the payment provider chosen in the same form, if any. A key is
+// verified with the provider after the product is saved, so a product is never lost to a key
+// the provider refuses. The editor shows how connecting went: a new product's editor through a
+// cookie, and an existing product's editor on the spot when it failed, with the form as it was.
+export async function saveSaas(_state: SaveSaasState, form: FormData): Promise<SaveSaasState> {
   const { user, client } = await requireUser();
+  let chosen: ChosenConnection | null;
+  try {
+    chosen = chosenConnection(form);
+  } catch (error) {
+    return { connectionError: makerMessage(error) };
+  }
   let uploaded: string | null = null;
   let savedId: string;
   let existed: boolean;
@@ -485,11 +513,44 @@ export async function saveSaas(_state: ActionState, form: FormData): Promise<Act
   // Search engines that take IndexNow notices hear about the page at once.
   announceProduct(client, savedId, previousSlug);
   if (!existed) sendQueuedTelegramAlerts();
-  // Sharing MRR can reach a milestone, whose email goes out now rather than on the next run.
+  let connectionError: string | null = null;
+  if (chosen?.key) {
+    const { name } = PROVIDERS[chosen.provider];
+    try {
+      await beginRevenueCheck(client, savedId, false);
+      const result = await connectProvider(savedId, chosen.provider, chosen.key);
+      await keepConnectionResult({
+        saasId: savedId,
+        provider: chosen.provider,
+        tone: "success",
+        text: `${name} connected. ${summary(result)}`,
+      });
+    } catch (error) {
+      unstable_rethrow(error);
+      connectionError = `${existed ? "Your changes were saved" : "The product was added"}, but ${name} was not connected. ${makerMessage(error)}`;
+      if (!existed)
+        await keepConnectionResult({
+          saasId: savedId,
+          provider: chosen.provider,
+          tone: "error",
+          text: connectionError,
+        });
+    }
+  }
+  // Sharing MRR or a verification can reach a milestone, whose email goes out now rather than on
+  // the next run.
   sendQueuedEmails();
   revalidatePath("/", "layout");
-  // New products continue to revenue verification; edits return to the dashboard.
+  // Approving access through OAuth starts with a plain navigation, which the browser makes.
+  if (chosen && !chosen.key) return { location: `/api/${chosen.provider}/connect?saas=${savedId}` };
+  // An existing product's editor keeps the form, so the key or the site can be corrected there.
+  if (existed && connectionError) return { connectionError };
+  // A connection shows its result in the editor; anything else returns to the dashboard.
   redirect(
-    existed ? `/dashboard?saved=${savedId}` : `/dashboard/saas/${savedId}?created=1#revenue`,
+    chosen
+      ? connectionResultPath(savedId)
+      : existed
+        ? `/dashboard?saved=${savedId}`
+        : `/dashboard?added=${savedId}`,
   );
 }

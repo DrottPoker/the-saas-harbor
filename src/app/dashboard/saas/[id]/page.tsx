@@ -1,22 +1,18 @@
 import { cookies } from "next/headers";
 import { notFound, redirect } from "next/navigation";
 import { z } from "zod";
-import { SaasForm } from "@/components/forms";
 import { BackLink } from "@/components/back-link";
 import { BadgeEmbed } from "@/components/badge-embed";
 import { DeleteProduct } from "@/components/delete-forms";
 import { DomainVerification } from "@/components/domain-verification";
 import { ModerationNotice } from "@/components/moderation-notice";
+import { SaasForm } from "@/components/saas-form";
 import { Notice, PageHeader, Shell } from "@/components/shell";
-import { RevenueConnectionSection } from "@/components/revenue-connection";
 import { CONNECTION_COLUMNS, type RevenueConnection } from "@/lib/data";
 import { RECORD_LABEL, recordName, recordValue, websiteDomain } from "@/lib/domain-verification";
 import { PRODUCT_LIMIT } from "@/lib/moderation";
-import {
-  decodeGumroadResult,
-  GUMROAD_RESULT_COOKIE,
-  gumroadClient,
-} from "@/lib/revenue/gumroad/oauth";
+import { oauthReadyProviders } from "@/lib/revenue/connect";
+import { CONNECTION_RESULT_COOKIE, decodeConnectionResult } from "@/lib/revenue/connection-result";
 import { currentUser, requireUser } from "@/lib/supabase/server";
 import { firstValues, type SearchParams } from "@/lib/params";
 import { siteUrl } from "@/lib/seo";
@@ -50,7 +46,7 @@ export default async function EditSaas({ params, searchParams }: Props) {
         <PageHeader
           className="mt-4 border-b"
           title="Add a SaaS"
-          description="Product details are public. After saving, connect your payment provider to verify revenue."
+          description="Product details are public. Connecting your payment provider is optional, and you can do it now or later."
         />
         <div className="pt-8">
           {(count ?? 0) >= PRODUCT_LIMIT ? (
@@ -59,7 +55,7 @@ export default async function EditSaas({ params, searchParams }: Props) {
               Delete a product to add another.
             </Notice>
           ) : (
-            <SaasForm id={crypto.randomUUID()} />
+            <SaasForm id={crypto.randomUUID()} oauthReady={oauthReadyProviders()} />
           )}
         </div>
       </Shell>
@@ -86,11 +82,12 @@ export default async function EditSaas({ params, searchParams }: Props) {
   const domain = websiteDomain(saas.data.website);
   const token = verification.data?.token;
   const query = firstValues(await searchParams);
-  // Connecting Gumroad returns here with the outcome in a cookie, for this product only.
-  const gumroad =
-    query.gumroad === "1"
-      ? decodeGumroadResult((await cookies()).get(GUMROAD_RESULT_COOKIE)?.value)
+  // Connecting a provider returns here with the outcome in a cookie, for this product only.
+  const outcome =
+    query.connection === "1"
+      ? decodeConnectionResult((await cookies()).get(CONNECTION_RESULT_COOKIE)?.value)
       : null;
+  const result = outcome?.saasId === id ? outcome : null;
   return (
     <Shell size="medium">
       <BackLink href="/dashboard">Dashboard</BackLink>
@@ -109,14 +106,16 @@ export default async function EditSaas({ params, searchParams }: Props) {
         />
       )}
       <div className="pt-8">
-        <SaasForm id={id} saas={saas.data} settings={settings.data} />
-        <RevenueConnectionSection
-          saasId={id}
+        <SaasForm
+          // A new result mounts the form again, so it shows the product as it is now saved.
+          key={result?.at ?? "saved"}
+          id={id}
+          saas={saas.data}
+          settings={settings.data}
           connection={connection.data as RevenueConnection | null}
           snapshot={connection.data ? snapshot.data : null}
-          created={query.created === "1"}
-          oauthReady={gumroadClient() ? ["gumroad"] : []}
-          oauthResult={gumroad?.saasId === id ? gumroad : null}
+          oauthReady={oauthReadyProviders()}
+          result={result}
         />
         <DomainVerification
           saasId={id}
