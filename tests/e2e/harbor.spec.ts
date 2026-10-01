@@ -795,9 +795,18 @@ test("registration, email confirmation, profile and SaaS editing, storage, priva
   // And every figure the founder chose to hide.
   for (const label of HIDE_FIGURES)
     await expect(page.getByLabel(label, { exact: true })).toBeChecked();
-  await page
-    .getByLabel("Upload logo")
-    .setInputFiles({ name: "logo.png", mimeType: "image/png", buffer: png });
+  // And the chosen logo, so saving again uploads it. Browsers read this address as example.com,
+  // other parsers as example.org, so the server refuses it.
+  const logo = page.getByLabel("Upload logo");
+  await logo.setInputFiles({ name: "logo.png", mimeType: "image/png", buffer: png });
+  const website = page.getByLabel("Website", { exact: true });
+  await website.fill("https://example.com\\@example.org");
+  await page.getByRole("button", { name: "Add SaaS", exact: true }).click();
+  await expect(
+    page.getByRole("alert").filter({ hasText: "without spaces or credentials" }),
+  ).toBeVisible();
+  expect(await logo.evaluate((input: HTMLInputElement) => input.files?.[0]?.name)).toBe("logo.png");
+  await website.fill("https://example.com");
   await page.getByRole("button", { name: "Add SaaS", exact: true }).click();
   // New products continue straight to Stripe verification.
   await expect(page).toHaveURL(/\/dashboard\/saas\/[0-9a-f-]{36}\?created=1/);

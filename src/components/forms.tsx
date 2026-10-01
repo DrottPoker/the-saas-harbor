@@ -639,13 +639,22 @@ export function SaasForm({
   saas?: Saas;
   settings?: SaasSettings | null;
 }) {
-  const [state, action] = useEditorAction(saveSaas);
+  const [state, action, pending] = useEditorAction(saveSaas);
   // Figures are public unless hidden, so a new product starts with every box clear.
   const hidden = (key: "mrr" | "revenue" | "customers" | "launch") =>
     state.values ? !!state.values[`hide_${key}`] : settings ? !settings[`share_${key}`] : false;
   const stack = state.values ? (state.values.tech?.split("\n") ?? []) : (saas?.tech_stack ?? []);
   return (
-    <form action={action}>
+    // Submitted from onSubmit rather than the action prop, so React does not reset the form after
+    // a failed save: a reset would clear a chosen logo and the remove box, which no saved value
+    // brings back. A successful save leaves the page.
+    <form
+      onSubmit={(event) => {
+        event.preventDefault();
+        const data = new FormData(event.currentTarget);
+        startTransition(() => action(data));
+      }}
+    >
       <input type="hidden" name="id" value={id} />
       <Section
         title="Product"
@@ -663,10 +672,7 @@ export function SaasForm({
             />
           </Field>
           <Field name="category" label="Category">
-            {/* React resets the form after the action but not a select's default, so the select
-                is mounted again with the value that was sent. */}
             <select
-              key={state.values?.category ?? saas?.category ?? "Productivity"}
               id="category"
               name="category"
               defaultValue={state.values?.category ?? saas?.category ?? "Productivity"}
@@ -757,7 +763,7 @@ export function SaasForm({
           <Button asChild variant="ghost">
             <Link href="/dashboard">Cancel</Link>
           </Button>
-          <Submit>{saas ? "Save changes" : "Add SaaS"}</Submit>
+          <Submit pending={pending}>{saas ? "Save changes" : "Add SaaS"}</Submit>
         </Actions>
       </div>
     </form>

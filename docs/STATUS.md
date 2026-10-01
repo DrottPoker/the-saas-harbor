@@ -21,6 +21,7 @@ The three migrations above were applied to production on 2026-10-01, before the 
 
 - **Sign-in forms that kept the last form's result.** Next.js keeps a page's state when only the query changes, so switching between sign-in, sign-up and password reset kept one form: after signing up, Create one showed Check your inbox for the old address again, and a failed sign-in's error followed to the reset form. Each form now starts afresh. Back in the username step no longer shows a green notice reading "details", the links between the forms keep where sign-in continues, and on the full sign-in page another form loads as a page instead of a dialog over it. The browser tests cover each.
 - **The answer to a first connection.** The form that connects a payment provider gives way to the connected provider as soon as the page has the connection, and its answer, such as the items that were not counted, went with it; so did Disconnected. The section now keeps both answers, and the browser tests check them.
+- **A logo lost on a failed save.** React resets a form after its action, failed or not, and a file field or the Remove current image box cannot be filled in again from what was sent, so a founder who chose a new logo and saved with a mistake elsewhere saved again without the logo, unaware. The product form now submits like the profile editor, without the reset; the registration browser test saves with an address the server refuses and finds the logo still chosen.
 
 ## Figures public by default 2026-09-29
 
