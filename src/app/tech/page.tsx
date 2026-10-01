@@ -3,6 +3,7 @@ import { categoryChip } from "@/components/explore";
 import { JsonLd } from "@/components/json-ld";
 import { PageHeader, Shell } from "@/components/shell";
 import { techCounts } from "@/lib/data";
+import { categorySlug } from "@/lib/domain";
 import { pageMetadata } from "@/lib/seo";
 import { techsJsonLd } from "@/lib/structured-data";
 import { techGroups, technologies } from "@/lib/tech";
@@ -20,8 +21,9 @@ export default async function TechStacks() {
       <PageHeader title="Tech stacks" description={description} />
       <div className="grid gap-10">
         {techGroups.map((group) => (
-          <section key={group} aria-labelledby={`group-${group}`}>
-            <h2 id={`group-${group}`} className="mb-3 font-semibold">
+          // An id holds no spaces: aria-labelledby reads one as a list of ids.
+          <section key={group} aria-labelledby={`group-${categorySlug(group)}`}>
+            <h2 id={`group-${categorySlug(group)}`} className="mb-3 font-semibold">
               {group}
             </h2>
             <ul className="flex flex-wrap gap-1.5">

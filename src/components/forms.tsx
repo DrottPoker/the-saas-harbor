@@ -1,6 +1,14 @@
 "use client";
 
-import { startTransition, useEffect, useRef, useState, useTransition } from "react";
+import {
+  cloneElement,
+  isValidElement,
+  startTransition,
+  useEffect,
+  useRef,
+  useState,
+  useTransition,
+} from "react";
 import { useEditorAction } from "./use-editor-action";
 import { useFormStatus } from "react-dom";
 import Link from "next/link";
@@ -78,6 +86,16 @@ export function Field({
   required?: boolean;
   children: React.ReactNode;
 }) {
+  // The hint is read out with the field: the field's one control points at it.
+  const hintId = hint ? `${name}-hint` : undefined;
+  const control =
+    hintId && isValidElement<{ "aria-describedby"?: string }>(children)
+      ? cloneElement(children, {
+          "aria-describedby": [children.props["aria-describedby"], hintId]
+            .filter(Boolean)
+            .join(" "),
+        })
+      : children;
   return (
     <div className="grid gap-2">
       <div className="flex items-center justify-between gap-3">
@@ -92,8 +110,12 @@ export function Field({
         </span>
         {aside}
       </div>
-      {children}
-      {hint && <p className="text-[13px] text-muted-foreground">{hint}</p>}
+      {control}
+      {hint && (
+        <p id={hintId} className="text-[13px] text-muted-foreground">
+          {hint}
+        </p>
+      )}
     </div>
   );
 }
@@ -472,15 +494,22 @@ function Setting({
 }) {
   return (
     <label className="flex items-start gap-3">
+      {/* Named by the label alone; the hint describes it. */}
       <input
         type="checkbox"
         name={name}
         defaultChecked={checked}
+        aria-labelledby={`${name}-label`}
+        aria-describedby={`${name}-hint`}
         className="mt-1 size-4 shrink-0 accent-brand"
       />
       <span>
-        <span className="block text-sm font-medium">{label}</span>
-        <span className="block text-[13px] text-muted-foreground">{hint}</span>
+        <span id={`${name}-label`} className="block text-sm font-medium">
+          {label}
+        </span>
+        <span id={`${name}-hint`} className="block text-[13px] text-muted-foreground">
+          {hint}
+        </span>
       </span>
     </label>
   );

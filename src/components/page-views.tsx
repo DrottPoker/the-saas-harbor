@@ -3,8 +3,17 @@
 import { useEffect, useRef } from "react";
 import { usePathname } from "next/navigation";
 import { isAdminPath, type SystemHints } from "@/lib/analytics";
+import { takeShownDialogPath } from "./route-dialog";
 
-type View = { key: string; visibleMs: number; since: number | null; sentMs: number };
+type View = {
+  key: string;
+  path: string;
+  /** Whether the page is a route dialog over the page before it. */
+  dialog: boolean;
+  visibleMs: number;
+  since: number | null;
+  sentMs: number;
+};
 
 // Client hints, where the browser offers them (Chromium browsers); not in TypeScript's DOM types.
 type UserAgentData = {
@@ -77,6 +86,13 @@ function engaged(view: View) {
   return view.visibleMs + (view.since === null ? 0 : performance.now() - view.since);
 }
 
+/** Stops a view's clock when its page is left, keeping the time it was visible. */
+function pause(view: View) {
+  if (view.since === null) return;
+  view.visibleMs += performance.now() - view.since;
+  view.since = null;
+}
+
 /** The page's visible time, once it has grown by a second or more since it was last reported. */
 function unreportedTime(view: View | null) {
   if (!view) return undefined;
@@ -97,12 +113,16 @@ function reportTime(view: View | null) {
  * random key, how long it was visible, reported by that key when it is hidden or left and with the
  * next page view, and clicks on links to other sites. Every page view carries the tab's referrer
  * and first address, which count only if the page starts a new visit. Query changes on the same
- * path, such as filters, are not new pages. Admin pages and automated browsers send nothing.
+ * path, such as filters, are not new pages. A dialog opened by an address, such as sign-in, counts
+ * as a page; closing it continues the view of the page beneath instead of counting that page
+ * again. Admin pages and automated browsers send nothing.
  */
 export function PageViews() {
   const path = usePathname();
   const last = useRef<string | null>(null);
   const view = useRef<View | null>(null);
+  // The view before the current one, paused, which goes on if the current one was a dialog over it.
+  const earlier = useRef<View | null>(null);
   // The address the tab loaded, with the campaign tags the visit came with.
   const landing = useRef<string | null>(null);
 
@@ -117,10 +137,29 @@ export function PageViews() {
       reportTime(previous);
       return;
     }
+    // A route dialog says where it was shown when it mounts, which can come just before or just
+    // after this effect: it marks either the new view or the one being left.
+    const shown = takeShownDialogPath();
+    if (previous && shown === previous.path) previous.dialog = true;
+    // Back from a dialog to the page beneath: that view goes on, and the dialog's time is reported.
+    const back = earlier.current;
+    earlier.current = null;
+    if (previous?.dialog && back?.path === path) {
+      reportTime(previous);
+      if (visible()) back.since = performance.now();
+      view.current = back;
+      return;
+    }
+    if (previous) {
+      pause(previous);
+      earlier.current = previous;
+    }
     const address = `${location.pathname}${location.search}`;
     if (first) landing.current = address;
     const current: View = {
       key: newKey(),
+      path,
+      dialog: shown === path,
       visibleMs: 0,
       since: first ? loadVisibleSince() : visible() ? performance.now() : null,
       sentMs: 0,

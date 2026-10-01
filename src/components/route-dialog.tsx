@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Dialog } from "radix-ui";
 import { X } from "lucide-react";
@@ -8,6 +8,17 @@ import { cn } from "@/lib/utils";
 import { Button } from "./ui/button";
 
 const widths = { narrow: "max-w-[26rem]", medium: "max-w-[34rem]" } as const;
+
+// The path of the last route dialog shown, for the site statistics: closing it returns to the page
+// beneath, whose view goes on rather than counting as a new one (src/components/page-views.tsx).
+let shownPath: string | null = null;
+
+/** Reads, and forgets, which path the last route dialog was shown at. */
+export function takeShownDialogPath() {
+  const path = shownPath;
+  shownPath = null;
+  return path;
+}
 
 /**
  * A page in a dialog over the page the user was on, such as sign-in or feedback. It opens on a link
@@ -31,12 +42,29 @@ export function RouteDialog({
   children: React.ReactNode;
 }) {
   const router = useRouter();
+  useEffect(() => {
+    shownPath = location.pathname;
+  }, []);
+  // The link that opened the dialog has focus while it first renders. Radix returns focus to its
+  // own trigger, which a dialog opened by an address does not have, so focus goes back here.
+  const [opener] = useState(() =>
+    typeof document !== "undefined" &&
+    document.activeElement instanceof HTMLElement &&
+    !document.activeElement.closest("[role=dialog]")
+      ? document.activeElement
+      : null,
+  );
   return (
     <Dialog.Root defaultOpen onOpenChange={(open) => !open && router.back()}>
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 z-50 bg-overlay backdrop-blur-[2px] data-[state=open]:animate-fade-in-fast" />
         {/* Anchored at the top rather than centered, so it keeps its place when a step is taller. */}
         <Dialog.Content
+          onCloseAutoFocus={(event) => {
+            if (!opener?.isConnected) return;
+            event.preventDefault();
+            opener.focus();
+          }}
           className={cn(
             "fixed top-[max(1rem,8vh)] left-1/2 z-50 max-h-[calc(100dvh-2rem)] w-[calc(100%-2rem)] -translate-x-1/2 overflow-y-auto rounded-2xl border bg-surface p-6 text-foreground shadow-float focus:outline-none data-[state=open]:animate-dialog-in sm:p-8",
             widths[width],
