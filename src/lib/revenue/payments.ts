@@ -1,7 +1,7 @@
 // Revenue from payments: every paid payment, subscription or one-time, after discounts, less
 // refunds, before tax and the provider's fees, dated by the UTC day it was paid. Days and windows
 // of days, and how far a read of payments reaches. Pure functions.
-import type { ListedPayment, PaymentRead } from "./types";
+import type { PaymentRead } from "./types";
 
 const DAY = 86_400;
 
@@ -60,12 +60,6 @@ export function coveredFrom(read: PaymentRead, since: string, before: string) {
   return from < before ? from : null;
 }
 
-/** Payments paid on or after a day. */
-export function paymentsFrom(payments: ListedPayment[], day: string) {
-  const start = dayStart(day);
-  return payments.filter((payment) => payment.at >= start);
-}
-
 /** What a payment earned after refunds, never below nothing. */
 export function netOf(amount: number, refunded = 0) {
   return Math.max(0, amount - refunded);
@@ -78,14 +72,17 @@ export type Coverage = { from: string | null; origin: boolean; readAt: string | 
 export type PaymentWindow = { from: string; to: string | null };
 
 /**
- * What one run reads: the last six months listed again, which picks up refunds, then, once they
- * are complete, older payments back from where the stored ones start, until the account's first
- * payment. A read that cannot list the six months in one go, such as the first read of a
- * provider that values each payment with a request, covers what it can and goes on in the next
- * run, since stored payments are not valued again. The stored payments still count where they
- * reach the days listed now; otherwise there is a gap, and older payments are read again.
- * Returns the windows read completely, their payments, and how far the payments then reach, or
- * null when the read covers no whole day.
+ * What one run reads: the last six months listed again, which picks up refunds, then older
+ * payments back from where the stored ones start, until the account's first payment. A read that
+ * cannot list the six months in one go, such as the first read of a provider that values each
+ * payment with a request, covers what it can and goes on in the next run, since stored payments
+ * are not valued again. The stored payments still count where they reach the days listed now, and
+ * older payments are then read too, so an account too large to list six months in one run still
+ * gets back to its first payment; otherwise there is a gap, and older payments are read again.
+ * Returns the windows read completely, the payments listed, and how far the payments then reach,
+ * or null when the read covers no whole day. The payments include those of a day a read did not
+ * finish: storing them spares valuing them again, while the day stays outside the windows, so
+ * nothing is removed from it and it counts only once it is read in full.
  */
 export async function collectPayments(
   stored: Coverage,
@@ -98,18 +95,18 @@ export async function collectPayments(
   const recentFrom = coveredFrom(recent, reread, addDays(dayOf(now.getTime() / 1000), 1));
   if (recentFrom === null) return null;
   const windows: PaymentWindow[] = [{ from: recentFrom, to: null }];
-  const listed = paymentsFrom(recent.payments, recentFrom);
+  const listed = [...recent.payments];
   const { from: storedFrom, readAt } = stored;
   const joins =
     storedFrom !== null && readAt !== null && recentFrom <= dayOf(Date.parse(readAt) / 1000);
   let from = joins && storedFrom < recentFrom ? storedFrom : recentFrom;
   let origin = joins && stored.origin;
-  if (recent.complete && !origin) {
+  if ((recent.complete || joins) && !origin) {
     const older = await read(FIRST_DAY, from, pages.older);
+    listed.push(...older.payments);
     const covered = coveredFrom(older, FIRST_DAY, from);
     if (covered !== null) {
       windows.push({ from: covered, to: from });
-      listed.push(...paymentsFrom(older.payments, covered));
       from = covered;
       origin = older.complete;
     }

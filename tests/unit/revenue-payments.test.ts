@@ -139,7 +139,8 @@ describe("collectPayments", () => {
       pages,
     );
     expect(calls[1]).toEqual([FIRST_DAY, "2025-06-01"]);
-    // The oldest day read may go on in the next page, so it is read again next time.
+    // The oldest day read may go on in the next page, so it is read again next time. Its
+    // payments are stored meanwhile, so they need no valuing then.
     expect(plan).toMatchObject({
       windows: [
         { from: "2026-03-28", to: null },
@@ -148,7 +149,7 @@ describe("collectPayments", () => {
       from: "2025-04-03",
       origin: false,
     });
-    expect(plan!.listed.map((p) => p.id)).toEqual(["may"]);
+    expect(plan!.listed.map((p) => p.id)).toEqual(["may", "april"]);
   });
 
   it("reads nothing older once the first payment was reached", async () => {
@@ -193,7 +194,36 @@ describe("collectPayments", () => {
       windows: [{ from: "2026-09-21", to: null }],
       from: "2026-09-21",
       origin: false,
-      listed: [],
+    });
+    // The unfinished day's payment is kept to be stored, outside the windows.
+    expect(plan!.listed.map((p) => p.id)).toEqual(["a"]);
+  });
+
+  it("reads older payments once an unfinished re-read joins the stored ones", async () => {
+    const calls: [string, string | null][] = [];
+    const plan = await collectPayments(
+      { from: "2026-09-01", origin: false, readAt: "2026-09-27T12:00:00Z" },
+      NOW,
+      async (since, before) => {
+        calls.push([since, before]);
+        return before === null
+          ? { payments: [payment("a", "2026-09-20T10:00:00Z")], complete: false }
+          : { payments: [payment("b", "2026-08-10T10:00:00Z")], complete: false };
+      },
+      pages,
+    );
+    // An account too large to list six months in one read still goes back to its first payment.
+    expect(calls).toEqual([
+      ["2026-03-28", null],
+      [FIRST_DAY, "2026-09-01"],
+    ]);
+    expect(plan).toMatchObject({
+      windows: [
+        { from: "2026-09-21", to: null },
+        { from: "2026-08-11", to: "2026-09-01" },
+      ],
+      from: "2026-08-11",
+      origin: false,
     });
   });
 

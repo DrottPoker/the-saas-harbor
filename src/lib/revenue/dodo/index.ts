@@ -35,7 +35,8 @@ async function environment(key: string, livemode: boolean | null, allowTest: boo
 /**
  * Payments from `before` back to `since`, a month at a time, each request counted against
  * `maxPages`. A payment is valued with a request of its own unless it is stored unchanged. A read
- * that runs out of requests covers the days from the newest one it could not value.
+ * that runs out of requests covers the days after the newest one it could not value, and returns
+ * the payments it valued on that day too, so they are stored and the next read goes further.
  */
 async function readPayments(
   key: string,
@@ -65,9 +66,9 @@ async function readPayments(
         continue;
       }
       if (requests++ >= maxPages) {
-        // The days after this payment's are complete; its own day is left for the next read.
-        const from = dayStart(dayOf(at)) + DAY;
-        return { payments: payments.filter((listed) => listed.at >= from), complete: false, from };
+        // The days after this payment's are complete; its own day is left for the next read,
+        // which finds the payments valued here stored.
+        return { payments, complete: false, from: dayStart(dayOf(at)) + DAY };
       }
       const detail = await fetchPayment(key, livemode, payment.payment_id);
       payments.push({

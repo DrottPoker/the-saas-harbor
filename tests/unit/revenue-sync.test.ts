@@ -513,7 +513,9 @@ describe("payments", () => {
     const { complete, from, payments } = await recent("dodo", DODO_KEYS.one, { maxPages: 4 });
     expect(complete).toBe(false);
     expect(from).toBeDefined();
-    expect(payments.every((payment) => payment.value && payment.at >= from!)).toBe(true);
+    // Every payment it valued comes back, those of the unfinished day too, so they are stored.
+    expect(payments.length).toBeGreaterThan(0);
+    expect(payments.every((payment) => payment.value)).toBe(true);
   }, 30_000);
 
   it("reads Creem transactions after refunds, without tax", async () => {
