@@ -56,48 +56,83 @@ export function RouteDialog({
   );
   return (
     <Dialog.Root defaultOpen onOpenChange={(open) => !open && router.back()}>
-      <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 z-50 bg-overlay backdrop-blur-[2px] data-[state=open]:animate-fade-in-fast" />
-        {/* Anchored at the top rather than centered, so it keeps its place when a step is taller. */}
-        <Dialog.Content
-          onCloseAutoFocus={(event) => {
-            if (!opener?.isConnected) return;
-            event.preventDefault();
-            opener.focus();
-          }}
+      <DialogPanel
+        title={title}
+        description={description}
+        icon={icon}
+        width={width}
+        titleRef={titleRef}
+        onCloseAutoFocus={(event) => {
+          if (!opener?.isConnected) return;
+          event.preventDefault();
+          opener.focus();
+        }}
+      >
+        {children}
+      </DialogPanel>
+    </Dialog.Root>
+  );
+}
+
+/**
+ * A dialog's overlay and panel, with its title, description and close button, inside a
+ * `Dialog.Root` that opens and closes it.
+ */
+export function DialogPanel({
+  title,
+  description,
+  icon,
+  width = "narrow",
+  titleRef,
+  onCloseAutoFocus,
+  children,
+}: {
+  title: string;
+  description: string;
+  icon?: React.ReactNode;
+  width?: keyof typeof widths;
+  titleRef?: React.Ref<HTMLHeadingElement>;
+  onCloseAutoFocus?: (event: Event) => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <Dialog.Portal>
+      <Dialog.Overlay className="fixed inset-0 z-50 bg-overlay backdrop-blur-[2px] data-[state=open]:animate-fade-in-fast" />
+      {/* Anchored at the top rather than centered, so it keeps its place when a step is taller. */}
+      <Dialog.Content
+        onCloseAutoFocus={onCloseAutoFocus}
+        className={cn(
+          "fixed top-[max(1rem,8vh)] left-1/2 z-50 max-h-[calc(100dvh-2rem)] w-[calc(100%-2rem)] -translate-x-1/2 overflow-y-auto rounded-2xl border bg-surface p-6 text-foreground shadow-float focus:outline-none data-[state=open]:animate-dialog-in sm:p-8",
+          widths[width],
+        )}
+      >
+        {icon}
+        <Dialog.Title
+          ref={titleRef}
+          tabIndex={-1}
           className={cn(
-            "fixed top-[max(1rem,8vh)] left-1/2 z-50 max-h-[calc(100dvh-2rem)] w-[calc(100%-2rem)] -translate-x-1/2 overflow-y-auto rounded-2xl border bg-surface p-6 text-foreground shadow-float focus:outline-none data-[state=open]:animate-dialog-in sm:p-8",
-            widths[width],
+            "pr-8 text-xl font-semibold tracking-tight focus:outline-none",
+            icon ? "mt-5" : undefined,
           )}
         >
-          {icon}
-          <Dialog.Title
-            ref={titleRef}
-            tabIndex={-1}
-            className={cn(
-              "pr-8 text-xl font-semibold tracking-tight focus:outline-none",
-              icon ? "mt-5" : undefined,
-            )}
+          {title}
+        </Dialog.Title>
+        <Dialog.Description className="mt-1 text-muted-foreground">
+          {description}
+        </Dialog.Description>
+        <div className="mt-7">{children}</div>
+        <Dialog.Close asChild>
+          <Button
+            variant="ghost"
+            size="icon"
+            aria-label="Close"
+            className="absolute top-3 right-3 text-muted-foreground hover:text-foreground"
           >
-            {title}
-          </Dialog.Title>
-          <Dialog.Description className="mt-1 text-muted-foreground">
-            {description}
-          </Dialog.Description>
-          <div className="mt-7">{children}</div>
-          <Dialog.Close asChild>
-            <Button
-              variant="ghost"
-              size="icon"
-              aria-label="Close"
-              className="absolute top-3 right-3 text-muted-foreground hover:text-foreground"
-            >
-              <X />
-            </Button>
-          </Dialog.Close>
-        </Dialog.Content>
-      </Dialog.Portal>
-    </Dialog.Root>
+            <X />
+          </Button>
+        </Dialog.Close>
+      </Dialog.Content>
+    </Dialog.Portal>
   );
 }
 

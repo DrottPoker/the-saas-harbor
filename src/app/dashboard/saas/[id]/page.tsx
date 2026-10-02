@@ -7,15 +7,18 @@ import { DeleteProduct } from "@/components/delete-forms";
 import { DomainVerification } from "@/components/domain-verification";
 import { ModerationNotice } from "@/components/moderation-notice";
 import { SaasForm } from "@/components/saas-form";
+import { SharePrompt } from "@/components/share-prompt";
 import { Notice, PageHeader, Shell } from "@/components/shell";
 import { CONNECTION_COLUMNS, type RevenueConnection } from "@/lib/data";
 import { RECORD_LABEL, recordName, recordValue, websiteDomain } from "@/lib/domain-verification";
 import { PRODUCT_LIMIT } from "@/lib/moderation";
+import { newProductId } from "@/lib/new-product";
 import { oauthReadyProviders } from "@/lib/revenue/connect";
 import { CONNECTION_RESULT_COOKIE, decodeConnectionResult } from "@/lib/revenue/connection-result";
 import { currentUser, requireUser } from "@/lib/supabase/server";
 import { firstValues, type SearchParams } from "@/lib/params";
 import { siteUrl } from "@/lib/seo";
+import { productShareText } from "@/lib/share";
 import { currentVerifiedDomain } from "@/lib/website-domain";
 
 type Props = {
@@ -88,8 +91,19 @@ export default async function EditSaas({ params, searchParams }: Props) {
       ? decodeConnectionResult((await cookies()).get(CONNECTION_RESULT_COOKIE)?.value)
       : null;
   const result = outcome?.saasId === id ? outcome : null;
+  // A product just added with a payment provider lands here, with the offer to share it once the
+  // connection worked; after a failure, the reason comes first.
+  const offerShare =
+    result?.tone === "success" && (await newProductId()) === id && !saas.data.hidden_at;
   return (
     <Shell size="medium">
+      {offerShare && (
+        <SharePrompt
+          name={saas.data.name}
+          url={`${siteUrl()}/saas/${saas.data.slug}`}
+          text={productShareText(saas.data.name, saas.data.tagline)}
+        />
+      )}
       <BackLink href="/dashboard">Dashboard</BackLink>
       <PageHeader
         className="mt-4 border-b"

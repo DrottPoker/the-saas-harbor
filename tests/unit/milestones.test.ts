@@ -9,9 +9,9 @@ import {
   notableMilestones,
   parseMilestone,
   RANK_MILESTONES,
-  shareLinks,
   shareText,
 } from "../../src/lib/milestones";
+import { shareLinks } from "../../src/lib/share";
 
 describe("milestone keys", () => {
   it("parse every key the database records and nothing else", () => {

@@ -8,6 +8,16 @@ The first release includes accounts, email confirmation and recovery, public mak
 
 Makers can message each other privately (see Messages below), and report products, profiles and messages to the admins, who decide in an admin panel (see Reports and moderation below). They get emails about unread messages and about decisions (see Email notifications below). Other forms of connection, such as following or contact lists, are not implemented.
 
+## An offer to share a new product on X 2026-10-02
+
+At the owner's request, to bring visitors to new products and to the site, a founder who adds a product is offered once to share it: a dialog, titled with the product's name and is listed, shows the post written ("I just listed Tidewise on The SaaS Harbor." and the tagline), with Share on X, Share on LinkedIn and Not now. X opens with the text and the link to the product's page filled in, and the post shows the product's sharing card.
+
+- It shows where saving leads: the dashboard for a product added without a payment provider, or the product's editor once a key or Gumroad's approval connected. After a refused key the editor shows the reason instead, and the offer follows once a key works, within fifteen minutes.
+- `saveSaas` names the new product in a short-lived cookie (`src/lib/new-product.ts`), and closing the dialog or opening the post deletes it in the browser, so the offer shows once. A first version deleted it through a server action, which a reload right after closing could cut short, so the offer came back; the browser test found it. The privacy policy (updated 2026-10-02) now says that short-lived cookies also carry, for a few minutes, which product was added and how connecting a provider went, which it did not say for the second before.
+- The share links moved from `milestones.ts` to `src/lib/share.ts`, and the dialog's frame from `RouteDialog` to `DialogPanel`, which both use.
+
+Unit tests cover the post's text and link. The browser test of verified domains finds the dialog on the dashboard with the post and link, runs its Axe scans in both themes, closes it and finds it gone after a reload; the tests that add a product with a provider close it before going on in the editor. The dialog was looked at in 390 px in the dark theme and in 1440 px in the light theme, where its three buttons share a row; on phones Not now takes a row of its own. `npm run check` (497 unit tests) and `npm run test:e2e` (19 tests, on the production build) pass.
+
 ## Product, user and statistics cards in the new design 2026-10-02
 
 At the owner's request, the sharing images of products, users and the statistics page take the navy design of the site's own image: the logo and the site's name under the beam, the name with the tagline or headline beside the logo or photo, and the figures along the bottom. The owner chose to keep verified MRR on a product's card, as the reason founders share their link, and to leave the milestone card as it was. The figures are the same as before, and verified MRR now shows its payment provider's tile. The site's host stays on the site's own image only, since three figures and a long name or category take the whole row and networks name the host under the card anyway.

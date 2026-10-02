@@ -75,14 +75,6 @@ export function shareText(milestone: Milestone, name: string) {
   return `${name} is now ${milestone.place === 1 ? "#1" : `in the top ${milestone.place}`} on ${SITE_NAME}'s leaderboard of verified revenue.`;
 }
 
-/** Links that open a post about the page on X and LinkedIn, which show its sharing card. */
-export function shareLinks(url: string, text: string) {
-  return {
-    x: `https://x.com/intent/post?${new URLSearchParams({ text, url })}`,
-    linkedin: `https://www.linkedin.com/sharing/share-offsite/?${new URLSearchParams({ url })}`,
-  };
-}
-
 /** A milestone's page, relative to the site. */
 export function milestonePath(slug: string, milestone: Milestone) {
   return `/saas/${slug}/milestones/${milestoneKey(milestone)}`;

@@ -249,7 +249,8 @@ export default function Privacy() {
           <p>
             The site uses cookies to keep you signed in and to remember whether you chose the light
             or dark theme. Short-lived cookies also carry a sign-in with Google or GitHub, or a
-            connection to Gumroad, from its start to its end.
+            connection to Gumroad, from its start to its end, and for a few minutes after you add a
+            product or connect a payment provider, which product it was and how connecting went.
           </p>
         </Section>
 

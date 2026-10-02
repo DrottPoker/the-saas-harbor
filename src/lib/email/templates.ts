@@ -6,11 +6,11 @@ import {
   milestonePath,
   milestoneSentence,
   notableMilestones,
-  shareLinks,
   shareText,
 } from "../milestones";
 import { decisionLabels, isReason } from "../moderation";
 import { isProviderId, providerName } from "../revenue/catalog";
+import { shareLinks } from "../share";
 import {
   emailButton,
   emailColors,

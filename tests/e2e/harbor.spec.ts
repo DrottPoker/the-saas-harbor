@@ -68,6 +68,13 @@ async function fillProduct(page: Page, name: string) {
     .fill("This is an isolated local integration fixture and is removed after verification.");
   await page.getByLabel("Website", { exact: true }).fill("https://example.com");
 }
+// A product just added offers, once, to share it on X; tests that go on in the editor close it.
+async function closeShareOffer(page: Page, name: string) {
+  const offer = page.getByRole("dialog", { name: `${name} is listed` });
+  await expect(offer).toBeVisible();
+  await offer.getByRole("button", { name: "Not now" }).click();
+  await expect(offer).toHaveCount(0);
+}
 const HIDE_REVENUE = "Hide verified revenue, MRR included";
 const HIDE_FIGURES = [HIDE_REVENUE, "Hide paying customer count", "Hide launch date"];
 // Verified figures are public by default; tests that need them private tick every box.
@@ -834,6 +841,8 @@ test("registration, email confirmation, profile and SaaS editing, storage, priva
   await expect(stripeKey).toHaveValue("");
   await stripeKey.fill("rk_test_harborfixture0001");
   await page.getByRole("button", { name: "Save and verify revenue" }).click();
+  // The offer to share the new product waits until its provider is connected.
+  await closeShareOffer(page, productName);
   await expect(revenue.getByText("Connected to Stripe")).toBeVisible();
   // The answer shows with the connected provider.
   await expect(revenue.getByRole("status").filter({ hasText: "Stripe connected." })).toBeVisible();
@@ -2911,6 +2920,7 @@ test("founders verify revenue through Paddle, Polar and Dodo Payments", async ({
   ).toBeVisible();
   await revenue.getByLabel("API key", { exact: true }).fill(PADDLE_KEYS.one);
   await page.getByRole("button", { name: "Add SaaS and verify revenue" }).click();
+  await closeShareOffer(page, `Providers ${run}`);
   await expect(revenue.getByText("Connected to Paddle")).toBeVisible();
   const id = new URL(page.url()).pathname.split("/").at(-1)!;
   await expect(revenue.getByText("$182.50", { exact: true })).toBeVisible();
@@ -2994,6 +3004,7 @@ test("founders verify revenue through Creem, Chargebee, Whop and RevenueCat", as
   ).toBeVisible();
   await revenue.getByLabel("API key", { exact: true }).fill(CREEM_KEYS.one);
   await page.getByRole("button", { name: "Add SaaS and verify revenue" }).click();
+  await closeShareOffer(page, `More providers ${run}`);
   await expect(revenue.getByText("Connected to Creem")).toBeVisible();
   const id = new URL(page.url()).pathname.split("/").at(-1)!;
   await expect(revenue.getByText("$35.42", { exact: true })).toBeVisible();
@@ -3106,9 +3117,33 @@ test("founders verify their website's domain with a DNS record", async ({ page }
   await fillProduct(page, `Domain ${run}`);
   await page.getByLabel("Website", { exact: true }).fill(`https://www.${domain}/`);
   await page.getByRole("button", { name: "Add SaaS", exact: true }).click();
-  // Without a payment provider, a new product returns to the dashboard.
+  // Without a payment provider, a new product returns to the dashboard, which offers to share it
+  // on X with the post written, scanned in both themes.
   await expect(page).toHaveURL(/\/dashboard\?added=/);
+  const offer = page.getByRole("dialog", { name: `Domain ${run} is listed` });
+  for (const theme of ["dark", "light"] as const) {
+    await setThemeCookie(page, theme);
+    await page.reload();
+    await expect(offer).toBeVisible();
+    await expectAccessible(page);
+  }
+  const shareOnX = offer.getByRole("link", { name: "Share on X" });
+  await expect(shareOnX).toHaveAttribute("target", "_blank");
+  const post = new URL((await shareOnX.getAttribute("href"))!);
+  expect(`${post.origin}${post.pathname}`).toBe("https://x.com/intent/post");
+  expect(post.searchParams.get("text")).toBe(
+    `I just listed Domain ${run} on The SaaS Harbor.\n\nA product created only by the local integration test.`,
+  );
+  expect(post.searchParams.get("url")).toBe(
+    `${test.info().project.use.baseURL}/saas/domain-${run}`,
+  );
+  await offer.getByRole("button", { name: "Not now" }).click();
+  await expect(offer).toHaveCount(0);
   await expect(page.getByRole("status").filter({ hasText: "Product added." })).toBeVisible();
+  // The offer shows once.
+  await page.reload();
+  await expect(page.getByRole("status").filter({ hasText: "Product added." })).toBeVisible();
+  await expect(offer).toHaveCount(0);
   const id = new URL(page.url()).searchParams.get("added")!;
   await page.goto(`/dashboard/saas/${id}`);
   const productPath = `/saas/domain-${run}`;
@@ -3236,6 +3271,7 @@ test("founders share revenue from all payments, and visitors rank products by it
   await chooseProvider(page, "Paddle");
   await revenue.getByLabel("API key", { exact: true }).fill(PADDLE_KEYS.one);
   await page.getByRole("button", { name: "Add SaaS and verify revenue" }).click();
+  await closeShareOffer(page, name);
   await expect(revenue.getByText("Connected to Paddle")).toBeVisible();
   const id = new URL(page.url()).pathname.split("/").at(-1)!;
   // Payments are read after connecting, not while the founder waits.
@@ -3473,6 +3509,8 @@ test("founders connect Gumroad by approving read access to their sales", async (
   await fillProduct(page, `Gumroad ${run}`);
   await page.getByRole("button", { name: "Add SaaS and connect Gumroad" }).click();
   await expect(page).toHaveURL(/\/dashboard\/saas\/[0-9a-f-]{36}\?connection=1/);
+  // The offer to share the product follows the approval on Gumroad too.
+  await closeShareOffer(page, `Gumroad ${run}`);
   const id = new URL(page.url()).pathname.split("/").at(-1)!;
   await expect(
     revenue.getByText(

@@ -24,6 +24,7 @@ import { addressAcceptsMail } from "@/lib/email-domain";
 import { sendQueuedEmails } from "@/lib/email/outbox";
 import { announceProduct, announceRemovedProduct } from "@/lib/indexnow";
 import { termsUpdated } from "@/lib/legal";
+import { keepNewProduct } from "@/lib/new-product";
 import { PROVIDERS } from "@/lib/revenue/catalog";
 import {
   beginRevenueCheck,
@@ -510,7 +511,11 @@ export async function saveSaas(_state: SaveSaasState, form: FormData): Promise<S
   }
   // Search engines that take IndexNow notices hear about the page at once.
   announceProduct(client, savedId, previousSlug);
-  if (!existed) sendQueuedTelegramAlerts();
+  if (!existed) {
+    sendQueuedTelegramAlerts();
+    // Wherever saving leads, the founder is offered to share the new product once.
+    await keepNewProduct(savedId);
+  }
   let connectionError: string | null = null;
   if (chosen?.key) {
     const { name } = PROVIDERS[chosen.provider];

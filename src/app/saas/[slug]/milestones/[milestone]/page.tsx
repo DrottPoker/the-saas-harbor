@@ -7,9 +7,9 @@ import {
   milestoneObject,
   milestonePath,
   milestoneSentence,
-  shareLinks,
   shareText,
 } from "@/lib/milestones";
+import { shareLinks } from "@/lib/share";
 import { providerName } from "@/lib/revenue/catalog";
 import { pageMetadata, SITE_NAME, siteUrl } from "@/lib/seo";
 import { ProductLogo } from "@/components/avatars";

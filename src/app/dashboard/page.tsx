@@ -5,8 +5,12 @@ import { ProductLogo } from "@/components/avatars";
 import { Badge } from "@/components/badge";
 import { ModerationNotice } from "@/components/moderation-notice";
 import { EmptyState, Notice, PageHeader, Shell } from "@/components/shell";
+import { SharePrompt } from "@/components/share-prompt";
 import { Button } from "@/components/ui/button";
+import { newProductId } from "@/lib/new-product";
 import { firstValues, type SearchParams } from "@/lib/params";
+import { siteUrl } from "@/lib/seo";
+import { productShareText } from "@/lib/share";
 
 export const metadata = { title: "Dashboard" };
 
@@ -48,6 +52,12 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
     throw new Error("Your dashboard could not be loaded.");
   const revenueStatus = new Map(connections?.map((row) => [row.saas_id, row.status]));
   const suspended = !!profile?.suspended_at;
+  // A product just added without a payment provider lands here, with the offer to share it.
+  const newProduct = await newProductId();
+  const added =
+    newProduct && params.added === newProduct && !suspended
+      ? products?.find((product) => product.id === newProduct && !product.hidden_at)
+      : undefined;
   const addButton = (
     <Button asChild>
       <Link href="/dashboard/saas/new">
@@ -60,6 +70,13 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
   return (
     <Shell>
       <PageHeader title="Dashboard" description="Manage your products." actions={addButton} />
+      {added && (
+        <SharePrompt
+          name={added.name}
+          url={`${siteUrl()}/saas/${added.slug}`}
+          text={productShareText(added.name, added.tagline)}
+        />
+      )}
       {params.saved && (
         <Notice tone="success" className="mb-6">
           Saved. The public product page is up to date.
