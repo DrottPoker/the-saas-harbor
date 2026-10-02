@@ -10,7 +10,7 @@ Makers can message each other privately (see Messages below), and report product
 
 ## One choice for all revenue 2026-10-01
 
-At the owner's request, founders hide or share verified revenue with one box, Hide verified revenue, MRR included, instead of one for MRR and one for revenue over 30 days, 12 months and all time. Products that had hidden either now hide both (migration `20261001220000_one_revenue_choice.sql`): in production that hid one connected product that shared MRR but not revenue, which leaves the MRR leaderboard until its founder shares revenue again.
+At the owner's request, founders hide or share verified revenue with one box, Hide verified revenue, MRR included, instead of one for MRR and one for revenue over 30 days, 12 months and all time. Products that had hidden either now hide both (migration `20261001220000_one_revenue_choice.sql`): in production that hid one connected product, VoxScribe, which shared MRR but not revenue. At the owner's request its revenue was shared again on 2026-10-02, since it had shared MRR before.
 
 - `saas_settings.share_revenue` is the choice and `share_mrr` is gone. `refresh_public_metrics` shares MRR, its history and growth, and revenue over every window and by month by it, so the split by month is public whenever revenue is, and `admin_revenue` returns the one choice.
 - `save_saas` takes `p_share_revenue` where `p_share_mrr` was. It still accepts `p_share_mrr` last, which the code deployed before this sends with its own `p_share_revenue`, and shares only when both do, so saving keeps working until the new code is live. Drop that parameter in a later migration.
