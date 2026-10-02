@@ -5,6 +5,9 @@
 /** A square box around the mark, in the coordinates of its paths. */
 export const LOGO_VIEWBOX = "104 45 1060 1060";
 
+/** Where the beam leaves the lantern (the middle of its narrow end), in the same coordinates. */
+export const LOGO_BEAM_ORIGIN = { x: 558, y: 270 };
+
 export type LogoColor = "ink" | "seaFrom" | "seaTo" | "riseFrom" | "riseTo" | "light";
 export type LogoTheme = "light" | "dark";
 

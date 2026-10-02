@@ -5,12 +5,13 @@ import type { ProviderId } from "@/lib/revenue/catalog";
 import { cn } from "@/lib/utils";
 import { CHARGEBEE_ICON, CREEM_ICON, WHOP_ICON } from "./provider-icons";
 
-type Tile =
+export type ProviderTile =
   | { kind: "path"; background: string; color: string; path: string; viewBox?: number }
   | { kind: "theme"; path: string; viewBox: number }
   | { kind: "image"; src: string; inset: number; background?: string };
 
-const tiles: Record<ProviderId, Tile> = {
+/** Also drawn on the site's sharing image (`og-card.tsx`). */
+export const PROVIDER_TILES: Record<ProviderId, ProviderTile> = {
   stripe: {
     kind: "path",
     background: "#635BFF",
@@ -54,8 +55,8 @@ const tiles: Record<ProviderId, Tile> = {
 };
 
 /** A 24-unit tile with the mark in its middle 14 units. */
-const SIZE = 24;
-const MARK = 14;
+export const TILE_SIZE = 24;
+export const TILE_MARK = 14;
 
 /** A provider's logo, beside its name: decorative, so screen readers read the name alone. */
 export function ProviderLogo({
@@ -65,44 +66,44 @@ export function ProviderLogo({
   provider: ProviderId;
   className?: string;
 }) {
-  const tile = tiles[provider];
-  const offset = (SIZE - MARK) / 2;
+  const tile = PROVIDER_TILES[provider];
+  const offset = (TILE_SIZE - TILE_MARK) / 2;
   return (
     <svg
-      viewBox={`0 0 ${SIZE} ${SIZE}`}
+      viewBox={`0 0 ${TILE_SIZE} ${TILE_SIZE}`}
       aria-hidden="true"
       className={cn("size-5 shrink-0 overflow-hidden rounded-[5px]", className)}
     >
       {tile.kind === "path" && (
         <>
-          <rect width={SIZE} height={SIZE} fill={tile.background} />
+          <rect width={TILE_SIZE} height={TILE_SIZE} fill={tile.background} />
           <path
             d={tile.path}
             fill={tile.color}
-            transform={`translate(${offset} ${offset}) scale(${MARK / (tile.viewBox ?? SIZE)})`}
+            transform={`translate(${offset} ${offset}) scale(${TILE_MARK / (tile.viewBox ?? TILE_SIZE)})`}
           />
         </>
       )}
       {tile.kind === "theme" && (
         <>
-          <rect width={SIZE} height={SIZE} className="fill-foreground" />
+          <rect width={TILE_SIZE} height={TILE_SIZE} className="fill-foreground" />
           <path
             d={tile.path}
             fillRule="evenodd"
             className="fill-background"
-            transform={`translate(${offset} ${offset}) scale(${MARK / tile.viewBox})`}
+            transform={`translate(${offset} ${offset}) scale(${TILE_MARK / tile.viewBox})`}
           />
         </>
       )}
       {tile.kind === "image" && (
         <>
-          {tile.background && <rect width={SIZE} height={SIZE} fill={tile.background} />}
+          {tile.background && <rect width={TILE_SIZE} height={TILE_SIZE} fill={tile.background} />}
           <image
             href={tile.src}
             x={tile.inset}
             y={tile.inset}
-            width={SIZE - 2 * tile.inset}
-            height={SIZE - 2 * tile.inset}
+            width={TILE_SIZE - 2 * tile.inset}
+            height={TILE_SIZE - 2 * tile.inset}
           />
         </>
       )}

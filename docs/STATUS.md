@@ -8,6 +8,16 @@ The first release includes accounts, email confirmation and recovery, public mak
 
 Makers can message each other privately (see Messages below), and report products, profiles and messages to the admins, who decide in an admin panel (see Reports and moderation below). They get emails about unread messages and about decisions (see Email notifications below). Other forms of connection, such as following or contact lists, are not implemented.
 
+## A new sharing image 2026-10-02
+
+At the owner's request, the image networks show for a link to the site is redesigned, and holds no figures, since they go out of date while a network keeps its copy. The owner chose a navy version over a light one: the logo and the site's name, the home page's heading Get your SaaS seen. List it for free., the line A public page and a place on a leaderboard of verified revenue, and along the bottom Verify revenue with and the tiles of every payment provider, with the site's host. A beam drawn like the one in the logo crosses it from the lantern. The image also stands in for a product, user or statistics card that has nothing to show, as before.
+
+A post on X on 2026-10-02 still showed the card from before 2026-09-26, with the number of products listed and ranked: X keeps a card for about a week and offers no way to refresh it. The image's address carries a new hash, so X fetches the new image once it reads the page again. X keeps cards by address, so a link with a query added, such as `https://thesaasharbor.com/?x=1` (the home page ignores it), is read afresh.
+
+Two things in how next/og draws images, now noted in ARCHITECTURE: Satori measured some words too wide where it could break a line, which left uneven gaps between words on the old card, so each line of the new image is joined by no-break spaces; and a blurred or layered beam showed blocks, so the beam is two wedges painted with `fill-opacity` alone.
+
+`npm run check` (487 unit tests) and `npm run test:e2e` (19 tests, on the production build) pass, and the image was checked as next/og draws it.
+
 ## The site's icon in Google results 2026-10-02
 
 Google showed a grey globe beside the site in its results instead of the logo. The pages linked an SVG icon and an Apple touch icon, and Google's favicon guidelines (updated 2026-08-28) take BMP, GIF, ICO, PNG, JPEG, PPM and TIFF, not SVG. Every page now links a 192-pixel PNG of the logo first (`src/app/icon.tsx`), then the SVG, renamed `icon1.svg` so that Next.js links it second. Browsers keep the SVG, which follows the color scheme: Chromium scores an icon whose sizes say `any` above every fixed size (checked in its `favicon_handler.cc`). The proxy's matcher and the browser test follow the new addresses, and the test checks the order.
