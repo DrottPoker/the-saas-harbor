@@ -927,8 +927,12 @@ test("registration, email confirmation, profile and SaaS editing, storage, priva
     applicationSubCategory: "Design",
   });
   await expect(page.getByRole("navigation", { name: "Breadcrumb" })).toContainText("Design");
-  // The tech stack links each technology to the products built with it.
+  // The tech stack is a card that names the technologies on one line, and opens to link each to
+  // the products built with it.
   const stack = page.getByRole("region", { name: "Tech stack" });
+  await expect(stack.getByText("Next.js, PostgreSQL")).toBeVisible();
+  await expect(stack.getByRole("link")).toHaveCount(0);
+  await stack.getByRole("heading", { name: "Tech stack" }).click();
   await expect(stack.getByRole("link")).toHaveText(["Next.js", "PostgreSQL"]);
   await expect(stack.getByRole("link", { name: "Next.js" })).toHaveAttribute(
     "href",

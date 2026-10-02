@@ -8,6 +8,10 @@ The first release includes accounts, email confirmation and recovery, public mak
 
 Makers can message each other privately (see Messages below), and report products, profiles and messages to the admins, who decide in an admin panel (see Reports and moderation below). They get emails about unread messages and about decisions (see Email notifications below). Other forms of connection, such as following or contact lists, are not implemented.
 
+## A closed tech stack card 2026-10-02
+
+At the owner's request, the tech stack on a product page no longer takes a row per group: it is a card that opens on demand, with one line naming the technologies while closed (cut off with an ellipsis on narrow screens) and the groups with their links once open. The browser test opens it before following a link. Checked at 390 and 1280 px in both themes.
+
 ## One choice for all revenue 2026-10-01
 
 At the owner's request, founders hide or share verified revenue with one box, Hide verified revenue, MRR included, instead of one for MRR and one for revenue over 30 days, 12 months and all time. Products that had hidden either now hide both (migration `20261001220000_one_revenue_choice.sql`): in production that hid one connected product, VoxScribe, which shared MRR but not revenue. At the owner's request its revenue was shared again on 2026-10-02, since it had shared MRR before.
