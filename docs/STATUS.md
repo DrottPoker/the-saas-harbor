@@ -8,6 +8,14 @@ The first release includes accounts, email confirmation and recovery, public mak
 
 Makers can message each other privately (see Messages below), and report products, profiles and messages to the admins, who decide in an admin panel (see Reports and moderation below). They get emails about unread messages and about decisions (see Email notifications below). Other forms of connection, such as following or contact lists, are not implemented.
 
+## The site's icon in Google results 2026-10-02
+
+Google showed a grey globe beside the site in its results instead of the logo. The pages linked an SVG icon and an Apple touch icon, and Google's favicon guidelines (updated 2026-08-28) take BMP, GIF, ICO, PNG, JPEG, PPM and TIFF, not SVG. Every page now links a 192-pixel PNG of the logo first (`src/app/icon.tsx`), then the SVG, renamed `icon1.svg` so that Next.js links it second. Browsers keep the SVG, which follows the color scheme: Chromium scores an icon whose sizes say `any` above every fixed size (checked in its `favicon_handler.cc`). The proxy's matcher and the browser test follow the new addresses, and the test checks the order.
+
+Google picks the icon up when it next crawls the home page, which can take days or weeks; URL Inspection in Search Console asks for a crawl sooner, once the site is added there (known issue 10). The results also show the domain where the site's name belongs, although the home page's `WebSite` data names it; that waits for a crawl too.
+
+`npm run check` (487 unit tests), `npm run build` and `npm run test:e2e` (19 tests) pass.
+
 ## A closed tech stack card 2026-10-02
 
 At the owner's request, the tech stack on a product page no longer takes a row per group: it is a card that opens on demand, with one line naming the technologies while closed (cut off with an ellipsis on narrow screens) and the groups with their links once open. The browser test opens it before following a link. Checked at 390 and 1280 px in both themes.

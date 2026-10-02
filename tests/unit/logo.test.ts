@@ -16,7 +16,7 @@ describe("logo", () => {
 
   it("is the favicon, with dark colors for a dark color scheme", async () => {
     // `vitest run -u` rewrites the file after the logo changes.
-    await expect(logoSvg({ dark: true })).toMatchFileSnapshot("../../src/app/icon.svg");
+    await expect(logoSvg({ dark: true })).toMatchFileSnapshot("../../src/app/icon1.svg");
   });
 
   it("draws at a size and position", () => {

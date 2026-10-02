@@ -95,6 +95,6 @@ export async function proxy(request: NextRequest) {
 // The icons, the logo and embedded badges carry their own headers and need no session.
 export const config = {
   matcher: [
-    "/((?!_next/static|_next/image|favicon\\.ico$|icon\\.svg$|apple-icon$|logo\\.png$|saas/[^/]+/badge\\.svg$).*)",
+    "/((?!_next/static|_next/image|favicon\\.ico$|icon$|icon1\\.svg$|apple-icon$|logo\\.png$|saas/[^/]+/badge\\.svg$).*)",
   ],
 };

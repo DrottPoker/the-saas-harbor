@@ -303,6 +303,8 @@ test("anonymous navigation, private route protection and responsive empty state"
   // Icons for browsers, other services and search results, and the key for IndexNow notices.
   for (const [path, type] of [
     ["/favicon.ico", "image/x-icon"],
+    ["/icon", "image/png"],
+    ["/icon1.svg", "image/svg+xml"],
     ["/apple-icon", "image/png"],
     ["/logo.png", "image/png"],
   ]) {
@@ -310,6 +312,12 @@ test("anonymous navigation, private route protection and responsive empty state"
     expect(icon.status(), path).toBe(200);
     expect(icon.headers()["content-type"], path).toBe(type);
   }
+  // Google takes no SVG favicon, so the PNG comes first.
+  const icons = html.slice(0, headEnd).match(/<link rel="icon"[^>]*>/g) ?? [];
+  expect(icons).toHaveLength(2);
+  expect(icons[0]).toContain('type="image/png"');
+  expect(icons[0]).toContain('sizes="192x192"');
+  expect(icons[1]).toContain('type="image/svg+xml"');
   expect(await (await page.request.get("/indexnow.txt")).text()).toMatch(/^[0-9a-f]{32}$/);
   // AI assistants get a guide to the site, linked from every page.
   const llms = await page.request.get("/llms.txt");
