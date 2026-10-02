@@ -213,7 +213,7 @@ function OverviewCard({ tz, range, onRange }: CardProps) {
   );
 }
 
-// Live: the last 30 minutes, read again every 30 seconds.
+// Live: the last 60 minutes, read again every 30 seconds.
 
 function LiveList({
   title,
@@ -255,7 +255,7 @@ function LiveCard() {
     <AnalyticsCard
       id="live"
       title="Right now"
-      description="The last 30 minutes, updated every 30 seconds."
+      description="The last 60 minutes, updated every 30 seconds."
       loading={report.loading}
       error={report.error}
       onRetry={report.retry}
@@ -280,12 +280,12 @@ function LiveCard() {
             </p>
             <p className="mt-1 text-sm text-muted-foreground">
               {formatCount(data.visitors)} {data.visitors === 1 ? "visitor" : "visitors"} and{" "}
-              {formatCount(data.page_views)} page {data.page_views === 1 ? "view" : "views"} in 30
+              {formatCount(data.page_views)} page {data.page_views === 1 ? "view" : "views"} in 60
               minutes.
             </p>
             <div className="mt-4">
               <ColumnChart
-                caption="Page views per minute, the last 30 minutes"
+                caption="Page views per minute, the last 60 minutes"
                 unit={["page view", "page views"]}
                 points={data.minutes.map((minute) => ({
                   key: String(minute.ago),

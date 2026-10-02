@@ -192,7 +192,7 @@ export const liveSchema = z.object({
   visitors: count,
   page_views: count,
   minutes: z.array(
-    z.object({ ago: z.number().int().min(0).max(29), page_views: count, visitors: count }),
+    z.object({ ago: z.number().int().min(0).max(59), page_views: count, visitors: count }),
   ),
   pages: z.array(z.object({ value: z.string(), visitors: count })),
   sources: z.array(z.object({ value: z.string().nullable(), visits: count })),

@@ -319,19 +319,22 @@ select is((select (r->'now'->>'users')::bigint from platform), (select n from ac
   'the totals now count every account');
 select is((select jsonb_array_length(r->'series') from platform), 24, 'platform figures by hour');
 
--- Live: the last minutes only.
+-- Live: the last 60 minutes only; the page view an hour ago is out.
 reset role;
 insert into private.page_views(created_at, visitor, visit, path, entry, device, browser, os)
 values (now() - interval '2 minutes', decode(repeat('05', 16), 'hex'), 1, '/pricing', true,
-  'desktop', 'Chrome', 'Windows');
+    'desktop', 'Chrome', 'Windows'),
+  (now() - interval '45 minutes', decode(repeat('06', 16), 'hex'), 2, '/stats', true,
+    'desktop', 'Chrome', 'Windows');
 set local role authenticated;
 select set_config('request.jwt.claim.sub', 'e6000000-0000-4000-8000-000000000002', true);
 create temp table live as select public.admin_analytics_live() as r;
 select results_eq(
   $$ select (r->>'current')::integer, (r->>'visitors')::integer, (r->>'page_views')::integer,
-       jsonb_array_length(r->'minutes'), r->'pages'->0->>'value' from live $$,
-  $$ values (1, 1, 1, 30, '/pricing'::text) $$,
-  'live: visitors now, the last 30 minutes by minute, and their pages');
+       jsonb_array_length(r->'minutes'), (r->'minutes'->0->>'ago')::integer,
+       (r->'minutes'->14->>'page_views')::integer, r->'pages'->0->>'value' from live $$,
+  $$ values (1, 2, 2, 60, 59, 1, '/pricing'::text) $$,
+  'live: visitors now, the last 60 minutes by minute, and their pages');
 reset role;
 
 select ok(

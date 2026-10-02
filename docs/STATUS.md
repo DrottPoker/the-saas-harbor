@@ -8,6 +8,12 @@ The first release includes accounts, email confirmation and recovery, public mak
 
 Makers can message each other privately (see Messages below), and report products, profiles and messages to the admins, who decide in an admin panel (see Reports and moderation below). They get emails about unread messages and about decisions (see Email notifications below). Other forms of connection, such as following or contact lists, are not implemented.
 
+## An hour in the live card 2026-10-02
+
+At the owner's request, the Right now card on the Analytics page covers the last 60 minutes instead of 30: its visitors and page views, a column per minute, and the pages, sources and countries. Visitors now are still those of the last 5 minutes. Migration `20261002090000_live_hour.sql` replaces `admin_analytics_live()`, and the report's schema accepts minutes up to 59 ago. The migration went to production before the code; until the code was live, the card there showed an error, since the earlier schema accepted only 30 minutes.
+
+The database test adds a page view 45 minutes ago, inside the hour and outside the earlier window, and checks that the one an hour ago stays out. The card was looked at in the analytics browser test at 1440 px and 390 px in both themes, where 60 columns still fit. `npm run check` (497 unit tests), `npm run test:db` (694 tests) and the analytics browser test pass.
+
 ## An offer to share a new product on X 2026-10-02
 
 At the owner's request, to bring visitors to new products and to the site, a founder who adds a product is offered once to share it: a dialog, titled with the product's name and is listed, shows the post written ("I just listed Tidewise on The SaaS Harbor." and the tagline), with Share on X, Share on LinkedIn and Not now. X opens with the text and the link to the product's page filled in, and the post shows the product's sharing card.
