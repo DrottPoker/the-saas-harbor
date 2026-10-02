@@ -2,7 +2,16 @@ import { ImageResponse } from "next/og";
 import { findSaas } from "@/lib/data";
 import { formatUsd } from "@/lib/domain";
 import { excerpt } from "@/lib/moderation";
-import { OG_SIZE, OgCard, OgPicture, siteImage } from "@/components/og-card";
+import { isProviderId } from "@/lib/revenue/catalog";
+import {
+  HarborCard,
+  type HarborFigure,
+  HarborFigures,
+  HarborHeading,
+  OG_SIZE,
+  OgPicture,
+  siteImage,
+} from "@/components/og-card";
 
 export const size = OG_SIZE;
 export const contentType = "image/png";
@@ -14,20 +23,26 @@ export default async function Image({ params }: { params: Promise<{ slug: string
   if (!found || "redirect" in found) return siteImage();
   const item = found.item;
   const name = item.name ?? "Product";
-  const figures: [string, string][] = [];
+  const figures: HarborFigure[] = [];
   if (item.revenue_status === "verified" && item.mrr_cents != null)
-    figures.push(["Verified MRR", formatUsd(item.mrr_cents)]);
+    figures.push({
+      label: "Verified MRR",
+      value: formatUsd(item.mrr_cents),
+      provider: isProviderId(item.provider) ? item.provider : undefined,
+    });
   if (item.customers != null)
-    figures.push(["Paying customers", item.customers.toLocaleString("en-US")]);
-  figures.push(["Category", item.category ?? "Other"]);
-  if (figures.length < 3) figures.push(["Founder", excerpt(item.owner_name ?? "", 28)]);
+    figures.push({ label: "Paying customers", value: item.customers.toLocaleString("en-US") });
+  figures.push({ label: "Category", value: item.category ?? "Other" });
+  if (figures.length < 3)
+    figures.push({ label: "Founder", value: excerpt(item.owner_name ?? "", 22) });
   return new ImageResponse(
-    <OgCard
-      title={excerpt(name, 48)}
-      subtitle={excerpt(item.tagline ?? "", 110)}
-      picture={<OgPicture path={item.logo_path} name={name} />}
-      figures={figures}
-    />,
+    <HarborCard footer={<HarborFigures figures={figures} />}>
+      <HarborHeading
+        title={name}
+        subtitle={item.tagline}
+        picture={<OgPicture path={item.logo_path} name={name} theme="dark" size={144} />}
+      />
+    </HarborCard>,
     size,
   );
 }

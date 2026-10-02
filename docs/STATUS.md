@@ -8,6 +8,16 @@ The first release includes accounts, email confirmation and recovery, public mak
 
 Makers can message each other privately (see Messages below), and report products, profiles and messages to the admins, who decide in an admin panel (see Reports and moderation below). They get emails about unread messages and about decisions (see Email notifications below). Other forms of connection, such as following or contact lists, are not implemented.
 
+## Product, user and statistics cards in the new design 2026-10-02
+
+At the owner's request, the sharing images of products, users and the statistics page take the navy design of the site's own image: the logo and the site's name under the beam, the name with the tagline or headline beside the logo or photo, and the figures along the bottom. The owner chose to keep verified MRR on a product's card, as the reason founders share their link, and to leave the milestone card as it was. The figures are the same as before, and verified MRR now shows its payment provider's tile. The site's host stays on the site's own image only, since three figures and a long name or category take the whole row and networks name the host under the card anyway.
+
+- Logos and photos sit on the dark theme's muted surface inside a border, as on the site, so a clear logo keeps its edges, and a product without a logo shows its initial in the blue of the logo's sea.
+- Taglines and headlines break into two lines in `src/lib/og-text.ts`, as evenly as fits and cut with an ellipsis, since Satori leaves uneven gaps where it breaks a line itself. A name gets smaller as it gets longer, so it keeps to one line, and long figures together, such as a category and a founder's full name, take a smaller size.
+- The images are drawn on every request, so a card shows the latest verification, hourly for MRR; a network that keeps its copy for about a week can show an older figure until then.
+
+Unit tests cover the line breaking. The cards were checked as next/og draws them, with a logo, a clear logo, an initial, a photo, a long name and long figures, and the site's own image stayed identical byte for byte. `npm run check` (493 unit tests) and `npm run test:e2e` (19 tests, on the production build) pass.
+
 ## A new sharing image 2026-10-02
 
 At the owner's request, the image networks show for a link to the site is redesigned, and holds no figures, since they go out of date while a network keeps its copy. The owner chose a navy version over a light one: the logo and the site's name, the home page's heading Get your SaaS seen. List it for free., the line A public page and a place on a leaderboard of verified revenue, and along the bottom Verify revenue with and the tiles of every payment provider, with the site's host. A beam drawn like the one in the logo crosses it from the lantern. The image also stands in for a product, user or statistics card that has nothing to show, as before.
