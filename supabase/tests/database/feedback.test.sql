@@ -4,6 +4,9 @@ begin;
 create extension if not exists pgtap with schema extensions;
 select plan(28);
 
+-- Feedback already sent on this machine would show up in the admin's list; set it aside.
+delete from public.feedback;
+
 insert into auth.users(id, email) values
   ('e4000000-0000-4000-8000-000000000001', 'user@feedback.test'),
   ('e4000000-0000-4000-8000-000000000002', 'admin@feedback.test'),

@@ -655,7 +655,7 @@ test("registration, email confirmation, profile and SaaS editing, storage, priva
   await page.goto(`/users/tester-${run}`);
   await expect(page.getByRole("heading", { name: `tester-${run}`, exact: true })).toBeVisible();
   await expect(page.getByText(`@tester-${run}`, { exact: true })).toBeVisible();
-  // Without a product, a headline or an About section, the profile stays out of search results.
+  // Without a product or a headline, the profile stays out of search results.
   await expect(page.locator('meta[name="robots"]')).toHaveAttribute("content", "noindex");
   await page.goto("/dashboard/profile");
   await page.getByLabel("Name", { exact: true }).fill("Local Test Maker");
@@ -663,15 +663,6 @@ test("registration, email confirmation, profile and SaaS editing, storage, priva
   await page.getByLabel("Username").fill(`local-test-maker-${run}`);
   await page.getByLabel("Headline").fill("Builds test fixtures for a living");
   await page.getByLabel("Location").fill("Gothenburg, Sweden");
-  await page.getByLabel("About").fill("An isolated maker profile for browser verification.");
-  await page.getByLabel("Skills").fill("Testing, Playwright, testing");
-  await page.getByRole("button", { name: "Add experience" }).click();
-  const role = page.getByRole("group", { name: "Role 1" });
-  await role.getByLabel("Title").fill("Test engineer");
-  await role.getByLabel("Company").fill("Harbor QA");
-  await role.getByLabel("Start month").selectOption("03");
-  await role.getByLabel("Start year").selectOption("2021");
-  await role.getByLabel("I work here now").check();
   await page.getByLabel("Website", { exact: true }).fill("https://example.com");
   // Each link must point to its own site; everything typed so far stays in the form.
   await page.getByLabel("LinkedIn").fill("https://evil.example/in/local-test-maker");
@@ -681,9 +672,7 @@ test("registration, email confirmation, profile and SaaS editing, storage, priva
     page.getByRole("alert").filter({ hasText: "Use your LinkedIn address" }),
   ).toBeVisible();
   await expect(page.getByLabel("Headline")).toHaveValue("Builds test fixtures for a living");
-  await expect(role.getByLabel("Title")).toHaveValue("Test engineer");
-  await expect(role.getByLabel("Start month")).toHaveValue("03");
-  await expect(role.getByLabel("I work here now")).toBeChecked();
+  await expect(page.getByLabel("Location")).toHaveValue("Gothenburg, Sweden");
   await page.getByLabel("LinkedIn").fill("https://www.linkedin.com/in/local-test-maker");
   await page.getByLabel("Upload photo").setInputFiles({
     name: "invalid.png",
@@ -739,13 +728,6 @@ test("registration, email confirmation, profile and SaaS editing, storage, priva
   // The personal profile shows everything that was saved, and its owner can edit it from here.
   await expect(page.getByText("Builds test fixtures for a living")).toBeVisible();
   await expect(page.getByText("Gothenburg, Sweden").first()).toBeVisible();
-  const experience = page.getByRole("region", { name: "Experience" });
-  await expect(experience.getByText("Test engineer")).toBeVisible();
-  await expect(experience.getByText(/^Mar 2021 - Present · /)).toBeVisible();
-  await expect(page.getByRole("region", { name: "Skills" }).getByRole("listitem")).toHaveText([
-    "Testing",
-    "Playwright",
-  ]);
   await expect(page.getByRole("link", { name: "local-test-maker" })).toHaveAttribute(
     "href",
     "https://www.linkedin.com/in/local-test-maker",

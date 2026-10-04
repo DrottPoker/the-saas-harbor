@@ -47,8 +47,7 @@ export default function Privacy() {
             <li>
               <strong className="font-medium text-foreground">Profile.</strong> Your username, which
               is also your page address, the details you add, such as your name, headline, location,
-              About text, experience, skills, links and photo, and when you last changed your
-              username.
+              links and photo, and when you last changed your username.
             </li>
             <li>
               <strong className="font-medium text-foreground">Products.</strong> The details you

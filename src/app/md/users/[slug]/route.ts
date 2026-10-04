@@ -1,4 +1,4 @@
-import { findProfile, makerListings, makerTotals, publicProfileExperience } from "@/lib/data";
+import { findProfile, makerListings, makerTotals } from "@/lib/data";
 import { makerMarkdown } from "@/lib/markdown";
 import { siteUrl } from "@/lib/seo";
 import { textNotFound, textRedirect, textResponse } from "@/lib/text-response";
@@ -9,13 +9,12 @@ export async function GET(_request: Request, ctx: RouteContext<"/md/users/[slug]
   if (!found) return textNotFound();
   if ("redirect" in found) return textRedirect(found.redirect);
   const profile = found.item;
-  const [products, experience, totals] = await Promise.all([
+  const [products, totals] = await Promise.all([
     makerListings(profile.id),
-    publicProfileExperience(profile.id),
     makerTotals(profile.id),
   ]);
   return textResponse(
-    makerMarkdown(profile, products, experience, {
+    makerMarkdown(profile, products, {
       mrr: totals.mrr.total,
       customers: totals.customers.total,
     }),

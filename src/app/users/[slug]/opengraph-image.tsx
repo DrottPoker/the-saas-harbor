@@ -36,7 +36,7 @@ export default async function Image({ params }: { params: Promise<{ slug: string
     <HarborCard footer={<HarborFigures figures={figures} />}>
       <HarborHeading
         title={profile.name}
-        subtitle={profile.headline || profile.bio}
+        subtitle={profile.headline}
         picture={
           <OgPicture path={profile.avatar_path} name={profile.name} round theme="dark" size={144} />
         }

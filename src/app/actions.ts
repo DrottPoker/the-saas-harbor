@@ -6,7 +6,6 @@ import { z } from "zod";
 import { changePassword, deleteAccount, deleteSignedInAccount } from "@/lib/account";
 import { recordAccountSource } from "@/lib/account-source";
 import { confirmationMethod, PROVIDER_NAMES, signedInWithin } from "@/lib/auth";
-import { parseSkills } from "@/lib/profile";
 import {
   emailLink,
   PASSWORD_MAX_LENGTH,
@@ -449,30 +448,17 @@ export async function deleteSaasAction(
   redirect("/dashboard?deleted=1", RedirectType.replace);
 }
 
-// Roles arrive as JSON from the experience editor.
-function experienceFrom(form: FormData) {
-  try {
-    const roles: unknown = JSON.parse(value(form, "experience") || "[]");
-    return Array.isArray(roles) ? roles : null;
-  } catch {
-    return null;
-  }
-}
-
 export async function saveProfile(_state: ActionState, form: FormData): Promise<ActionState> {
   const { user, client } = await requireUser();
   const uploaded: string[] = [];
   let unsaved: string | null = null;
   try {
-    const experience = experienceFrom(form);
-    if (!experience) return { error: "Your experience could not be read. Please try again." };
-    const fields = profileSchema.parse({
-      ...Object.fromEntries(
+    const fields = profileSchema.parse(
+      Object.fromEntries(
         [
           "name",
           "headline",
           "location",
-          "bio",
           "website",
           "linkedin_url",
           "github_url",
@@ -480,9 +466,7 @@ export async function saveProfile(_state: ActionState, form: FormData): Promise<
           "social_url",
         ].map((key) => [key, value(form, key)]),
       ),
-      skills: parseSkills(value(form, "skills")),
-      experience,
-    });
+    );
     const { data: existing, error: readError } = await client
       .from("profiles")
       .select("avatar_path, slug")
@@ -507,21 +491,12 @@ export async function saveProfile(_state: ActionState, form: FormData): Promise<
       p_name: fields.name,
       p_headline: fields.headline,
       p_location: fields.location,
-      p_bio: fields.bio,
       p_website: fields.website,
       p_linkedin_url: fields.linkedin_url,
       p_github_url: fields.github_url,
       p_x_url: fields.x_url,
       p_social_url: fields.social_url,
-      p_skills: fields.skills,
       p_avatar_path: avatar || (form.has("remove_image") ? null : (existing?.avatar_path ?? null)),
-      p_experience: fields.experience.map((role) => ({
-        title: role.title,
-        organization: role.organization,
-        starts_on: `${role.start}-01`,
-        ends_on: role.end && `${role.end}-01`,
-        description: role.description,
-      })),
     });
     if (error) throw new Error("Your profile could not be saved. Please try again.");
     // Checked above, so this fails only when someone took the username in the meantime.

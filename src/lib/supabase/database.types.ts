@@ -364,65 +364,15 @@ export type Database = {
         }
         Relationships: []
       }
-      profile_experience: {
-        Row: {
-          created_at: string
-          description: string
-          ends_on: string | null
-          id: string
-          organization: string
-          profile_id: string
-          starts_on: string
-          title: string
-        }
-        Insert: {
-          created_at?: string
-          description?: string
-          ends_on?: string | null
-          id?: string
-          organization: string
-          profile_id: string
-          starts_on: string
-          title: string
-        }
-        Update: {
-          created_at?: string
-          description?: string
-          ends_on?: string | null
-          id?: string
-          organization?: string
-          profile_id?: string
-          starts_on?: string
-          title?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "profile_experience_profile_id_fkey"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "inbox"
-            referencedColumns: ["other_id"]
-          },
-          {
-            foreignKeyName: "profile_experience_profile_id_fkey"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       profiles: {
         Row: {
           avatar_path: string | null
-          bio: string
           github_url: string
           headline: string
           id: string
           linkedin_url: string
           location: string
           name: string
-          skills: string[]
           slug: string
           social_url: string
           suspended_at: string | null
@@ -434,14 +384,12 @@ export type Database = {
         }
         Insert: {
           avatar_path?: string | null
-          bio?: string
           github_url?: string
           headline?: string
           id: string
           linkedin_url?: string
           location?: string
           name: string
-          skills?: string[]
           slug: string
           social_url?: string
           suspended_at?: string | null
@@ -453,14 +401,12 @@ export type Database = {
         }
         Update: {
           avatar_path?: string | null
-          bio?: string
           github_url?: string
           headline?: string
           id?: string
           linkedin_url?: string
           location?: string
           name?: string
-          skills?: string[]
           slug?: string
           social_url?: string
           suspended_at?: string | null
@@ -1512,14 +1458,11 @@ export type Database = {
       save_profile: {
         Args: {
           p_avatar_path: string
-          p_bio: string
-          p_experience: Json
           p_github_url: string
           p_headline: string
           p_linkedin_url: string
           p_location: string
           p_name: string
-          p_skills: string[]
           p_social_url: string
           p_website: string
           p_x_url: string

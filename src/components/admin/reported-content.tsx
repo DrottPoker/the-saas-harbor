@@ -63,6 +63,7 @@ export function ReportedContent({ target, content }: { target: string; content: 
     );
   }
   const name = text(copy, "name");
+  // Copies made before 2026-10-04 also hold the About text and skills that profiles had then.
   const skills = Array.isArray(copy.skills) ? copy.skills.filter((s) => typeof s === "string") : [];
   return (
     <div className="grid gap-4">

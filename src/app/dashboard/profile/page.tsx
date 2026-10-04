@@ -10,13 +10,11 @@ export const metadata = { title: "Edit profile" };
 // Account settings, such as the password and deleting the account, are in Settings.
 export default async function EditProfile() {
   const { user, client } = await requireUser();
-  const [profile, experience, usernameLock] = await Promise.all([
+  const [profile, usernameLock] = await Promise.all([
     client.from("profiles").select("*").eq("id", user.id).maybeSingle(),
-    client.from("profile_experience").select("*").eq("profile_id", user.id),
     client.rpc("username_change_available_at"),
   ]);
-  if (profile.error || experience.error || usernameLock.error)
-    throw new Error("Your profile could not be loaded.");
+  if (profile.error || usernameLock.error) throw new Error("Your profile could not be loaded.");
   return (
     <Shell size="medium">
       <PageHeader
@@ -42,12 +40,7 @@ export default async function EditProfile() {
         />
       )}
       <div className="pt-8">
-        <ProfileForm
-          profile={profile.data}
-          experience={experience.data}
-          usernameAvailableAt={usernameLock.data}
-          thisYear={new Date().getUTCFullYear()}
-        />
+        <ProfileForm profile={profile.data} usernameAvailableAt={usernameLock.data} />
       </div>
     </Shell>
   );

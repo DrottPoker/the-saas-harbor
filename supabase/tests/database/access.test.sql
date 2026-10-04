@@ -1,7 +1,7 @@
 -- Grants, RLS, storage ownership, verified revenue and ranking. Runs in a rolled-back transaction.
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(124);
+select plan(114);
 
 insert into auth.users(id) values
   ('b0000000-0000-4000-8000-000000000001'),
@@ -312,87 +312,34 @@ select results_eq(
 set local role anon;
 select set_config('request.jwt.claim.sub', '', true);
 select throws_ok(
-  $$ select public.save_profile('SQL Test One', 'Solo founder', 'Gothenburg', 'A longer story.', 'https://example.com', 'https://www.linkedin.com/in/sql-test', 'https://github.com/sql-test', 'https://x.com/sqltest', '', array['Postgres', 'Next.js'], null, '[{"title": "Founder", "organization": "SQL Test", "starts_on": "2024-01-01",
-      "ends_on": null, "description": "Building."}]') $$,
+  $$ select public.save_profile('SQL Test One', 'Solo founder', 'Gothenburg', 'https://example.com', 'https://www.linkedin.com/in/sql-test', 'https://github.com/sql-test', 'https://x.com/sqltest', '', null) $$,
   '42501', null, 'visitors cannot save a profile'
 );
 set local role authenticated;
 select set_config('request.jwt.claim.sub', 'b0000000-0000-4000-8000-000000000001', true);
 select lives_ok(
-  $$ select public.save_profile('SQL Test One', 'Solo founder', 'Gothenburg', 'A longer story.', 'https://example.com', 'https://www.linkedin.com/in/sql-test', 'https://github.com/sql-test', 'https://x.com/sqltest', '', array['Postgres', 'Next.js'], null, '[{"title": "Founder", "organization": "SQL Test", "starts_on": "2024-01-01",
-      "ends_on": null, "description": "Building."},
-      {"title": "Engineer", "organization": "Earlier Co", "starts_on": "2019-09-01",
-      "ends_on": "2023-12-01", "description": ""}]') $$,
-  'owner saves a personal profile with experience'
+  $$ select public.save_profile('SQL Test One', 'Solo founder', 'Gothenburg', 'https://example.com', 'https://www.linkedin.com/in/sql-test', 'https://github.com/sql-test', 'https://x.com/sqltest', '', null) $$,
+  'owner saves a personal profile'
 );
 set local role anon;
 select set_config('request.jwt.claim.sub', '', true);
 select results_eq(
-  $$ select headline, location, skills, linkedin_url from public.profiles
+  $$ select headline, location, linkedin_url from public.profiles
     where id = 'b0000000-0000-4000-8000-000000000001' $$,
-  $$ values ('Solo founder'::text, 'Gothenburg'::text, array['Postgres', 'Next.js']::text[],
-    'https://www.linkedin.com/in/sql-test'::text) $$,
+  $$ values ('Solo founder'::text, 'Gothenburg'::text, 'https://www.linkedin.com/in/sql-test'::text) $$,
   'everyone can read the personal profile'
-);
-select is(
-  (select count(*)::int from public.profile_experience where profile_id = 'b0000000-0000-4000-8000-000000000001'),
-  2, 'everyone can read the experience'
 );
 set local role authenticated;
 select set_config('request.jwt.claim.sub', 'b0000000-0000-4000-8000-000000000001', true);
-select lives_ok($$ select public.save_profile('SQL Test One', 'Solo founder', 'Gothenburg', 'A longer story.', 'https://example.com', 'https://www.linkedin.com/in/sql-test', 'https://github.com/sql-test', 'https://x.com/sqltest', '', array['Postgres', 'Next.js'], null, '[{"title": "Founder", "organization": "SQL Test", "starts_on": "2024-01-01",
-      "ends_on": null, "description": "Building."}]') $$, 'saving again works');
-select is(
-  (select count(*)::int from public.profile_experience where profile_id = 'b0000000-0000-4000-8000-000000000001'),
-  1, 'saving again replaces the experience'
-);
 select throws_ok(
-  $$ select public.save_profile('SQL Test One', 'Solo founder', 'Gothenburg', 'A longer story.', 'https://example.com', 'https://www.linkedin.com/in/sql-test', 'https://github.com/sql-test', 'https://x.com/sqltest', '', array['Postgres', 'postgres'], null, '[{"title": "Founder", "organization": "SQL Test", "starts_on": "2024-01-01",
-      "ends_on": null, "description": "Building."}]') $$,
-  '23514', null, 'skills are unique, ignoring case'
-);
-select throws_ok(
-  $$ select public.save_profile('SQL Test One', 'Solo founder', 'Gothenburg', 'A longer story.', 'https://example.com', 'https://www.linkedin.com/in/sql-test', 'https://github.com/sql-test', 'https://x.com/sqltest', '', (select array_agg('Skill ' || n) from generate_series(1, 21) n), null, '[{"title": "Founder", "organization": "SQL Test", "starts_on": "2024-01-01",
-      "ends_on": null, "description": "Building."}]') $$,
-  '23514', null, 'a profile lists at most 20 skills'
-);
-select throws_ok(
-  $$ select public.save_profile('SQL Test One', 'Solo founder', 'Gothenburg', 'A longer story.', 'https://example.com', 'https://www.linkedin.com/in/sql-test', 'https://gitlab.com/sql-test', 'https://x.com/sqltest', '', array['Postgres', 'Next.js'], null, '[{"title": "Founder", "organization": "SQL Test", "starts_on": "2024-01-01",
-      "ends_on": null, "description": "Building."}]') $$,
+  $$ select public.save_profile('SQL Test One', 'Solo founder', 'Gothenburg', 'https://example.com', 'https://www.linkedin.com/in/sql-test', 'https://gitlab.com/sql-test', 'https://x.com/sqltest', '', null) $$,
   '23514', null, 'the GitHub link must point to GitHub'
 );
 select throws_ok(
-  $$ select public.save_profile('SQL Test One', 'Solo founder', 'Gothenburg', 'A longer story.', 'https://example.com', 'https://evil.example/in/sql-test', 'https://github.com/sql-test', 'https://x.com/sqltest', '', array['Postgres', 'Next.js'], null, '[{"title": "Founder", "organization": "SQL Test", "starts_on": "2024-01-01",
-      "ends_on": null, "description": "Building."}]') $$,
+  $$ select public.save_profile('SQL Test One', 'Solo founder', 'Gothenburg', 'https://example.com', 'https://evil.example/in/sql-test', 'https://github.com/sql-test', 'https://x.com/sqltest', '', null) $$,
   '23514', null, 'the LinkedIn link must point to LinkedIn'
 );
-select throws_ok(
-  $$ select public.save_profile('SQL Test One', 'Solo founder', 'Gothenburg', 'A longer story.', 'https://example.com', 'https://www.linkedin.com/in/sql-test', 'https://github.com/sql-test', 'https://x.com/sqltest', '', array['Postgres', 'Next.js'], null, '[{"title": "Founder", "organization": "SQL Test", "starts_on": "2024-01-01",
-      "ends_on": "2023-01-01"}]') $$,
-  '23514', null, 'a role cannot end before it starts'
-);
-select throws_ok(
-  $$ select public.save_profile('SQL Test One', 'Solo founder', 'Gothenburg', 'A longer story.', 'https://example.com', 'https://www.linkedin.com/in/sql-test', 'https://github.com/sql-test', 'https://x.com/sqltest', '', array['Postgres', 'Next.js'], null, '[{"title": "Founder", "organization": "SQL Test", "starts_on": "2024-01-15"}]') $$,
-  '23514', null, 'roles are stored by month'
-);
-select throws_ok(
-  $$ select public.save_profile('SQL Test One', 'Solo founder', 'Gothenburg', 'A longer story.', 'https://example.com', 'https://www.linkedin.com/in/sql-test', 'https://github.com/sql-test', 'https://x.com/sqltest', '', array['Postgres', 'Next.js'], null, (select jsonb_agg(jsonb_build_object('title', 'Role ' || n,
-      'organization', 'SQL Test', 'starts_on', '2020-01-01')) from generate_series(1, 41) n)) $$,
-  '23514', 'A profile can list up to 40 roles', 'a profile lists at most 40 roles'
-);
-set local role authenticated;
-select set_config('request.jwt.claim.sub', 'b0000000-0000-4000-8000-000000000002', true);
-select throws_ok(
-  $$ insert into public.profile_experience(profile_id, title, organization, starts_on)
-    values ('b0000000-0000-4000-8000-000000000001', 'Forged', 'Forged', '2020-01-01') $$,
-  '42501', null, 'makers cannot add roles to another profile'
-);
-delete from public.profile_experience where profile_id = 'b0000000-0000-4000-8000-000000000001';
 reset role;
-select is(
-  (select count(*)::int from public.profile_experience where profile_id = 'b0000000-0000-4000-8000-000000000001'),
-  1, 'makers cannot remove roles from another profile'
-);
 
 -- Messages: only the two makers in a conversation can read it, writes go through
 -- send_message(), blocks work in both directions, and Realtime events carry ids only.
@@ -726,9 +673,8 @@ select is(
     union all select saas_id from public.public_metrics where owner_id = 'b0000000-0000-4000-8000-000000000001'
     union all select saas_id from public.revenue_snapshots where owner_id = 'b0000000-0000-4000-8000-000000000001'
     union all select saas_id from public.revenue_connections where owner_id = 'b0000000-0000-4000-8000-000000000001'
-    union all select profile_id from public.profile_experience where profile_id = 'b0000000-0000-4000-8000-000000000001'
   ) owned),
-  0, 'profile, experience, products, settings, metrics, snapshots and provider keys are deleted'
+  0, 'profile, products, settings, metrics, snapshots and provider keys are deleted'
 );
 select is_empty(
   $$ select 1 from private.subscription_claims

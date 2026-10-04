@@ -39,7 +39,7 @@ group by r.rolname;
 select results_eq(
   $$ select relation, privileges from pgtap_table_privileges where role = 'anon' order by 1 $$,
   $$ values ('category_counts'::text, 'SELECT'::text), ('leaderboard', 'SELECT'),
-    ('profile_experience', 'SELECT'), ('profiles', 'SELECT'), ('public_metrics', 'SELECT'),
+    ('profiles', 'SELECT'), ('public_metrics', 'SELECT'),
     ('public_saas', 'SELECT'), ('revenue_leaderboard', 'SELECT'), ('saas', 'SELECT'),
     ('saas_milestones', 'SELECT'), ('tech_counts', 'SELECT') $$,
   'visitors only read listings, products and profiles');
@@ -50,7 +50,7 @@ select results_eq(
     ('conversations', 'SELECT'), ('feedback', 'SELECT'), ('inbox', 'SELECT'),
     ('leaderboard', 'SELECT'),
     ('messages', 'SELECT'), ('moderation_log', 'SELECT'), ('notification_settings', 'SELECT'),
-    ('profile_experience', 'DELETE,INSERT,SELECT'), ('profiles', 'SELECT'),
+    ('profiles', 'SELECT'),
     ('public_metrics', 'SELECT'), ('public_saas', 'SELECT'), ('reports', 'SELECT'),
     ('revenue_connections', 'DELETE'), ('revenue_leaderboard', 'SELECT'), ('revenue_snapshots', 'SELECT'), ('saas', 'DELETE,SELECT'), ('saas_milestones', 'SELECT'),
     ('saas_settings', 'INSERT,SELECT,UPDATE'), ('tech_counts', 'SELECT') $$,
@@ -60,7 +60,7 @@ select is_empty($$ select * from pgtap_column_privileges where role = 'anon' $$,
 select results_eq(
   $$ select relation, privilege, columns from pgtap_column_privileges
      where role = 'authenticated' order by 1, 2 $$,
-  $$ values ('profiles'::text, 'UPDATE'::text, 'avatar_path,bio,github_url,headline,linkedin_url,location,name,skills,social_url,updated_at,website,x_url'),
+  $$ values ('profiles'::text, 'UPDATE'::text, 'avatar_path,github_url,headline,linkedin_url,location,name,social_url,updated_at,website,x_url'),
     ('revenue_connections', 'SELECT', 'connected_at,key_hint,last_error,last_synced_at,livemode,owner_id,provider,revenue_checked_at,revenue_from,revenue_note,revenue_origin,revenue_read_at,saas_id,status'),
     ('saas', 'INSERT', 'category,description,id,logo_path,name,owner_id,tagline,tech_stack,website'),
     ('saas', 'UPDATE', 'category,description,logo_path,name,tagline,tech_stack,updated_at,website') $$,

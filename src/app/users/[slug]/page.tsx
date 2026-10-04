@@ -6,11 +6,11 @@ import { PersonAvatar } from "@/components/avatars";
 import { ListingGrid, ResultsFooter } from "@/components/listings";
 import { SendMessageButton } from "@/components/messages/send-message-button";
 import { Metric } from "@/components/metric";
-import { ProfileDetails, RoleList, Skills } from "@/components/profile/profile-sections";
+import { ProfileDetails } from "@/components/profile/profile-sections";
 import { ReportLink } from "@/components/report-link";
 import { EmptyState, Notice, Shell } from "@/components/shell";
 import { Button } from "@/components/ui/button";
-import { findProfile, listings, makerTotals, PAGE_SIZE, publicProfileExperience } from "@/lib/data";
+import { findProfile, listings, makerTotals, PAGE_SIZE } from "@/lib/data";
 import { formatUsd } from "@/lib/domain";
 import { pageMetadata, profileDescription } from "@/lib/seo";
 import { makerJsonLd } from "@/lib/structured-data";
@@ -33,9 +33,9 @@ export async function generateMetadata({ params }: Pick<Props, "params">): Promi
       type: "profile",
       markdown: true,
     }),
-    // A profile without products, a headline or an About section has nothing for search engines
-    // yet, and the sitemap leaves out profiles without products.
-    ...(!totals.products && !profile.headline && !profile.bio && { robots: { index: false } }),
+    // A profile without products or a headline has nothing for search engines yet, and the sitemap
+    // leaves out profiles without products.
+    ...(!totals.products && !profile.headline && { robots: { index: false } }),
   };
 }
 
@@ -50,19 +50,12 @@ export default async function Maker({ params, searchParams }: Props) {
   const profile = found.item;
   const id = profile.id;
   const page = safePage(firstValues(await searchParams).page);
-  const [experience, totals, result, viewer] = await Promise.all([
-    publicProfileExperience(id),
+  const [totals, result, viewer] = await Promise.all([
     makerTotals(id),
     listings({ owner: id, page }),
     currentUser(),
   ]);
   const own = viewer?.id === id;
-  const missing = [
-    !profile.headline && "a headline",
-    !profile.bio && "an About section",
-    !experience.length && "your experience",
-    !profile.skills.length && "skills",
-  ].filter(Boolean);
 
   return (
     <Shell size="medium">
@@ -116,9 +109,9 @@ export default async function Maker({ params, searchParams }: Props) {
         share them.
       </p>
 
-      {own && missing.length > 0 && (
+      {own && !profile.headline && (
         <Notice className="mt-6">
-          Add {missing.join(", ").replace(/, ([^,]*)$/, " and $1")} so others get to know you.{" "}
+          Add a headline so others get to know you.{" "}
           <Link href="/dashboard/profile" className="font-medium underline">
             Edit profile
           </Link>
@@ -127,14 +120,6 @@ export default async function Maker({ params, searchParams }: Props) {
 
       <div className="mt-12 grid gap-10 lg:grid-cols-[minmax(0,1fr)_17rem] lg:gap-14">
         <div className="grid min-w-0 content-start gap-12">
-          {profile.bio && (
-            <section>
-              <h2 className="text-lg font-semibold">About {profile.name}</h2>
-              <p className="mt-3 leading-7 whitespace-pre-wrap text-foreground/85 [overflow-wrap:anywhere]">
-                {profile.bio}
-              </p>
-            </section>
-          )}
           <section aria-labelledby="products">
             <h2 id="products" className="text-lg font-semibold">
               Products
@@ -160,20 +145,9 @@ export default async function Maker({ params, searchParams }: Props) {
               )}
             </div>
           </section>
-          {experience.length > 0 && (
-            <section aria-labelledby="experience">
-              <h2 id="experience" className="text-lg font-semibold">
-                Experience
-              </h2>
-              <div className="mt-4">
-                <RoleList roles={experience} />
-              </div>
-            </section>
-          )}
         </div>
         <aside className="grid content-start gap-4">
           <ProfileDetails profile={profile} />
-          {profile.skills.length > 0 && <Skills skills={profile.skills} />}
           {!own && (
             <ReportLink target="profile" id={id} className="mt-1">
               Report this profile

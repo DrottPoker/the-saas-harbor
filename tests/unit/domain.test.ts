@@ -61,9 +61,9 @@ describe("profile boundaries", () => {
   it.each(["javascript:alert(1)", "data:text/html,test", "https://user:password@example.com"])(
     "rejects unsafe link %s",
     (website) =>
-      expect(
-        profileSchema.safeParse({ name: "Maker", bio: "", website, social_url: "" }).success,
-      ).toBe(false),
+      expect(profileSchema.safeParse({ name: "Maker", website, social_url: "" }).success).toBe(
+        false,
+      ),
   );
   const product = {
     id: crypto.randomUUID(),
@@ -112,14 +112,11 @@ describe("profile boundaries", () => {
       name: "Maker",
       headline: "",
       location: "",
-      bio: "",
       website: "",
       linkedin_url: "linkedin.com/in/maker",
       github_url: "",
       x_url: "x.com/maker",
       social_url: "",
-      skills: [],
-      experience: [],
     });
     expect([links.linkedin_url, links.x_url]).toEqual([
       "https://linkedin.com/in/maker",

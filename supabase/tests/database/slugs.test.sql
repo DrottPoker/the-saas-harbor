@@ -24,7 +24,7 @@ select ok(
   (select slug ~ '^slugtest-maker(-[0-9]+)?$' from public.profiles
     where id = 'f0000000-0000-4000-8000-000000000001'),
   'a profile made without a username gets a slug from its name');
-select public.save_profile('Slugtest Zoë Ångström', '', '', '', '', '', '', '', '', '{}', null, '[]');
+select public.save_profile('Slugtest Zoë Ångström', '', '', '', '', '', '', '', null);
 select ok(
   (select slug ~ '^slugtest-maker(-[0-9]+)?$' from public.profiles
     where id = 'f0000000-0000-4000-8000-000000000001'),
@@ -103,7 +103,7 @@ select is(public.saas_slug_redirect('slugtest-beta'), 'slugtest-alpha-3',
   'the intermediate slug now redirects');
 select is(public.saas_slug_redirect('slugtest-alpha'), null, 'a slug in use never redirects');
 
-select public.save_profile('Slugtest Someone Else', '', '', '', '', '', '', '', '', '{}', null, '[]');
+select public.save_profile('Slugtest Someone Else', '', '', '', '', '', '', '', null);
 select ok(
   (select slug ~ '^slugtest-maker(-[0-9]+)?$' from public.profiles
     where id = 'f0000000-0000-4000-8000-000000000001'),

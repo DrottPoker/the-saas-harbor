@@ -66,13 +66,11 @@ function profile(overrides: Partial<Profile> = {}): Profile {
     name: "Tomas Rivera",
     headline: "Builds tools for data teams",
     location: "Lisbon",
-    bio: "# Not a heading\n- not a list",
     website: "https://tomas.example",
     linkedin_url: "",
     github_url: "https://github.com/tomas",
     x_url: "",
     social_url: "",
-    skills: ["SQL", "Go"],
     avatar_path: null,
     suspended_at: null,
     suspended_note: "",
@@ -355,22 +353,10 @@ describe("markdown", () => {
     expect(text).not.toContain("[Evil]");
   });
 
-  it("describes a maker with products, experience and skills", () => {
+  it("describes a maker with products and links", () => {
     const text = makerMarkdown(
       profile(),
       [listing(), listing({ slug: "private-one", name: "Private One", revenue_status: "private" })],
-      [
-        {
-          id: "r1",
-          profile_id: "a0000000-0000-4000-8000-000000000001",
-          title: "Founder",
-          organization: "QueryBird",
-          description: "",
-          starts_on: "2024-01-01",
-          ends_on: null,
-          created_at: "2024-01-01T00:00:00Z",
-        },
-      ],
       { mrr: 420_000, customers: 37 },
     );
     expect(text).toContain("# Tomas Rivera\n\n> Builds tools for data teams");
@@ -380,10 +366,7 @@ describe("markdown", () => {
       "- [QueryBird](https://harbor.example/saas/querybird.md): SQL reports for small teams $4,200 verified MRR.",
     );
     expect(text).toContain("MRR not shared.");
-    expect(text).toContain("\\# Not a heading\n\\- not a list");
-    expect(text).toContain("- Founder, QueryBird (Jan 2024 - Present");
-    expect(text).toContain("## Skills\n\nSQL, Go");
-    const unshared = makerMarkdown(profile(), [], [], { mrr: null, customers: null });
+    const unshared = makerMarkdown(profile(), [], { mrr: null, customers: null });
     expect(unshared).toContain("- Verified MRR across shared products: not shared");
     expect(unshared).toContain("- Subscribers across shared products: not shared");
   });
@@ -529,7 +512,7 @@ describe("product titles and descriptions", () => {
 });
 
 describe("profile descriptions", () => {
-  const person = { name: "Tomas Rivera", headline: "Builds tools for data teams", bio: "" };
+  const person = { name: "Tomas Rivera", headline: "Builds tools for data teams" };
 
   it("name the products the user is the founder of", () => {
     expect(profileDescription(person, ["QueryBird"])).toBe(
@@ -542,11 +525,6 @@ describe("profile descriptions", () => {
       "Builds tools for data teams. Founder of A, B, C and 2 more.",
     );
   });
-
-  it("start with the About section when there is no headline", () =>
-    expect(
-      profileDescription({ ...person, headline: "", bio: "I build things" }, ["QueryBird"]),
-    ).toBe("I build things. Founder of QueryBird."));
 
   it("fall back to the name", () => {
     expect(profileDescription({ ...person, headline: "" }, ["QueryBird"])).toBe(

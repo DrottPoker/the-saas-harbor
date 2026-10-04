@@ -1,6 +1,5 @@
 import { z } from "zod";
 import { DETAILS_MAX_LENGTH, DETAILS_REQUIRED, NOTE_MAX_LENGTH, REASONS } from "./moderation";
-import { latestDate, latestMonth } from "./profile";
 import { TECH_STACK_MAX, techFromSlug } from "./tech";
 
 export const categories = [
@@ -105,29 +104,13 @@ function profileLink(host: RegExp, site: string, example: string) {
     }
   }, `Use your ${site} address, such as ${example}.`);
 }
-const month = z
-  .string()
-  .regex(/^\d{4}-(0[1-9]|1[0-2])$/, "Choose a month and a year for every date.");
-export const roleSchema = z
-  .object({
-    title: z
-      .string()
-      .trim()
-      .min(1, "Every role needs a title.")
-      .max(100, "Keep titles under 100 characters."),
-    organization: z
-      .string()
-      .trim()
-      .min(1, "Every role needs a company.")
-      .max(100, "Keep company names under 100 characters."),
-    start: month,
-    end: month.nullable(),
-    description: z.string().trim().max(1000, "Keep descriptions under 1,000 characters."),
-  })
-  .refine((role) => role.start >= "1900-01", "Choose a start year after 1900.")
-  .refine((role) => role.start <= latestMonth(), "A start date cannot be in the future.")
-  .refine((role) => !role.end || role.end >= role.start, "A role cannot end before it starts.")
-  .refine((role) => !role.end || role.end <= latestMonth(), "An end date cannot be in the future.");
+/**
+ * The latest date anywhere, in the time zone furthest ahead (UTC+14): what "today" is for a founder
+ * east of UTC is never in the future by it.
+ */
+export function latestDate(now = new Date()) {
+  return new Date(now.getTime() + 14 * 3_600_000).toISOString().slice(0, 10);
+}
 export const profileSchema = z.object({
   name: z
     .string()
@@ -136,7 +119,6 @@ export const profileSchema = z.object({
     .max(60, "Use a name of 2 to 60 characters."),
   headline: z.string().trim().max(120, "Keep the headline under 120 characters."),
   location: z.string().trim().max(80, "Keep the location under 80 characters."),
-  bio: z.string().trim().max(2000, "Keep About under 2,000 characters."),
   website: optionalUrl,
   linkedin_url: profileLink(
     /^([a-z0-9-]+\.)*linkedin\.com$/i,
@@ -146,15 +128,6 @@ export const profileSchema = z.object({
   github_url: profileLink(/^(www\.)?github\.com$/i, "GitHub", "https://github.com/your-name"),
   x_url: profileLink(/^(www\.)?(x|twitter)\.com$/i, "X", "https://x.com/your-name"),
   social_url: optionalUrl,
-  skills: z
-    .array(
-      z
-        .string()
-        .max(40, "Keep each skill under 40 characters.")
-        .regex(/^\P{Cc}+$/u, "Skills cannot contain special characters."),
-    )
-    .max(20, "Add up to 20 skills."),
-  experience: z.array(roleSchema).max(40, "List up to 40 roles."),
 });
 export const saasSchema = z.object({
   id: z.uuid(),

@@ -313,13 +313,6 @@ export const findProfile = cache(async (address: string): Promise<Found<Profile>
   return profile ? { redirect: `/users/${profile.slug}` } : null;
 });
 
-export const publicProfileExperience = cache(async (id: string) => {
-  const client = publicClient();
-  if (!client) throw new Error("Supabase is not configured.");
-  const { data, error } = await client.from("profile_experience").select("*").eq("profile_id", id);
-  if (error) throw new Error("This profile could not be loaded.");
-  return data;
-});
 // A maker's key figures: every listed product, oldest first, and verified MRR and subscribers
 // summed over the products that share them.
 export const makerTotals = cache(async (id: string) => {

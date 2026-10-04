@@ -31,7 +31,6 @@ const makers = [
   {
     key: "lena",
     name: "Lena Okafor",
-    bio: "Building finance tools for small teams. Previously led product at a payments startup.",
     website: "https://lenaokafor.example",
     products: [
       {
@@ -60,7 +59,6 @@ const makers = [
   {
     key: "tomas",
     name: "Tomás Rivera",
-    bio: "Former data engineer. I build small tools for people who live in SQL.",
     website: "https://tomasrivera.example",
     products: [
       {
@@ -89,7 +87,6 @@ const makers = [
   {
     key: "priya",
     name: "Priya Natarajan",
-    bio: "Solo founder. Bootstrapped, profitable, and writing about it.",
     website: "https://priya.example",
     products: [
       {
@@ -119,7 +116,6 @@ const makers = [
   {
     key: "mei",
     name: "Mei Chen",
-    bio: "Designer who codes. Making tools that help product teams ship polished work.",
     website: "https://meichen.example",
     products: [
       {
@@ -148,7 +144,6 @@ const makers = [
   {
     key: "jonas",
     name: "Jonas Berg",
-    bio: "Growth marketer turned founder. Based in Gothenburg.",
     website: "https://jonasberg.example",
     products: [
       {
@@ -177,7 +172,6 @@ const makers = [
   {
     key: "sam",
     name: "Sam Whitfield",
-    bio: "Infrastructure person. I like boring software that never pages anyone.",
     website: "https://samwhitfield.example",
     products: [
       {
@@ -206,7 +200,6 @@ const makers = [
   {
     key: "aisha",
     name: "Aisha Rahman",
-    bio: "ML engineer building the unglamorous tooling around language models.",
     products: [
       {
         name: "Promptvault",
@@ -234,7 +227,6 @@ const makers = [
   {
     key: "oskar",
     name: "Oskar Lindqvist",
-    bio: "Ex-chef writing software for the trades I know.",
     products: [
       {
         name: "Rostra",
@@ -267,100 +259,43 @@ const personal = {
   lena: {
     headline: "Building finance tools for small teams",
     location: "London, United Kingdom",
-    about:
-      "I build finance tools for small teams. Before Ledgerloop I led product at a payments startup, where I watched finance teams close the books in spreadsheets every month.\n\nLedgerloop and Paperweight are my attempt to make that week calmer. I am always happy to talk about pricing, onboarding and selling to finance teams.",
-    skills: ["Product management", "Payments", "Accounting workflows", "Pricing"],
     linkedin: "https://www.linkedin.com/in/harbor-demo-lena",
-    experience: [
-      ["Founder", "Ledgerloop", "2022-03", null],
-      ["Head of Product", "Northpay", "2018-06", "2022-02"],
-    ],
   },
   tomas: {
     headline: "Small tools for people who live in SQL",
     location: "Valencia, Spain",
-    about:
-      "Data engineer for ten years, now building Querybird and Shiplog. I like tools that answer a question in one screen.",
-    skills: ["PostgreSQL", "Data engineering", "Python", "TypeScript"],
     github: "https://github.com/harbor-demo-tomas",
-    experience: [
-      ["Founder", "Querybird", "2023-05", null],
-      ["Data Engineer", "Brightline Analytics", "2017-09", "2023-04"],
-    ],
   },
   priya: {
     headline: "Solo founder, bootstrapped and profitable",
     location: "Toronto, Canada",
-    about:
-      "I run Tallyform on my own and write about what it takes to grow a product without outside money. Dialtone is my newest experiment.",
-    skills: ["Bootstrapping", "No-code", "Payments", "Writing"],
     x: "https://x.com/harbor_demo_priya",
-    experience: [
-      ["Founder", "Tallyform", "2021-09", null],
-      ["Founder", "Dialtone", "2025-02", null],
-      ["Software Engineer", "Formwise", "2016-01", "2021-08"],
-    ],
   },
   mei: {
     headline: "Designer who codes",
     location: "Singapore",
-    about:
-      "Product designer turned maker. Framecast turns screenshots into launch videos, and Paletteer builds accessible color systems.",
-    skills: ["Product design", "Design systems", "React", "Motion design"],
     linkedin: "https://www.linkedin.com/in/harbor-demo-mei",
     x: "https://x.com/harbor_demo_mei",
-    experience: [
-      ["Founder", "Framecast", "2023-11", null],
-      ["Senior Product Designer", "Studio Lumen", "2019-03", "2023-10"],
-    ],
   },
   jonas: {
     headline: "Growth marketer turned founder",
     location: "Gothenburg, Sweden",
-    about:
-      "I spent years helping other companies grow before building Sendwise, a deliverability tool for small sales teams.",
-    skills: ["Growth", "Email deliverability", "SEO", "Copywriting"],
     linkedin: "https://www.linkedin.com/in/harbor-demo-jonas",
-    experience: [
-      ["Founder", "Sendwise", "2022-10", null],
-      ["Growth Lead", "Kustbolaget", "2018-04", "2022-09"],
-    ],
   },
   sam: {
     headline: "Boring infrastructure that never pages anyone",
     location: "Manchester, United Kingdom",
-    about:
-      "Site reliability engineer by trade. Beacon is the status page and uptime tool I wanted during a decade of on-call rotations.",
-    skills: ["Go", "Kubernetes", "Observability", "PostgreSQL"],
     github: "https://github.com/harbor-demo-sam",
-    experience: [
-      ["Founder", "Beacon", "2022-06", null],
-      ["Site Reliability Engineer", "Parcelworks", "2015-05", "2022-05"],
-    ],
   },
   aisha: {
     headline: "Tooling for production LLM apps",
     location: "Berlin, Germany",
-    about:
-      "ML engineer building the unglamorous tooling around language models: versioned prompts, evaluations and rollbacks.",
-    skills: ["Machine learning", "LLM evaluation", "Python", "TypeScript"],
     github: "https://github.com/harbor-demo-aisha",
     linkedin: "https://www.linkedin.com/in/harbor-demo-aisha",
-    experience: [
-      ["Founder", "Promptvault", "2024-02", null],
-      ["Machine Learning Engineer", "Aster Labs", "2020-01", "2024-01"],
-    ],
   },
   oskar: {
     headline: "Software for the trades I know",
     location: "Malmö, Sweden",
-    about:
-      "Twelve years in restaurant kitchens taught me what shift planning should feel like. Rostra is that tool.",
-    skills: ["Restaurant operations", "Scheduling", "Ruby on Rails"],
-    experience: [
-      ["Founder", "Rostra", "2023-08", null],
-      ["Head Chef", "Bistro Norra", "2012-03", "2021-12"],
-    ],
   },
 };
 
@@ -521,21 +456,12 @@ for (const maker of makers) {
     p_name: maker.name,
     p_headline: details.headline ?? "",
     p_location: details.location ?? "",
-    p_bio: details.about ?? maker.bio,
     p_website: maker.website ?? "",
     p_linkedin_url: details.linkedin ?? "",
     p_github_url: details.github ?? "",
     p_x_url: details.x ?? "",
     p_social_url: "",
-    p_skills: details.skills ?? [],
     p_avatar_path: null,
-    p_experience: (details.experience ?? []).map(([title, organization, start, end]) => ({
-      title,
-      organization,
-      starts_on: `${start}-01`,
-      ends_on: end && `${end}-01`,
-      description: "",
-    })),
   });
   if (profileError) throw new Error(`Could not save the profile for ${email}.`);
 
@@ -613,15 +539,12 @@ const { error: moderatorProfileError } = await moderator.rpc("save_profile", {
   p_name: "Harbor Admin",
   p_headline: "Reviews reports for The SaaS Harbor",
   p_location: "",
-  p_bio: "",
   p_website: "",
   p_linkedin_url: "",
   p_github_url: "",
   p_x_url: "",
   p_social_url: "",
-  p_skills: [],
   p_avatar_path: null,
-  p_experience: [],
 });
 if (moderatorProfileError) throw new Error("Could not save the demo admin's profile.");
 

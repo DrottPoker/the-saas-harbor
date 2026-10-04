@@ -2,10 +2,10 @@
 -- rolled-back transaction.
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(94);
+select plan(93);
 
--- Makers, a reporter, a bystander and two admins. The maker has two products, experience and a
--- verified MRR on the leaderboard, and has written to the reporter.
+-- Makers, a reporter, a bystander and two admins. The maker has two products and a verified MRR
+-- on the leaderboard, and has written to the reporter.
 insert into auth.users(id, email) values
   ('d0000000-0000-4000-8000-000000000001', 'maker@moderation.test'),
   ('d0000000-0000-4000-8000-000000000002', 'reporter@moderation.test'),
@@ -18,8 +18,6 @@ insert into public.profiles(id, name) values
   ('d0000000-0000-4000-8000-000000000003', 'Moderation Bystander'),
   ('d0000000-0000-4000-8000-000000000004', 'Moderation Admin'),
   ('d0000000-0000-4000-8000-000000000005', 'Second Admin');
-insert into public.profile_experience(profile_id, title, organization, starts_on)
-  values ('d0000000-0000-4000-8000-000000000001', 'Founder', 'Moderation Co', '2024-01-01');
 insert into private.admins(user_id) values
   ('d0000000-0000-4000-8000-000000000004'), ('d0000000-0000-4000-8000-000000000005');
 
@@ -270,7 +268,7 @@ select set_config('request.jwt.claim.sub', '', true);
 select isnt_empty($$ select 1 from public.leaderboard where id = 'e0000000-0000-4000-8000-000000000001' $$,
   'a restored product is ranked again');
 
--- An admin suspends the maker. The profile, experience, products and messages disappear for
+-- An admin suspends the maker. The profile, products and messages disappear for
 -- everyone else, and the account can neither send nor receive messages.
 set local role authenticated;
 select set_config('request.jwt.claim.sub', 'd0000000-0000-4000-8000-000000000004', true);
@@ -305,8 +303,6 @@ set local role anon;
 select set_config('request.jwt.claim.sub', '', true);
 select is_empty($$ select 1 from public.profiles where id = 'd0000000-0000-4000-8000-000000000001' $$,
   'a suspended profile is hidden');
-select is_empty($$ select 1 from public.profile_experience where profile_id = 'd0000000-0000-4000-8000-000000000001' $$,
-  'a suspended maker''s experience is hidden');
 select is_empty($$ select 1 from public.public_saas where owner_id = 'd0000000-0000-4000-8000-000000000001' $$,
   'a suspended maker''s products are hidden');
 

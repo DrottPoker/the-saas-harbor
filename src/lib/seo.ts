@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import type { Listing } from "./data";
 import { formatUsd } from "./domain";
-import { excerpt } from "./moderation";
 import { safePage } from "./params";
 
 export const SITE_NAME = "The SaaS Harbor";
@@ -110,16 +109,15 @@ function nameList(names: string[], most = 3) {
 }
 
 /**
- * A profile page's description: the headline or the start of the About section, and the products
- * the user is the founder of, which people often search for.
+ * A profile page's description: the headline, and the products the user is the founder of, which
+ * people often search for.
  */
 export function profileDescription(
-  profile: { name: string; headline: string | null; bio: string | null },
+  profile: { name: string; headline: string | null },
   products: string[],
 ) {
   const founder = products.length ? `Founder of ${nameList(products)}.` : "";
-  const about = profile.headline || (profile.bio && excerpt(profile.bio, founder ? 110 : 160));
-  const lead = about ? sentence(about) : "";
+  const lead = profile.headline ? sentence(profile.headline) : "";
   if (lead) return [lead, founder].filter(Boolean).join(" ");
   return products.length
     ? `${profile.name}, founder of ${nameList(products)}, on ${SITE_NAME}.`

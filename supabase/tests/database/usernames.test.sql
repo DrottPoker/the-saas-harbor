@@ -98,7 +98,7 @@ select throws_ok(
      'Support') $$,
   '42501', null, 'users cannot insert a profile, so a reserved name never becomes an address');
 select throws_ok(
-  $$ select public.save_profile('Support', '', '', '', '', '', '', '', '', '{}', null, '[]') $$,
+  $$ select public.save_profile('Support', '', '', '', '', '', '', '', null) $$,
   'P0001', 'Choose a username first', 'saving a profile does not create one');
 select throws_ok(
   $$ select public.save_saas('e3100000-0000-4000-8000-000000000006', 'Usertest Product',

@@ -8,6 +8,10 @@ The first release includes accounts, email confirmation and recovery, public mak
 
 Makers can message each other privately (see Messages below), and report products, profiles and messages to the admins, who decide in an admin panel (see Reports and moderation below). They get emails about unread messages and about decisions (see Email notifications below). Other forms of connection, such as following or contact lists, are not implemented.
 
+## Profiles without About, experience and skills 2026-10-04
+
+At the owner's request, profiles no longer have About, Experience or Skills: the edit form, the public profile, its Markdown version and its sharing image leave them out, and migration `20261004140000_drop_about_experience_skills.sql` drops the `bio` and `skills` columns and the `profile_experience` table, so what users had written there is deleted. `save_profile` takes only the remaining fields, and a report on a profile copies only those; reports made before keep their copies, and the admin panel still shows them. A profile's search description and sharing image use the headline alone, and the owner's prompt on their profile asks only for a headline. The privacy policy no longer lists the three fields.
+
 ## Fixes from a walkthrough as a new user 2026-10-04
 
 At the owner's request, the site was walked through as a new visitor and founder (production as a visitor, then sign-up, a product, the profile, messages and settings locally), and every point found was fixed:

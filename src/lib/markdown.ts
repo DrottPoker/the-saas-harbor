@@ -13,7 +13,6 @@ import type { CategoryCount, Listing, Profile } from "./data";
 import { categorySlug, formatDate, formatUsd } from "./domain";
 import { REVENUE_WINDOWS, revenueRankingTitle, sharesRevenue } from "./revenue-figures";
 import { providerList, providerName } from "./revenue/catalog";
-import { rolePeriod, sortRoles, type ProfileExperience } from "./profile";
 import { SITE_DESCRIPTION, SITE_NAME, siteUrl } from "./seo";
 import { groupTechStack, technologies } from "./tech";
 import { currentVerifiedDomain } from "./website-domain";
@@ -173,7 +172,6 @@ export function productMarkdown(item: Listing) {
 export function makerMarkdown(
   profile: Profile,
   products: Listing[],
-  experience: ProfileExperience[],
   totals: { mrr: number | null; customers: number | null },
 ) {
   const base = siteUrl();
@@ -203,23 +201,6 @@ export function makerMarkdown(
             `- [${inline(item.name)}](${base}/saas/${item.slug}.md): ${inline(item.tagline)} ${mrrText(item)}.`,
         )
       : ["No products listed yet."]),
-    ...(profile.bio
-      ? ["", `## About ${inline(profile.name)}`, "", escapeMarkdown(profile.bio)]
-      : []),
-    ...(experience.length
-      ? [
-          "",
-          "## Experience",
-          "",
-          ...sortRoles(experience).map(
-            (role) =>
-              `- ${inline(role.title)}, ${inline(role.organization)} (${rolePeriod(role)})${role.description ? `: ${inline(role.description)}` : ""}`,
-          ),
-        ]
-      : []),
-    ...(profile.skills.length
-      ? ["", "## Skills", "", profile.skills.map((skill) => inline(skill)).join(", ")]
-      : []),
     "",
     "---",
     "",
