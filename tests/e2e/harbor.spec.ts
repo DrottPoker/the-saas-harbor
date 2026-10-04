@@ -451,14 +451,17 @@ test("demo products fill the lists without a rank, until real products take thei
   }
   const violations: string[] = [];
   watchPolicy(page, violations);
-  // The leaderboard's first page is filled after the real products, and demo rows have no rank.
-  // The list's heading is for screen readers only, and the rows carry no Demo tag.
-  await expect(heading).toHaveClass("sr-only");
-  await expect(page.getByText("Examples of how products appear here")).toHaveCount(0);
+  // The leaderboard's first page is filled after the real products, under a visible heading that
+  // says they are made up, and demo rows have no rank. On wide screens the Demo MRR column marks
+  // them; on phones, where the table has no column headings, each row's Demo tag does.
+  await expect(heading).toBeVisible();
+  await expect(
+    page.getByText("Made-up examples that show what a listing looks like."),
+  ).toBeVisible();
   const rows = page.getByRole("list", { name: "Demo products" }).getByRole("listitem");
   await expect(rows).toHaveCount(Math.min(13, 12 - count));
   for (const row of await rows.all()) {
-    await expect(row.getByText("Demo", { exact: true })).toHaveCount(0);
+    await expect(row.getByText("Demo", { exact: true })).toBeHidden();
     await expect(row.getByText("Demo MRR", { exact: true })).toBeAttached();
     await expect(row.getByText("Rank", { exact: true })).toHaveCount(0);
   }
@@ -513,6 +516,9 @@ test("demo products fill the lists without a rank, until real products take thei
     await page.goto(path);
     await expectNoHorizontalScroll(page);
   }
+  await page.goto("/");
+  for (const row of await rows.all())
+    await expect(row.getByText("Demo", { exact: true })).toBeVisible();
   expect(violations).toEqual([]);
 });
 
@@ -2179,18 +2185,41 @@ test("users send feedback from any page, and admins read it and mark it handled"
   });
   if (grantError) throw new Error("Unable to grant admin rights.");
 
-  // A visitor who opens the form signs in first, and the form then opens in a dialog over the
-  // page, which it remembers.
+  // A visitor sends feedback without an account, from a dialog over the page it remembers, and
+  // may leave an address for a reply. The alert says only that there is one.
+  const visitor = await (await browser.newContext()).newPage();
+  await visitor.goto("/stats");
+  await visitor.getByRole("link", { name: "Feedback", exact: true }).click();
+  await expect(visitor).toHaveURL(/\/feedback\?from=%2Fstats$/);
+  const visitorDialog = visitor.getByRole("dialog", { name: "Send feedback" });
+  const visitorMessage = `Sign-up did not take my username ${run}.`;
+  const replyTo = `harbor-feedback-visitor-${run}@example.test`;
+  await visitorDialog.getByLabel("Bug or error").check();
+  await visitorDialog.getByLabel("Your feedback").fill(visitorMessage);
+  await visitorDialog.getByLabel("Email address (optional)").fill(replyTo);
+  await expectAccessible(visitor);
+  await visitorDialog.getByRole("button", { name: "Send feedback" }).click();
+  await expect(visitor.getByRole("heading", { name: "Thank you for your feedback" })).toBeFocused();
+  await expect
+    .poll(async () =>
+      (await telegramMessages(visitor.request)).find((text) => text.includes(visitorMessage)),
+    )
+    .toMatch(/From a visitor on <code>\/stats<\/code>:[\s\S]*They left an email address/);
+  expect(
+    (await telegramMessages(visitor.request)).find((text) => text.includes(visitorMessage)),
+  ).not.toContain(replyTo);
+  await visitor.context().close();
+
+  // A signed-in user's feedback opens the same way, under their account.
   const page = await (await browser.newContext()).newPage();
+  await login(page, sender.email, sender.password);
   await page.goto("/stats");
   await page.getByRole("link", { name: "Feedback", exact: true }).click();
-  await expect(page).toHaveURL(/\/auth\?next=%2Ffeedback%3Ffrom%3D%252Fstats$/);
-  await page.getByLabel("Email address").fill(sender.email);
-  await page.getByLabel("Password", { exact: true }).fill(sender.password);
-  await page.getByRole("button", { name: "Sign in", exact: true }).click();
   await expect(page).toHaveURL(/\/feedback\?from=%2Fstats$/);
   const dialog = page.getByRole("dialog", { name: "Send feedback" });
   await expect(dialog).toBeVisible();
+  // Users leave no address: theirs is in their account.
+  await expect(dialog.getByLabel("Email address (optional)")).toHaveCount(0);
   // The page stays under the dialog, hidden from screen readers while it is open.
   await expect(
     page.getByRole("heading", { name: "Statistics", level: 1, includeHidden: true }),
@@ -2208,7 +2237,7 @@ test("users send feedback from any page, and admins read it and mark it handled"
   await expect
     .poll(async () => (await telegramMessages(page.request)).find((text) => text.includes(message)))
     .toMatch(/^<b>New feedback: Bug or error<\/b>\n.* on <code>\/stats<\/code>:/);
-  // Closing returns to the page, and sign-in is no longer in the way back.
+  // Closing returns to the page.
   await page.getByRole("button", { name: "Done" }).click();
   await expect(page).toHaveURL(/\/stats$/);
   await expect(page.getByRole("dialog")).toHaveCount(0);
@@ -2256,6 +2285,13 @@ test("users send feedback from any page, and admins read it and mark it handled"
   await expect(item.getByRole("link", { name: "/stats" })).toHaveAttribute("href", "/stats");
   const fromFooter = adminPage.getByRole("article").filter({ hasText: footerMessage });
   await expect(fromFooter.getByRole("link", { name: "/about" })).toHaveAttribute("href", "/about");
+  // A visitor's feedback names no account, and offers the address they left for a reply.
+  const fromVisitor = adminPage.getByRole("article").filter({ hasText: visitorMessage });
+  await expect(fromVisitor.getByText("a visitor", { exact: true })).toBeVisible();
+  await expect(fromVisitor.getByRole("link", { name: `Reply to ${replyTo}` })).toHaveAttribute(
+    "href",
+    `mailto:${replyTo}`,
+  );
   // When it came in, with the time, in the admin's own time zone.
   await expect(item.locator("time")).toHaveText(
     /^[A-Z][a-z]{2} \d{1,2}, \d{4}, \d{1,2}:\d{2}\s(AM|PM)$/,
@@ -2272,6 +2308,8 @@ test("users send feedback from any page, and admins read it and mark it handled"
   await adminPage.goto("/admin/feedback");
   await expect(adminPage.getByText(message)).toBeVisible();
   await adminPage.context().close();
+  // A visitor's feedback goes with no account, so the test removes its own.
+  await admin.from("feedback").delete().eq("message", visitorMessage);
 });
 
 test("visits are counted without cookies, and admins see them under Analytics", async ({
