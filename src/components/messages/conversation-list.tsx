@@ -116,14 +116,19 @@ export function ConversationList({
             );
           })}
         </ul>
+      ) : openId ? (
+        // The first conversation is open beside this, so there is nothing to explain.
+        <p className="px-4 py-6 text-sm text-muted-foreground">
+          Your conversations show here once a message is sent.
+        </p>
       ) : (
         <div className="flex flex-1 flex-col items-center justify-center px-6 py-10 text-center">
           <p className="font-semibold">No messages yet</p>
           <p className="mt-1.5 max-w-xs text-sm text-muted-foreground">
-            Open a user&apos;s profile and choose Send message to start a conversation.
+            Open a product or a user&apos;s profile and choose Send message to start a conversation.
           </p>
           <Button asChild variant="outline" className="mt-5">
-            <Link href="/">Browse the leaderboard</Link>
+            <Link href="/browse">Browse products</Link>
           </Button>
         </div>
       )}

@@ -168,7 +168,9 @@ export type Database = {
           kind: string
           message: string
           page: string | null
-          user_id: string
+          reply_email: string | null
+          user_id: string | null
+          visitor: string | null
         }
         Insert: {
           created_at?: string
@@ -178,7 +180,9 @@ export type Database = {
           kind: string
           message: string
           page?: string | null
-          user_id: string
+          reply_email?: string | null
+          user_id?: string | null
+          visitor?: string | null
         }
         Update: {
           created_at?: string
@@ -188,7 +192,9 @@ export type Database = {
           kind?: string
           message?: string
           page?: string | null
-          user_id?: string
+          reply_email?: string | null
+          user_id?: string | null
+          visitor?: string | null
         }
         Relationships: []
       }
@@ -1573,6 +1579,17 @@ export type Database = {
           p_id: string
           p_reason: string
           p_target: string
+        }
+        Returns: string
+      }
+      submit_visitor_feedback: {
+        Args: {
+          p_ip: string
+          p_kind: string
+          p_message: string
+          p_page: string
+          p_reply_email: string
+          p_user_agent: string
         }
         Returns: string
       }

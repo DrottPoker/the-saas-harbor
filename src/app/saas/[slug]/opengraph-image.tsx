@@ -31,7 +31,7 @@ export default async function Image({ params }: { params: Promise<{ slug: string
       provider: isProviderId(item.provider) ? item.provider : undefined,
     });
   if (item.customers != null)
-    figures.push({ label: "Paying customers", value: item.customers.toLocaleString("en-US") });
+    figures.push({ label: "Subscribers", value: item.customers.toLocaleString("en-US") });
   figures.push({ label: "Category", value: item.category ?? "Other" });
   if (figures.length < 3)
     figures.push({ label: "Founder", value: excerpt(item.owner_name ?? "", 22) });

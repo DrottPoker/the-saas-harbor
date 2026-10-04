@@ -8,6 +8,29 @@ The first release includes accounts, email confirmation and recovery, public mak
 
 Makers can message each other privately (see Messages below), and report products, profiles and messages to the admins, who decide in an admin panel (see Reports and moderation below). They get emails about unread messages and about decisions (see Email notifications below). Other forms of connection, such as following or contact lists, are not implemented.
 
+## Fixes from a walkthrough as a new user 2026-10-04
+
+At the owner's request, the site was walked through as a new visitor and founder (production as a visitor, then sign-up, a product, the profile, messages and settings locally), and every point found was fixed:
+
+- **Demo products.** On phones the leaderboard had no column headings, so demo rows showed $38,400 with nothing marking them as made up. Every list now shows them under a visible Demo products heading with a line saying they are examples that are never ranked, and leaderboard rows on phones carry a Demo tag. This replaces the owner's choice of 2026-09-26 to mark them only by the column; AGENTS.md says so.
+- **Ranking.** Equal amounts are ordered by revenue of all time before the date listed, so a product at $0 MRR that has sold something ranks above one that has not (migration `20261004120000_leaderboard_ties.sql`).
+- **Test listings.** The Proxy and etergt, by the same account, were hidden in production through `admin_hide_saas`, as the owner's admin account, with the reason Other and a note that they look like tests; the founder got the usual decision email.
+- **Product pages.** Charts and trends start at the product's first month with an amount, its launch or its listing, instead of twelve months of $0 before it existed, and a product that sells only one-time purchases opens on its revenue. Paying customers is now Subscribers everywhere it shows, since Paying customers 0 beside $14 of revenue read as a contradiction. The founder sees Edit product and a note, for them alone, on why figures read Not shared.
+- **How it works** starts with three steps to get listed; the detail of how each figure is calculated folds away.
+- **Sign-in** says why it is asked for when a visitor came to write to a founder or to report, instead of Welcome back.
+- **Feedback without an account.** Visitors send feedback too, with an optional email address for a reply, so someone stuck before signing up can tell us (migration `20261004130000_visitor_feedback.sql`, `submit_visitor_feedback` for the service role only, limits per visitor and for all visitors, deleted after 12 months, described in the privacy policy, updated 2026-10-04).
+- **Dashboard** shows Next steps until a product has a logo, the profile a photo and headline, a payment provider is verified and a domain verified.
+- **Sharing a new product** links to its page as well.
+- **Product form** takes a website without https://, asks for a category instead of choosing Productivity, puts the optional payment provider after the logo and tech stack, and keeps Save in view; the editor links to the public page.
+- **Settings** (renamed from Email settings) change the email address, confirmed from both addresses, and the password, checked against the current one; an account without a password can choose one by email. Delete account moved here from Edit profile.
+- **Messages.** Enter sends and Shift+Enter starts a new line with a keyboard, which a line under the field says; the conversation list no longer says No messages yet beside an open conversation.
+- **Username** rules show before any error, spaces and capitals become hyphens and lowercase as they are typed, and a refusal shows by the field. Check your inbox can send the email again after a minute, and the confirm page says why it asks for a click.
+- **Names.** Signed-in users see Add SaaS throughout; List your SaaS is for visitors. Browse moved to `/browse` (`/discover` redirects) and offers A to Z and Newest, which is New arrivals, so the header has Leaderboard and Browse; New arrivals stays in the footer. On phones the dashboard is in the account menu instead of an unlabeled icon.
+
+Verified: `npm run check` (504 unit tests), `npm run test:db` (706 tests) and `npm run build` pass; every changed screen was looked at with Playwright at 1440 px light and 390 px dark with an Axe scan of WCAG 2.2 AA (no violations), and the flows were run locally: visitor feedback with its alert context, the username field, sending the confirmation again, a wrong and a right password change, an email change confirmed from both addresses, the share dialog's link and Enter in Messages. The browser tests (`npm run test:e2e`) were updated but not run, since another project held ports 3001 and 3002 that day.
+
+Before this code goes to production, run `npm run auth:production` for the new `email_change` template; without it Supabase sends its default email change message, which the confirm page cannot read.
+
 ## An hour in the live card 2026-10-02
 
 At the owner's request, the Right now card on the Analytics page covers the last 60 minutes instead of 30: its visitors and page views, a column per minute, and the pages, sources and countries. Visitors now are still those of the last 5 minutes. Migration `20261002090000_live_hour.sql` replaces `admin_analytics_live()`, and the report's schema accepts minutes up to 59 ago. The migration went to production before the code; until the code was live, the card there showed an error, since the earlier schema accepted only 30 minutes.

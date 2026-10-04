@@ -69,8 +69,8 @@ function submitLabel(isNew: boolean, provider: ProviderId | null) {
 }
 
 /**
- * Everything about a product in one form, revenue verification included: the details, then the
- * payment provider, which is optional, then the logo and the tech stack. One save does it all.
+ * Everything about a product in one form, revenue verification included: the details, the logo
+ * and the tech stack, then the payment provider, which is optional. One save does it all.
  */
 export function SaasForm({
   id,
@@ -137,13 +137,19 @@ export function SaasForm({
               defaultValue={state.values?.name ?? saas?.name}
             />
           </Field>
-          <Field name="category" label="Category">
+          <Field name="category" label="Category" required>
+            {/* No category is chosen for the founder, so a new product does not land in one by
+                default. */}
             <select
               id="category"
               name="category"
-              defaultValue={state.values?.category ?? saas?.category ?? "Productivity"}
+              required
+              defaultValue={state.values?.category ?? saas?.category ?? ""}
               className={cn(fieldClasses, "h-10")}
             >
+              <option value="" disabled>
+                Choose a category
+              </option>
               {categories.map((category) => (
                 <option key={category}>{category}</option>
               ))}
@@ -174,14 +180,19 @@ export function SaasForm({
           />
         </Field>
         <Field name="website" label="Website" required>
+          {/* Text rather than url, so example.com is taken; the server adds https://. */}
           <Input
             id="website"
             name="website"
-            type="url"
+            type="text"
+            inputMode="url"
+            autoComplete="url"
+            autoCapitalize="none"
+            spellCheck={false}
             required
             maxLength={500}
             defaultValue={state.values?.website ?? saas?.website}
-            placeholder="https://"
+            placeholder="example.com"
           />
         </Field>
         <div className="grid gap-2.5 sm:max-w-xs">
@@ -195,6 +206,15 @@ export function SaasForm({
           </Field>
           <Share name="hide_launch" label="Hide launch date" checked={hidden("launch")} />
         </div>
+      </Section>
+      <Section title="Logo" description="A square logo works best.">
+        <ImageField label="Upload logo" current={saas?.logo_path} name={saas?.name ?? ""} />
+      </Section>
+      <Section
+        title="Tech stack"
+        description={`What the product is built with, up to ${TECH_STACK_MAX}. Shown on its page, with links to other products built with the same.`}
+      >
+        <TechStackField stack={stack} />
       </Section>
       <RevenueSection
         saasId={id}
@@ -223,34 +243,27 @@ export function SaasForm({
           />
           <Share
             name="hide_customers"
-            label="Hide paying customer count"
+            label="Hide subscriber count"
             checked={hidden("customers")}
           />
         </div>
       </RevenueSection>
-      <Section title="Logo" description="A square logo works best.">
-        <ImageField label="Upload logo" current={saas?.logo_path} name={saas?.name ?? ""} />
-      </Section>
-      <Section
-        title="Tech stack"
-        description={`What the product is built with, up to ${TECH_STACK_MAX}. Shown on its page, with links to other products built with the same.`}
-      >
-        <TechStackField stack={stack} />
-      </Section>
-      <div className="grid gap-4">
+      <div className="mb-4 empty:hidden">
         <Feedback state={state} />
-        <Actions>
-          <Button asChild variant="ghost">
-            <Link href="/dashboard">Cancel</Link>
-          </Button>
-          <Submit
-            pending={pending || !!state.location}
-            pendingLabel={verifying ? "Verifying revenue..." : "Saving..."}
-          >
-            {submitLabel(!saas, provider)}
-          </Submit>
-        </Actions>
       </div>
+      {/* A direct child of the form, so it stays in view while the form is and saving never needs
+          a search below it. */}
+      <Actions sticky>
+        <Button asChild variant="ghost">
+          <Link href="/dashboard">Cancel</Link>
+        </Button>
+        <Submit
+          pending={pending || !!state.location}
+          pendingLabel={verifying ? "Verifying revenue..." : "Saving..."}
+        >
+          {submitLabel(!saas, provider)}
+        </Submit>
+      </Actions>
     </form>
   );
 }

@@ -5,7 +5,7 @@
 -- Runs in a rolled-back transaction.
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(30);
+select plan(31);
 
 -- Existing local connections count as just checked, so only the fixtures are due.
 update public.revenue_connections set last_checked_at = now(), revenue_checked_at = now();
@@ -178,6 +178,16 @@ select results_eq(
     ('e8100000-0000-4000-8000-000000000002'::uuid, 2, 2),
     ('e8100000-0000-4000-8000-000000000003'::uuid, 3, 3) $$,
   'visitors read the rankings, which follow a founder who shares');
+
+-- Equal MRR is ordered by revenue of all time, then by when the product was listed.
+set local role postgres;
+update public.public_metrics set mrr_cents = 500, revenue_total_cents = 9000
+where saas_id = 'e8100000-0000-4000-8000-000000000003';
+select results_eq(
+  $$ select id from public.leaderboard where id::text like 'e81%' order by rank $$,
+  $$ values ('e8100000-0000-4000-8000-000000000001'::uuid),
+    ('e8100000-0000-4000-8000-000000000003'::uuid), ('e8100000-0000-4000-8000-000000000002'::uuid) $$,
+  'equal MRR ranks the product with more revenue of all time first');
 
 -- A verification older than a week hides the figures like MRR.
 set local role postgres;

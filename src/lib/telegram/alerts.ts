@@ -7,7 +7,8 @@ import { REASONS, reasonLabels, type Reason } from "../moderation";
 export type ClaimedAlert = {
   id: number;
   kind: string;
-  user_id: string;
+  /** Null for feedback from a visitor without an account. */
+  user_id: string | null;
   feedback_id: string | null;
   context: unknown;
 };
@@ -68,10 +69,13 @@ export function renderAlert(alert: ClaimedAlert, origin: string): string | null 
     if (!message) return null;
     const kind = isKind(c.feedback_kind) ? feedbackLabels[c.feedback_kind] : "Feedback";
     const page = text(c.page);
+    // A visitor's address for a reply stays in the admin panel; the alert only says it is there.
+    const sender = c.visitor === true ? "a visitor" : who(c);
     lines = [
       `<b>New feedback: ${escape(kind)}</b>`,
-      `From ${escape(who(c))}${page ? ` on <code>${escape(page)}</code>` : ""}:`,
+      `From ${escape(sender)}${page ? ` on <code>${escape(page)}</code>` : ""}:`,
       `<blockquote>${escape(message)}</blockquote>`,
+      c.visitor === true && c.reply === true ? "They left an email address for a reply." : null,
       link(`${origin}/admin/feedback`, "Open the feedback"),
     ];
   } else if (alert.kind === "saas") {

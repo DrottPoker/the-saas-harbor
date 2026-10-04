@@ -2,6 +2,7 @@
 // HTML pages show. Text makers wrote is escaped, so it cannot add headings, links or other
 // structure, and every file says which parts makers wrote.
 import {
+  historySince,
   monthLabel,
   parseHistory,
   parseRevenueHistory,
@@ -98,8 +99,11 @@ export function productMarkdown(item: Listing) {
   const category = item.category ?? "Other";
   const verified = item.revenue_status === "verified" && item.mrr_cents != null;
   const revenueShared = sharesRevenue(item);
-  const history = verified ? parseHistory(item.mrr_history) : null;
-  const revenueHistory = revenueShared ? parseRevenueHistory(item.revenue_history) : null;
+  const since = { launchedOn: item.launched_on, listedAt: item.created_at };
+  const history = verified ? historySince(parseHistory(item.mrr_history), since) : null;
+  const revenueHistory = revenueShared
+    ? historySince(parseRevenueHistory(item.revenue_history), since)
+    : null;
   const domain = currentVerifiedDomain(item.website, item.verified_domain);
   const lines = [
     `# ${inline(item.name)}`,
@@ -128,7 +132,7 @@ export function productMarkdown(item: Listing) {
     ...(verified && item.mrr_growth_pct != null
       ? [`- Change over 30 days: ${growthText(item.mrr_growth_pct)}`]
       : []),
-    `- Paying customers: ${item.customers?.toLocaleString("en-US") ?? "not shared"}`,
+    `- Subscribers: ${item.customers?.toLocaleString("en-US") ?? "not shared"}`,
     // Revenue besides MRR, one-time purchases included, only where it is shared.
     ...(revenueShared
       ? REVENUE_WINDOWS.map(({ column, label }) => {
@@ -189,7 +193,7 @@ export function makerMarkdown(
     ...links.map(([label, url]) => `- ${label}: ${autolink(url!)}`),
     `- Products: ${products.length}`,
     `- Verified MRR across shared products: ${totals.mrr == null ? "not shared" : formatUsd(totals.mrr)}`,
-    `- Paying customers across shared products: ${totals.customers?.toLocaleString("en-US") ?? "not shared"}`,
+    `- Subscribers across shared products: ${totals.customers?.toLocaleString("en-US") ?? "not shared"}`,
     "",
     "## Products",
     "",
@@ -251,7 +255,7 @@ export function llmsText(
       ({ ranking, short }) =>
         `- [${revenueRankingTitle({ short })}](${base}/?by=${ranking}): products ranked by verified revenue ${ranking === "all" ? "since their first payment" : `in the last ${short}`}, one-time purchases included`,
     ),
-    `- [Browse](${base}/discover): every listed product, A to Z`,
+    `- [Browse](${base}/browse): every listed product, A to Z`,
     `- [New arrivals](${base}/newest): the latest products to join`,
     `- [Categories](${base}/categories): products by category`,
     `- [Tech stacks](${base}/tech): products by the technologies their founders list`,

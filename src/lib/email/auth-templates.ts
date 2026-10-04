@@ -53,4 +53,17 @@ export const authTemplates = {
     footer:
       "The link works once and expires after an hour, and you can open it on any device. If you did not ask for this, ignore this email and your password stays the same.",
   }),
+  // Sent to the current address and to the new one, each with its own link; the change is made
+  // once both are confirmed.
+  email_change: authTemplate({
+    heading: "Confirm your new email address",
+    preview: "Confirm the change of your email address on The SaaS Harbor.",
+    body: "Someone asked to change the email address of your account on The SaaS Harbor from {{ .Email }} to {{ .NewEmail }}. The change is made once it is confirmed from both addresses.",
+    action: {
+      label: "Confirm the change",
+      url: "{{ .RedirectTo }}?token_hash={{ .TokenHash }}&type=email_change",
+    },
+    footer:
+      "The link works once and expires after an hour, and you can open it on any device. If you did not ask for this, ignore this email and your email address stays the same.",
+  }),
 };

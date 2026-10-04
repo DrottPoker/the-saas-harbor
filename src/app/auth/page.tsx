@@ -1,13 +1,14 @@
 import type { Metadata } from "next";
-import { authHeadings, authMode, AuthPanel } from "@/components/auth-panel";
+import { authHeading, authMode, AuthPanel } from "@/components/auth-panel";
 import { LogoMark } from "@/components/logo";
 import { requireUser } from "@/lib/supabase/server";
+import { safeNext } from "@/lib/domain";
 import { firstValues, type SearchParams } from "@/lib/params";
 
 type Props = { searchParams: Promise<SearchParams> };
 
 export async function generateMetadata({ searchParams }: Props): Promise<Metadata> {
-  return { title: authHeadings[authMode(firstValues(await searchParams).mode)].title };
+  return { title: authHeading(authMode(firstValues(await searchParams).mode), null).title };
 }
 
 /**
@@ -18,7 +19,7 @@ export default async function Auth({ searchParams }: Props) {
   const params = await searchParams;
   const mode = authMode(firstValues(params).mode);
   if (mode === "update") await requireUser();
-  const { title, description } = authHeadings[mode];
+  const { title, description } = authHeading(mode, safeNext(firstValues(params).next));
   return (
     <div className="mx-auto w-full max-w-sm px-4 pt-14 sm:pt-24">
       <LogoMark className="size-14" />

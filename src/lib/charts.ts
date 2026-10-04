@@ -66,6 +66,25 @@ export function parseRevenueHistory(value: unknown): RevenuePoint[] | null {
   }));
 }
 
+/**
+ * A history from when the product had one: from the earliest of its first month with an amount,
+ * its launch month and the month it was listed, so a new product's chart does not reach back to
+ * months before it existed. Null when no month is left; unchanged when nothing tells a start.
+ */
+export function historySince<T extends MrrPoint>(
+  history: T[] | null,
+  { launchedOn, listedAt }: { launchedOn?: string | null; listedAt?: string | null },
+): T[] | null {
+  if (!history) return null;
+  const starts = [history.find((p) => p.cents > 0)?.month, launchedOn, listedAt]
+    .filter((date): date is string => !!date)
+    .map((date) => date.slice(0, 7))
+    .sort();
+  if (!starts.length) return history;
+  const kept = history.filter((p) => p.month >= starts[0]!);
+  return kept.length ? kept : null;
+}
+
 function monthParts(month: string) {
   const [year, index] = month.split("-").map(Number);
   return { year, name: MONTHS[index - 1] };

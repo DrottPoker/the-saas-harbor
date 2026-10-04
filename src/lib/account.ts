@@ -44,20 +44,10 @@ async function deleteWith(client: SupabaseClient<Database>, userId: string) {
 }
 
 /**
- * Deletes the account of a user without a password, whose current session signed in with Google
- * or GitHub in the last five minutes; the database checks that sign-in again. Images go first, as below.
+ * Checks a password by signing in again on a separate client, whose fresh session then makes the
+ * request that needs it. The client's session is signed out by the caller.
  */
-export async function deleteSignedInAccount(client: SupabaseClient<Database>, userId: string) {
-  await deleteWith(client, userId);
-}
-
-/**
- * Deletes the signed-in maker's account and everything it owns. The password is checked by
- * signing in again on a separate client; the database only accepts deletion from a password
- * sign-in of the last five minutes, so that fresh session makes both requests. Images go first,
- * through the Storage API: if that fails, the account stays in place and can be deleted again.
- */
-export async function deleteAccount(userId: string, email: string, password: string) {
+async function signInAgain(email: string, password: string) {
   const config = supabaseConfig();
   if (!config) throw new Error("Supabase is not configured.");
   const client = createClient<Database>(config.url, config.key, {
@@ -72,6 +62,52 @@ export async function deleteAccount(userId: string, email: string, password: str
       throw new Error("Your password could not be checked. Try again shortly.");
     throw new Error("The password is incorrect.");
   }
+  return { client, data };
+}
+
+/**
+ * Sets a new password once the current one is checked. Auth asks for a recent sign-in before a
+ * password changes (secure_password_change), which the fresh session is.
+ */
+export async function changePassword(
+  userId: string,
+  email: string,
+  current: string,
+  password: string,
+) {
+  const { client, data } = await signInAgain(email, current);
+  try {
+    if (data.user.id !== userId) throw new Error("Your password could not be changed. Try again.");
+    const { error } = await client.auth.updateUser({ password });
+    if (error)
+      throw new Error(
+        error.code === "same_password"
+          ? "Choose a password that differs from your current one."
+          : error.code === "weak_password"
+            ? "Choose a stronger password."
+            : "Your password could not be changed. Try again.",
+      );
+  } finally {
+    await client.auth.signOut({ scope: "local" });
+  }
+}
+
+/**
+ * Deletes the account of a user without a password, whose current session signed in with Google
+ * or GitHub in the last five minutes; the database checks that sign-in again. Images go first, as below.
+ */
+export async function deleteSignedInAccount(client: SupabaseClient<Database>, userId: string) {
+  await deleteWith(client, userId);
+}
+
+/**
+ * Deletes the signed-in maker's account and everything it owns. The password is checked by
+ * signing in again on a separate client; the database only accepts deletion from a password
+ * sign-in of the last five minutes, so that fresh session makes both requests. Images go first,
+ * through the Storage API: if that fails, the account stays in place and can be deleted again.
+ */
+export async function deleteAccount(userId: string, email: string, password: string) {
+  const { client, data } = await signInAgain(email, password);
   try {
     // The email comes from the current session, so this only guards against a mix-up.
     if (data.user.id !== userId) throw new Error("Your account could not be deleted. Try again.");

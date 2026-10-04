@@ -41,7 +41,7 @@ const intro: Record<Mode, { title: string; description: string; path: string; so
   discover: {
     title: "Browse SaaS",
     description: "Every product listed here, A to Z, including those that keep revenue private.",
-    path: "/discover",
+    path: "/browse",
     sort: "name",
   },
   newest: {
@@ -51,6 +51,12 @@ const intro: Record<Mode, { title: string; description: string; path: string; so
     sort: "newest",
   },
 };
+
+// Browse and New arrivals list the same products, so each offers the other as an order.
+const ORDERS: { mode: Mode; label: string }[] = [
+  { mode: "discover", label: "A to Z" },
+  { mode: "newest", label: "Newest" },
+];
 
 // The leaderboard's rankings, in the order the choice shows them.
 const RANKINGS: { ranking: Ranking; label: string }[] = [
@@ -113,6 +119,7 @@ export async function Explore({
       tech?: string;
       search?: string;
       page?: number;
+      mode?: Mode;
     } = {},
   ) {
     const next = {
@@ -121,6 +128,7 @@ export async function Explore({
       tech: tech?.slug ?? "",
       search,
       page: 1,
+      mode,
       ...change,
     };
     const query = new URLSearchParams();
@@ -129,7 +137,7 @@ export async function Explore({
     if (next.tech) query.set("tech", next.tech);
     if (next.search) query.set("q", next.search);
     if (next.page > 1) query.set("page", String(next.page));
-    return `${path}${query.size ? `?${query}` : ""}`;
+    return `${intro[next.mode].path}${query.size ? `?${query}` : ""}`;
   }
 
   const searchForm = (
@@ -178,7 +186,7 @@ export async function Explore({
         <PageHeader title={title} description={description} actions={searchForm} />
       )}
 
-      {ranked && (
+      {ranked ? (
         <nav aria-label="Rank by" className={cn(categoryChipRow, "items-center")}>
           <span className="shrink-0 pr-1 text-[13px] text-muted-foreground">Rank by</span>
           {RANKINGS.map((item) => (
@@ -192,6 +200,22 @@ export async function Explore({
             </Link>
           ))}
         </nav>
+      ) : (
+        !tech && (
+          <nav aria-label="Order" className={cn(categoryChipRow, "items-center")}>
+            <span className="shrink-0 pr-1 text-[13px] text-muted-foreground">Order</span>
+            {ORDERS.map((item) => (
+              <Link
+                key={item.mode}
+                href={url({ mode: item.mode })}
+                aria-current={mode === item.mode ? "page" : undefined}
+                className={categoryChip}
+              >
+                {item.label}
+              </Link>
+            ))}
+          </nav>
+        )
       )}
       <nav aria-label="Categories" className={categoryChipRow}>
         {["", ...categories].map((item) => (
@@ -267,10 +291,16 @@ export async function Explore({
           )}
           {!!demo.length && (
             <section aria-labelledby="demo-products" className={cn(!!rows.length && "mt-10")}>
-              {/* The owner wants no visible heading here; each demo page carries the Demo tag. */}
-              <h2 id="demo-products" className="sr-only">
-                Demo products
-              </h2>
+              {/* Visible, so the made-up figures are never read as real ones (2026-10-04). */}
+              <div className="mb-4">
+                <h2 id="demo-products" className="text-lg font-semibold tracking-tight">
+                  Demo products
+                </h2>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Made-up examples that show what a listing looks like. They are never ranked and
+                  leave as real products join.
+                </p>
+              </div>
               {ranked ? (
                 <Leaderboard items={demo} ranking={ranking} demo labelledBy="demo-products" />
               ) : (
@@ -286,8 +316,8 @@ export async function Explore({
           {byRevenue
             ? "Revenue is every payment a product received, one-time purchases included, after refunds and without tax. It is read through a read-only key to the product's payment provider and refreshed every day."
             : "MRR is read from each product's subscriptions through a read-only key to its payment provider and refreshed every hour."}{" "}
-          Figures older than seven days are not ranked. Equal amounts are ordered by the date the
-          product was listed.{" "}
+          Figures older than seven days are not ranked. Equal amounts are ordered by revenue of all
+          time, then by the date the product was listed.{" "}
           <Link href="/about" className="underline underline-offset-2 hover:text-foreground">
             How the ranking works
           </Link>

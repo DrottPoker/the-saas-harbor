@@ -1,7 +1,16 @@
 "use client";
 import Link from "next/link";
 import { DropdownMenu } from "radix-ui";
-import { ChevronDown, Flag, LogOut, Mail, Pencil, ShieldCheck, UserRound } from "lucide-react";
+import {
+  ChevronDown,
+  Flag,
+  LayoutDashboard,
+  LogOut,
+  Pencil,
+  Settings,
+  ShieldCheck,
+  UserRound,
+} from "lucide-react";
 import { signOut } from "@/app/actions";
 import type { AccountMenuData } from "@/lib/account-menu";
 import { PersonAvatar } from "./avatars";
@@ -52,6 +61,10 @@ export function AccountMenu({ account }: { account: AccountMenuData }) {
             </MenuLink>
           ) : (
             <>
+              <MenuLink href="/dashboard">
+                <LayoutDashboard />
+                Dashboard
+              </MenuLink>
               {slug && !suspended && (
                 <MenuLink href={`/users/${slug}`}>
                   <UserRound />
@@ -63,8 +76,8 @@ export function AccountMenu({ account }: { account: AccountMenuData }) {
                 Edit profile
               </MenuLink>
               <MenuLink href="/dashboard/settings">
-                <Mail />
-                Email settings
+                <Settings />
+                Settings
               </MenuLink>
               {sentReports && (
                 <MenuLink href="/dashboard/reports">

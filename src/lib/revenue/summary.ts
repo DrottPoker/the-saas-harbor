@@ -30,7 +30,7 @@ const skipped: Record<ProviderId, [string, string]> = {
 
 /** What a verification found, in words for the founder. */
 export function summary(result: Verification) {
-  const customers = `${result.customers} paying ${result.customers === 1 ? "customer" : "customers"}`;
+  const customers = `${result.customers} ${result.customers === 1 ? "subscriber" : "subscribers"}`;
   const [one, many] = skipped[result.provider];
   const notCounted = result.skippedItems
     ? ` ${result.skippedItems} ${result.skippedItems === 1 ? one : many} not counted.`

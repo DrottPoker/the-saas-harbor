@@ -66,45 +66,44 @@ export function hasUnsafeUrlCharacters(value: string) {
     })
   );
 }
-const optionalUrl = z
-  .string()
-  .trim()
-  .max(500)
-  .refine(
-    (value) =>
-      !value ||
-      (!hasUnsafeUrlCharacters(value) &&
-        (() => {
-          try {
-            const url = new URL(value);
-            return ["http:", "https:"].includes(url.protocol) && !url.username && !url.password;
-          } catch {
-            return false;
-          }
-        })()),
-    "Use a full http:// or https:// URL without spaces or credentials.",
-  );
+/** An address as typed, with https:// in front when it names no scheme, such as example.com. */
+export function withScheme(value: string) {
+  const trimmed = value.trim();
+  return !trimmed || /^[a-z][a-z0-9+.-]*:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
+}
+// An address field: trimmed, with https:// added when it has no scheme.
+const address = z.string().transform(withScheme).pipe(z.string().max(500));
+const optionalUrl = address.refine(
+  (value) =>
+    !value ||
+    (!hasUnsafeUrlCharacters(value) &&
+      (() => {
+        try {
+          const url = new URL(value);
+          return ["http:", "https:"].includes(url.protocol) && !url.username && !url.password;
+        } catch {
+          return false;
+        }
+      })()),
+  "Enter a web address, such as example.com, without spaces.",
+);
 // A link to a profile on one site, such as LinkedIn: https, the right host and a path.
 function profileLink(host: RegExp, site: string, example: string) {
-  return z
-    .string()
-    .trim()
-    .max(500)
-    .refine((value) => {
-      if (!value) return true;
-      try {
-        const url = new URL(value);
-        return (
-          url.protocol === "https:" &&
-          host.test(url.hostname) &&
-          url.pathname.length > 1 &&
-          !url.username &&
-          !url.password
-        );
-      } catch {
-        return false;
-      }
-    }, `Use your ${site} address, such as ${example}.`);
+  return address.refine((value) => {
+    if (!value) return true;
+    try {
+      const url = new URL(value);
+      return (
+        url.protocol === "https:" &&
+        host.test(url.hostname) &&
+        url.pathname.length > 1 &&
+        !url.username &&
+        !url.password
+      );
+    } catch {
+      return false;
+    }
+  }, `Use your ${site} address, such as ${example}.`);
 }
 const month = z
   .string()
@@ -162,7 +161,7 @@ export const saasSchema = z.object({
   name: z.string().trim().min(2).max(80),
   tagline: z.string().trim().min(5).max(140),
   description: z.string().trim().min(20).max(5000),
-  category: z.enum(categories),
+  category: z.enum(categories, { message: "Choose a category." }),
   website: optionalUrl.refine(Boolean, "A website is required."),
   launched_on: z
     .string()
@@ -198,7 +197,7 @@ export type ActionState = { error?: string; success?: string };
  */
 export const USERNAME_MIN_LENGTH = 3;
 export const USERNAME_MAX_LENGTH = 30;
-const USERNAME_RULES = "Use 3 to 30 letters, numbers and single hyphens, like jane-doe.";
+export const USERNAME_RULES = "Use 3 to 30 letters, numbers and single hyphens, like jane-doe.";
 export const usernameSchema = z
   .string()
   .trim()
@@ -222,7 +221,12 @@ export const USERNAME_CHANGE_DAYS = 30;
 
 /** A username as the user typed it, in the form it is stored in, before the rules are checked. */
 export function normalizeUsername(input: string) {
-  return input.trim().replace(/^@/, "").toLowerCase();
+  return usernameAsTyped(input.trim().replace(/^@/, ""));
+}
+
+/** What the username field shows while typing: lowercase, with spaces and underscores as hyphens. */
+export function usernameAsTyped(input: string) {
+  return input.toLowerCase().replace(/[\s_]+/g, "-");
 }
 
 /** When the username can be changed again, in days from now, such as "in 12 days". */
@@ -261,12 +265,13 @@ export const noteSchema = z
   .trim()
   .max(NOTE_MAX_LENGTH, "Keep the note under 1,000 characters.");
 
-// An email link from Auth: a token hash and what it confirms. Only the two kinds the app sends.
+// An email link from Auth: a token hash and what it confirms. Only the kinds the app sends.
 export function emailLink(tokenHash: string | null | undefined, type: string | null | undefined) {
   if (!tokenHash || !/^[A-Za-z0-9_-]{16,200}$/.test(tokenHash)) return null;
-  if (type !== "email" && type !== "recovery") return null;
+  if (type !== "email" && type !== "recovery" && type !== "email_change") return null;
   return { tokenHash, type } as const;
 }
+export type EmailLinkType = NonNullable<ReturnType<typeof emailLink>>["type"];
 
 // Where sign-in may continue to. Only known internal paths, so the parameter cannot be used to
 // send people to another site.

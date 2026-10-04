@@ -100,7 +100,7 @@ export default async function TechPage({ params }: Props) {
               {rest.count > PAGE_SIZE && (
                 <p className="mt-4 text-sm">
                   <Link
-                    href={`/discover${query}`}
+                    href={`/browse${query}`}
                     className="font-medium underline underline-offset-2"
                   >
                     Browse all products built with {tech.name}

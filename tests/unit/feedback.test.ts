@@ -2,7 +2,6 @@ import { describe, expect, it } from "vitest";
 import { safeNext } from "../../src/lib/domain";
 import {
   feedbackHref,
-  feedbackLink,
   feedbackOpening,
   feedbackPage,
   feedbackSchema,
@@ -36,15 +35,6 @@ describe("feedback", () => {
     expect(safeNext("/feedback?from=%2F&next=x")).toBeNull();
   });
 
-  it("sends visitors to sign-in first, which continues to the form with the page", () => {
-    expect(feedbackLink("/stats", true)).toBe("/feedback?from=%2Fstats");
-    const visitor = feedbackLink("/stats", false);
-    expect(visitor).toBe("/auth?next=%2Ffeedback%3Ffrom%3D%252Fstats");
-    expect(safeNext(new URLSearchParams(visitor.split("?")[1]).get("next"))).toBe(
-      "/feedback?from=%2Fstats",
-    );
-  });
-
   it("opens in a dialog, except after the full sign-in page and over the form itself", () => {
     for (const from of ["/stats", "/saas/metricfold?x=1", "/", "/authors", null])
       expect(feedbackOpening(from)).toBe("dialog");
@@ -56,10 +46,20 @@ describe("feedback", () => {
   it("needs a kind and some text", () => {
     expect(feedbackSchema.safeParse({ kind: "bug", message: "  Too short " }).success).toBe(false);
     expect(
-      feedbackSchema.parse({ kind: "suggestion", message: " A dark badge, please. " }),
-    ).toEqual({ kind: "suggestion", message: "A dark badge, please." });
+      feedbackSchema.parse({ kind: "suggestion", message: " A dark badge, please. ", email: "" }),
+    ).toEqual({ kind: "suggestion", message: "A dark badge, please.", email: "" });
     expect(
-      feedbackSchema.safeParse({ kind: "praise", message: "Lovely site overall." }).success,
+      feedbackSchema.safeParse({ kind: "praise", message: "Lovely site overall.", email: "" })
+        .success,
     ).toBe(false);
+  });
+
+  it("takes a visitor's address for a reply, or none", () => {
+    const feedback = { kind: "bug", message: "Sign-up says my email is invalid." };
+    expect(feedbackSchema.parse({ ...feedback, email: " jane@example.com " }).email).toBe(
+      "jane@example.com",
+    );
+    for (const email of ["jane", "jane@", `${"a".repeat(250)}@example.com`])
+      expect(feedbackSchema.safeParse({ ...feedback, email }).success, email).toBe(false);
   });
 });

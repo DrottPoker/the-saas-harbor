@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { LayoutDashboard, Plus } from "lucide-react";
+import { Plus } from "lucide-react";
 import type { AccountMenuData } from "@/lib/account-menu";
 import { providerList } from "@/lib/revenue/catalog";
 import { AccountMenu } from "./account-menu";
@@ -12,7 +12,8 @@ import { ThemeMenu } from "./theme-menu";
 import { Button } from "./ui/button";
 
 const quietLink = "text-sm text-muted-foreground transition-colors hover:text-foreground";
-// Below md a signed-in header shows icons with 32 px targets, so everything fits on one line.
+// Below md a signed-in header shows icons with 32 px targets, so everything fits on one line; the
+// dashboard is in the account menu there.
 const iconLink = `${quietLink} inline-flex items-center justify-center gap-1.5 max-md:h-8 max-md:min-w-8`;
 
 export function SiteHeader({
@@ -33,9 +34,9 @@ export function SiteHeader({
           {account ? (
             <>
               <MessagesLink userId={account.id} initialCount={unread} className={iconLink} />
-              <Link className={iconLink} href="/dashboard">
-                <LayoutDashboard aria-hidden="true" className="size-4 md:hidden" />
-                <span className="max-md:sr-only">Dashboard</span>
+              {/* Phones reach the dashboard from the account menu, where it has its name. */}
+              <Link className={`${quietLink} max-md:hidden`} href="/dashboard">
+                Dashboard
               </Link>
             </>
           ) : (
@@ -47,10 +48,14 @@ export function SiteHeader({
           <Button asChild size="sm" className={account ? "max-sm:w-8 max-sm:px-0" : undefined}>
             <Link href={account ? "/dashboard/saas/new" : "/auth?mode=signup"}>
               <Plus className={account ? undefined : "max-sm:hidden"} />
-              <span className={account ? "max-sm:sr-only" : undefined}>
-                {/* The shorter label keeps a visitor's header on one line on the narrowest phones. */}
-                List<span className={account ? undefined : "max-[359px]:hidden"}> your</span> SaaS
-              </span>
+              {account ? (
+                <span className="max-sm:sr-only">Add SaaS</span>
+              ) : (
+                <span>
+                  {/* The shorter label keeps the header on one line on the narrowest phones. */}
+                  List<span className="max-[359px]:hidden"> your</span> SaaS
+                </span>
+              )}
             </Link>
           </Button>
           {account && <AccountMenu account={account} />}
@@ -72,7 +77,8 @@ const footerGroups: {
   {
     title: "Explore",
     links: [
-      ...sections,
+      ...sections.map(([href, label]) => [href, label] as const),
+      ["/newest", "New arrivals"],
       ["/categories", "Categories"],
       ["/tech", "Tech stacks"],
       ["/stats", "Statistics"],
@@ -98,7 +104,7 @@ const footerGroups: {
   },
 ];
 
-export function SiteFooter({ signedIn }: { signedIn: boolean }) {
+export function SiteFooter() {
   return (
     <footer className="mt-24 border-t">
       <div className="mx-auto grid max-w-6xl gap-10 px-4 py-12 sm:px-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]">
@@ -117,9 +123,7 @@ export function SiteFooter({ signedIn }: { signedIn: boolean }) {
                   <li key={href}>
                     {href === "/feedback" ? (
                       // Opens the form with the page the user is on.
-                      <FeedbackLink signedIn={signedIn} className={quietLink}>
-                        {label}
-                      </FeedbackLink>
+                      <FeedbackLink className={quietLink}>{label}</FeedbackLink>
                     ) : href.endsWith(".txt") ? (
                       <a className={quietLink} href={href}>
                         {label}

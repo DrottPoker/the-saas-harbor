@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { ArrowUpRight, BadgeCheck } from "lucide-react";
-import { parseHistory, parseRevenueHistory } from "@/lib/charts";
+import { historySince, parseHistory, parseRevenueHistory } from "@/lib/charts";
 import type { Listing, PageViewCounts } from "@/lib/data";
 import { categorySlug, formatDate, formatUsd } from "@/lib/domain";
 import { REVENUE_WINDOWS, sharesRevenue } from "@/lib/revenue-figures";
@@ -15,7 +15,7 @@ import { DemoLogo } from "./demo-logo";
 import { SendMessageButton } from "./messages/send-message-button";
 import { Metric } from "./metric";
 import { ReportLink } from "./report-link";
-import { Shell } from "./shell";
+import { Notice, Shell } from "./shell";
 import { TechStack } from "./tech-stack";
 import { Button } from "./ui/button";
 
@@ -55,6 +55,50 @@ function ViewCounts({ views }: { views: PageViewCounts }) {
 }
 
 /**
+ * Why the founder's own page reads Not shared, for the founder alone: visitors are never told
+ * whether revenue is unverified or private. Nothing when every figure shows.
+ */
+function FounderNote({ item }: { item: Listing }) {
+  const editor = `/dashboard/saas/${item.id}`;
+  const revenue = {
+    unverified: {
+      text: "MRR, revenue and subscribers read Not shared until you connect your payment provider.",
+      action: "Connect it",
+    },
+    private: { text: "You hide your revenue, so it reads Not shared.", action: "Change this" },
+    stale: {
+      text: "Your figures have not been verified for seven days, so they read Not shared.",
+      action: "Check the connection",
+    },
+    verified: null,
+  }[item.revenue_status ?? "unverified"];
+  const launch = !item.launched_on;
+  if (!revenue && !launch) return null;
+  return (
+    <Notice className="mt-3">
+      <span className="font-medium">Only you see this.</span>{" "}
+      {revenue && (
+        <>
+          {revenue.text}{" "}
+          <Link href={`${editor}#revenue`} className="font-medium underline underline-offset-2">
+            {revenue.action}
+          </Link>
+          {launch && " "}
+        </>
+      )}
+      {launch && (
+        <>
+          Launched reads Not shared without a launch date, or while you hide it.{" "}
+          <Link href={editor} className="font-medium underline underline-offset-2">
+            Edit the launch date
+          </Link>
+        </>
+      )}
+    </Notice>
+  );
+}
+
+/**
  * A product's public page. A demo product (`item.demo`) says that it is made up, and has no maker
  * profile, website, messages or reports. `views` is set for the product's founder only.
  */
@@ -71,6 +115,7 @@ export function ProductProfile({
   views?: PageViewCounts | null;
 }) {
   const demo = item.demo;
+  const own = !demo && !!viewerId && viewerId === item.owner_id;
   const name = item.name ?? "SaaS";
   const site = hostname(item.website);
   const domainVerified = !demo && !!currentVerifiedDomain(item.website, item.verified_domain);
@@ -78,14 +123,15 @@ export function ProductProfile({
   const revenueShared = sharesRevenue(item);
   const verified =
     (item.revenue_status === "verified" && item.mrr_cents != null) || (!demo && revenueShared);
-  const history = parseHistory(item.mrr_history);
-  const revenueHistory = parseRevenueHistory(item.revenue_history);
+  const since = { launchedOn: item.launched_on, listedAt: item.created_at };
+  const history = historySince(parseHistory(item.mrr_history), since);
+  const revenueHistory = historySince(parseRevenueHistory(item.revenue_history), since);
   // All time sits with MRR; the shorter windows follow in their own row.
   const allTime = REVENUE_WINDOWS.find((window) => window.ranking === "all")!;
   const windows = REVENUE_WINDOWS.filter((window) => window !== allTime);
   // Category pages list real products only, so demo products link to the filtered Browse list.
   const categoryHref = demo
-    ? `/discover?category=${encodeURIComponent(item.category ?? "")}`
+    ? `/browse?category=${encodeURIComponent(item.category ?? "")}`
     : `/categories/${categorySlug(item.category ?? "Other")}`;
   const title = (
     <h1 className="text-3xl font-semibold tracking-tight [overflow-wrap:anywhere]">{name}</h1>
@@ -103,7 +149,7 @@ export function ProductProfile({
   return (
     <Shell className="pt-6 sm:pt-8">
       <nav aria-label="Breadcrumb" className="mb-4 text-sm text-muted-foreground">
-        <Link href="/discover" className="hover:text-foreground">
+        <Link href="/browse" className="hover:text-foreground">
           Browse
         </Link>
         <span aria-hidden="true" className="mx-2">
@@ -183,12 +229,18 @@ export function ProductProfile({
                   </a>
                 </Button>
               )}
-              {item.owner_id && (
-                <SendMessageButton
-                  makerId={item.owner_id}
-                  viewerId={viewerId}
-                  className="max-sm:flex-1"
-                />
+              {own ? (
+                <Button asChild variant="outline" className="max-sm:flex-1">
+                  <Link href={`/dashboard/saas/${item.id}`}>Edit product</Link>
+                </Button>
+              ) : (
+                item.owner_id && (
+                  <SendMessageButton
+                    makerId={item.owner_id}
+                    viewerId={viewerId}
+                    className="max-sm:flex-1"
+                  />
+                )
               )}
             </div>
           )}
@@ -208,7 +260,7 @@ export function ProductProfile({
             className="bg-subtle"
           />
           <Metric
-            label="Paying customers"
+            label="Subscribers"
             value={item.customers?.toLocaleString("en-US") ?? null}
             className="bg-subtle"
           />
@@ -236,6 +288,7 @@ export function ProductProfile({
           </dl>
         )}
       </header>
+      {own && <FounderNote item={item} />}
       {(verified || (demo && item.mrr_cents != null)) && (
         <p className="mt-3 flex items-center gap-1.5 px-1 text-[13px] text-muted-foreground">
           {demo ? (

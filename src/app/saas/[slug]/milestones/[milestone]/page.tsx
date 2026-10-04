@@ -52,7 +52,7 @@ export default async function MilestonePage({ params }: Props) {
   return (
     <Shell size="narrow" className="pt-6 sm:pt-8">
       <nav aria-label="Breadcrumb" className="mb-4 text-sm text-muted-foreground">
-        <Link href="/discover" className="hover:text-foreground">
+        <Link href="/browse" className="hover:text-foreground">
           Browse
         </Link>
         <span aria-hidden="true" className="mx-2">

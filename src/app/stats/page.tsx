@@ -74,7 +74,7 @@ function Figures({ stats }: { stats: DirectoryStats }) {
       />
       <Metric
         className={tile}
-        label="Paying customers"
+        label="Subscribers"
         value={stats.customers == null ? null : stats.customers.toLocaleString("en-US")}
         detail={
           <span className="text-xs text-muted-foreground">

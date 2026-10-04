@@ -44,7 +44,7 @@ export async function GET(
   if (error || !data.url)
     return to(
       confirming
-        ? "/dashboard/profile?confirm=failed#delete-account"
+        ? "/dashboard/settings?confirm=failed#delete-account"
         : `/auth?error=failed&provider=${provider}`,
     );
   (await cookies()).set(

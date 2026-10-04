@@ -8,11 +8,13 @@ export function Navigation({ className }: { className?: string }) {
   const path = usePathname();
   return (
     <nav aria-label="Main" className={cn("items-center gap-1", className)}>
-      {sections.map(([href, label]) => (
+      {sections.map(([href, label, also]) => (
         <Link
           key={href}
           href={href}
-          aria-current={path === href ? "page" : undefined}
+          aria-current={
+            path === href || (also as readonly string[]).includes(path) ? "page" : undefined
+          }
           className="rounded-md px-2.5 py-1.5 text-sm whitespace-nowrap text-muted-foreground transition-colors hover:text-foreground aria-[current=page]:bg-muted aria-[current=page]:font-medium aria-[current=page]:text-foreground"
         >
           {label}

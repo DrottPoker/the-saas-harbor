@@ -86,6 +86,8 @@ describe("auth emails", () => {
     );
     expect(authTemplates.recovery).toContain("&amp;type=recovery");
     expect(authTemplates.recovery).toContain('<img src="{{ .SiteURL }}/logo.png"');
+    expect(authTemplates.email_change).toContain("&amp;type=email_change");
+    expect(authTemplates.email_change).toContain("to {{ .NewEmail }}");
   });
 });
 

@@ -14,7 +14,7 @@ export type AuthMode = "login" | "signup" | "reset" | "update";
 
 // Each description fits on one line at the form's width, so every form starts at the same height.
 export const authHeadings: Record<AuthMode, { title: string; description: string }> = {
-  login: { title: "Sign in", description: "Welcome back. Sign in to manage your products." },
+  login: { title: "Sign in", description: "Sign in to manage your products and messages." },
   signup: {
     title: "Create your account",
     description: "Free to list. You choose what to share.",
@@ -31,6 +31,27 @@ export const authHeadings: Record<AuthMode, { title: string; description: string
 
 export function authMode(value: string | undefined): AuthMode {
   return value === "signup" || value === "reset" || value === "update" ? value : "login";
+}
+
+/**
+ * The heading of a form, saying why sign-in is asked for when a visitor came from something that
+ * needs an account, such as writing to a founder. `next` is already checked with safeNext().
+ */
+export function authHeading(mode: AuthMode, next: string | null) {
+  const heading = authHeadings[mode];
+  const reason = next?.startsWith("/messages")
+    ? "send a message"
+    : next?.startsWith("/report/")
+      ? "send a report"
+      : null;
+  if (!reason || (mode !== "login" && mode !== "signup")) return heading;
+  return {
+    title: heading.title,
+    description:
+      mode === "login"
+        ? `Sign in or create a free account to ${reason}.`
+        : `A free account lets you ${reason}.`,
+  };
 }
 
 // Set by scripts/local-env.mjs during local development only. Never shown for a remote address.

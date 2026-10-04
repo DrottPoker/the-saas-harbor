@@ -10,13 +10,18 @@ type Props = { searchParams: Promise<SearchParams> };
 const copy = {
   email: {
     title: "Confirm your email",
-    description: "Confirm your email address to finish creating your account.",
+    description: "One last step: confirm your email address to finish creating your account.",
     submit: "Confirm email",
   },
   recovery: {
     title: "Reset your password",
     description: "Continue to choose a new password for your account.",
     submit: "Choose a new password",
+  },
+  email_change: {
+    title: "Confirm your new email address",
+    description: "Confirm the change of your account's email address.",
+    submit: "Confirm the change",
   },
 };
 
@@ -45,7 +50,13 @@ export default async function Confirm({ searchParams }: Props) {
       </p>
       <div className="mt-8">
         {link && text ? (
-          <ConfirmLinkForm tokenHash={link.tokenHash} type={link.type} submit={text.submit} />
+          <>
+            <ConfirmLinkForm tokenHash={link.tokenHash} type={link.type} submit={text.submit} />
+            <p className="mt-6 text-[13px] text-muted-foreground">
+              Why the extra click? Some email services open links on their own to check them, and
+              that would use up your link before you could.
+            </p>
+          </>
         ) : (
           <Link className="text-sm font-medium hover:underline" href="/auth">
             Back to sign in

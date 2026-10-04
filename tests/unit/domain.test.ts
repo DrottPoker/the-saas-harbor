@@ -2,7 +2,9 @@ import { describe, expect, it } from "vitest";
 import {
   USERNAME_PROBLEMS,
   usernameLockedMessage,
+  usernameAsTyped,
   usernameSchema,
+  withScheme,
   containsPattern,
   emailLink,
   formatUsd,
@@ -19,6 +21,7 @@ describe("email links", () => {
       tokenHash: `pkce_${hash}`,
       type: "recovery",
     });
+    expect(emailLink(hash, "email_change")).toEqual({ tokenHash: hash, type: "email_change" });
   });
   it.each([
     [hash, "magiclink"],
@@ -98,6 +101,37 @@ describe("profile boundaries", () => {
     expect(website("https://example.com/a\nb")).toBe(false);
     expect(website("https://example.com/\u0085")).toBe(false);
   });
+  it("takes an address without https://, and adds it", () => {
+    expect(withScheme(" example.com/pricing ")).toBe("https://example.com/pricing");
+    expect(withScheme("http://example.com")).toBe("http://example.com");
+    expect(withScheme("")).toBe("");
+    expect(saasSchema.parse({ ...product, website: "example.com" }).website).toBe(
+      "https://example.com",
+    );
+    const links = profileSchema.parse({
+      name: "Maker",
+      headline: "",
+      location: "",
+      bio: "",
+      website: "",
+      linkedin_url: "linkedin.com/in/maker",
+      github_url: "",
+      x_url: "x.com/maker",
+      social_url: "",
+      skills: [],
+      experience: [],
+    });
+    expect([links.linkedin_url, links.x_url]).toEqual([
+      "https://linkedin.com/in/maker",
+      "https://x.com/maker",
+    ]);
+    // Another scheme is kept as it is, and refused.
+    expect(saasSchema.safeParse({ ...product, website: "ftp://example.com" }).success).toBe(false);
+  });
+  it("needs a category chosen", () =>
+    expect(saasSchema.safeParse({ ...product, category: "" }).error?.issues[0]?.message).toBe(
+      "Choose a category.",
+    ));
   it("rejects invalid calendar dates", () =>
     expect(saasSchema.safeParse({ ...product, launched_on: "2026-02-30" }).success).toBe(false));
   it("takes launch dates from 1970 until today, wherever today is", () => {
@@ -121,16 +155,11 @@ describe("usernames", () => {
   it("are lowercased, lose an @ in front, and follow the rules", () => {
     expect(usernameSchema.parse("  @Jane-Doe ")).toBe("jane-doe");
     expect(usernameSchema.parse("abc")).toBe("abc");
-    for (const bad of [
-      "ab",
-      "a".repeat(31),
-      "-jane",
-      "jane-",
-      "ja--ne",
-      "jane_doe",
-      "jane doe",
-      "jané",
-    ])
+    // Spaces and underscores become hyphens, as the field shows while typing.
+    expect(usernameSchema.parse("Jane Doe")).toBe("jane-doe");
+    expect(usernameSchema.parse("jane_doe")).toBe("jane-doe");
+    expect(usernameAsTyped("New  Founder_X")).toBe("new-founder-x");
+    for (const bad of ["ab", "a".repeat(31), "-jane", "jane-", "ja--ne", "jane - doe", "jané"])
       expect(usernameSchema.safeParse(bad).error?.issues[0]?.message).toBe(
         USERNAME_PROBLEMS.format,
       );

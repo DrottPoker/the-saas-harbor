@@ -54,6 +54,33 @@ describe("feedback alerts", () => {
       ].join("\n"),
     );
   });
+  it("name a visitor without an account, and only say whether they left an address", () => {
+    const visitor = {
+      ...alert("feedback", {
+        visitor: true,
+        reply: true,
+        feedback_kind: "other",
+        message: "Sign-up keeps saying my email is wrong",
+        page: "/auth",
+      }),
+      user_id: null,
+    };
+    expect(renderAlert(visitor, origin)).toBe(
+      [
+        "<b>New feedback: Other feedback</b>",
+        "From a visitor on <code>/auth</code>:",
+        "<blockquote>Sign-up keeps saying my email is wrong</blockquote>",
+        "They left an email address for a reply.",
+        `<a href="${origin}/admin/feedback">Open the feedback</a>`,
+      ].join("\n"),
+    );
+    expect(
+      renderAlert(
+        { ...visitor, context: { ...(visitor.context as object), reply: false } },
+        origin,
+      ),
+    ).not.toContain("email address");
+  });
   it("escape what users wrote", () => {
     const message = renderAlert(
       alert("feedback", {

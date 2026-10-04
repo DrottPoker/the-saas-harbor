@@ -11,12 +11,12 @@ export async function generateMetadata({ searchParams }: Props): Promise<Metadat
       title: "Browse SaaS products",
       description:
         "Every independent SaaS product listed on The SaaS Harbor, A to Z, including those that keep their revenue private.",
-      path: "/discover",
+      path: "/browse",
     },
     firstValues(await searchParams),
   );
 }
 
-export default async function Discover({ searchParams }: Props) {
+export default async function Browse({ searchParams }: Props) {
   return <Explore mode="discover" params={firstValues(await searchParams)} />;
 }

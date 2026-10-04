@@ -8,7 +8,7 @@ import { Button } from "../ui/button";
 
 export type FeedbackRow = Pick<
   Database["public"]["Tables"]["feedback"]["Row"],
-  "id" | "kind" | "message" | "page" | "created_at" | "handled_at" | "user_id"
+  "id" | "kind" | "message" | "page" | "created_at" | "handled_at" | "user_id" | "reply_email"
 >;
 
 const kindTones: Record<FeedbackKind, "error" | "accent" | "neutral"> = {
@@ -42,14 +42,27 @@ export function FeedbackList({
                 {item.handled_at && <Badge tone="success">Handled</Badge>}
                 <span>
                   From{" "}
-                  <Link
-                    href={`/admin/accounts/${item.user_id}`}
-                    className="font-medium text-foreground hover:underline"
-                  >
-                    {names.get(item.user_id) ?? "an account without a profile"}
-                  </Link>{" "}
+                  {item.user_id ? (
+                    <Link
+                      href={`/admin/accounts/${item.user_id}`}
+                      className="font-medium text-foreground hover:underline"
+                    >
+                      {names.get(item.user_id) ?? "an account without a profile"}
+                    </Link>
+                  ) : (
+                    // A visitor without an account, who may have left an address for a reply.
+                    <span className="font-medium text-foreground">a visitor</span>
+                  )}{" "}
                   · <LocalTime value={item.created_at} full />
                 </span>
+                {item.reply_email && (
+                  <a
+                    href={`mailto:${item.reply_email}`}
+                    className="font-medium text-foreground underline [overflow-wrap:anywhere]"
+                  >
+                    Reply to {item.reply_email}
+                  </a>
+                )}
               </div>
               <p className="leading-7 whitespace-pre-wrap [overflow-wrap:anywhere]">
                 {item.message}

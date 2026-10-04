@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
 import { FeedbackForm } from "@/components/feedback-form";
 import { PageHeader, Shell } from "@/components/shell";
-import { feedbackHeading, feedbackHref, feedbackPage } from "@/lib/feedback";
+import { feedbackHeading, feedbackPage } from "@/lib/feedback";
 import { firstValues, type SearchParams } from "@/lib/params";
-import { requireUser } from "@/lib/supabase/server";
+import { currentUser } from "@/lib/supabase/server";
 
 export const metadata: Metadata = {
   title: feedbackHeading.title,
@@ -11,9 +11,9 @@ export const metadata: Metadata = {
 };
 
 /**
- * The feedback form as a page, for direct visits, reloads and the return from the full sign-in
- * page. Links inside the site open it in a dialog over the current page instead
- * (`src/app/@modal/(.)feedback`).
+ * The feedback form as a page, for direct visits, reloads and links from the full sign-in page.
+ * Links inside the site open it in a dialog over the current page instead
+ * (`src/app/@modal/(.)feedback`). Visitors send it too, without an account.
  */
 export default async function SendFeedback({
   searchParams,
@@ -21,13 +21,12 @@ export default async function SendFeedback({
   searchParams: Promise<SearchParams>;
 }) {
   const from = feedbackPage(firstValues(await searchParams).from);
-  // Feedback comes from signed-in users, so sign-in continues here, remembering the page.
-  await requireUser({ next: feedbackHref(from) });
+  const visitor = !(await currentUser());
   return (
     <Shell size="narrow">
       <PageHeader className="border-b" {...feedbackHeading} />
       <div className="pt-8">
-        <FeedbackForm from={from} />
+        <FeedbackForm from={from} visitor={visitor} />
       </div>
     </Shell>
   );

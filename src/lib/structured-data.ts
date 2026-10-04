@@ -160,7 +160,7 @@ export function productJsonLd(item: Listing): JsonLd {
     description: item.tagline,
     isPartOf: isPartOf(),
     breadcrumb: breadcrumbs([
-      { name: "Browse", path: "/discover" },
+      { name: "Browse", path: "/browse" },
       { name: category, path: `/categories/${categorySlug(category)}` },
       { name: item.name ?? "SaaS", path },
     ]),

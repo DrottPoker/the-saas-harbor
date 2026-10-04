@@ -491,7 +491,7 @@ function Connected({
               </dd>
             </div>
             <div className="px-5 py-4">
-              <dt className="text-sm text-muted-foreground">Paying customers</dt>
+              <dt className="text-sm text-muted-foreground">Subscribers</dt>
               <dd className="mt-1 text-xl font-semibold tabular-nums">
                 {snapshot.customers.toLocaleString("en-US")}
               </dd>
@@ -582,7 +582,7 @@ export function RevenueSection({
     <Section
       id="revenue"
       title="Verified revenue"
-      description="Connect your payment provider with a read-only key to verify MRR and paying customers. Verified MRR is ranked on the leaderboard, and the link to your website is followed by search engines. You can also do this later."
+      description="Connect your payment provider with a read-only key to verify MRR and subscribers. Verified MRR is ranked on the leaderboard, and the link to your website is followed by search engines. You can also do this later."
     >
       {result && <Notice tone={result.tone}>{result.text}</Notice>}
       {connection ? (

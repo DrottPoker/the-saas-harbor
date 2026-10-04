@@ -27,7 +27,7 @@ export default async function Image({ params }: { params: Promise<{ slug: string
     figures.push({ label: "Verified MRR", value: formatUsd(totals.mrr.total) });
   if (totals.customers.total != null)
     figures.push({
-      label: "Paying customers",
+      label: "Subscribers",
       value: totals.customers.total.toLocaleString("en-US"),
     });
   if (figures.length < 3 && profile.location)

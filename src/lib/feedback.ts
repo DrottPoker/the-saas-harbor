@@ -1,8 +1,8 @@
 import { z } from "zod";
 import { hasUnsafeUrlCharacters } from "./domain";
 
-// Feedback from users to the admins. The database has the same kinds and limits
-// (public.submit_feedback).
+// Feedback from users and visitors to the admins. The database has the same kinds and limits
+// (public.submit_feedback and public.submit_visitor_feedback).
 export const FEEDBACK_KINDS = ["bug", "suggestion", "other"] as const;
 export type FeedbackKind = (typeof FEEDBACK_KINDS)[number];
 
@@ -34,7 +34,20 @@ export const feedbackSchema = z.object({
     .trim()
     .min(FEEDBACK_MIN_LENGTH, `Write at least ${FEEDBACK_MIN_LENGTH} characters.`)
     .max(FEEDBACK_MAX_LENGTH, "Keep it under 2,000 characters."),
+  /** Where a visitor wants a reply, if anywhere. A user's address is in their account. */
+  email: z
+    .string()
+    .trim()
+    .max(254, "Enter a valid email address, or leave it empty.")
+    .refine(
+      (value) => !value || z.email().safeParse(value).success,
+      "Enter a valid email address, or leave it empty.",
+    )
+    .default(""),
 });
+
+/** A form field people never see, which only bots fill in. */
+export const FEEDBACK_TRAP = "homepage";
 
 /**
  * A path on this site that feedback was sent from, such as /dashboard, or null for anything else,
@@ -53,12 +66,6 @@ export function feedbackPage(value: string | null | undefined) {
 export function feedbackHref(from: string | null) {
   const page = feedbackPage(from);
   return page && page !== "/feedback" ? `/feedback?from=${encodeURIComponent(page)}` : "/feedback";
-}
-
-/** Where a Feedback link on `path` leads: the form, or for a visitor, sign-in that continues there. */
-export function feedbackLink(path: string, signedIn: boolean) {
-  const href = feedbackHref(path);
-  return signedIn ? href : `/auth?next=${encodeURIComponent(href)}`;
 }
 
 /**

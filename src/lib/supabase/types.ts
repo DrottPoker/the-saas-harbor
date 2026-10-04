@@ -20,6 +20,7 @@ export type Database = Omit<GeneratedDatabase, "public"> & {
       | "saas_slug_redirect"
       | "check_username"
       | "submit_feedback"
+      | "submit_visitor_feedback"
       | "username_change_available_at"
       | "claim_emails"
       | "complete_email"
@@ -35,10 +36,11 @@ export type Database = Omit<GeneratedDatabase, "public"> & {
         Args: Nullable<Functions["complete_email"]["Args"], "p_error">;
         Returns: undefined;
       };
-      // Only feedback alerts have feedback; the context is null once its subject is gone.
+      // Only feedback alerts have feedback, and a visitor's has no user; the context is null once
+      // its subject is gone.
       claim_telegram_alerts: {
         Args: Functions["claim_telegram_alerts"]["Args"];
-        Returns: Nullable<Row<"claim_telegram_alerts">, "feedback_id" | "context">[];
+        Returns: Nullable<Row<"claim_telegram_alerts">, "user_id" | "feedback_id" | "context">[];
       };
       complete_telegram_alert: {
         Args: Nullable<Functions["complete_telegram_alert"]["Args"], "p_error" | "p_retry_after">;
@@ -73,6 +75,10 @@ export type Database = Omit<GeneratedDatabase, "public"> & {
       };
       submit_feedback: {
         Args: Nullable<Functions["submit_feedback"]["Args"], "p_page">;
+        Returns: string;
+      };
+      submit_visitor_feedback: {
+        Args: Nullable<Functions["submit_visitor_feedback"]["Args"], "p_page" | "p_reply_email">;
         Returns: string;
       };
       username_change_available_at: {

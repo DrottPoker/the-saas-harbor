@@ -1,8 +1,8 @@
--- Feedback: what users can send, the limits, who reads it, handling, and account deletion. Runs
--- in a rolled-back transaction.
+-- Feedback: what users and visitors can send, the limits, who reads it, handling, account deletion
+-- and how long a visitor's is kept. Runs in a rolled-back transaction.
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(17);
+select plan(28);
 
 insert into auth.users(id, email) values
   ('e4000000-0000-4000-8000-000000000001', 'user@feedback.test'),
@@ -83,6 +83,63 @@ delete from auth.users where id = 'e4000000-0000-4000-8000-000000000001';
 select is_empty($$ select 1 from public.feedback
   where user_id = 'e4000000-0000-4000-8000-000000000001' $$,
   'deleting the account removes its feedback');
+
+-- Visitors send feedback through the server only, within their own limits and a shared one.
+set local role anon;
+select throws_ok($$ select public.submit_visitor_feedback('203.0.113.7', 'Browser V', 'bug',
+  'Sign-up did not work for me.', '/auth', null) $$,
+  '42501', null, 'visitors cannot send it to the database themselves');
+reset role;
+set local role authenticated;
+select throws_ok($$ select public.submit_visitor_feedback('203.0.113.7', 'Browser V', 'bug',
+  'Sign-up did not work for me.', '/auth', null) $$,
+  '42501', null, 'nor can users');
+reset role;
+set local role service_role;
+select lives_ok($$ select public.submit_visitor_feedback('203.0.113.7', 'Browser V', 'bug',
+  ' Sign-up did not work for me. ', '/auth', ' Jane@Example.com ') $$,
+  'the server sends a visitor''s feedback');
+select throws_ok($$ select public.submit_visitor_feedback('203.0.113.7', 'Browser V', 'other',
+  'Another message here.', null, 'not-an-address') $$,
+  'P0001', 'Enter a valid email address, or leave it empty', 'a reply address must be one');
+select public.submit_visitor_feedback('203.0.113.7', 'Browser V', 'other',
+  'Second visitor message.', null, null);
+select public.submit_visitor_feedback('203.0.113.7', 'Browser V', 'other',
+  'Third visitor message.', null, null);
+select throws_ok($$ select public.submit_visitor_feedback('203.0.113.7', 'Browser V', 'other',
+  'Fourth visitor message.', null, null) $$,
+  'P0001', 'You have sent a lot of feedback. Try again later', 'three an hour from one visitor');
+select lives_ok($$ select public.submit_visitor_feedback('203.0.113.8', 'Browser W', 'other',
+  'Another visitor writes.', null, null) $$, 'another visitor has limits of their own');
+reset role;
+select results_eq(
+  $$ select message, page, reply_email, octet_length(visitor) from public.feedback
+     where user_id is null and kind = 'bug' $$,
+  $$ values ('Sign-up did not work for me.'::text, '/auth'::text, 'jane@example.com'::text, 16) $$,
+  'a visitor''s feedback keeps a hash of the visitor, and the address in lower case');
+select ok(
+  (select private.telegram_alert_context(a) @> '{"visitor": true, "reply": true}'
+     and not private.telegram_alert_context(a) ? 'reply_email'
+   from private.telegram_alerts a join public.feedback f on f.id = a.feedback_id
+   where a.user_id is null and f.kind = 'bug'),
+  'it is alerted, saying only that a reply address is there');
+-- Many visitors at once meet a limit for all of them together.
+insert into public.feedback(visitor, kind, message)
+select decode(lpad(to_hex(i), 32, '0'), 'hex'), 'other', 'Flood message number ' || i
+from generate_series(1, 30) i;
+set local role service_role;
+select throws_ok($$ select public.submit_visitor_feedback('203.0.113.9', 'Browser X', 'other',
+  'One more from someone new.', null, null) $$,
+  'P0001', 'A lot of feedback came in just now. Try again later', 'all visitors share a limit too');
+reset role;
+select throws_ok($$ insert into public.feedback(user_id, visitor, kind, message)
+  values ('e4000000-0000-4000-8000-000000000002', decode(repeat('01', 16), 'hex'), 'other',
+    'Both a user and a visitor.') $$, '23514', null,
+  'feedback comes from a user or from a visitor');
+select ok(
+  (select command like '%user_id is null%12 months%' from cron.job
+   where jobname = 'harbor-feedback-retention'),
+  'a visitor''s feedback is deleted after 12 months');
 
 select * from finish();
 rollback;

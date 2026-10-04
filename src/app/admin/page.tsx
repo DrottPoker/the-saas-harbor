@@ -38,7 +38,9 @@ export default async function AdminOverview() {
     client.from("moderation_log").select("*").order("created_at", { ascending: false }).limit(5),
     client
       .from("feedback")
-      .select("id, kind, message, page, created_at, handled_at, user_id", { count: "exact" })
+      .select("id, kind, message, page, created_at, handled_at, user_id, reply_email", {
+        count: "exact",
+      })
       .is("handled_at", null)
       .order("created_at", { ascending: false })
       .limit(3),

@@ -81,7 +81,10 @@ export default function Privacy() {
             </li>
             <li>
               <strong className="font-medium text-foreground">Feedback.</strong> What you send as
-              feedback, the page you sent it from, and whether it has been handled.
+              feedback, the page you sent it from, and whether it has been handled. Without an
+              account, you may also leave an email address for a reply, and we keep the day&apos;s
+              hash of your IP address and browser, as for the site statistics, to limit how much
+              feedback one visitor sends.
             </li>
             <li>
               <strong className="font-medium text-foreground">Emails.</strong> Which emails you
@@ -217,8 +220,9 @@ export default function Privacy() {
               created and whether its email address is confirmed; about new products, with their
               name, tagline, category and founder; about reports, with who sent them, what or whom
               they are about, the reason and the explanation; and about feedback, with who sent it,
-              from which page, and its text. So is a notice with your name and username when you
-              write to the site&apos;s own account, but never the message.
+              from which page, and its text, and for a visitor whether they left an email address,
+              never the address itself. So is a notice with your name and username when you write to
+              the site&apos;s own account, but never the message.
             </li>
             <li>
               <strong className="font-medium text-foreground">Service providers:</strong> our
@@ -261,10 +265,11 @@ export default function Privacy() {
             you delete a product or your account, the data that belongs to it is deleted, apart from
             what is needed for longer, such as reports and decisions that are still relevant, and
             copies in backups until those backups expire. The site statistics are kept apart from
-            accounts for up to 25 months. Records of sent emails and other technical records are
-            kept for a short time. Alerts sent to admins on Telegram stay in their chat until they
-            are deleted there. Information that was public may already have been copied by others,
-            such as search engines.
+            accounts for up to 25 months. Feedback from visitors without an account, with any email
+            address left for a reply, is deleted after 12 months. Records of sent emails and other
+            technical records are kept for a short time. Alerts sent to admins on Telegram stay in
+            their chat until they are deleted there. Information that was public may already have
+            been copied by others, such as search engines.
           </p>
           <p>
             We use technical and organisational measures to protect your data, such as encryption of

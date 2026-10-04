@@ -331,8 +331,17 @@ export function Conversation({
                 // after sending would wipe what was typed, and the shortcut sends nothing more.
                 readOnly={sending}
                 className="max-h-40 min-h-10 resize-none"
+                aria-describedby="message-keys"
                 onKeyDown={(event) => {
-                  if (event.key === "Enter" && (event.metaKey || event.ctrlKey)) {
+                  // With a keyboard, Enter sends and Shift+Enter starts a new line. A touch
+                  // keyboard's Enter starts a new line, since the Send button is at hand.
+                  const sends =
+                    event.key === "Enter" &&
+                    !event.nativeEvent.isComposing &&
+                    (event.metaKey ||
+                      event.ctrlKey ||
+                      (!event.shiftKey && window.matchMedia("(pointer: fine)").matches));
+                  if (sends) {
                     event.preventDefault();
                     if (!sending) event.currentTarget.form?.requestSubmit();
                   }
@@ -342,6 +351,12 @@ export function Conversation({
                 Send
               </Submit>
             </div>
+            <p
+              id="message-keys"
+              className="text-xs text-muted-foreground [@media(pointer:coarse)]:hidden"
+            >
+              Enter sends. Shift+Enter starts a new line.
+            </p>
           </form>
         ) : (
           closedNotice

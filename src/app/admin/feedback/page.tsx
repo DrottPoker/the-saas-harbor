@@ -34,7 +34,9 @@ export default async function AdminFeedback({
 
   let query = client
     .from("feedback")
-    .select("id, kind, message, page, created_at, handled_at, user_id", { count: "exact" });
+    .select("id, kind, message, page, created_at, handled_at, user_id, reply_email", {
+      count: "exact",
+    });
   // The newest first; handled feedback by when it was handled.
   query =
     status === "new"
@@ -55,7 +57,7 @@ export default async function AdminFeedback({
     <>
       <PageHeader
         title="Feedback"
-        description="Bugs, errors, suggestions and other feedback from users."
+        description="Bugs, errors, suggestions and other feedback from users and visitors."
       />
       <div className="mb-4">
         <FilterTabs
@@ -67,8 +69,8 @@ export default async function AdminFeedback({
       {!items.length ? (
         <EmptyState title={status === "new" ? "No new feedback" : "No feedback"}>
           {status === "new"
-            ? "Everything has been handled. New feedback from users appears here."
-            : "Feedback from users is listed here."}
+            ? "Everything has been handled. New feedback appears here."
+            : "Feedback from users and visitors is listed here."}
         </EmptyState>
       ) : (
         <>

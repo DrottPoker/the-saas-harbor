@@ -29,6 +29,8 @@ const config: NextConfig = {
       // Profiles moved from /makers to /users: everyone is a user, and the founder of the products
       // they own.
       { source: "/makers/:path*", destination: "/users/:path*", permanent: true },
+      // Browse moved from /discover to the address its name gives; the query carries over.
+      { source: "/discover", destination: "/browse", permanent: true },
     ];
   },
   async headers() {

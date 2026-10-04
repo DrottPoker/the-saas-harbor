@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { Dialog } from "radix-ui";
 import { LinkedInIcon, XIcon } from "@/components/profile/brand-icons";
 import { DialogPanel } from "@/components/route-dialog";
@@ -10,10 +11,21 @@ import { shareLinks } from "@/lib/share";
 
 /**
  * Offers a founder to share the product they just added: a post on X with its text written, whose
- * link shows the product's sharing card. Closing the offer, or opening the post, forgets it, so it
- * shows once.
+ * link shows the product's sharing card, or a look at the page first. Closing the offer, opening
+ * the post or the page forgets it, so it shows once.
  */
-export function SharePrompt({ name, url, text }: { name: string; url: string; text: string }) {
+export function SharePrompt({
+  name,
+  url,
+  path,
+  text,
+}: {
+  name: string;
+  url: string;
+  /** The product page on this site, such as /saas/tidewise. */
+  path: string;
+  text: string;
+}) {
   const [open, setOpen] = useState(true);
   const links = shareLinks(url, text);
   const close = () => {
@@ -47,6 +59,16 @@ export function SharePrompt({ name, url, text }: { name: string; url: string; te
             <Button variant="ghost">Not now</Button>
           </Dialog.Close>
         </div>
+        <p className="mt-4 text-sm text-muted-foreground">
+          Want to see it first?{" "}
+          <Link
+            href={path}
+            onClick={close}
+            className="font-medium text-foreground underline underline-offset-2"
+          >
+            View your page
+          </Link>
+        </p>
       </DialogPanel>
     </Dialog.Root>
   );

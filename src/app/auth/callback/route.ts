@@ -22,7 +22,7 @@ export async function GET(request: NextRequest) {
   const failed = (reason: string) =>
     to(
       flow.confirm
-        ? "/dashboard/profile?confirm=failed#delete-account"
+        ? "/dashboard/settings?confirm=failed#delete-account"
         : `/auth?error=${reason}${provider}`,
     );
   const code = search.get("code");
@@ -31,7 +31,7 @@ export async function GET(request: NextRequest) {
   const { data, error } = await client.auth.exchangeCodeForSession(code);
   if (error || !data.user) return failed("failed");
   if (flow.confirm) {
-    if (data.user.id === flow.confirm) return to("/dashboard/profile#delete-account");
+    if (data.user.id === flow.confirm) return to("/dashboard/settings#delete-account");
     // Another account signed in, possibly into another profile: nothing is deleted.
     await client.auth.signOut({ scope: "local" });
     return to(`/auth?error=account${provider}`);

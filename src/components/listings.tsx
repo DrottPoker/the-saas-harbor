@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { BadgeCheck } from "lucide-react";
-import { parseHistory, parseRevenueHistory } from "@/lib/charts";
+import { historySince, parseHistory, parseRevenueHistory } from "@/lib/charts";
 import { PAGE_SIZE, type Listing } from "@/lib/data";
 import { formatDate, formatUsd } from "@/lib/domain";
 import { revenueWindow, type Ranking } from "@/lib/revenue-figures";
@@ -35,8 +35,8 @@ function Logo({ item }: { item: Listing }) {
  * The ranking, by verified MRR or by revenue over a window. Each row also shows revenue of all
  * time, or MRR in the ranking by all time, and a trend of the figure ranked by: MRR at month end,
  * or revenue by month. With `demo`, the same table lists demo products instead: unranked, under a
- * Demo column, and with their launch date where real products show when they were verified. Their
- * pages carry the Demo tag.
+ * Demo column (a Demo tag on each row on phones), and with their launch date where real products
+ * show when they were verified. Their pages carry the Demo tag.
  */
 export function Leaderboard({
   items,
@@ -82,10 +82,11 @@ export function Leaderboard({
       </div>
       <List className="divide-y" aria-labelledby={labelledBy}>
         {items.map((item, index) => {
-          // The trend of what the list ranks by.
-          const history = span
-            ? parseRevenueHistory(item.revenue_history)
-            : parseHistory(item.mrr_history);
+          // The trend of what the list ranks by, from when the product had one.
+          const history = historySince(
+            span ? parseRevenueHistory(item.revenue_history) : parseHistory(item.mrr_history),
+            { launchedOn: item.launched_on, listedAt: item.created_at },
+          );
           const secondCents = item[second.column];
           return (
             <li key={item.id}>
@@ -119,7 +120,11 @@ export function Leaderboard({
                 <span className="flex min-w-0 items-center gap-3">
                   <Logo item={item} />
                   <span className="min-w-0">
-                    <span className="block truncate font-medium">{item.name}</span>
+                    <span className="flex min-w-0 items-center gap-2">
+                      <span className="truncate font-medium">{item.name}</span>
+                      {/* Phones have no column headings, so each demo row says so itself. */}
+                      {item.demo && <Badge className="md:hidden">Demo</Badge>}
+                    </span>
                     <span className="block truncate text-sm text-muted-foreground">
                       {item.tagline}
                     </span>

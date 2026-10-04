@@ -103,7 +103,7 @@ export default async function Maker({ params, searchParams }: Props) {
           detail={<span className="text-xs text-muted-foreground">{across(totals.mrr.count)}</span>}
         />
         <Metric
-          label="Paying customers"
+          label="Subscribers"
           value={totals.customers.total?.toLocaleString("en-US") ?? null}
           detail={
             <span className="text-xs text-muted-foreground">{across(totals.customers.count)}</span>

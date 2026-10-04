@@ -320,7 +320,7 @@ export const publicProfileExperience = cache(async (id: string) => {
   if (error) throw new Error("This profile could not be loaded.");
   return data;
 });
-// A maker's key figures: every listed product, oldest first, and verified MRR and paying customers
+// A maker's key figures: every listed product, oldest first, and verified MRR and subscribers
 // summed over the products that share them.
 export const makerTotals = cache(async (id: string) => {
   const client = publicClient();

@@ -1,5 +1,5 @@
+// The main navigation. New arrivals is Browse in another order, so Browse covers it.
 export const sections = [
-  ["/", "Leaderboard"],
-  ["/discover", "Browse"],
-  ["/newest", "New arrivals"],
+  ["/", "Leaderboard", []],
+  ["/browse", "Browse", ["/newest"]],
 ] as const;

@@ -9,7 +9,8 @@ select results_eq(
   $$ select jobname::text, schedule::text from cron.job where jobname like 'harbor-%' order by 1 $$,
   $$ values ('harbor-analytics-retention'::text, '41 3 * * *'::text),
     ('harbor-domain-checks', '23 * * * *'),
-    ('harbor-email-send', '* * * * *'), ('harbor-job-history', '17 3 * * *'),
+    ('harbor-email-send', '* * * * *'), ('harbor-feedback-retention', '37 3 * * *'),
+    ('harbor-job-history', '17 3 * * *'),
     ('harbor-revenue-sync', '*/10 * * * *'), ('harbor-telegram-retention', '29 3 * * *'),
     ('harbor-telegram-send', '* * * * *'), ('harbor-unfinished-signups', '53 3 * * *') $$,
   'emails and Telegram alerts every minute, revenue every ten minutes, domains hourly, cleanup daily');

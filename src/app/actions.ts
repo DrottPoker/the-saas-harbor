@@ -3,7 +3,7 @@
 import { redirect, RedirectType, unstable_rethrow } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
-import { deleteAccount, deleteSignedInAccount } from "@/lib/account";
+import { changePassword, deleteAccount, deleteSignedInAccount } from "@/lib/account";
 import { recordAccountSource } from "@/lib/account-source";
 import { confirmationMethod, PROVIDER_NAMES, signedInWithin } from "@/lib/auth";
 import { parseSkills } from "@/lib/profile";
@@ -171,6 +171,26 @@ export async function authenticate(
   );
 }
 
+// Sends the sign-up confirmation again. Auth answers the same whether or not the address has an
+// account waiting for confirmation, and limits how often it sends.
+export async function resendConfirmationAction(email: string): Promise<ActionState> {
+  if (!z.email().safeParse(email).success) return { error: "Enter a valid email address." };
+  const client = await serverClient();
+  const { error } = await client.auth.resend({
+    type: "signup",
+    email,
+    options: { emailRedirectTo: `${siteUrl()}/auth/confirm` },
+  });
+  if (error)
+    return {
+      error:
+        error.code === "over_email_send_rate_limit"
+          ? "Email limit reached. Please wait a minute before trying again."
+          : "The email could not be sent again. Try again in a minute.",
+    };
+  return { success: "Sent again. It can take a minute to arrive." };
+}
+
 export async function saveEmailSettingsAction(
   _state: ActionState,
   form: FormData,
@@ -204,8 +224,17 @@ export async function confirmEmailLinkAction(
       error:
         link.type === "recovery"
           ? "This link has expired or has already been used. Request a new reset link."
-          : "This link has expired or has already been used. Sign in if you confirmed your email before, or sign up again to get a new link.",
+          : link.type === "email_change"
+            ? "This link has expired or has already been used. Ask for the change again in Settings."
+            : "This link has expired or has already been used. Sign in if you confirmed your email before, or sign up again to get a new link.",
     };
+  if (link.type === "email_change") {
+    // The first of the two addresses to confirm gets no session: the other one still has to.
+    if (!data.session)
+      return { success: "Confirmed. Now open the link we sent to your other email address." };
+    revalidatePath("/", "layout");
+    redirect("/dashboard/settings?email=changed");
+  }
   await recordSignInCountry(client);
   revalidatePath("/", "layout");
   if (link.type === "recovery") redirect("/auth?mode=update");
@@ -246,6 +275,79 @@ export async function signOut() {
   if (error) throw new Error("Unable to sign out. Please try again.");
   revalidatePath("/", "layout");
   redirect("/");
+}
+
+// A new email address. Auth sends a link to the current address and one to the new address, and
+// changes it once both are confirmed, so a stolen session alone cannot move the account.
+export async function changeEmailAction(_state: ActionState, form: FormData): Promise<ActionState> {
+  const { user, client } = await requireUser();
+  const email = value(form, "email").trim();
+  if (!z.email().safeParse(email).success || email.length > 254)
+    return { error: "Enter a valid email address." };
+  if (email.toLowerCase() === user.email?.toLowerCase())
+    return { error: "That is already your email address." };
+  if (!(await addressAcceptsMail(email)))
+    return { error: "This email address cannot receive email. Check it for typos." };
+  const { error } = await client.auth.updateUser(
+    { email },
+    { emailRedirectTo: `${siteUrl()}/auth/confirm` },
+  );
+  if (error)
+    return {
+      error:
+        error.code === "email_exists"
+          ? "That email address already has an account."
+          : error.code === "over_email_send_rate_limit"
+            ? "Email limit reached. Please wait a minute before trying again."
+            : "The change could not be started. Please try again.",
+    };
+  return {
+    success: `We sent a link to ${user.email} and one to ${email}. Your address changes once both are confirmed.`,
+  };
+}
+
+// A new password, once the current one is checked. Every other session ends afterwards, so a
+// device signed in with the old password has to sign in again.
+export async function changePasswordAction(
+  _state: ActionState,
+  form: FormData,
+): Promise<ActionState> {
+  const { user, client } = await requireUser();
+  if (confirmationMethod(user) !== "password" || !user.email)
+    return { error: "Your account has no password yet. Send yourself a link to choose one." };
+  const current = value(form, "current_password");
+  const password = value(form, "password");
+  if (!current || current.length > PASSWORD_MAX_LENGTH)
+    return { error: "Enter your current password." };
+  if (password.length < PASSWORD_MIN_LENGTH || password.length > PASSWORD_MAX_LENGTH)
+    return {
+      error: `Use a new password between ${PASSWORD_MIN_LENGTH} and ${PASSWORD_MAX_LENGTH} characters.`,
+    };
+  try {
+    await changePassword(user.id, user.email, current, password);
+  } catch (error) {
+    return { error: message(error) };
+  }
+  await client.auth.signOut({ scope: "others" });
+  return { success: "Password changed. Your other devices are signed out." };
+}
+
+// A link to choose a password by email, for an account that signs in with Google or GitHub, or
+// for a user who does not remember theirs.
+export async function sendPasswordLinkAction(): Promise<ActionState> {
+  const { user, client } = await requireUser();
+  if (!user.email) return { error: "Your account has no email address to send the link to." };
+  const { error } = await client.auth.resetPasswordForEmail(user.email, {
+    redirectTo: `${siteUrl()}/auth/confirm`,
+  });
+  if (error)
+    return {
+      error:
+        error.code === "over_email_send_rate_limit"
+          ? "Email limit reached. Please wait a minute before trying again."
+          : "The link could not be sent. Please try again.",
+    };
+  return { success: `We sent a link to ${user.email}. Open it to choose a password.` };
 }
 
 export async function deleteAccountAction(

@@ -361,15 +361,18 @@ export function ProfileForm({
       </Section>
       <Section
         title="Links"
-        description="Full https:// addresses. LinkedIn, GitHub and X show with their icons."
+        description="Web addresses, with or without https://. LinkedIn, GitHub and X show with their icons."
       >
         <Field name="website" label="Website">
           <Input
             id="website"
             name="website"
-            type="url"
+            type="text"
+            inputMode="url"
+            autoCapitalize="none"
+            spellCheck={false}
             maxLength={500}
-            placeholder="https://"
+            placeholder="example.com"
             defaultValue={text("website")}
           />
         </Field>
@@ -377,9 +380,12 @@ export function ProfileForm({
           <Input
             id="linkedin_url"
             name="linkedin_url"
-            type="url"
+            type="text"
+            inputMode="url"
+            autoCapitalize="none"
+            spellCheck={false}
             maxLength={500}
-            placeholder="https://www.linkedin.com/in/"
+            placeholder="linkedin.com/in/your-name"
             defaultValue={text("linkedin_url")}
           />
         </Field>
@@ -387,9 +393,12 @@ export function ProfileForm({
           <Input
             id="github_url"
             name="github_url"
-            type="url"
+            type="text"
+            inputMode="url"
+            autoCapitalize="none"
+            spellCheck={false}
             maxLength={500}
-            placeholder="https://github.com/"
+            placeholder="github.com/your-name"
             defaultValue={text("github_url")}
           />
         </Field>
@@ -397,9 +406,12 @@ export function ProfileForm({
           <Input
             id="x_url"
             name="x_url"
-            type="url"
+            type="text"
+            inputMode="url"
+            autoCapitalize="none"
+            spellCheck={false}
             maxLength={500}
-            placeholder="https://x.com/"
+            placeholder="x.com/your-name"
             defaultValue={text("x_url")}
           />
         </Field>
@@ -411,9 +423,12 @@ export function ProfileForm({
           <Input
             id="social_url"
             name="social_url"
-            type="url"
+            type="text"
+            inputMode="url"
+            autoCapitalize="none"
+            spellCheck={false}
             maxLength={500}
-            placeholder="https://"
+            placeholder="example.com"
             defaultValue={text("social_url")}
           />
         </Field>

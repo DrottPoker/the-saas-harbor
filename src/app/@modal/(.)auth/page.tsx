@@ -1,8 +1,9 @@
 import { headers } from "next/headers";
-import { authHeadings, authMode, AuthPanel } from "@/components/auth-panel";
+import { authHeading, authMode, AuthPanel } from "@/components/auth-panel";
 import { LogoMark } from "@/components/logo";
 import { FullPageLoad, RouteDialog } from "@/components/route-dialog";
 import { authNeedsFullPage } from "@/lib/auth";
+import { safeNext } from "@/lib/domain";
 import { firstValues, type SearchParams } from "@/lib/params";
 import { requireUser } from "@/lib/supabase/server";
 
@@ -18,7 +19,7 @@ export default async function AuthModal({ searchParams }: { searchParams: Promis
   }
   const mode = authMode(firstValues(params).mode);
   if (mode === "update") await requireUser();
-  const { title, description } = authHeadings[mode];
+  const { title, description } = authHeading(mode, safeNext(firstValues(params).next));
   return (
     <RouteDialog title={title} description={description} icon={<LogoMark className="size-10" />}>
       <AuthPanel searchParams={params} />

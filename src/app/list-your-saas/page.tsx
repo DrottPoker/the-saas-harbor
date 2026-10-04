@@ -30,7 +30,7 @@ const gains = [
 const differences = [
   "Free, with no paid plans or upgrades.",
   "No review queue: your page is public as soon as you save it.",
-  "No paid placements: the leaderboard is ordered by verified MRR, and equal amounts by the date the product was listed.",
+  "No paid placements: the leaderboard is ordered by verified MRR, and equal amounts by revenue of all time, then by the date the product was listed.",
   "Revenue is read from your payment provider through a read-only key, never typed in.",
   "The link to your website is followed by search engines (dofollow) once your revenue is verified, whether you share the figures or not. It is free.",
   "Search engines hear about your page at once: it joins the sitemap, and Bing and the other search engines that take IndexNow notices are told when you save it.",
@@ -62,7 +62,7 @@ const questions: FaqItem[] = [
   {
     question: "Do I have to share my revenue?",
     answer:
-      "No. Verified revenue, paying customers and the launch date are public by default, and you can hide each of them when you add the product or later. Hiding revenue hides MRR too.",
+      "No. Verified revenue, the subscriber count and the launch date are public by default, and you can hide each of them when you add the product or later. Hiding revenue hides MRR too.",
   },
   {
     question: "Which payment providers can verify revenue?",

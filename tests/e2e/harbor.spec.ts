@@ -66,7 +66,9 @@ async function fillProduct(page: Page, name: string) {
   await page
     .getByLabel("Description")
     .fill("This is an isolated local integration fixture and is removed after verification.");
-  await page.getByLabel("Website", { exact: true }).fill("https://example.com");
+  await page.getByLabel("Category").selectOption("Productivity");
+  // Without https://, which the server adds.
+  await page.getByLabel("Website", { exact: true }).fill("example.com");
 }
 // A product just added offers, once, to share it on X; tests that go on in the editor close it.
 async function closeShareOffer(page: Page, name: string) {
@@ -76,7 +78,7 @@ async function closeShareOffer(page: Page, name: string) {
   await expect(offer).toHaveCount(0);
 }
 const HIDE_REVENUE = "Hide verified revenue, MRR included";
-const HIDE_FIGURES = [HIDE_REVENUE, "Hide paying customer count", "Hide launch date"];
+const HIDE_FIGURES = [HIDE_REVENUE, "Hide subscriber count", "Hide launch date"];
 // Verified figures are public by default; tests that need them private tick every box.
 async function hideFigures(page: Page) {
   for (const label of HIDE_FIGURES) await page.getByLabel(label, { exact: true }).check();
@@ -285,7 +287,7 @@ test("anonymous navigation, private route protection and responsive empty state"
   expect(robots).toContain(`Sitemap: ${origin}/sitemap.xml`);
   const sitemap = await page.request.get("/sitemap.xml");
   expect(sitemap.headers()["content-type"]).toContain("xml");
-  expect(await sitemap.text()).toContain(`<loc>${origin}/discover</loc>`);
+  expect(await sitemap.text()).toContain(`<loc>${origin}/browse</loc>`);
   expect(await sitemap.text()).not.toContain("/demo/");
   expect(await sitemap.text()).toContain(`<loc>${origin}/categories</loc>`);
   for (const path of ["/list-your-saas", "/where-to-launch"])
@@ -361,11 +363,13 @@ test("anonymous navigation, private route protection and responsive empty state"
   await expect(page.getByRole("heading", { name: "Page not found" })).toBeVisible();
   await page.goto("/dashboard");
   await expect(page).toHaveURL(/\/auth$/);
+  // Browse moved from /discover, and the old address keeps its filters.
   await page.goto(`/discover?category=Design&q=missing-${run}`);
+  await expect(page).toHaveURL(`/browse?category=Design&q=missing-${run}`);
   await expect(page.getByRole("heading", { name: "No matching products" })).toBeVisible();
   // A page past the last one does not exist, and a repeated search reads its first. Searches stay
   // out of search results.
-  expect((await page.goto("/discover?page=999"))?.status()).toBe(404);
+  expect((await page.goto("/browse?page=999"))?.status()).toBe(404);
   await expect(page.getByRole("heading", { name: "Page not found" })).toBeVisible();
   await page.goto(`/?q=missing-${run}&q=other`);
   await expect(page.getByRole("heading", { name: "No matching products" })).toBeVisible();
@@ -374,7 +378,7 @@ test("anonymous navigation, private route protection and responsive empty state"
   await page.setViewportSize({ width: 390, height: 844 });
   for (const path of [
     "/",
-    "/discover",
+    "/browse",
     "/categories",
     "/categories/design",
     "/tech",
@@ -402,13 +406,13 @@ test("anonymous navigation, private route protection and responsive empty state"
   await page.getByRole("contentinfo").getByRole("link", { name: "Terms" }).click();
   await expect(page.getByRole("heading", { name: "Terms", level: 1 })).toBeVisible();
   const publicPages = [
-    "/discover",
+    "/browse",
     "/newest",
     "/categories",
     "/categories/design",
     "/tech",
     "/tech/nextjs",
-    "/discover?tech=nextjs",
+    "/browse?tech=nextjs",
     "/about",
     "/list-your-saas",
     "/where-to-launch",
@@ -462,7 +466,7 @@ test("demo products fill the lists without a rank, until real products take thei
   // The search and the categories apply to them as to real products.
   await page.goto("/?q=CRONHAWK");
   await expect(rows).toHaveCount(1);
-  await page.goto("/discover?category=Finance");
+  await page.goto("/browse?category=Finance");
   await expect(page.getByRole("link", { name: /Retrywell/ })).toHaveAttribute(
     "href",
     "/demo/retrywell",
@@ -494,7 +498,7 @@ test("demo products fill the lists without a rank, until real products take thei
     await setThemeCookie(page, theme);
     for (const path of [
       "/",
-      "/discover",
+      "/browse",
       "/newest",
       "/about",
       "/demo/metricfold",
@@ -505,7 +509,7 @@ test("demo products fill the lists without a rank, until real products take thei
     }
   }
   await page.setViewportSize({ width: 390, height: 844 });
-  for (const path of ["/", "/discover", "/demo/metricfold"]) {
+  for (const path of ["/", "/browse", "/demo/metricfold"]) {
     await page.goto(path);
     await expectNoHorizontalScroll(page);
   }
@@ -540,7 +544,7 @@ test("theme menu persists light and dark, and system follows the OS", async ({ p
   expect(await pageBackground(page)).toBe(dark);
   for (const path of [
     "/",
-    "/discover",
+    "/browse",
     "/newest",
     "/categories",
     "/categories/design",
@@ -627,7 +631,7 @@ test("registration, email confirmation, profile and SaaS editing, storage, priva
   await elsewhere.getByRole("button", { name: "Confirm email" }).click();
   // A new account starts by listing its first product.
   await expect(elsewhere).toHaveURL(/\/dashboard\/saas\/new$/);
-  await expect(elsewhere.getByRole("heading", { name: "Add a SaaS" })).toBeVisible();
+  await expect(elsewhere.getByRole("heading", { name: "Add SaaS" })).toBeVisible();
   await elsewhere.goto(confirmation);
   await elsewhere.getByRole("button", { name: "Confirm email" }).click();
   await expect(
@@ -958,10 +962,10 @@ test("registration, email confirmation, profile and SaaS editing, storage, priva
   expect(await (await page.request.get(`${productPath}.md`)).text()).toContain(
     `## Tech stack\n\n- Frontend: [Next.js](${origin}/tech/nextjs)\n- Databases: [PostgreSQL](${origin}/tech/postgresql)`,
   );
-  await page.goto(`/discover?tech=nextjs&q=${encodeURIComponent(productName)}`);
+  await page.goto(`/browse?tech=nextjs&q=${encodeURIComponent(productName)}`);
   await expect(page.getByText("Built with Next.js")).toBeVisible();
   await expect(page.getByRole("link").filter({ hasText: productName })).toBeVisible();
-  await page.goto(`/discover?tech=react&q=${encodeURIComponent(productName)}`);
+  await page.goto(`/browse?tech=react&q=${encodeURIComponent(productName)}`);
   await expect(page.getByRole("heading", { name: "No matching products" })).toBeVisible();
   const { data: builtWith } = await anon
     .from("public_saas")
@@ -1149,7 +1153,7 @@ test("registration, email confirmation, profile and SaaS editing, storage, priva
     `/saas/${productId}`,
     `${productPath}/milestones/mrr-100`,
     `/users/${firstUserId}`,
-    "/discover",
+    "/browse",
     "/categories/design",
     "/tech/nextjs",
     "/dashboard",
@@ -1180,9 +1184,7 @@ test("registration, email confirmation, profile and SaaS editing, storage, priva
   await page.reload();
   await page.getByRole("button", { name: "Refresh now" }).click();
   await expect(
-    page.getByText(
-      "Verified MRR: $104 from 3 paying customers. 1 usage-based item was not counted.",
-    ),
+    page.getByText("Verified MRR: $104 from 3 subscribers. 1 usage-based item was not counted."),
   ).toBeVisible();
 
   await page.getByLabel(HIDE_REVENUE, { exact: true }).check();
@@ -1190,7 +1192,7 @@ test("registration, email confirmation, profile and SaaS editing, storage, priva
   await expect(page).toHaveURL(/saved=/);
   await page.goto(`/?q=${encodeURIComponent(productName)}`);
   await expect(page.getByText(productName, { exact: true })).toHaveCount(0);
-  await page.goto(`/discover?q=${encodeURIComponent(productName)}`);
+  await page.goto(`/browse?q=${encodeURIComponent(productName)}`);
   await expect(page.getByRole("heading", { name: productName, exact: true })).toBeVisible();
 
   // One Stripe account can verify one product only.
@@ -1605,7 +1607,23 @@ test("a user deletes products, then their account and everything in it", async (
   await expect(productList).toHaveCount(1);
   expect(await files(id)).toContain("avatar.png");
 
-  await page.goto("/dashboard/profile");
+  // Settings change the password once the current one is checked.
+  await page.goto("/dashboard/settings");
+  const newPassword = `${leavingPassword}-changed`;
+  const current = page.getByLabel("Current password");
+  await current.fill("not-the-right-password");
+  await page.getByLabel("New password").fill(newPassword);
+  await page.getByRole("button", { name: "Change password" }).click();
+  await expect(
+    page.getByRole("alert").filter({ hasText: "The password is incorrect." }),
+  ).toBeVisible();
+  await current.fill(leavingPassword);
+  await page.getByLabel("New password").fill(newPassword);
+  await page.getByRole("button", { name: "Change password" }).click();
+  await expect(
+    page.getByText("Password changed. Your other devices are signed out."),
+  ).toBeVisible();
+
   const confirm = page.getByLabel("Confirm with your password");
   const remove = page.getByRole("button", { name: "Delete account" });
   // A wrong password changes nothing, and the password is never written back into the field.
@@ -1618,7 +1636,7 @@ test("a user deletes products, then their account and everything in it", async (
   expect((await admin.auth.admin.getUserById(id)).error).toBeNull();
   expect(await files(id)).toHaveLength(2);
 
-  await confirm.fill(leavingPassword);
+  await confirm.fill(newPassword);
   await remove.click();
   await expect(page).toHaveURL(/\/account-deleted$/);
   await expect(page.getByRole("heading", { name: "Your account has been deleted" })).toBeVisible();
@@ -1643,7 +1661,7 @@ test("a user deletes products, then their account and everything in it", async (
   await page.goto("/dashboard");
   await expect(page).toHaveURL(/\/auth$/);
   await page.getByLabel("Email address").fill(leavingEmail);
-  await page.getByLabel("Password", { exact: true }).fill(leavingPassword);
+  await page.getByLabel("Password", { exact: true }).fill(newPassword);
   await page.getByRole("button", { name: "Sign in", exact: true }).click();
   await expect(page.getByRole("alert").filter({ hasText: "Unable to sign in" })).toBeVisible();
 });
@@ -2722,7 +2740,7 @@ test("users get one email per unread conversation, and can turn it off", async (
   // The recipient turns message emails off, and on again, in their settings.
   await login(page, recipient.email, recipient.password);
   const account = await openAccountMenu(page, recipient.name);
-  await account.getByRole("menuitem", { name: "Email settings" }).click();
+  await account.getByRole("menuitem", { name: "Settings", exact: true }).click();
   await expect(page).toHaveURL("/dashboard/settings");
   const setting = page.getByRole("checkbox", { name: /New messages from other users/ });
   // Waits for the save itself: the confirmation text stays on screen between saves.
@@ -2943,7 +2961,7 @@ test("founders verify revenue through Paddle, Polar and Dodo Payments", async ({
   await page.getByRole("button", { name: "Save and verify revenue" }).click();
   await expect(revenue.getByText("Connected to Polar")).toBeVisible();
   await expect(
-    revenue.getByText(/^Polar connected\. Verified MRR: \$59\.17 from 3 paying customers\./),
+    revenue.getByText(/^Polar connected\. Verified MRR: \$59\.17 from 3 subscribers\./),
   ).toBeVisible();
   await expect(revenue.getByText("$59.17", { exact: true })).toBeVisible();
 
@@ -3035,7 +3053,7 @@ test("founders verify revenue through Creem, Chargebee, Whop and RevenueCat", as
   await expect(revenue.getByText("Connected to Chargebee")).toBeVisible();
   await expect(
     revenue.getByText(
-      /^Chargebee connected\. Verified MRR: \$35\.21 from 2 paying customers\. 1 subscription without a paid invoice was not counted\./,
+      /^Chargebee connected\. Verified MRR: \$35\.21 from 2 subscribers\. 1 subscription without a paid invoice was not counted\./,
     ),
   ).toBeVisible();
   await expect(revenue.getByText(`Key ${CHARGEBEE.site} · …ebee`)).toBeVisible();
@@ -3514,7 +3532,7 @@ test("founders connect Gumroad by approving read access to their sales", async (
   const id = new URL(page.url()).pathname.split("/").at(-1)!;
   await expect(
     revenue.getByText(
-      "Gumroad connected. Verified MRR: $50 from 3 paying customers. 1 subscriber without a recent charge was not counted.",
+      "Gumroad connected. Verified MRR: $50 from 3 subscribers. 1 subscriber without a recent charge was not counted.",
     ),
   ).toBeVisible();
   await expect(revenue.getByText("Connected to Gumroad")).toBeVisible();

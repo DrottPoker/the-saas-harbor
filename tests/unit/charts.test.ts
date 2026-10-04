@@ -4,6 +4,7 @@ import {
   monthLabel,
   changePct,
   chartPeriods,
+  historySince,
   mrrChartModel,
   niceScale,
   parseHistory,
@@ -29,6 +30,35 @@ describe("stored history", () => {
       [{ month: "2026-08" }],
     ])
       expect(parseHistory(value)).toBeNull();
+  });
+});
+
+describe("history since the product had one", () => {
+  const months = ["2025-10", "2025-11", "2025-12", "2026-01", "2026-02", "2026-03"];
+  const history = (cents: number[]) => months.map((month, i) => ({ month, cents: cents[i]! }));
+
+  it("starts at the first month with an amount", () =>
+    expect(
+      historySince(history([0, 0, 0, 900, 1200, 1500]), { listedAt: "2026-03-02T10:00:00Z" }),
+    ).toEqual(history([0, 0, 0, 900, 1200, 1500]).slice(3)));
+
+  it("or at the launch or listing month, whichever is earliest", () => {
+    const flat = history([0, 0, 0, 0, 0, 0]);
+    expect(historySince(flat, { listedAt: "2026-02-20T08:00:00Z" })).toEqual(flat.slice(4));
+    expect(
+      historySince(flat, { launchedOn: "2025-12-01", listedAt: "2026-02-20T08:00:00Z" }),
+    ).toEqual(flat.slice(2));
+    // Revenue before the launch date still shows.
+    expect(historySince(history([0, 300, 0, 0, 0, 0]), { launchedOn: "2026-01-15" })).toEqual(
+      history([0, 300, 0, 0, 0, 0]).slice(1),
+    );
+  });
+
+  it("is empty when the product joined after the history ends, and whole without dates", () => {
+    const flat = history([0, 0, 0, 0, 0, 0]);
+    expect(historySince(flat, { listedAt: "2026-04-01T00:00:00Z" })).toBeNull();
+    expect(historySince(flat, {})).toEqual(flat);
+    expect(historySince(null, { listedAt: "2026-01-01" })).toBeNull();
   });
 });
 

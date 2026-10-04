@@ -181,7 +181,7 @@ describe("structured data", () => {
       },
       breadcrumb: {
         itemListElement: [
-          { item: "https://harbor.example/discover" },
+          { item: "https://harbor.example/browse" },
           { item: "https://harbor.example/categories/developer-tools" },
           { item: "https://harbor.example/saas/querybird" },
         ],
@@ -253,7 +253,7 @@ describe("markdown", () => {
     );
     expect(text).toContain("- Monthly recurring revenue: $4,200");
     expect(text).toContain("- Change over 30 days: +4.5%");
-    expect(text).toContain("- Paying customers: 37");
+    expect(text).toContain("- Subscribers: 37");
     expect(text).toContain("| August 2026 | $4,100 |");
     expect(text).toContain("written by the users who list them");
   });
@@ -333,7 +333,7 @@ describe("markdown", () => {
     );
     expect(text).toContain("- Monthly recurring revenue: not shared");
     // Every figure the page shows says so, as on the HTML page, rather than going missing.
-    expect(text).toContain("- Paying customers: not shared");
+    expect(text).toContain("- Subscribers: not shared");
     expect(text).toContain("- Launched: not shared");
     expect(text).not.toContain("MRR at month end");
     expect(text).not.toContain("$");
@@ -385,7 +385,7 @@ describe("markdown", () => {
     expect(text).toContain("## Skills\n\nSQL, Go");
     const unshared = makerMarkdown(profile(), [], [], { mrr: null, customers: null });
     expect(unshared).toContain("- Verified MRR across shared products: not shared");
-    expect(unshared).toContain("- Paying customers across shared products: not shared");
+    expect(unshared).toContain("- Subscribers across shared products: not shared");
   });
 
   it("guides AI assistants through the site", () => {
@@ -434,19 +434,19 @@ describe("markdown", () => {
 });
 
 describe("list metadata", () => {
-  const list = { title: "Browse SaaS products", description: "Every product.", path: "/discover" };
+  const list = { title: "Browse SaaS products", description: "Every product.", path: "/browse" };
 
   it("gives the plain list its own address", () =>
     expect(listMetadata(list, {})).toMatchObject({
       title: "Browse SaaS products",
-      alternates: { canonical: "/discover" },
-      openGraph: { url: "/discover" },
+      alternates: { canonical: "/browse" },
+      openGraph: { url: "/browse" },
     }));
 
   it("makes each later page a page of its own", () => {
     expect(listMetadata(list, { page: "3" })).toMatchObject({
       title: "Browse SaaS products, page 3",
-      alternates: { canonical: "/discover?page=3" },
+      alternates: { canonical: "/browse?page=3" },
     });
     expect(
       listMetadata(
@@ -458,7 +458,7 @@ describe("list metadata", () => {
     ).toMatchObject({ title: "Leaderboard, page 2", alternates: { canonical: "/?page=2" } });
     // An invalid or first page is the plain list.
     expect(listMetadata(list, { page: "x" })).toMatchObject({
-      alternates: { canonical: "/discover" },
+      alternates: { canonical: "/browse" },
     });
   });
 
@@ -466,22 +466,22 @@ describe("list metadata", () => {
     for (const params of [{ category: "Design", page: "2" }, { tech: "go" }])
       expect(listMetadata(list, params)).toMatchObject({
         title: "Browse SaaS products",
-        alternates: { canonical: "/discover" },
+        alternates: { canonical: "/browse" },
       });
     expect(listMetadata(list, {})).not.toHaveProperty("robots");
     expect(listMetadata(list, { q: "query", page: "2" })).toMatchObject({
       robots: { index: false, follow: true },
-      alternates: { canonical: "/discover" },
+      alternates: { canonical: "/browse" },
     });
     expect(listMetadata(list, { q: "  " })).not.toHaveProperty("robots");
   });
 });
 
 describe("product titles and descriptions", () => {
-  it("carry verified MRR and paying customers", () =>
+  it("carry verified MRR and subscribers", () =>
     expect(productSummary(listing())).toEqual({
       title: "QueryBird: $4,200 verified MRR",
-      description: "SQL reports for small teams. Verified MRR $4,200 from 37 paying customers.",
+      description: "SQL reports for small teams. Verified MRR $4,200 from 37 subscribers.",
     }));
 
   it("end the tagline as a sentence without doubling its punctuation", () => {
@@ -516,7 +516,7 @@ describe("product titles and descriptions", () => {
 
   it("add revenue beside MRR", () =>
     expect(productSummary(listing({ revenue_total_cents: 5_000_000 })).description).toBe(
-      "SQL reports for small teams. Verified MRR $4,200 from 37 paying customers. Verified revenue, all time: $50,000.",
+      "SQL reports for small teams. Verified MRR $4,200 from 37 subscribers. Verified revenue, all time: $50,000.",
     ));
 
   it("show only what is shared and verified", () => {

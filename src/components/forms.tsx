@@ -18,6 +18,7 @@ import {
   checkSignupDetails,
   confirmEmailLinkAction,
   finishSignupAction,
+  resendConfirmationAction,
   saveEmailSettingsAction,
 } from "@/app/actions";
 import {
@@ -25,7 +26,9 @@ import {
   PASSWORD_MIN_LENGTH,
   USERNAME_MAX_LENGTH,
   USERNAME_MIN_LENGTH,
+  usernameAsTyped,
   type ActionState,
+  type EmailLinkType,
 } from "@/lib/domain";
 import { PROVIDER_NAMES, type OAuthProvider } from "@/lib/auth";
 import { cn } from "@/lib/utils";
@@ -180,8 +183,24 @@ export function ImageField({
     </div>
   );
 }
-export function Actions({ children }: { children: React.ReactNode }) {
-  return <div className="flex items-center justify-end gap-2 border-t pt-6">{children}</div>;
+/** A form's buttons. `sticky` keeps them at the bottom of the screen while the form is in view. */
+export function Actions({
+  sticky = false,
+  children,
+}: {
+  sticky?: boolean;
+  children: React.ReactNode;
+}) {
+  return (
+    <div
+      className={cn(
+        "flex items-center justify-end gap-2 border-t pt-6",
+        sticky && "sticky bottom-0 z-10 -mx-4 bg-background px-4 pb-4 pt-4 sm:-mx-6 sm:px-6",
+      )}
+    >
+      {children}
+    </div>
+  );
 }
 
 /** A username field, with the @ in front of it. */
@@ -205,6 +224,12 @@ export function UsernameInput(props: Omit<React.ComponentProps<typeof Input>, "t
         // One more for an @ typed in front, which the server removes.
         maxLength={USERNAME_MAX_LENGTH + 1}
         {...props}
+        // "New Founder" becomes new-founder as it is typed, as the server would store it.
+        onChange={(event) => {
+          const typed = usernameAsTyped(event.currentTarget.value);
+          if (typed !== event.currentTarget.value) event.currentTarget.value = typed;
+          props.onChange?.(event);
+        }}
         // Read-only while a recent change locks it, and it looks it.
         className={cn(
           "pl-7 read-only:cursor-not-allowed read-only:bg-subtle read-only:text-muted-foreground",
@@ -252,6 +277,48 @@ function TermsCheckbox({ defaultChecked }: { defaultChecked: boolean }) {
   );
 }
 
+// Seconds before the confirmation can be sent again, as Auth allows one email a minute.
+const RESEND_WAIT = 60;
+
+/**
+ * Sends the confirmation email again. Auth sends one a minute, so it waits a minute after sign-up,
+ * which just sent one, and after each email it sends.
+ */
+function ResendConfirmation({ email }: { email: string }) {
+  const [result, setResult] = useState<ActionState>({});
+  const [wait, setWait] = useState(RESEND_WAIT);
+  const [sending, startSending] = useTransition();
+  useEffect(() => {
+    if (!wait) return;
+    const timer = setTimeout(() => setWait(wait - 1), 1000);
+    return () => clearTimeout(timer);
+  }, [wait]);
+  return (
+    <div className="grid gap-3">
+      <Feedback state={result} />
+      <Button
+        type="button"
+        variant="ghost"
+        className="h-10 w-full"
+        disabled={sending || wait > 0}
+        onClick={() =>
+          startSending(async () => {
+            const sent = await resendConfirmationAction(email);
+            setResult(sent);
+            if (sent.success) setWait(RESEND_WAIT);
+          })
+        }
+      >
+        {sending
+          ? "Sending..."
+          : wait > 0
+            ? `Send the email again in ${wait} s`
+            : "Send the email again"}
+      </Button>
+    </div>
+  );
+}
+
 const authCopy = {
   login: "Sign in",
   signup: "Create account",
@@ -260,7 +327,7 @@ const authCopy = {
 } as const;
 
 const USERNAME_HINT =
-  "Shown as @username and used as your profile address. You can change it later.";
+  "3 to 30 letters, numbers and hyphens. Shown as @username and used as your profile address. You can change it later.";
 
 // Sign-up has two steps: the email address and password, which the server checks first, then the
 // username and the Terms of Service, after which the account is created. Both steps stay in one form, so the
@@ -337,9 +404,10 @@ export function AuthForm({
           . Open it to confirm your account and add your product.
         </p>
         <p className="text-[13px] leading-5 text-muted-foreground">
-          Nothing after a few minutes? Look in your spam folder, or sign up again if the address was
-          wrong.
+          Nothing after a few minutes? Look in your spam folder, send it again, or sign up again if
+          the address was wrong.
         </p>
+        <ResendConfirmation email={state.values?.email ?? ""} />
         <Button asChild variant="outline" className="h-10 w-full">
           <Link href={authHref()} replace>
             Go to sign in
@@ -383,6 +451,8 @@ export function AuthForm({
             <Field name="username" label="Username" hint={USERNAME_HINT}>
               <UsernameInput ref={username} defaultValue={state.values?.username} />
             </Field>
+            {/* A refused username is the usual problem here, so it shows by the field. */}
+            <Feedback state={state} />
             {/* Required here and checked again by the server, which records the version. */}
             <TermsCheckbox defaultChecked={state.values?.terms === "on"} />
           </>
@@ -436,7 +506,7 @@ export function AuthForm({
             </Field>
           )}
         </div>
-        <Feedback state={signup && !choosing ? details : state} />
+        {!choosing && <Feedback state={signup ? details : state} />}
         <Submit className="h-10 w-full" pending={signup ? checking || creating : undefined}>
           {signup && !choosing ? "Continue" : authCopy[mode]}
         </Submit>
@@ -574,24 +644,29 @@ export function ConfirmLinkForm({
   submit,
 }: {
   tokenHash: string;
-  type: "email" | "recovery";
+  type: EmailLinkType;
   submit: string;
 }) {
   const [state, action] = useEditorAction(confirmEmailLinkAction);
+  const back = {
+    email: { href: "/auth", label: "Back to sign in" },
+    recovery: { href: "/auth?mode=reset", label: "Request a new reset link" },
+    email_change: { href: "/dashboard/settings", label: "Back to settings" },
+  }[type];
   return (
     <form action={action} className="grid gap-5">
       <input type="hidden" name="token_hash" value={tokenHash} />
       <input type="hidden" name="type" value={type} />
       <Feedback state={state} />
-      <Submit className="h-10 w-full" pendingLabel="Checking the link...">
-        {submit}
-      </Submit>
+      {/* Once one address of an email change is confirmed, its link is used up. */}
+      {!state.success && (
+        <Submit className="h-10 w-full" pendingLabel="Checking the link...">
+          {submit}
+        </Submit>
+      )}
       <p className="text-center text-sm text-muted-foreground">
-        <Link
-          className="font-medium text-foreground hover:underline"
-          href={type === "recovery" ? "/auth?mode=reset" : "/auth"}
-        >
-          {type === "recovery" ? "Request a new reset link" : "Back to sign in"}
+        <Link className="font-medium text-foreground hover:underline" href={back.href}>
+          {back.label}
         </Link>
       </p>
     </form>

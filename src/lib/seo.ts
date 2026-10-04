@@ -81,7 +81,7 @@ export function productSummary(item: Pick<Listing, ProductSummaryField>) {
   const mrr = item.revenue_status === "verified" && item.mrr_cents ? item.mrr_cents : null;
   const revenue = item.revenue_total_cents || null;
   const customers = item.customers
-    ? ` from ${item.customers.toLocaleString("en-US")} paying ${item.customers === 1 ? "customer" : "customers"}`
+    ? ` from ${item.customers.toLocaleString("en-US")} ${item.customers === 1 ? "subscriber" : "subscribers"}`
     : "";
   return {
     title: mrr

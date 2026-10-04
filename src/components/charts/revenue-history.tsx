@@ -175,10 +175,12 @@ export function RevenueHistory({
   revenueDescription?: string;
   className?: string;
 }) {
-  const views = [
-    ...(history ? [mrrView(history, title, description)] : []),
-    ...(revenue ? [revenueView(revenue, revenueDescription)] : []),
-  ];
+  const mrr = history ? [mrrView(history, title, description)] : [];
+  const paid = revenue ? [revenueView(revenue, revenueDescription)] : [];
+  // A product that sells one-time purchases only opens on its revenue, not on a flat $0 line.
+  const revenueFirst =
+    !!history?.every((point) => point.cents === 0) && !!revenue?.some((point) => point.cents > 0);
+  const views = revenueFirst ? [...paid, ...mrr] : [...mrr, ...paid];
   if (!views.length) return null;
   return (
     <section

@@ -9,6 +9,7 @@ import {
   FEEDBACK_KINDS,
   FEEDBACK_MAX_LENGTH,
   FEEDBACK_MIN_LENGTH,
+  FEEDBACK_TRAP,
   feedbackHeading,
   feedbackHints,
   feedbackLabels,
@@ -16,6 +17,7 @@ import {
 import { Feedback, Field, Submit } from "./forms";
 import { RouteDialog } from "./route-dialog";
 import { Button } from "./ui/button";
+import { Input } from "./ui/input";
 import { Textarea } from "./ui/textarea";
 import { useEditorAction } from "./use-editor-action";
 
@@ -26,10 +28,19 @@ const thanks = {
 };
 
 /**
- * What the user wants to tell the admins. Once sent, it calls `onSent`, or without it gives way to
- * a thank-you with a link back to the page it came from.
+ * What the user or visitor wants to tell the admins. A visitor may leave an email address for a
+ * reply. Once sent, it calls `onSent`, or without it gives way to a thank-you with a link back to
+ * the page it came from.
  */
-export function FeedbackForm({ from, onSent }: { from: string | null; onSent?: () => void }) {
+export function FeedbackForm({
+  from,
+  visitor,
+  onSent,
+}: {
+  from: string | null;
+  visitor: boolean;
+  onSent?: () => void;
+}) {
   const [state, action] = useEditorAction(async (previous, form) => {
     const result = await submitFeedbackAction(from, previous, form);
     if (result.success) onSent?.();
@@ -105,10 +116,35 @@ export function FeedbackForm({ from, onSent }: { from: string | null; onSent?: (
           defaultValue={state.values?.message}
         />
       </Field>
+      {visitor && (
+        <Field
+          name="feedback_email"
+          label="Email address (optional)"
+          hint="Only if you want a reply. You do not need an account to send feedback."
+        >
+          <Input
+            id="feedback_email"
+            name="email"
+            type="email"
+            autoComplete="email"
+            maxLength={254}
+            defaultValue={state.values?.email}
+          />
+        </Field>
+      )}
+      {/* Out of sight and out of the tab order; only bots fill it in. */}
+      <div aria-hidden="true" className="absolute -left-[9999px] size-px overflow-hidden">
+        <label>
+          Leave this empty
+          <input type="text" name={FEEDBACK_TRAP} tabIndex={-1} autoComplete="off" />
+        </label>
+      </div>
       <Feedback state={state} />
       <div className="flex flex-col-reverse gap-4 sm:flex-row sm:items-center sm:justify-between">
         <p className="text-[13px] text-muted-foreground">
-          Only admins read feedback, together with your name and the page you came from.
+          {visitor
+            ? "Only admins read feedback, together with the page you came from and your email address, if you give one."
+            : "Only admins read feedback, together with your name and the page you came from."}
         </p>
         <Submit pendingLabel="Sending..." className="shrink-0">
           Send feedback
@@ -122,7 +158,7 @@ export function FeedbackForm({ from, onSent }: { from: string | null; onSent?: (
  * The form in a dialog over the page it was opened from (`src/app/@modal/(.)feedback`). Once sent,
  * the dialog thanks the user, and closing it returns to that page.
  */
-export function FeedbackDialog({ from }: { from: string | null }) {
+export function FeedbackDialog({ from, visitor }: { from: string | null; visitor: boolean }) {
   const [sent, setSent] = useState(false);
   const title = useRef<HTMLHeadingElement>(null);
   useEffect(() => {
@@ -144,7 +180,7 @@ export function FeedbackDialog({ from }: { from: string | null }) {
           </Dialog.Close>
         </div>
       ) : (
-        <FeedbackForm from={from} onSent={() => setSent(true)} />
+        <FeedbackForm from={from} visitor={visitor} onSent={() => setSent(true)} />
       )}
     </RouteDialog>
   );

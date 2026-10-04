@@ -1,4 +1,5 @@
 import { cookies } from "next/headers";
+import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { z } from "zod";
 import { BackLink } from "@/components/back-link";
@@ -9,6 +10,7 @@ import { ModerationNotice } from "@/components/moderation-notice";
 import { SaasForm } from "@/components/saas-form";
 import { SharePrompt } from "@/components/share-prompt";
 import { Notice, PageHeader, Shell } from "@/components/shell";
+import { Button } from "@/components/ui/button";
 import { CONNECTION_COLUMNS, type RevenueConnection } from "@/lib/data";
 import { RECORD_LABEL, recordName, recordValue, websiteDomain } from "@/lib/domain-verification";
 import { PRODUCT_LIMIT } from "@/lib/moderation";
@@ -27,7 +29,7 @@ type Props = {
 };
 
 export async function generateMetadata({ params }: Pick<Props, "params">) {
-  return { title: (await params).id === "new" ? "Add a SaaS" : "Edit SaaS" };
+  return { title: (await params).id === "new" ? "Add SaaS" : "Edit SaaS" };
 }
 
 export default async function EditSaas({ params, searchParams }: Props) {
@@ -48,7 +50,7 @@ export default async function EditSaas({ params, searchParams }: Props) {
         <BackLink href="/dashboard">Dashboard</BackLink>
         <PageHeader
           className="mt-4 border-b"
-          title="Add a SaaS"
+          title="Add SaaS"
           description="Product details are public. Connecting your payment provider is optional, and you can do it now or later."
         />
         <div className="pt-8">
@@ -101,6 +103,7 @@ export default async function EditSaas({ params, searchParams }: Props) {
         <SharePrompt
           name={saas.data.name}
           url={`${siteUrl()}/saas/${saas.data.slug}`}
+          path={`/saas/${saas.data.slug}`}
           text={productShareText(saas.data.name, saas.data.tagline)}
         />
       )}
@@ -109,6 +112,14 @@ export default async function EditSaas({ params, searchParams }: Props) {
         className="mt-4 border-b"
         title={`Edit ${saas.data.name}`}
         description="Product details and verified figures are public. You can hide the figures."
+        actions={
+          // A hidden product has no public page to show.
+          !saas.data.hidden_at && (
+            <Button asChild variant="outline">
+              <Link href={`/saas/${saas.data.slug}`}>View page</Link>
+            </Button>
+          )
+        }
       />
       {saas.data.hidden_at && (
         <ModerationNotice
