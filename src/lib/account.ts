@@ -66,8 +66,10 @@ async function signInAgain(email: string, password: string) {
 }
 
 /**
- * Sets a new password once the current one is checked. Auth asks for a recent sign-in before a
- * password changes (secure_password_change), which the fresh session is.
+ * Sets a new password once the current one is checked, and returns the fresh session that set it.
+ * Auth asks for a recent sign-in before a password changes (secure_password_change), which that
+ * session is, and then ends every other session of the user, the browser's own included, so the
+ * caller hands this one to the browser.
  */
 export async function changePassword(
   userId: string,
@@ -87,8 +89,11 @@ export async function changePassword(
             ? "Choose a stronger password."
             : "Your password could not be changed. Try again.",
       );
-  } finally {
+    return data.session;
+  } catch (cause) {
+    // The session is not needed once the change failed.
     await client.auth.signOut({ scope: "local" });
+    throw cause;
   }
 }
 

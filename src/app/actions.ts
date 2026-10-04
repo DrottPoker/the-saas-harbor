@@ -306,8 +306,9 @@ export async function changeEmailAction(_state: ActionState, form: FormData): Pr
   };
 }
 
-// A new password, once the current one is checked. Every other session ends afterwards, so a
-// device signed in with the old password has to sign in again.
+// A new password, once the current one is checked. Auth ends every other session when it changes,
+// so a device signed in with the old password has to sign in again; this browser carries on with
+// the session that made the change.
 export async function changePasswordAction(
   _state: ActionState,
   form: FormData,
@@ -324,11 +325,15 @@ export async function changePasswordAction(
       error: `Use a new password between ${PASSWORD_MIN_LENGTH} and ${PASSWORD_MAX_LENGTH} characters.`,
     };
   try {
-    await changePassword(user.id, user.email, current, password);
+    const session = await changePassword(user.id, user.email, current, password);
+    const { error } = await client.auth.setSession({
+      access_token: session.access_token,
+      refresh_token: session.refresh_token,
+    });
+    if (error) throw new Error("Your password was changed. Sign in again with it.");
   } catch (error) {
     return { error: message(error) };
   }
-  await client.auth.signOut({ scope: "others" });
   return { success: "Password changed. Your other devices are signed out." };
 }
 
