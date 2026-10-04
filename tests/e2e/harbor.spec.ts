@@ -804,7 +804,7 @@ test("registration, email confirmation, profile and SaaS editing, storage, priva
   await website.fill("https://example.com\\@example.org");
   await page.getByRole("button", { name: "Add SaaS", exact: true }).click();
   await expect(
-    page.getByRole("alert").filter({ hasText: "without spaces or credentials" }),
+    page.getByRole("alert").filter({ hasText: "Enter a web address, such as example.com" }),
   ).toBeVisible();
   expect(await logo.evaluate((input: HTMLInputElement) => input.files?.[0]?.name)).toBe("logo.png");
   await website.fill("https://example.com");
