@@ -133,6 +133,14 @@ export default function Privacy() {
           </p>
         </Section>
 
+        <Section id="time-zone" title="Your time zone">
+          <p>
+            Dates and times are shown in the time zone set on your device. Until your browser has
+            given it, a page uses the time zone our host looks up from your IP address. Neither is
+            stored.
+          </p>
+        </Section>
+
         <Section id="purposes" title="Why we use it">
           <List>
             <li>

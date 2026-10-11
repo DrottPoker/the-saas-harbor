@@ -53,7 +53,7 @@ export function FeedbackList({
                     // A visitor without an account, who may have left an address for a reply.
                     <span className="font-medium text-foreground">a visitor</span>
                   )}{" "}
-                  · <LocalTime value={item.created_at} full />
+                  · <LocalTime format="full" value={item.created_at} />
                 </span>
                 {item.reply_email && (
                   <a

@@ -2,9 +2,9 @@
 
 import { BadgeCheck } from "lucide-react";
 import { checkDomainAction } from "@/app/domain-actions";
-import { formatDate } from "@/lib/domain";
 import { CopyField } from "./copy-field";
 import { Feedback, Section, Submit } from "./forms";
+import { LocalTime } from "./local-time";
 import { Notice } from "./shell";
 import { useEditorAction } from "./use-editor-action";
 
@@ -46,15 +46,24 @@ export function DomainVerification({
             {verified ? (
               <p className="flex items-center gap-1.5 text-sm">
                 <BadgeCheck aria-hidden="true" className="size-4 shrink-0 text-brand" />
-                {domain} is verified. Last checked {formatDate(verifiedAt)}.
+                {/* One flex item, so the date sits in the sentence. */}
+                <span>
+                  {domain} is verified.
+                  {verifiedAt && (
+                    <>
+                      {" "}
+                      Last checked <LocalTime format="date" value={verifiedAt} />.
+                    </>
+                  )}
+                </span>
               </p>
             ) : (
               <p className="text-sm text-muted-foreground">{domain} is not verified yet.</p>
             )}
             {verified && missingSince && (
               <Notice tone="error">
-                The record was not found on {formatDate(missingSince)}. The domain stays verified
-                for three days after that; add the record back before then.
+                The record was not found on <LocalTime format="date" value={missingSince} />. The
+                domain stays verified for three days after that; add the record back before then.
               </Notice>
             )}
             <p className="text-sm text-muted-foreground">

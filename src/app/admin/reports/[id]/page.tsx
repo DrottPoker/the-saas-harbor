@@ -9,9 +9,9 @@ import { LogList, ReportList } from "@/components/admin/rows";
 import { PersonAvatar } from "@/components/avatars";
 import { Badge } from "@/components/badge";
 import { BackLink } from "@/components/back-link";
+import { LocalTime } from "@/components/local-time";
 import { Notice } from "@/components/shell";
 import { profileNames, requireAdmin } from "@/lib/admin";
-import { formatDate } from "@/lib/domain";
 import {
   adminStatusLabels,
   isReason,
@@ -114,7 +114,7 @@ export default async function AdminReport({ params, searchParams }: Props) {
           </h1>
           <p className="mt-1.5 text-muted-foreground">
             {isReason(report.reason) ? reasonLabels[report.reason] : report.reason} · Sent{" "}
-            {formatDate(report.created_at)}
+            <LocalTime format="date" value={report.created_at} />
           </p>
         </div>
         <Badge tone={statusTones[status]} className="self-start">
@@ -173,7 +173,7 @@ export default async function AdminReport({ params, searchParams }: Props) {
                     )}
                   </>,
                 ],
-                ["Sent", formatDate(report.created_at)],
+                ["Sent", <LocalTime format="date" value={report.created_at} />],
               ]}
             />
           </Panel>
@@ -254,7 +254,18 @@ export default async function AdminReport({ params, searchParams }: Props) {
             <Panel
               id="outcome"
               title="Outcome"
-              description={`${adminStatusLabels[status]} on ${formatDate(report.resolved_at)}.`}
+              description={
+                <>
+                  {adminStatusLabels[status]}
+                  {report.resolved_at && (
+                    <>
+                      {" "}
+                      on <LocalTime format="date" value={report.resolved_at} />
+                    </>
+                  )}
+                  .
+                </>
+              }
             >
               {log.data?.length ? (
                 <LogList entries={log.data} admins={names} label="Decisions on this report" />

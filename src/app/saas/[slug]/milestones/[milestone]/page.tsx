@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound, permanentRedirect, redirect } from "next/navigation";
-import { formatDate } from "@/lib/domain";
 import {
   milestoneHeadline,
   milestoneObject,
@@ -14,6 +13,7 @@ import { providerName } from "@/lib/revenue/catalog";
 import { pageMetadata, SITE_NAME, siteUrl } from "@/lib/seo";
 import { ProductLogo } from "@/components/avatars";
 import { CopyField } from "@/components/copy-field";
+import { LocalTime } from "@/components/local-time";
 import { Shell } from "@/components/shell";
 import { Button } from "@/components/ui/button";
 import { loadMilestone, type Params } from "./load";
@@ -73,7 +73,7 @@ export default async function MilestonePage({ params }: Props) {
       <article className="overflow-hidden rounded-xl border bg-surface shadow-card">
         <div className="p-6 sm:p-8">
           <p className="text-sm text-muted-foreground">
-            Milestone reached on <time dateTime={reachedAt}>{formatDate(reachedAt)}</time>
+            Milestone reached on <LocalTime format="date" value={reachedAt} />
           </p>
           <h1 className="mt-2 text-4xl font-semibold tracking-tight tabular-nums sm:text-5xl">
             {milestoneHeadline(milestone)}

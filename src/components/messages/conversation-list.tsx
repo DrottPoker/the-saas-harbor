@@ -86,7 +86,7 @@ export function ConversationList({
                       </span>
                       {conversation.last_message_at && (
                         <LocalTime
-                          short
+                          format="list"
                           value={conversation.last_message_at}
                           className="shrink-0 text-xs text-muted-foreground"
                         />

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { AdminRevenue, LogEntry, Report } from "@/lib/admin";
-import { formatDate, formatUsd } from "@/lib/domain";
+import { formatUsd } from "@/lib/domain";
 import {
   actionLabels,
   adminStatusLabels,
@@ -18,6 +18,7 @@ import {
 import { cn } from "@/lib/utils";
 import { PersonAvatar, ProductLogo } from "../avatars";
 import { Badge } from "../badge";
+import { LocalTime } from "../local-time";
 
 const row =
   "flex flex-col gap-2 p-4 transition-colors hover:bg-subtle sm:flex-row sm:items-center sm:gap-4";
@@ -57,7 +58,7 @@ export function ReportList({
                 <p className="truncate text-sm text-muted-foreground">
                   {isReason(report.reason) ? reasonLabels[report.reason] : report.reason} ·{" "}
                   {maker && `${names.get(report.subject_id) ?? "Unknown user"} · `}
-                  {formatDate(report.created_at)}
+                  <LocalTime format="date" value={report.created_at} />
                 </p>
               </div>
               <Badge tone={statusTones[status]} className="self-start sm:self-auto">
@@ -125,7 +126,7 @@ export function ProductList({
                   <p className="truncate font-medium">{product.name}</p>
                   <p className="truncate text-sm text-muted-foreground">
                     {showMaker && `${product.owner?.name ?? "Unknown founder"} · `}Listed{" "}
-                    {formatDate(product.created_at)}
+                    <LocalTime format="date" value={product.created_at} />
                   </p>
                 </div>
               </div>
@@ -171,7 +172,7 @@ export function AccountList({ accounts }: { accounts: AdminAccount[] }) {
               <div className="min-w-0">
                 <p className="truncate font-medium">{account.name ?? "No profile"}</p>
                 <p className="truncate text-sm text-muted-foreground">
-                  {account.email} · Joined {formatDate(account.created_at)}
+                  {account.email} · Joined <LocalTime format="date" value={account.created_at} />
                 </p>
               </div>
             </div>
@@ -230,7 +231,7 @@ export function LogList({
                 {isReason(entry.reason) && `${decisionLabels[entry.reason]} · `}
                 {entry.admin_id
                   ? (admins.get(entry.admin_id) ?? "An admin")
-                  : "A former admin"} · {formatDate(entry.created_at)}
+                  : "A former admin"} · <LocalTime format="date" value={entry.created_at} />
               </p>
             </div>
           </Link>

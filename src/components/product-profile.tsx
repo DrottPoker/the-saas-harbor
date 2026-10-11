@@ -12,6 +12,7 @@ import { Badge } from "./badge";
 import { Growth } from "./charts/growth";
 import { RevenueHistory } from "./charts/revenue-history";
 import { DemoLogo } from "./demo-logo";
+import { LocalTime } from "./local-time";
 import { SendMessageButton } from "./messages/send-message-button";
 import { Metric } from "./metric";
 import { ReportLink } from "./report-link";
@@ -296,8 +297,17 @@ export function ProductProfile({
           ) : (
             <>
               <BadgeCheck aria-hidden="true" className="size-4 shrink-0 text-brand" />
-              Verified with {providerName(item.provider)} through {providerAccess(item.provider)}.
-              Last verified {formatDate(item.verified_at)}.{!item.livemode && " Test mode data."}
+              {/* One flex item, so the date sits in the sentence. */}
+              <span>
+                Verified with {providerName(item.provider)} through {providerAccess(item.provider)}.
+                Last verified{" "}
+                {item.verified_at ? (
+                  <LocalTime format="date" value={item.verified_at} />
+                ) : (
+                  "Not shared"
+                )}
+                .{!item.livemode && " Test mode data."}
+              </span>
             </>
           )}
         </p>
@@ -368,7 +378,9 @@ export function ProductProfile({
             {item.created_at && (
               <div className="flex justify-between gap-4">
                 <dt className="text-muted-foreground">Listed</dt>
-                <dd className="text-right">{formatDate(item.created_at)}</dd>
+                <dd className="text-right">
+                  <LocalTime format="date" value={item.created_at} />
+                </dd>
               </div>
             )}
           </dl>

@@ -8,10 +8,10 @@ import { LogList, ProductList, ReportList } from "@/components/admin/rows";
 import { PersonAvatar } from "@/components/avatars";
 import { Badge } from "@/components/badge";
 import { BackLink } from "@/components/back-link";
+import { LocalTime } from "@/components/local-time";
 import { Notice } from "@/components/shell";
 import { adminRevenue, openReportCounts, profileNames, requireAdmin } from "@/lib/admin";
 import { countryName } from "@/lib/analytics-reports";
-import { formatDate } from "@/lib/domain";
 import { decisionLabels, isReason } from "@/lib/moderation";
 import { firstValues, type SearchParams } from "@/lib/params";
 
@@ -23,7 +23,8 @@ type Props = {
 export const metadata = { title: "Account" };
 
 const link = "font-medium underline underline-offset-2";
-const date = (value: string | null) => (value ? formatDate(value) : "Never");
+const date = (value: string | null) =>
+  value ? <LocalTime format="date" value={value} /> : "Never";
 
 export default async function AdminAccount({ params, searchParams }: Props) {
   const { user, client } = await requireAdmin();
@@ -102,7 +103,10 @@ export default async function AdminAccount({ params, searchParams }: Props) {
                   // From the IP address of the latest sign-in that had one, with its date.
                   "Sign-in country",
                   account.data.country ? (
-                    `${countryName(account.data.country)} (${account.data.country}) · ${date(account.data.country_at)}`
+                    <>
+                      {countryName(account.data.country)} ({account.data.country}) ·{" "}
+                      {date(account.data.country_at)}
+                    </>
                   ) : (
                     <span className="text-muted-foreground">Not known yet</span>
                   ),
@@ -193,7 +197,7 @@ export default async function AdminAccount({ params, searchParams }: Props) {
             >
               <Facts
                 rows={[
-                  ["Since", formatDate(maker.suspended_at)],
+                  ["Since", <LocalTime format="date" value={maker.suspended_at} />],
                   [
                     "Reason",
                     isReason(maker.suspended_reason)

@@ -1,19 +1,19 @@
 import Link from "next/link";
-import { formatDate } from "@/lib/domain";
 import { operator } from "@/lib/legal";
 import { decisionLabels, isReason } from "@/lib/moderation";
 import { cn } from "@/lib/utils";
 import { Contact } from "./legal";
+import { LocalTime } from "./local-time";
 
 const copy = {
   product: {
     title: "Product hidden",
-    heading: (date: string) => `An admin hid this product on ${date}.`,
+    heading: (date: React.ReactNode) => <>An admin hid this product on {date}.</>,
     effect: "It is not shown anywhere on The SaaS Harbor. You can still edit or delete it.",
   },
   account: {
     title: "Account suspended",
-    heading: (date: string) => `An admin suspended your account on ${date}.`,
+    heading: (date: React.ReactNode) => <>An admin suspended your account on {date}.</>,
     effect:
       "Your profile and products are hidden, and you cannot send messages or reports. You can still sign in, edit your products and delete your account.",
   },
@@ -45,7 +45,7 @@ export function ModerationNotice({
     >
       <h2 id={id} className="font-semibold">
         <span className="sr-only">{text.title}: </span>
-        {text.heading(formatDate(at))}
+        {text.heading(<LocalTime format="date" value={at} />)}
       </h2>
       <p className="mt-1">{text.effect}</p>
       <dl className="mt-3 grid gap-x-4 gap-y-1 sm:grid-cols-[7rem_minmax(0,1fr)]">

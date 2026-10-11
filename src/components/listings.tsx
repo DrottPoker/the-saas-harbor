@@ -10,6 +10,7 @@ import { Badge } from "./badge";
 import { Growth } from "./charts/growth";
 import { Sparkline } from "./charts/sparkline";
 import { DemoLogo } from "./demo-logo";
+import { LocalTime } from "./local-time";
 import { Button } from "./ui/button";
 
 // Phones show the rank, the product and its figure. The category and the second figure join from
@@ -153,7 +154,13 @@ export function Leaderboard({
                 </span>
                 <span className="hidden text-right text-sm text-muted-foreground tabular-nums xl:block">
                   <span className="sr-only">{item.demo ? "Launched " : "Verified "}</span>
-                  {formatDate(item.demo ? item.launched_on : item.verified_at)}
+                  {item.demo ? (
+                    formatDate(item.launched_on)
+                  ) : item.verified_at ? (
+                    <LocalTime format="date" value={item.verified_at} />
+                  ) : (
+                    "Not shared"
+                  )}
                 </span>
               </Link>
             </li>
@@ -186,7 +193,14 @@ function RevenueLabel({ item }: { item: Listing }) {
 // A demo product never joined, so New arrivals shows when it launched instead.
 function cardMeta(item: Listing, meta: "maker" | "joined") {
   if (meta === "maker") return `by ${item.owner_name}`;
-  if (!item.demo) return `Joined ${formatDate(item.created_at)}`;
+  if (!item.demo)
+    return item.created_at ? (
+      <>
+        Joined <LocalTime format="date" value={item.created_at} />
+      </>
+    ) : (
+      `by ${item.owner_name}`
+    );
   return item.launched_on ? `Launched ${formatDate(item.launched_on)}` : `by ${item.owner_name}`;
 }
 

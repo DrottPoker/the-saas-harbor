@@ -8,9 +8,10 @@ import { LogList, ReportList } from "@/components/admin/rows";
 import { ProductLogo } from "@/components/avatars";
 import { Badge } from "@/components/badge";
 import { BackLink } from "@/components/back-link";
+import { LocalTime } from "@/components/local-time";
 import { Notice } from "@/components/shell";
 import { adminRevenue, profileNames, requireAdmin, type AdminRevenue } from "@/lib/admin";
-import { formatDate, formatUsd } from "@/lib/domain";
+import { formatUsd } from "@/lib/domain";
 import { decisionLabels, isReason } from "@/lib/moderation";
 import { firstValues, type SearchParams } from "@/lib/params";
 import { REVENUE_WINDOWS } from "@/lib/revenue-figures";
@@ -44,9 +45,14 @@ function revenueRows(revenue: AdminRevenue): [string, React.ReactNode][] {
     ],
     [
       "Verified",
-      revenue.verified_at
-        ? `${formatDate(revenue.verified_at)}${revenue.stale ? ", out of date and not shown on the site" : ""}`
-        : "Not yet",
+      revenue.verified_at ? (
+        <>
+          <LocalTime format="date" value={revenue.verified_at} />
+          {revenue.stale && ", out of date and not shown on the site"}
+        </>
+      ) : (
+        "Not yet"
+      ),
     ],
     ["MRR", figure(revenue.mrr_cents, revenue.share_revenue, "Not verified yet")],
     ...REVENUE_WINDOWS.map(({ column, short }): [string, React.ReactNode] => [
@@ -121,7 +127,7 @@ export default async function AdminProduct({ params, searchParams }: Props) {
               rows={[
                 ["Category", item.category],
                 ["Website", item.website],
-                ["Listed", formatDate(item.created_at)],
+                ["Listed", <LocalTime format="date" value={item.created_at} />],
                 [
                   "Public page",
                   !item.hidden_at && !ownerSuspended ? (
@@ -188,7 +194,7 @@ export default async function AdminProduct({ params, searchParams }: Props) {
             >
               <Facts
                 rows={[
-                  ["Since", formatDate(item.hidden_at)],
+                  ["Since", <LocalTime format="date" value={item.hidden_at} />],
                   [
                     "Reason",
                     isReason(item.hidden_reason) ? decisionLabels[item.hidden_reason] : "Not given",

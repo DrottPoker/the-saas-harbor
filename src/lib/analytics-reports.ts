@@ -3,6 +3,7 @@
 // 20260927150000 for the funnel); the route
 // /admin/analytics/data validates them here. Pure, so it is unit-tested.
 import { z } from "zod";
+import { isTimeZone } from "./time";
 
 export const RANGES = [
   { value: "24h", short: "24h", label: "Last 24 hours" },
@@ -67,17 +68,6 @@ export const REPORTS = [
   "sources",
 ] as const;
 export type Report = (typeof REPORTS)[number];
-
-/** A time zone the runtime knows, such as Europe/Stockholm. */
-export function isTimeZone(value: string) {
-  if (!value || value.length > 64) return false;
-  try {
-    new Intl.DateTimeFormat("en-US", { timeZone: value });
-    return true;
-  } catch {
-    return false;
-  }
-}
 
 /** A request to /admin/analytics/data. */
 export const reportRequestSchema = z.discriminatedUnion("report", [

@@ -1,31 +1,65 @@
 "use client";
 
-import { useSyncExternalStore } from "react";
-import { formatFullTime, formatListTime, formatMessageTime } from "@/lib/messages";
+import { createContext, useContext, useSyncExternalStore } from "react";
+import { formatDay, formatFullTime, formatListTime, formatMessageTime } from "@/lib/time";
+
+/** The server's guess at the visitor's time zone, and the time of the request. */
+export type ServerClock = { timeZone: string; now: number };
+
+// The root layout provides the request's clock (`serverClock`).
+const ServerClockContext = createContext<ServerClock>({ timeZone: "UTC", now: 0 });
+
+/** Lets the first render in the browser give the same text as the server's HTML. */
+export function ServerClockProvider({
+  clock,
+  children,
+}: {
+  clock: ServerClock;
+  children: React.ReactNode;
+}) {
+  return <ServerClockContext value={clock}>{children}</ServerClockContext>;
+}
+
+const formats: Record<
+  "message" | "list" | "full" | "date",
+  (value: string, timeZone: string, now?: Date) => string
+> = {
+  /** The time today, else with the day. */
+  message: formatMessageTime,
+  /** The time today, else the day only. */
+  list: formatListTime,
+  /** Always the day, its year and the time. */
+  full: formatFullTime,
+  /** The day with its year. */
+  date: formatDay,
+};
 
 const subscribe = () => () => {};
 
+/** The time zone set on the visitor's device. */
+function deviceTimeZone() {
+  return Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
+}
+
 /**
- * A time in the visitor's own time zone. The server does not know it, so the text is filled in
- * right after hydration instead of rendering the server's time zone.
+ * A moment in the visitor's own time zone, the one set on their device. The server cannot know it,
+ * so it renders the time zone the host looks up from the IP address, and the browser switches to
+ * the device's right after hydration when the two differ, as behind a VPN.
  */
 export function LocalTime({
   value,
-  short = false,
-  full = false,
+  format = "message",
   className,
 }: {
   value: string;
-  /** The day only, unless it is today. */
-  short?: boolean;
-  /** Always the day, its year and the time. */
-  full?: boolean;
+  format?: keyof typeof formats;
   className?: string;
 }) {
+  const clock = useContext(ServerClockContext);
   const text = useSyncExternalStore(
     subscribe,
-    () => (full ? formatFullTime : short ? formatListTime : formatMessageTime)(value),
-    () => null,
+    () => formats[format](value, deviceTimeZone()),
+    () => formats[format](value, clock.timeZone, new Date(clock.now)),
   );
   return (
     <time dateTime={value} className={className}>

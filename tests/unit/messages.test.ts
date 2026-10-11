@@ -2,9 +2,6 @@ import { describe, expect, it } from "vitest";
 import { safeNext } from "../../src/lib/domain";
 import {
   deliveryStatus,
-  formatFullTime,
-  formatListTime,
-  formatMessageTime,
   laterTime,
   mergeMessages,
   startsGroup,
@@ -68,33 +65,6 @@ describe("read receipts", () => {
     expect(laterTime(null, sent.created_at)).toBe(sent.created_at);
     expect(laterTime("2026-09-24T10:00:00.1234+00:00", sent.created_at)).toBe(sent.created_at);
     expect(laterTime(reply.created_at, sent.created_at)).toBe(reply.created_at);
-  });
-});
-
-describe("message times", () => {
-  // Built in local time, since messages are shown in the visitor's own time zone.
-  const now = new Date(2026, 8, 24, 18, 0);
-  const format = (date: Date) => formatMessageTime(date.toISOString(), now).replace(/\u202f/g, " ");
-
-  it("shows only the time today", () =>
-    expect(format(new Date(2026, 8, 24, 15, 5))).toBe("3:05 PM"));
-
-  it("adds the day this year and the year before that", () => {
-    expect(format(new Date(2026, 8, 23, 9, 30))).toBe("Sep 23, 9:30 AM");
-    expect(format(new Date(2025, 11, 31, 23, 59))).toBe("Dec 31, 2025, 11:59 PM");
-  });
-
-  it("always gives the day, its year and the time in full", () => {
-    const full = (date: Date) => formatFullTime(date.toISOString()).replace(/\u202f/g, " ");
-    expect(full(new Date(2026, 8, 24, 15, 5))).toBe("Sep 24, 2026, 3:05 PM");
-    expect(full(new Date(2025, 11, 31, 9, 30))).toBe("Dec 31, 2025, 9:30 AM");
-  });
-
-  it("shows the time today and only the day before that in the conversation list", () => {
-    const short = (date: Date) => formatListTime(date.toISOString(), now).replace(/\u202f/g, " ");
-    expect(short(new Date(2026, 8, 24, 15, 5))).toBe("3:05 PM");
-    expect(short(new Date(2026, 8, 23, 9, 30))).toBe("Sep 23");
-    expect(short(new Date(2025, 11, 31, 23, 59))).toBe("Dec 31, 2025");
   });
 });
 

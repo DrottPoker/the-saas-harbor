@@ -64,39 +64,3 @@ export function startsGroup(previous: ChatMessage | undefined, message: ChatMess
     Date.parse(message.created_at) - Date.parse(previous.created_at) > 5 * 60_000
   );
 }
-
-/** "3:05 PM" today, "Sep 24, 3:05 PM" this year, "Sep 24, 2025, 3:05 PM" before. Local time. */
-export function formatMessageTime(value: string, now = new Date()) {
-  const date = new Date(value);
-  const time = date.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
-  if (date.toDateString() === now.toDateString()) return time;
-  return `${formatDay(date, now)}, ${time}`;
-}
-
-/** The day, with its year, and the time: "Sep 24, 2026, 3:05 PM". Local time. */
-export function formatFullTime(value: string) {
-  return new Date(value).toLocaleString("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-  });
-}
-
-/** The shorter form for the conversation list: "3:05 PM" today, else the day only. Local time. */
-export function formatListTime(value: string, now = new Date()) {
-  const date = new Date(value);
-  if (date.toDateString() === now.toDateString())
-    return date.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
-  return formatDay(date, now);
-}
-
-/** "Sep 24" this year, "Sep 24, 2025" before. */
-function formatDay(date: Date, now: Date) {
-  return date.toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-    ...(date.getFullYear() === now.getFullYear() ? {} : { year: "numeric" }),
-  });
-}

@@ -2,12 +2,14 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { headers } from "next/headers";
 import { FeedbackButton } from "@/components/feedback-button";
+import { ServerClockProvider } from "@/components/local-time";
 import { PageViews } from "@/components/page-views";
 import { SiteFooter, SiteHeader } from "@/components/site-chrome";
 import { ThemeScript } from "@/components/theme-script";
 import { VercelAnalytics } from "@/components/vercel-analytics";
 import { accountMenu } from "@/lib/account-menu";
 import { SITE_DESCRIPTION, SITE_NAME, siteUrl } from "@/lib/seo";
+import { serverClock } from "@/lib/server-clock";
 import { currentUser, unreadMessageCount } from "@/lib/supabase/server";
 import "./globals.css";
 
@@ -35,10 +37,11 @@ export const metadata: Metadata = {
 export const dynamic = "force-dynamic";
 // `modal` is a dialog opened by a link inside the site, such as sign-in (`src/app/@modal`).
 export default async function RootLayout({ children, modal }: LayoutProps<"/">) {
-  const [user, nonce] = await Promise.all([
+  const [user, nonce, clock] = await Promise.all([
     currentUser(),
     // Set by the proxy together with the Content Security Policy.
     headers().then((list) => list.get("x-nonce") ?? undefined),
+    serverClock(),
   ]);
   const [account, unread] = user
     ? await Promise.all([accountMenu(), unreadMessageCount()])
@@ -49,22 +52,24 @@ export default async function RootLayout({ children, modal }: LayoutProps<"/">) 
         <ThemeScript nonce={nonce} />
       </head>
       <body className="flex min-h-dvh flex-col">
-        <a
-          className="fixed top-2 left-2 z-50 -translate-y-16 rounded-md bg-primary px-3 py-2 text-sm text-primary-foreground focus:translate-y-0"
-          href="#main"
-        >
-          Skip to content
-        </a>
-        <SiteHeader account={account} unread={unread} />
-        <main id="main" className="flex-1">
-          {children}
-        </main>
-        <SiteFooter />
-        {modal}
-        <FeedbackButton />
-        <PageViews />
-        {/* Vercel sets VERCEL_ENV; local servers, tests and previews measure nothing. */}
-        {process.env.VERCEL_ENV === "production" && <VercelAnalytics />}
+        <ServerClockProvider clock={clock}>
+          <a
+            className="fixed top-2 left-2 z-50 -translate-y-16 rounded-md bg-primary px-3 py-2 text-sm text-primary-foreground focus:translate-y-0"
+            href="#main"
+          >
+            Skip to content
+          </a>
+          <SiteHeader account={account} unread={unread} />
+          <main id="main" className="flex-1">
+            {children}
+          </main>
+          <SiteFooter />
+          {modal}
+          <FeedbackButton />
+          <PageViews />
+          {/* Vercel sets VERCEL_ENV; local servers, tests and previews measure nothing. */}
+          {process.env.VERCEL_ENV === "production" && <VercelAnalytics />}
+        </ServerClockProvider>
       </body>
     </html>
   );

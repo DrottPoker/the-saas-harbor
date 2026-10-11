@@ -19,6 +19,7 @@ import { STRIPE_KEY_PERMISSIONS, stripeKeyCreationUrl } from "@/lib/revenue/stri
 import { SITE_NAME } from "@/lib/seo";
 import { cn } from "@/lib/utils";
 import { Feedback, Field, Section } from "./forms";
+import { LocalTime } from "./local-time";
 import { ProviderLogo } from "./provider-logo";
 import { Notice } from "./shell";
 import { Button } from "./ui/button";
@@ -474,8 +475,12 @@ function Connected({
             </p>
             <p className="text-sm text-muted-foreground [overflow-wrap:anywhere]">
               {oauth ? "Read access" : "Key"} {connection.key_hint}
-              {connection.last_synced_at &&
-                ` · Last verified ${formatDate(connection.last_synced_at)}`}
+              {connection.last_synced_at && (
+                <>
+                  {" "}
+                  · Last verified <LocalTime format="date" value={connection.last_synced_at} />
+                </>
+              )}
             </p>
             {!ok && connection.last_error && (
               <p className="mt-1 text-sm text-error">{connection.last_error}</p>

@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { DETAILS_MAX_LENGTH, DETAILS_REQUIRED, NOTE_MAX_LENGTH, REASONS } from "./moderation";
 import { TECH_STACK_MAX, techFromSlug } from "./tech";
+import { formatDay } from "./time";
 
 export const categories = [
   "AI & Machine Learning",
@@ -42,14 +43,13 @@ export function formatUsd(cents: number) {
     maximumFractionDigits: 2,
   }).format(cents / 100);
 }
+/**
+ * A calendar date, such as a launch date, or the UTC day of a moment where everyone gets the same
+ * text, as in Markdown and sharing images. Pages show moments with `LocalTime` instead, in the
+ * visitor's time zone.
+ */
 export function formatDate(value: string | null) {
-  if (!value) return "Not shared";
-  return new Intl.DateTimeFormat("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-    timeZone: "UTC",
-  }).format(new Date(value));
+  return value ? formatDay(value, "UTC") : "Not shared";
 }
 /**
  * Whether an address or path holds spaces, control characters or backslashes. A valid one never

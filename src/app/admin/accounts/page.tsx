@@ -8,13 +8,13 @@ import { ADMIN_PAGE_SIZE, requireAdmin } from "@/lib/admin";
 import {
   FUNNEL_STEPS,
   RANGE_VALUES,
-  isTimeZone,
   rangeLabel,
   type FunnelStep,
   type Range,
 } from "@/lib/analytics-reports";
 import { PAST_LAST_PAGE } from "@/lib/data";
 import { firstValues, safePage, type SearchParams } from "@/lib/params";
+import { isTimeZone } from "@/lib/time";
 
 export const metadata = { title: "Accounts" };
 

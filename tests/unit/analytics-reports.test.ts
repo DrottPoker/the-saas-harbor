@@ -11,7 +11,6 @@ import {
   formatWait,
   funnelRows,
   funnelSchema,
-  isTimeZone,
   labelIndices,
   languageName,
   overviewSchema,
@@ -48,8 +47,6 @@ describe("analytics reports", () => {
       { report: "users" },
     ])
       expect(reportRequestSchema.safeParse(other).success).toBe(false);
-    expect(isTimeZone("UTC")).toBe(true);
-    expect(isTimeZone("")).toBe(false);
   });
 
   it("builds the address of a report", () => {

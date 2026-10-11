@@ -1,8 +1,8 @@
 import Link from "next/link";
 import { Badge } from "@/components/badge";
 import { Contact } from "@/components/legal";
+import { LocalTime } from "@/components/local-time";
 import { EmptyState, Notice, PageHeader, Shell } from "@/components/shell";
-import { formatDate } from "@/lib/domain";
 import { operator } from "@/lib/legal";
 import {
   isReason,
@@ -69,8 +69,13 @@ export default async function YourReports({
                   </p>
                   <p className="text-sm text-muted-foreground">
                     {isReason(report.reason) ? reasonLabels[report.reason] : report.reason} · Sent{" "}
-                    {formatDate(report.created_at)}
-                    {report.resolved_at && ` · Decided ${formatDate(report.resolved_at)}`}
+                    <LocalTime format="date" value={report.created_at} />
+                    {report.resolved_at && (
+                      <>
+                        {" "}
+                        · Decided <LocalTime format="date" value={report.resolved_at} />
+                      </>
+                    )}
                   </p>
                 </div>
                 <Badge tone={statusTones[status]} className="self-start sm:self-auto">
