@@ -8,6 +8,7 @@ import {
   type HarborFigure,
   HarborFigures,
   HarborHeading,
+  OG_RESPONSE,
   OG_SIZE,
   OgPicture,
   siteImage,
@@ -43,6 +44,6 @@ export default async function Image({ params }: { params: Promise<{ slug: string
         picture={<OgPicture path={item.logo_path} name={name} theme="dark" size={144} />}
       />
     </HarborCard>,
-    size,
+    OG_RESPONSE,
   );
 }

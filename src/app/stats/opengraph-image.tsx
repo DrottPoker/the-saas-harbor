@@ -1,5 +1,12 @@
 import { ImageResponse } from "next/og";
-import { HarborCard, HarborFigures, HarborHeading, OG_SIZE, siteImage } from "@/components/og-card";
+import {
+  HarborCard,
+  HarborFigures,
+  HarborHeading,
+  OG_RESPONSE,
+  OG_SIZE,
+  siteImage,
+} from "@/components/og-card";
 import { directoryStats } from "@/lib/data";
 import { formatUsd } from "@/lib/domain";
 import { STATS_MINIMUM } from "@/lib/stats";
@@ -32,6 +39,6 @@ export default async function Image() {
         subtitle={`${formatUsd(stats.mrr_cents)} in monthly recurring revenue across ${stats.ranked.toLocaleString("en-US")} independent SaaS products.`}
       />
     </HarborCard>,
-    OG_SIZE,
+    OG_RESPONSE,
   );
 }

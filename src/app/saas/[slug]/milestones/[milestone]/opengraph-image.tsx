@@ -3,7 +3,7 @@ import { formatDate } from "@/lib/domain";
 import { milestoneHeadline, milestoneSentence } from "@/lib/milestones";
 import { excerpt } from "@/lib/moderation";
 import { providerName } from "@/lib/revenue/catalog";
-import { OG_SIZE, OgCard, OgPicture, siteImage } from "@/components/og-card";
+import { OG_RESPONSE, OG_SIZE, OgCard, OgPicture, siteImage } from "@/components/og-card";
 import { loadMilestone, type Params } from "./load";
 
 export const size = OG_SIZE;
@@ -27,6 +27,6 @@ export default async function Image({ params }: { params: Params }) {
         ["Revenue verified with", providerName(item.provider)],
       ]}
     />,
-    size,
+    OG_RESPONSE,
   );
 }

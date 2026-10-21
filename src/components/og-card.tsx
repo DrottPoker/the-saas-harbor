@@ -13,6 +13,14 @@ import { SITE_NAME, siteUrl } from "@/lib/seo";
 
 export const OG_SIZE = { width: 1200, height: 630 };
 
+// Cards with live figures are drawn per request, at the CPU cost of several page views. The CDN
+// keeps each for an hour, then for up to a day serves the last one while it draws a new one, so a
+// card can lag its page by about an hour. Networks keep cards for days anyway.
+export const OG_RESPONSE = {
+  ...OG_SIZE,
+  headers: { "Cache-Control": "public, max-age=0, s-maxage=3600, stale-while-revalidate=86400" },
+};
+
 const colors = {
   background: "#e8e6df",
   muted: "#dad8d0",
@@ -413,6 +421,6 @@ export function siteImage() {
         </div>
       </div>
     </HarborCard>,
-    OG_SIZE,
+    OG_RESPONSE,
   );
 }
