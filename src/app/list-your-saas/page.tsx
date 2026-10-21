@@ -38,8 +38,8 @@ const differences = [
 
 const steps = [
   "Create an account with your email address and a username.",
+  `Choose your payment provider at the top of the form. Connect ${providerList("or")} with a read-only key to verify your MRR, and choose what to share. For any other provider, or none yet, choose Other and write its name.`,
   "Add your product: name, tagline, description, category, website, logo and tech stack. It is public when you save it.",
-  `If you like, connect ${providerList("or")} in the same form with a read-only key to verify your MRR, and choose what to share.`,
   "If you like, verify your domain with a DNS record and add the badge to your site.",
 ];
 
@@ -52,7 +52,7 @@ const questions: FaqItem[] = [
   {
     question: "Can I list a product that has no revenue yet?",
     answer:
-      "Yes. A product without a connected payment provider gets the same public page and appears in Browse, New arrivals and its category and technology pages. Only the leaderboard needs verified MRR.",
+      "Yes. Choose Other as the payment provider and write none. A product without a connected payment provider gets the same public page and appears in Browse, New arrivals and its category and technology pages. Only the leaderboard needs verified MRR.",
   },
   {
     question: "How long until my listing is public?",

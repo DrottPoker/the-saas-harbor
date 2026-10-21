@@ -2,18 +2,20 @@
 
 import Link from "next/link";
 import { startTransition, useActionState, useState } from "react";
-import { Check, ChevronDown, CircleAlert, CircleCheck, ExternalLink } from "lucide-react";
+import { Check, ChevronDown, CircleAlert, CircleCheck, Ellipsis, ExternalLink } from "lucide-react";
 import { Select } from "radix-ui";
 import { disconnectProviderAction, refreshRevenueAction } from "@/app/revenue-actions";
-import { formatDate, formatUsd, type ActionState } from "@/lib/domain";
+import { formatDate, formatUsd, OTHER_PROVIDER_MAX_LENGTH, type ActionState } from "@/lib/domain";
 import type { RevenueConnection, RevenueSnapshot } from "@/lib/data";
 import {
   connectsWithOAuth,
   isProviderId,
+  isProviderOption,
   PROVIDER_IDS,
   PROVIDERS,
   providerAccount,
   type ProviderId,
+  type ProviderOption,
 } from "@/lib/revenue/catalog";
 import { STRIPE_KEY_PERMISSIONS, stripeKeyCreationUrl } from "@/lib/revenue/stripe/key";
 import { SITE_NAME } from "@/lib/seo";
@@ -206,27 +208,37 @@ const noHistory: Record<ProviderId, string> = {
   gumroad: "No revenue history: the Gumroad account has more sales than one verification reads.",
 };
 
+const option =
+  "flex cursor-default items-center gap-2.5 rounded-md px-2 py-2 text-sm outline-none select-none data-highlighted:bg-muted";
+
 /**
- * The payment providers to choose from, with their logos. The choice is part of the product form,
- * so saving the form connects the chosen provider; with none chosen, the form saves the product
- * alone. The list is a Radix select, so a hidden field carries the choice.
+ * The payment providers to choose from, with their logos, and Other last, for a provider that is
+ * not supported. The choice is part of the product form, so saving the form connects the chosen
+ * provider. The list is a Radix select, so a hidden field carries the choice.
  */
 function ProviderChoice({
   value,
   onChange,
+  offerOther,
+  invalid,
   onClear,
   clearLabel,
 }: {
-  value: ProviderId | null;
-  onChange: (provider: ProviderId) => void;
+  value: ProviderOption | null;
+  onChange: (provider: ProviderOption) => void;
+  /** Whether Other is offered, and a choice is required: only while nothing is connected. */
+  offerOther: boolean;
+  /** Set when the form was sent without a choice. */
+  invalid: boolean;
   /** Leaves the provider unchosen again; without it, nothing offers that. */
   onClear?: () => void;
-  clearLabel: string;
+  clearLabel?: string;
 }) {
   return (
     <Field
       name="provider"
       label="Payment provider"
+      required={offerOther}
       aside={
         onClear && (
           <button
@@ -242,11 +254,15 @@ function ProviderChoice({
       <Select.Root
         value={value ?? ""}
         onValueChange={(next) => {
-          if (isProviderId(next)) onChange(next);
+          if (isProviderOption(next)) onChange(next);
         }}
       >
         <Select.Trigger
           id="provider"
+          // Not Radix's own `required`, which would have the browser point at a hidden field; the
+          // form checks the choice itself.
+          aria-required={offerOther}
+          aria-invalid={invalid || undefined}
           className={cn(
             fieldClasses,
             "flex h-10 items-center gap-2.5 text-left data-placeholder:text-faint-foreground",
@@ -265,11 +281,7 @@ function ProviderChoice({
           >
             <Select.Viewport>
               {PROVIDER_IDS.map((id) => (
-                <Select.Item
-                  key={id}
-                  value={id}
-                  className="flex cursor-default items-center gap-2.5 rounded-md px-2 py-2 text-sm outline-none select-none data-highlighted:bg-muted"
-                >
+                <Select.Item key={id} value={id} className={option}>
                   {/* The logo is part of the item's text, so the closed list shows it too. */}
                   <Select.ItemText>
                     <span className="flex items-center gap-2.5">
@@ -282,6 +294,27 @@ function ProviderChoice({
                   </Select.ItemIndicator>
                 </Select.Item>
               ))}
+              {offerOther && (
+                <>
+                  <Select.Separator className="-mx-1 my-1 h-px bg-border" />
+                  <Select.Item value="other" className={option}>
+                    <Select.ItemText>
+                      <span className="flex items-center gap-2.5">
+                        <span
+                          aria-hidden="true"
+                          className="flex size-5 shrink-0 items-center justify-center rounded-[5px] border bg-subtle"
+                        >
+                          <Ellipsis className="size-3.5 text-muted-foreground" />
+                        </span>
+                        Other
+                      </span>
+                    </Select.ItemText>
+                    <Select.ItemIndicator className="ml-auto">
+                      <Check aria-hidden="true" className="size-4 text-muted-foreground" />
+                    </Select.ItemIndicator>
+                  </Select.Item>
+                </>
+              )}
             </Select.Viewport>
           </Select.Content>
         </Select.Portal>
@@ -362,6 +395,35 @@ function ProviderFields({
       <p className="text-[13px] text-muted-foreground">
         The key is encrypted and only used to read {guide.reads}. You can revoke it in {name} at any
         time. {privacyLink}
+      </p>
+    </div>
+  );
+}
+
+/** Other: the founder writes which provider they use, which only they and admins see. */
+function OtherProviderField({ defaultValue }: { defaultValue?: string }) {
+  return (
+    <div className="grid gap-4">
+      <Field
+        name="other_provider"
+        label="Your payment provider"
+        hint="If you take no payments yet, write none."
+        required
+      >
+        <Input
+          id="other_provider"
+          name="other_provider"
+          autoComplete="off"
+          required
+          maxLength={OTHER_PROVIDER_MAX_LENGTH}
+          defaultValue={defaultValue}
+        />
+      </Field>
+      <p className="text-[13px] text-muted-foreground">
+        Revenue from other providers cannot be verified yet, so the product is listed without
+        verified MRR and is not ranked on the leaderboard. You can connect a provider from the list
+        at any time. The name is not shown on the site; we use it to choose which providers to
+        support next.
       </p>
     </div>
   );
@@ -548,9 +610,10 @@ function Connected({
 }
 
 /**
- * Revenue verification as a section of the product form, right after the product's details. It
- * is optional: choosing a provider and pasting its key makes saving the form verify the revenue
- * too. A connected product shows its figures here, with a way to replace the key.
+ * The payment provider as the first section of the product form. A product that is not connected
+ * needs a choice: a provider from the list, whose key saving the form verifies, or Other, with the
+ * name of the founder's provider. A connected product shows its figures here, with a way to
+ * replace the key.
  */
 export function RevenueSection({
   saasId,
@@ -560,6 +623,8 @@ export function RevenueSection({
   result,
   provider,
   onProvider,
+  invalid,
+  otherProvider,
   values,
   children,
 }: {
@@ -570,8 +635,12 @@ export function RevenueSection({
   oauthReady: ProviderId[];
   /** How the last connection went, in words for the founder. */
   result: { tone: "success" | "error"; text: string } | null;
-  provider: ProviderId | null;
-  onProvider: (provider: ProviderId | null) => void;
+  provider: ProviderOption | null;
+  onProvider: (provider: ProviderOption | null) => void;
+  /** Set when the form was sent without a choice. */
+  invalid: boolean;
+  /** The name saved under Other, if any. */
+  otherProvider: string | null;
   /** What the form sent last, after a failed save. */
   values?: Record<string, string>;
   /** What visitors see of the figures. */
@@ -587,7 +656,7 @@ export function RevenueSection({
     <Section
       id="revenue"
       title="Verified revenue"
-      description="Connect your payment provider with a read-only key to verify MRR and subscribers. Verified MRR is ranked on the leaderboard, and the link to your website is followed by search engines. You can also do this later."
+      description="Connect your payment provider with a read-only key to verify MRR and subscribers. Verified MRR is ranked on the leaderboard, and the link to your website is followed by search engines. If your provider is not in the list, choose Other."
     >
       {result && <Notice tone={result.tone}>{result.text}</Notice>}
       {connection ? (
@@ -604,13 +673,15 @@ export function RevenueSection({
               <ProviderChoice
                 value={provider}
                 onChange={onProvider}
+                offerOther={false}
+                invalid={false}
                 onClear={() => {
                   onProvider(null);
                   setReplacing(false);
                 }}
                 clearLabel="Keep the current connection"
               />
-              {provider && (
+              {provider && provider !== "other" && (
                 <ProviderFields
                   provider={provider}
                   replace
@@ -634,19 +705,22 @@ export function RevenueSection({
       ) : (
         <div className="grid gap-4">
           <Feedback state={outcome} />
-          <ProviderChoice
-            value={provider}
-            onChange={onProvider}
-            onClear={provider ? () => onProvider(null) : undefined}
-            clearLabel="Connect later"
-          />
-          {provider && (
-            <ProviderFields
-              provider={provider}
-              replace={false}
-              oauthReady={oauthReady}
-              values={values}
+          <ProviderChoice value={provider} onChange={onProvider} offerOther invalid={invalid} />
+          {provider === "other" ? (
+            <OtherProviderField
+              defaultValue={
+                values?.provider === "other" ? values.other_provider : (otherProvider ?? undefined)
+              }
             />
+          ) : (
+            provider && (
+              <ProviderFields
+                provider={provider}
+                replace={false}
+                oauthReady={oauthReady}
+                values={values}
+              />
+            )
           )}
         </div>
       )}

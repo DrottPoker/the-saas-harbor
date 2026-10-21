@@ -3,7 +3,14 @@ import { cookies } from "next/headers";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { cookieOptions } from "@/lib/supabase/config";
 import type { Database } from "@/lib/supabase/types";
-import { connectsWithOAuth, isProviderId, PROVIDERS, type ProviderId } from "./catalog";
+import { otherProviderSchema } from "@/lib/domain";
+import {
+  CHOOSE_PROVIDER,
+  connectsWithOAuth,
+  isProviderId,
+  PROVIDERS,
+  type ProviderId,
+} from "./catalog";
 import {
   CONNECTION_RESULT_COOKIE,
   CONNECTION_RESULT_SECONDS,
@@ -34,16 +41,23 @@ export async function beginRevenueCheck(
 }
 
 /**
- * The payment provider chosen in the product form, with the key pasted for it, or null when none
- * was chosen. A provider connected through OAuth has no key: its approval starts after the save.
- * Checked before the product is saved, so a key in the wrong form saves nothing.
+ * The payment provider chosen in the product form: a supported one with the key pasted for it, or
+ * Other with the name the founder wrote. Null when none was chosen, which only a product that is
+ * connected already may leave. A provider connected through OAuth has no key: its approval starts
+ * after the save. Checked before the product is saved, so a key in the wrong form saves nothing.
  */
 export type ChosenConnection = { provider: ProviderId; key: ParsedKey | null };
+export type ChosenProvider = ChosenConnection | { provider: "other"; name: string };
 
-export function chosenConnection(form: FormData): ChosenConnection | null {
+export function chosenProvider(form: FormData): ChosenProvider | null {
   const provider = form.get("provider");
   if (provider === null || provider === "") return null;
-  if (!isProviderId(provider)) throw new VerificationError("Choose a payment provider.");
+  if (provider === "other") {
+    const name = otherProviderSchema.safeParse(String(form.get("other_provider") ?? ""));
+    if (!name.success) throw new VerificationError(name.error.issues[0]!.message);
+    return { provider, name: name.data };
+  }
+  if (!isProviderId(provider)) throw new VerificationError(CHOOSE_PROVIDER);
   if (connectsWithOAuth(provider)) {
     if (!oauthReadyProviders().includes(provider))
       throw new VerificationError(`${PROVIDERS[provider].name} is not set up on this server yet.`);

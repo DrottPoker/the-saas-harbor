@@ -8,6 +8,8 @@ import {
   containsPattern,
   emailLink,
   formatUsd,
+  OTHER_PROVIDER_MAX_LENGTH,
+  otherProviderSchema,
   profileSchema,
   saasSchema,
 } from "../../src/lib/domain";
@@ -145,6 +147,21 @@ describe("profile boundaries", () => {
     expect(parsed).not.toHaveProperty("mrr");
     expect(parsed).not.toHaveProperty("mrr_cents");
     expect(parsed).not.toHaveProperty("customers");
+  });
+});
+
+describe("a provider named under Other", () => {
+  it("is trimmed, with single spaces, as the database stores it", () => {
+    expect(otherProviderSchema.parse("  Lemon \t Squeezy\n")).toBe("Lemon Squeezy");
+  });
+  it("is required and kept short", () => {
+    expect(otherProviderSchema.safeParse("   ").error?.issues[0]?.message).toBe(
+      "Write the name of your payment provider.",
+    );
+    expect(otherProviderSchema.safeParse("x".repeat(OTHER_PROVIDER_MAX_LENGTH)).success).toBe(true);
+    expect(otherProviderSchema.safeParse("x".repeat(OTHER_PROVIDER_MAX_LENGTH + 1)).success).toBe(
+      false,
+    );
   });
 });
 

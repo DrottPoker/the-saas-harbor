@@ -5,7 +5,7 @@
 -- Runs in a rolled-back transaction.
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(31);
+select plan(30);
 
 -- Existing local connections count as just checked, so only the fixtures are due.
 update public.revenue_connections set last_checked_at = now(), revenue_checked_at = now();
@@ -19,10 +19,9 @@ select set_config('request.jwt.claim.sub', 'e8000000-0000-4000-8000-000000000001
 select public.save_saas('e8100000-0000-4000-8000-000000000001', 'Revenue Alpha', 'Fixture',
   'A temporary fixture that is rolled back.', 'Other', 'https://example.com', null, null, false,
   false, false);
--- Code deployed before the one choice sends the MRR choice last.
 select public.save_saas('e8100000-0000-4000-8000-000000000002', 'Revenue Beta', 'Fixture',
   'A temporary fixture that is rolled back.', 'Other', 'https://example.com', null, null, true,
-  false, false, null, true);
+  false, false);
 select set_config('request.jwt.claim.sub', 'e8000000-0000-4000-8000-000000000002', true);
 select public.save_saas('e8100000-0000-4000-8000-000000000003', 'Revenue Gamma', 'Fixture',
   'A temporary fixture that is rolled back.', 'Other', 'https://example.com', null, null, true,
@@ -36,20 +35,6 @@ select results_eq(
     ('e8100000-0000-4000-8000-000000000002'::uuid, true),
     ('e8100000-0000-4000-8000-000000000003'::uuid, true) $$,
   'one choice shares or hides all of a product''s revenue');
-
-set local role authenticated;
-select set_config('request.jwt.claim.sub', 'e8000000-0000-4000-8000-000000000001', true);
-select public.save_saas('e8100000-0000-4000-8000-000000000002', 'Revenue Beta', 'Fixture',
-  'A temporary fixture that is rolled back.', 'Other', 'https://example.com', null, null, true,
-  false, false, null, false);
-set local role postgres;
-select is((select share_revenue from public.saas_settings
-  where saas_id = 'e8100000-0000-4000-8000-000000000002'), false,
-  'earlier code that hides MRR hides revenue too');
-set local role authenticated;
-select public.save_saas('e8100000-0000-4000-8000-000000000002', 'Revenue Beta', 'Fixture',
-  'A temporary fixture that is rolled back.', 'Other', 'https://example.com', null, null, true,
-  false, false);
 
 -- Connections for all three products.
 set local role service_role;

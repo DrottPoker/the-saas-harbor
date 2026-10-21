@@ -15,8 +15,8 @@ export const metadata = pageMetadata({
 // The first thing a new founder wants to know, before how the figures are made.
 const steps = [
   "Create a free account with your email address and a username.",
+  `Choose your payment provider. Connecting ${providerList("or")} with a read-only key verifies your MRR, which puts your product on the leaderboard and makes the link to your website one that search engines follow. For any other provider, or none yet, choose Other and write its name.`,
   "Add your product: its name, tagline, description, category and website. Its page is public as soon as you save it.",
-  `If you like, connect your payment provider, ${providerList("or")}, with a read-only key. Verified MRR puts your product on the leaderboard and makes the link to your website one that search engines follow.`,
 ];
 
 type Section = {

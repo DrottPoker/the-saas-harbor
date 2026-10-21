@@ -1,11 +1,15 @@
 import { describe, expect, it } from "vitest";
 import {
+  CHOOSE_PROVIDER,
   isProviderId,
+  isProviderOption,
   providerAccess,
   providerAccount,
   providerList,
   providerName,
 } from "../../src/lib/revenue/catalog";
+import { chosenProvider } from "../../src/lib/revenue/connect";
+import { VerificationError } from "../../src/lib/revenue/errors";
 import { parseDodoKey } from "../../src/lib/revenue/dodo/key";
 import {
   dodoMrr,
@@ -65,6 +69,49 @@ describe("provider catalog", () => {
     expect(providerAccess("stripe")).toBe("a read-only key");
     expect(providerAccess("gumroad")).toBe("read-only access");
     expect(providerAccess(null)).toBe("a read-only key");
+  });
+
+  it("offers Other besides the providers, though Other is none of them", () => {
+    expect(isProviderOption("other")).toBe(true);
+    expect(isProviderOption("paddle")).toBe(true);
+    expect(isProviderOption("lemonsqueezy")).toBe(false);
+    expect(isProviderId("other")).toBe(false);
+  });
+});
+
+describe("the product form's provider choice", () => {
+  const form = (fields: Record<string, string>) => {
+    const data = new FormData();
+    for (const [key, value] of Object.entries(fields)) data.set(key, value);
+    return data;
+  };
+
+  it("is empty only when nothing was chosen", () => {
+    expect(chosenProvider(form({}))).toBeNull();
+    expect(chosenProvider(form({ provider: "" }))).toBeNull();
+  });
+
+  it("takes the name written under Other", () => {
+    expect(
+      chosenProvider(
+        form({ provider: "other", other_provider: " Lemon  Squeezy ", provider_key: "x" }),
+      ),
+    ).toEqual({ provider: "other", name: "Lemon Squeezy" });
+    expect(() => chosenProvider(form({ provider: "other", other_provider: " " }))).toThrow(
+      new VerificationError("Write the name of your payment provider."),
+    );
+  });
+
+  it("refuses anything that is not in the list", () => {
+    expect(() => chosenProvider(form({ provider: "lemonsqueezy" }))).toThrow(
+      new VerificationError(CHOOSE_PROVIDER),
+    );
+  });
+
+  it("checks a supported provider's key", () => {
+    expect(() => chosenProvider(form({ provider: "stripe", provider_key: "" }))).toThrow(
+      VerificationError,
+    );
   });
 });
 

@@ -5,7 +5,13 @@ import { startTransition, useEffect, useState } from "react";
 import { saveSaas, type SaveSaasState } from "@/app/actions";
 import type { RevenueConnection, RevenueSnapshot, Saas, SaasSettings } from "@/lib/data";
 import { categories } from "@/lib/domain";
-import { connectsWithOAuth, PROVIDERS, type ProviderId } from "@/lib/revenue/catalog";
+import {
+  CHOOSE_PROVIDER,
+  connectsWithOAuth,
+  PROVIDERS,
+  type ProviderId,
+  type ProviderOption,
+} from "@/lib/revenue/catalog";
 import { TECH_STACK_MAX, techGroups, technologies } from "@/lib/tech";
 import { cn } from "@/lib/utils";
 import { Actions, Feedback, Field, ImageField, Section, Share, Submit } from "./forms";
@@ -60,8 +66,8 @@ function TechStackField({ stack }: { stack: string[] }) {
 }
 
 // What the save button does, in its own words: saving alone, or connecting the chosen provider too.
-function submitLabel(isNew: boolean, provider: ProviderId | null) {
-  if (!provider) return isNew ? "Add SaaS" : "Save changes";
+function submitLabel(isNew: boolean, provider: ProviderOption | null) {
+  if (!provider || provider === "other") return isNew ? "Add SaaS" : "Save changes";
   const save = isNew ? "Add SaaS" : "Save";
   return connectsWithOAuth(provider)
     ? `${save} and connect ${PROVIDERS[provider].name}`
@@ -69,8 +75,9 @@ function submitLabel(isNew: boolean, provider: ProviderId | null) {
 }
 
 /**
- * Everything about a product in one form, revenue verification included: the details, the logo
- * and the tech stack, then the payment provider, which is optional. One save does it all.
+ * Everything about a product in one form, revenue verification included: the payment provider
+ * first, which every product names, then the details, the logo and the tech stack. One save does
+ * it all.
  */
 export function SaasForm({
   id,
@@ -92,24 +99,30 @@ export function SaasForm({
   result?: { provider: ProviderId; tone: "success" | "error"; text: string } | null;
 }) {
   const [state, action, pending] = useEditorAction<SaveSaasState>(saveSaas);
-  // A key the provider refused comes back with its provider chosen, ready for another key.
-  const [provider, setProvider] = useState<ProviderId | null>(
-    result?.tone === "error" && !connectsWithOAuth(result.provider) ? result.provider : null,
-  );
+  // A key the provider refused comes back with its provider chosen, ready for another key, and a
+  // product saved under Other with Other chosen.
+  const [provider, setProvider] = useState<ProviderOption | null>(() => {
+    if (result?.tone === "error" && !connectsWithOAuth(result.provider)) return result.provider;
+    return !connection && settings?.other_provider ? "other" : null;
+  });
+  // Set when the form was sent without a provider, until one is chosen.
+  const [missing, setMissing] = useState(false);
   useEffect(() => {
     // Approving access through OAuth starts with a plain navigation once the product is saved.
     if (state.location) window.location.assign(state.location);
     // The save button is at the end of the form, so a refused key brings its section into view.
     if (state.connectionError) document.getElementById("revenue")?.scrollIntoView();
   }, [state]);
-  const shown = state.connectionError
-    ? { tone: "error" as const, text: state.connectionError }
-    : result;
+  const shown = missing
+    ? { tone: "error" as const, text: CHOOSE_PROVIDER }
+    : state.connectionError
+      ? { tone: "error" as const, text: state.connectionError }
+      : result;
   // Figures are public unless hidden, so a new product starts with every box clear.
   const hidden = (key: "revenue" | "customers" | "launch") =>
     state.values ? !!state.values[`hide_${key}`] : settings ? !settings[`share_${key}`] : false;
   const stack = state.values ? (state.values.tech?.split("\n") ?? []) : (saas?.tech_stack ?? []);
-  const verifying = !!provider && !connectsWithOAuth(provider);
+  const verifying = !!provider && provider !== "other" && !connectsWithOAuth(provider);
   return (
     // Submitted from onSubmit rather than the action prop, so React does not reset the form after
     // a failed save: a reset would clear a chosen logo, the remove box and a pasted key, which no
@@ -117,11 +130,60 @@ export function SaasForm({
     <form
       onSubmit={(event) => {
         event.preventDefault();
+        // The server checks this too; here it saves a round trip and goes back to the list.
+        if (!connection && !provider) {
+          setMissing(true);
+          document.getElementById("revenue")?.scrollIntoView();
+          document.getElementById("provider")?.focus({ preventScroll: true });
+          return;
+        }
         const data = new FormData(event.currentTarget);
         startTransition(() => action(data));
       }}
     >
       <input type="hidden" name="id" value={id} />
+      <RevenueSection
+        saasId={id}
+        connection={connection}
+        snapshot={snapshot}
+        oauthReady={oauthReady}
+        result={shown}
+        provider={provider}
+        onProvider={(next) => {
+          setProvider(next);
+          setMissing(false);
+        }}
+        invalid={missing}
+        otherProvider={settings?.other_provider ?? null}
+        values={state.values}
+      >
+        {/* Hidden rather than removed under Other, so saving keeps what the founder chose. */}
+        <div
+          role="group"
+          aria-labelledby="figures-title"
+          className={cn("grid gap-2.5 border-t pt-5", provider === "other" && "hidden")}
+        >
+          <div>
+            <p id="figures-title" className="text-sm font-medium">
+              Public figures
+            </p>
+            <p className="mt-1 text-[13px] text-muted-foreground">
+              Verified figures are public unless you hide them. Public revenue is ranked on the
+              leaderboard, by MRR and by revenue over 30 days, 12 months and all time.
+            </p>
+          </div>
+          <Share
+            name="hide_revenue"
+            label="Hide verified revenue, MRR included"
+            checked={hidden("revenue")}
+          />
+          <Share
+            name="hide_customers"
+            label="Hide subscriber count"
+            checked={hidden("customers")}
+          />
+        </div>
+      </RevenueSection>
       <Section
         title="Product"
         description="Shown on the public product page and in listings. Fields marked * are required."
@@ -216,38 +278,6 @@ export function SaasForm({
       >
         <TechStackField stack={stack} />
       </Section>
-      <RevenueSection
-        saasId={id}
-        connection={connection}
-        snapshot={snapshot}
-        oauthReady={oauthReady}
-        result={shown}
-        provider={provider}
-        onProvider={setProvider}
-        values={state.values}
-      >
-        <div role="group" aria-labelledby="figures-title" className="grid gap-2.5 border-t pt-5">
-          <div>
-            <p id="figures-title" className="text-sm font-medium">
-              Public figures
-            </p>
-            <p className="mt-1 text-[13px] text-muted-foreground">
-              Verified figures are public unless you hide them. Public revenue is ranked on the
-              leaderboard, by MRR and by revenue over 30 days, 12 months and all time.
-            </p>
-          </div>
-          <Share
-            name="hide_revenue"
-            label="Hide verified revenue, MRR included"
-            checked={hidden("revenue")}
-          />
-          <Share
-            name="hide_customers"
-            label="Hide subscriber count"
-            checked={hidden("customers")}
-          />
-        </div>
-      </RevenueSection>
       <div className="mb-4 empty:hidden">
         <Feedback state={state} />
       </div>

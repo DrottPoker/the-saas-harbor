@@ -79,6 +79,20 @@ export function isProviderId(value: unknown): value is ProviderId {
   return typeof value === "string" && Object.hasOwn(PROVIDERS, value);
 }
 
+/**
+ * What the product form's list offers: a supported provider, or Other, for a founder whose
+ * provider is not supported and who writes its name instead.
+ */
+export type ProviderOption = ProviderId | "other";
+
+export function isProviderOption(value: unknown): value is ProviderOption {
+  return value === "other" || isProviderId(value);
+}
+
+/** Why a product form without a payment provider was not saved. */
+export const CHOOSE_PROVIDER =
+  "Choose your payment provider. If it is not in the list, choose Other.";
+
 /** A provider's name for people; unknown or missing values read as a payment provider. */
 export function providerName(id: string | null | undefined) {
   return isProviderId(id) ? PROVIDERS[id].name : "a payment provider";

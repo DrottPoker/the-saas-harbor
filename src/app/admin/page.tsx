@@ -3,10 +3,42 @@ import { FeedbackList } from "@/components/admin/feedback-list";
 import { LogList, ReportList } from "@/components/admin/rows";
 import { Metric } from "@/components/metric";
 import { EmptyState, PageHeader } from "@/components/shell";
-import { profileNames, requireAdmin } from "@/lib/admin";
+import { adminPaymentProviders, profileNames, requireAdmin, type ProviderCount } from "@/lib/admin";
+import { providerName } from "@/lib/revenue/catalog";
 
 // Labels may wrap on phones, so the figures keep to the bottom and line up.
 const card = "flex flex-col justify-between rounded-xl border bg-surface shadow-card";
+
+// Products by payment provider, most first.
+function ProviderCounts({
+  title,
+  rows,
+  empty,
+}: {
+  title: string;
+  rows: ProviderCount[];
+  empty: string;
+}) {
+  return (
+    <div className="rounded-xl border bg-surface p-5 shadow-card">
+      <h3 className="text-sm font-medium">{title}</h3>
+      {rows.length ? (
+        <dl className="mt-3 grid gap-2 text-sm">
+          {rows.map((row) => (
+            <div key={row.name} className="flex items-baseline justify-between gap-4">
+              <dt className="min-w-0 [overflow-wrap:anywhere]">{row.name}</dt>
+              <dd className="shrink-0 text-muted-foreground tabular-nums">
+                {row.products} {row.products === 1 ? "product" : "products"}
+              </dd>
+            </div>
+          ))}
+        </dl>
+      ) : (
+        <p className="mt-3 text-sm text-muted-foreground">{empty}</p>
+      )}
+    </div>
+  );
+}
 
 function SectionHeading({ id, title, href }: { id: string; title: string; href: string }) {
   return (
@@ -47,10 +79,11 @@ export default async function AdminOverview() {
   ]);
   for (const result of [open, hidden, suspended, accounts, queue, log, feedback])
     if (result.error) throw new Error("The admin overview could not be loaded.");
-  const [makers, admins, senders] = await Promise.all([
+  const [makers, admins, senders, providers] = await Promise.all([
     profileNames(client, queue.data?.map((report) => report.subject_id) ?? []),
     profileNames(client, log.data?.map((entry) => entry.admin_id) ?? []),
     profileNames(client, feedback.data?.map((item) => item.user_id) ?? []),
+    adminPaymentProviders(client),
   ]);
 
   return (
@@ -99,6 +132,31 @@ export default async function AdminOverview() {
             Hidden products, suspensions and dismissed reports are listed here.
           </EmptyState>
         )}
+      </section>
+
+      <section aria-labelledby="providers" className="mt-12">
+        <h2 id="providers" className="text-lg font-semibold">
+          Payment providers
+        </h2>
+        <p className="mt-1 mb-4 text-sm text-muted-foreground">
+          The providers products are connected to, and the ones founders write under Other when
+          theirs is not supported.{" "}
+          {providers.none === 1
+            ? "1 product has neither."
+            : `${providers.none} products have neither.`}
+        </p>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <ProviderCounts
+            title="Connected"
+            rows={providers.connected.map((row) => ({ ...row, name: providerName(row.name) }))}
+            empty="No product is connected yet."
+          />
+          <ProviderCounts
+            title="Written under Other"
+            rows={providers.other}
+            empty="No founder has written a provider yet."
+          />
+        </div>
       </section>
     </>
   );

@@ -87,6 +87,24 @@ export async function adminRevenue(client: AdminClient, ids: string[]) {
   return figures;
 }
 
+export type ProviderCount = { name: string; products: number };
+
+/**
+ * Which payment providers products use: the ones they are connected to, the names founders wrote
+ * under Other, most products first, and how many products have neither.
+ */
+export async function adminPaymentProviders(client: AdminClient) {
+  const { data, error } = await client.rpc("admin_payment_providers");
+  if (error) throw new Error("Payment providers could not be loaded.");
+  const rows = (kind: string): ProviderCount[] =>
+    data.filter((row) => row.kind === kind && row.name !== null);
+  return {
+    connected: rows("connected"),
+    other: rows("other"),
+    none: data.find((row) => row.kind === "none")?.products ?? 0,
+  };
+}
+
 export const ADMIN_PAGE_SIZE = 25;
 
 // Where a decision form returns to: an admin detail page only.

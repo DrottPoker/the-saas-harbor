@@ -52,8 +52,8 @@ export default function Privacy() {
             <li>
               <strong className="font-medium text-foreground">Products.</strong> The details you
               add, such as name, tagline, description, category, website, logo, tech stack and
-              launch date, and for a product&apos;s domain, the domain, its DNS record and when it
-              was checked.
+              launch date, the name of your payment provider when it is not one we connect, and for
+              a product&apos;s domain, the domain, its DNS record and when it was checked.
             </li>
             <li>
               <strong className="font-medium text-foreground">Revenue verification.</strong> Which
@@ -160,9 +160,9 @@ export default function Privacy() {
             </li>
             <li>
               To understand how people find and use the service, and to improve and develop it, from
-              the site statistics, how accounts found the site, how far they get and the feedback
-              they send, in totals and for single accounts (our legitimate interests, Article
-              6(1)(f)).
+              the site statistics, how accounts found the site, how far they get, the payment
+              providers founders name and the feedback they send, in totals and for single accounts
+              (our legitimate interests, Article 6(1)(f)).
             </li>
             <li>
               To write to you about your account, your products and the service, for example to help

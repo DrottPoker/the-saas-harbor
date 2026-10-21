@@ -162,6 +162,21 @@ export const saasSchema = z.object({
       "Choose technologies from the list.",
     ),
 });
+/** The payment provider a founder names under Other, when theirs is not supported. */
+export const OTHER_PROVIDER_MAX_LENGTH = 60;
+export const otherProviderSchema = z
+  .string()
+  .trim()
+  .transform((name) => name.replace(/\s+/g, " "))
+  .pipe(
+    z
+      .string()
+      .min(1, "Write the name of your payment provider.")
+      .max(
+        OTHER_PROVIDER_MAX_LENGTH,
+        `Keep the payment provider under ${OTHER_PROVIDER_MAX_LENGTH} characters.`,
+      ),
+  );
 export type ActionState = { error?: string; success?: string };
 
 /**

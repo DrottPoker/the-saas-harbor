@@ -902,6 +902,7 @@ export type Database = {
       saas_settings: {
         Row: {
           launched_on: string | null
+          other_provider: string | null
           owner_id: string
           saas_id: string
           share_customers: boolean
@@ -911,6 +912,7 @@ export type Database = {
         }
         Insert: {
           launched_on?: string | null
+          other_provider?: string | null
           owner_id: string
           saas_id: string
           share_customers?: boolean
@@ -920,6 +922,7 @@ export type Database = {
         }
         Update: {
           launched_on?: string | null
+          other_provider?: string | null
           owner_id?: string
           saas_id?: string
           share_customers?: boolean
@@ -1257,6 +1260,14 @@ export type Database = {
         }
         Returns: undefined
       }
+      admin_payment_providers: {
+        Args: never
+        Returns: {
+          kind: string
+          name: string
+          products: number
+        }[]
+      }
       admin_restore_account: {
         Args: { p_note: string; p_profile: string }
         Returns: undefined
@@ -1477,9 +1488,9 @@ export type Database = {
           p_launched_on: string
           p_logo_path: string
           p_name: string
+          p_other_provider?: string
           p_share_customers: boolean
           p_share_launch: boolean
-          p_share_mrr?: boolean
           p_share_revenue: boolean
           p_tagline: string
           p_tech_stack?: string[]

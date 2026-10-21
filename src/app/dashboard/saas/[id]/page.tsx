@@ -51,7 +51,7 @@ export default async function EditSaas({ params, searchParams }: Props) {
         <PageHeader
           className="mt-4 border-b"
           title="Add SaaS"
-          description="Product details are public. Connecting your payment provider is optional, and you can do it now or later."
+          description="Start with your payment provider: connecting it with a read-only key verifies your MRR. If yours is not in the list, choose Other. Product details are public."
         />
         <div className="pt-8">
           {(count ?? 0) >= PRODUCT_LIMIT ? (

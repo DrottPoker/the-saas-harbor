@@ -24,12 +24,12 @@ import { sendQueuedEmails } from "@/lib/email/outbox";
 import { announceProduct, announceRemovedProduct } from "@/lib/indexnow";
 import { termsUpdated } from "@/lib/legal";
 import { keepNewProduct } from "@/lib/new-product";
-import { PROVIDERS } from "@/lib/revenue/catalog";
+import { CHOOSE_PROVIDER, PROVIDERS } from "@/lib/revenue/catalog";
 import {
   beginRevenueCheck,
-  chosenConnection,
+  chosenProvider,
   keepConnectionResult,
-  type ChosenConnection,
+  type ChosenProvider,
 } from "@/lib/revenue/connect";
 import { connectionResultPath } from "@/lib/revenue/connection-result";
 import { makerMessage } from "@/lib/revenue/errors";
@@ -524,18 +524,21 @@ export type SaveSaasState = ActionState & {
   connectionError?: string;
 };
 
-// Saves a product, and connects the payment provider chosen in the same form, if any. A key is
-// verified with the provider after the product is saved, so a product is never lost to a key
-// the provider refuses. The editor shows how connecting went: a new product's editor through a
-// cookie, and an existing product's editor on the spot when it failed, with the form as it was.
+// Saves a product, and connects the payment provider chosen in the same form. Every product names
+// its provider: a supported one to connect, or another one under Other, kept with the settings;
+// only a product that is connected already may leave the choice empty. A key is verified with the
+// provider after the product is saved, so a product is never lost to a key the provider refuses.
+// The editor shows how connecting went: a new product's editor through a cookie, and an existing
+// product's editor on the spot when it failed, with the form as it was.
 export async function saveSaas(_state: SaveSaasState, form: FormData): Promise<SaveSaasState> {
   const { user, client } = await requireUser();
-  let chosen: ChosenConnection | null;
+  let choice: ChosenProvider | null;
   try {
-    chosen = chosenConnection(form);
+    choice = chosenProvider(form);
   } catch (error) {
     return { connectionError: makerMessage(error) };
   }
+  const chosen = choice?.provider === "other" ? null : choice;
   let uploaded: string | null = null;
   let savedId: string;
   let existed: boolean;
@@ -564,6 +567,14 @@ export async function saveSaas(_state: SaveSaasState, form: FormData): Promise<S
       return { error: "You can only edit your own SaaS." };
     existed = !!existing;
     previousSlug = existing?.slug ?? null;
+    if (!choice) {
+      const { count, error: connectionError } = await client
+        .from("revenue_connections")
+        .select("saas_id", { count: "exact", head: true })
+        .eq("saas_id", fields.id);
+      if (connectionError) return { error: "The SaaS profile could not be loaded." };
+      if (!count) return { connectionError: CHOOSE_PROVIDER };
+    }
     uploaded = await uploadImage(client, user.id, form.get("image"));
     const { data, error } = await client.rpc("save_saas", {
       p_id: fields.id,
@@ -578,6 +589,8 @@ export async function saveSaas(_state: SaveSaasState, form: FormData): Promise<S
       p_share_customers: fields.share_customers,
       p_share_launch: fields.share_launch,
       p_tech_stack: fields.tech_stack,
+      // Left out, it defaults to null, which clears a name saved before.
+      p_other_provider: choice?.provider === "other" ? choice.name : undefined,
     });
     if (error)
       throw new Error(

@@ -767,15 +767,35 @@ test("registration, email confirmation, profile and SaaS editing, storage, priva
     mimeType: "image/png",
     buffer: Buffer.from("not an image"),
   });
+  // The payment provider comes first, and every product needs one: saving without it goes back
+  // to the list before anything is sent.
+  const revenue = page.locator("#revenue");
+  const providerList = revenue.getByRole("combobox", { name: "Payment provider" });
+  await page.getByRole("button", { name: "Add SaaS", exact: true }).click();
+  await expect(
+    revenue.getByRole("alert").filter({
+      hasText: "Choose your payment provider. If it is not in the list, choose Other.",
+    }),
+  ).toBeVisible();
+  await expect(providerList).toBeFocused();
+  await expect(providerList).toHaveAttribute("aria-invalid", "true");
+  // Other, last in the list, asks for the provider's name rather than a key, and puts the boxes
+  // for verified figures out of view.
+  await chooseProvider(page, "Other");
+  await expect(revenue.getByRole("alert")).toHaveCount(0);
+  await expect(page.getByLabel(HIDE_REVENUE, { exact: true })).toBeHidden();
+  const otherProvider = revenue.getByLabel("Your payment provider");
+  await otherProvider.fill("Lemon Squeezy");
   await page.getByRole("button", { name: "Add SaaS", exact: true }).click();
   await expect(page.getByRole("alert").filter({ hasText: "Choose a valid PNG" })).toBeVisible();
   await expect(page.getByLabel("Product name", { exact: true })).toHaveValue(productName);
   await expect(page.getByLabel("Category")).toHaveValue("Design");
+  await expect(otherProvider).toHaveValue("Lemon Squeezy");
   // A failed save keeps every ticked technology.
   await expect(page.getByLabel("Next.js", { exact: true })).toBeChecked();
   await expect(page.getByLabel("PostgreSQL", { exact: true })).toBeChecked();
   await expect(page.getByLabel("React", { exact: true })).not.toBeChecked();
-  // And every figure the founder chose to hide.
+  // And every figure the founder chose to hide, out of view under Other.
   for (const label of HIDE_FIGURES)
     await expect(page.getByLabel(label, { exact: true })).toBeChecked();
   // And the chosen logo, so saving again uploads it. Browsers read this address as example.com,
@@ -791,18 +811,11 @@ test("registration, email confirmation, profile and SaaS editing, storage, priva
   expect(await logo.evaluate((input: HTMLInputElement) => input.files?.[0]?.name)).toBe("logo.png");
   await website.fill("https://example.com");
 
-  // The payment provider is part of the same form, and optional: choosing one asks for its key,
-  // and Connect later leaves it for another time.
-  const revenue = page.locator("#revenue");
-  await expect(revenue.getByText(/You can also do this later\./)).toBeVisible();
-  await chooseProvider(page, "Stripe");
-  await expect(page.getByRole("button", { name: "Add SaaS and verify revenue" })).toBeVisible();
-  await revenue.getByRole("button", { name: "Connect later" }).click();
-  await expect(revenue.getByLabel("Restricted key", { exact: true })).toHaveCount(0);
-  await expect(page.getByRole("button", { name: "Add SaaS", exact: true })).toBeVisible();
-
+  // A provider from the list asks for its key instead, and the boxes come back as they were.
   // Stripe's key form opens with the read permissions filled in.
   await chooseProvider(page, "Stripe");
+  await expect(otherProvider).toHaveCount(0);
+  await expect(page.getByLabel(HIDE_REVENUE, { exact: true })).toBeChecked();
   await expect(
     page.getByRole("link", { name: "Create a read-only key in Stripe" }),
   ).toHaveAttribute(
@@ -2934,7 +2947,9 @@ test("founders verify revenue through Paddle, Polar and Dodo Payments", async ({
     await page.goto("/dashboard/saas/new");
     await providerList.focus();
     await page.keyboard.press("Enter");
-    await expect(page.getByRole("option")).toHaveCount(9);
+    // Nine providers, then Other.
+    await expect(page.getByRole("option")).toHaveCount(10);
+    await expect(page.getByRole("option").last()).toHaveText("Other");
     // The open list moves focus to its first option a moment later; keys pressed before then
     // are lost.
     await expect(page.getByRole("option", { name: "Stripe", exact: true })).toBeFocused();
@@ -3154,9 +3169,11 @@ test("founders verify their website's domain with a DNS record", async ({ page }
   await page.goto("/dashboard/saas/new");
   await fillProduct(page, `Domain ${run}`);
   await page.getByLabel("Website", { exact: true }).fill(`https://www.${domain}/`);
+  await chooseProvider(page, "Other");
+  await page.getByLabel("Your payment provider").fill("none");
   await page.getByRole("button", { name: "Add SaaS", exact: true }).click();
-  // Without a payment provider, a new product returns to the dashboard, which offers to share it
-  // on X with the post written, scanned in both themes.
+  // Without a provider to connect, a new product returns to the dashboard, which offers to share
+  // it on X with the post written, scanned in both themes.
   await expect(page).toHaveURL(/\/dashboard\?added=/);
   const offer = page.getByRole("dialog", { name: `Domain ${run} is listed` });
   for (const theme of ["dark", "light"] as const) {
@@ -3270,8 +3287,13 @@ test("founders verify their website's domain with a DNS record", async ({ page }
   expect(recheck.status()).toBe(200);
   expect(await recheck.json()).toMatchObject({ removed: 0 });
 
-  // A website on another domain loses the mark at once.
+  // A website on another domain loses the mark at once. The editor keeps the provider named under
+  // Other, so saving needs no new choice.
   await page.goto(`/dashboard/saas/${id}`);
+  await expect(
+    page.locator("#revenue").getByRole("combobox", { name: "Payment provider" }),
+  ).toHaveText("Other");
+  await expect(page.getByLabel("Your payment provider")).toHaveValue("none");
   await page.getByLabel("Website", { exact: true }).fill(`https://elsewhere-${run}.example/`);
   await page.getByRole("button", { name: "Save changes" }).click();
   await expect(page).toHaveURL(/saved=/);
