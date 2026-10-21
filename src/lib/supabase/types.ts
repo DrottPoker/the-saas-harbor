@@ -90,7 +90,10 @@ export type Database = Omit<GeneratedDatabase, "public"> & {
         Returns: undefined;
       };
       save_saas: {
-        Args: Nullable<Functions["save_saas"]["Args"], "p_logo_path" | "p_launched_on">;
+        Args: Nullable<
+          Functions["save_saas"]["Args"],
+          "p_logo_path" | "p_launched_on" | "p_other_provider"
+        >;
         Returns: string;
       };
       record_revenue_verification: {

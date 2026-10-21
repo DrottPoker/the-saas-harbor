@@ -589,8 +589,8 @@ export async function saveSaas(_state: SaveSaasState, form: FormData): Promise<S
       p_share_customers: fields.share_customers,
       p_share_launch: fields.share_launch,
       p_tech_stack: fields.tech_stack,
-      // Left out, it defaults to null, which clears a name saved before.
-      p_other_provider: choice?.provider === "other" ? choice.name : undefined,
+      // Null clears a name saved before.
+      p_other_provider: choice?.provider === "other" ? choice.name : null,
     });
     if (error)
       throw new Error(
