@@ -1876,6 +1876,7 @@ test("reports reach the admin panel, where admins hide products and suspend acco
     p_share_revenue: false,
     p_share_customers: false,
     p_share_launch: false,
+    p_other_provider: "Lemon Squeezy",
   });
   if (saveError) throw new Error("Unable to create the reported product.");
   const offer = `Buy my course today ${run}`;
@@ -2088,8 +2089,18 @@ test("reports reach the admin panel, where admins hide products and suspend acco
   await adminPage.getByRole("button", { name: "Lift suspension" }).click();
   await expect(adminPage.getByText("The suspension is lifted.")).toBeVisible();
   await adminPage.goto(`/admin/products/${productId}`);
+  // The product's page and the product list say what the founder wrote under Other.
+  await expect(
+    adminPage.getByRole("region", { name: "Revenue" }).getByText("Lemon Squeezy", { exact: true }),
+  ).toBeVisible();
   await adminPage.getByRole("button", { name: "Show product again" }).click();
   await expect(adminPage.getByText("The product is shown again.")).toBeVisible();
+  await adminPage.goto(`/admin/products?q=${encodeURIComponent(product)}`);
+  await expect(
+    adminPage
+      .getByRole("list", { name: "Products" })
+      .getByText("Other: Lemon Squeezy", { exact: true }),
+  ).toBeVisible();
   await expect
     .poll(() => subjects(maker.email))
     .toContain(`Your product ${product} is shown again`);

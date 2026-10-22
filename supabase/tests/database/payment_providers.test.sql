@@ -3,7 +3,7 @@
 -- rolled-back transaction.
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(14);
+select plan(18);
 
 insert into auth.users(id, email) values
   ('f1000000-0000-4000-8000-000000000001', 'maker@payment-providers.test'),
@@ -86,13 +86,19 @@ set local role service_role;
 select public.record_revenue_verification('f1100000-0000-4000-8000-000000000005', 'stripe',
   'v1:providers', 'rk_live_…prov', true, 100, 1, '{"usd": 100}', null, '{}', null, null, null);
 
--- Nobody but admins sees the counts.
+-- Nobody but admins sees the counts, or each product's name.
 select throws_ok('select * from public.admin_payment_providers()', '42501', null,
   'the service role does not use the admin function');
+select throws_ok(
+  $$ select * from public.admin_other_providers(array['f1100000-0000-4000-8000-000000000001'::uuid]) $$,
+  '42501', null, 'nor the one for each product');
 set local role authenticated;
 select set_config('request.jwt.claim.sub', 'f1000000-0000-4000-8000-000000000001', true);
 select throws_ok('select * from public.admin_payment_providers()', '42501',
   'Only admins can do this', 'founders cannot read the counts');
+select throws_ok(
+  $$ select * from public.admin_other_providers(array['f1100000-0000-4000-8000-000000000001'::uuid]) $$,
+  '42501', 'Only admins can do this', 'nor the names, even their own');
 
 select set_config('request.jwt.claim.sub', 'f1000000-0000-4000-8000-000000000003', true);
 select results_eq(
@@ -107,6 +113,15 @@ select ok(
 select is(
   (select products from public.admin_payment_providers() where kind = 'none'),
   (select none + 1 from counted_before), 'and how many products have neither');
+select results_eq(
+  $$ select saas_id, name from public.admin_other_providers(array[
+       'f1100000-0000-4000-8000-000000000001', 'f1100000-0000-4000-8000-000000000002',
+       'f1100000-0000-4000-8000-000000000005', 'f1100000-0000-4000-8000-000000000006']::uuid[])
+     order by saas_id $$,
+  $$ values ('f1100000-0000-4000-8000-000000000001'::uuid, 'Harbor Test Pay'::text),
+       ('f1100000-0000-4000-8000-000000000002'::uuid, 'harbor test pay') $$,
+  'admins read each asked-for product''s name as written, without connected products');
+select is_empty($$ select * from public.admin_other_providers('{}') $$, 'no products, no names');
 
 -- Choosing a supported provider, or one connected, clears the name.
 select set_config('request.jwt.claim.sub', 'f1000000-0000-4000-8000-000000000001', true);

@@ -81,8 +81,14 @@ export default async function EditSaas({ params, searchParams }: Props) {
       .maybeSingle(),
     client.rpc("saas_domain_verification", { p_saas: id }).maybeSingle(),
   ]);
-  if (saas.error || settings.error || connection.error || snapshot.error || verification.error)
+  const failed = [saas, settings, connection, snapshot, verification].find(
+    (result) => result.error,
+  )?.error;
+  if (failed) {
+    // The page only says it failed, so the log keeps why.
+    console.error("The product editor could not be loaded:", failed.code, failed.message);
     throw new Error("Your SaaS could not be loaded.");
+  }
   if (!saas.data) notFound();
   const domain = websiteDomain(saas.data.website);
   const token = verification.data?.token;

@@ -82,10 +82,23 @@ export type AdminProduct = {
   owner: { name: string; suspended_at: string | null } | null;
 };
 
-// The latest MRR and 30-day revenue, whether the founder shares them or not.
-function RevenueSummary({ revenue }: { revenue: AdminRevenue | undefined }) {
+// The latest MRR and 30-day revenue, whether the founder shares them or not, or what the founder
+// wrote under Other.
+function RevenueSummary({
+  revenue,
+  other,
+}: {
+  revenue: AdminRevenue | undefined;
+  other: string | undefined;
+}) {
   const box = "text-sm tabular-nums sm:w-44 sm:shrink-0 sm:text-right";
-  if (!revenue) return <p className={cn(box, "text-muted-foreground")}>Not connected</p>;
+  if (!revenue)
+    return (
+      <div className={cn(box, "min-w-0 text-muted-foreground")}>
+        <p>Not connected</p>
+        {other && <p className="truncate">Other: {other}</p>}
+      </div>
+    );
   const { mrr_cents: mrr, revenue_30d_cents: days30 } = revenue;
   return (
     <div className={box}>
@@ -103,12 +116,15 @@ export function ProductList({
   products,
   openReports,
   revenue,
+  otherProviders,
   showMaker = true,
 }: {
   products: AdminProduct[];
   openReports: Map<string, number>;
   /** The latest verified figures by product id, from adminRevenue(). */
   revenue: Map<string, AdminRevenue>;
+  /** What founders wrote under Other by product id, from adminOtherProviders(). */
+  otherProviders: Map<string, string>;
   /** Off on a maker's own page. */
   showMaker?: boolean;
 }) {
@@ -130,7 +146,7 @@ export function ProductList({
                   </p>
                 </div>
               </div>
-              <RevenueSummary revenue={figures} />
+              <RevenueSummary revenue={figures} other={otherProviders.get(product.id)} />
               <div className="flex flex-wrap gap-1.5 sm:justify-end">
                 {figures?.stale && <Badge>Figures out of date</Badge>}
                 {reports > 0 && (

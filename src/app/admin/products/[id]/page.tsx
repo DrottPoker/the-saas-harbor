@@ -10,7 +10,13 @@ import { Badge } from "@/components/badge";
 import { BackLink } from "@/components/back-link";
 import { LocalTime } from "@/components/local-time";
 import { Notice } from "@/components/shell";
-import { adminRevenue, profileNames, requireAdmin, type AdminRevenue } from "@/lib/admin";
+import {
+  adminOtherProviders,
+  adminRevenue,
+  profileNames,
+  requireAdmin,
+  type AdminRevenue,
+} from "@/lib/admin";
 import { formatUsd } from "@/lib/domain";
 import { decisionLabels, isReason } from "@/lib/moderation";
 import { firstValues, type SearchParams } from "@/lib/params";
@@ -66,13 +72,14 @@ export default async function AdminProduct({ params, searchParams }: Props) {
   const { client } = await requireAdmin();
   const { id } = await params;
   if (!z.uuid().safeParse(id).success) notFound();
-  const [product, revenue, reports, log] = await Promise.all([
+  const [product, revenue, otherProviders, reports, log] = await Promise.all([
     client
       .from("saas")
       .select("*, owner:profiles(id, name, suspended_at)")
       .eq("id", id)
       .maybeSingle(),
     adminRevenue(client, [id]),
+    adminOtherProviders(client, [id]),
     client
       .from("reports")
       .select("id, target, content, reason, status, created_at, subject_id")
@@ -94,6 +101,7 @@ export default async function AdminProduct({ params, searchParams }: Props) {
   ]);
   const ownerSuspended = !!item.owner?.suspended_at;
   const figures = revenue.get(id);
+  const otherProvider = otherProviders.get(id);
   const returnTo = `/admin/products/${id}`;
 
   return (
@@ -152,8 +160,17 @@ export default async function AdminProduct({ params, searchParams }: Props) {
           >
             {figures ? (
               <Facts rows={revenueRows(figures)} />
+            ) : otherProvider ? (
+              <Facts
+                rows={[
+                  ["Provider", "Other, not connected"],
+                  ["Written as", <span className="font-medium">{otherProvider}</span>],
+                ]}
+              />
             ) : (
-              <p className="text-sm text-muted-foreground">No payment provider is connected.</p>
+              <p className="text-sm text-muted-foreground">
+                No payment provider is connected, and the founder has not named one.
+              </p>
             )}
           </Panel>
 

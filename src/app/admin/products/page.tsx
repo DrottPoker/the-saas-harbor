@@ -2,7 +2,13 @@ import { FilterTabs, SearchForm } from "@/components/admin/filters";
 import { ProductList, type AdminProduct } from "@/components/admin/rows";
 import { ResultsFooter } from "@/components/listings";
 import { EmptyState, PageHeader } from "@/components/shell";
-import { ADMIN_PAGE_SIZE, adminRevenue, openReportCounts, requireAdmin } from "@/lib/admin";
+import {
+  ADMIN_PAGE_SIZE,
+  adminOtherProviders,
+  adminRevenue,
+  openReportCounts,
+  requireAdmin,
+} from "@/lib/admin";
 import { PAST_LAST_PAGE } from "@/lib/data";
 import { containsPattern } from "@/lib/domain";
 import { firstValues, safePage, type SearchParams } from "@/lib/params";
@@ -71,9 +77,10 @@ export default async function AdminProducts({
     count = result.count ?? 0;
   }
   const shown = products.map((product) => product.id);
-  const [reports, revenue] = await Promise.all([
+  const [reports, revenue, otherProviders] = await Promise.all([
     openReportCounts(client, "saas_id", shown),
     adminRevenue(client, shown),
+    adminOtherProviders(client, shown),
   ]);
 
   return (
@@ -102,7 +109,12 @@ export default async function AdminProducts({
         <EmptyState title="No matching products">Try another filter or search term.</EmptyState>
       ) : (
         <>
-          <ProductList products={products} openReports={reports} revenue={revenue} />
+          <ProductList
+            products={products}
+            openReports={reports}
+            revenue={revenue}
+            otherProviders={otherProviders}
+          />
           <ResultsFooter
             page={page}
             count={count}

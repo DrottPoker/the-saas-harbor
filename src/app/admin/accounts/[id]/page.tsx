@@ -10,7 +10,13 @@ import { Badge } from "@/components/badge";
 import { BackLink } from "@/components/back-link";
 import { LocalTime } from "@/components/local-time";
 import { Notice } from "@/components/shell";
-import { adminRevenue, openReportCounts, profileNames, requireAdmin } from "@/lib/admin";
+import {
+  adminOtherProviders,
+  adminRevenue,
+  openReportCounts,
+  profileNames,
+  requireAdmin,
+} from "@/lib/admin";
 import { countryName } from "@/lib/analytics-reports";
 import { decisionLabels, isReason } from "@/lib/moderation";
 import { firstValues, type SearchParams } from "@/lib/params";
@@ -57,10 +63,11 @@ export default async function AdminAccount({ params, searchParams }: Props) {
   if (!account.data) notFound();
   const maker = profile.data;
   const productIds = (products.data ?? []).map((product) => product.id);
-  const [admins, productReports, productRevenue] = await Promise.all([
+  const [admins, productReports, productRevenue, productOtherProviders] = await Promise.all([
     profileNames(client, [id, ...(log.data ?? []).map((entry) => entry.admin_id)]),
     openReportCounts(client, "saas_id", productIds),
     adminRevenue(client, productIds),
+    adminOtherProviders(client, productIds),
   ]);
   const owner = maker && { name: maker.name, suspended_at: maker.suspended_at };
   const returnTo = `/admin/accounts/${id}`;
@@ -153,6 +160,7 @@ export default async function AdminAccount({ params, searchParams }: Props) {
                 products={products.data.map((product) => ({ ...product, owner }))}
                 openReports={productReports}
                 revenue={productRevenue}
+                otherProviders={productOtherProviders}
                 showMaker={false}
               />
             ) : (

@@ -87,6 +87,16 @@ export async function adminRevenue(client: AdminClient, ids: string[]) {
   return figures;
 }
 
+/** What founders wrote under Other, by product id, for products that are not connected. */
+export async function adminOtherProviders(client: AdminClient, ids: string[]) {
+  const names = new Map<string, string>();
+  if (!ids.length) return names;
+  const { data, error } = await client.rpc("admin_other_providers", { p_ids: ids });
+  if (error) throw new Error("Payment providers could not be loaded.");
+  for (const row of data) names.set(row.saas_id, row.name);
+  return names;
+}
+
 export type ProviderCount = { name: string; products: number };
 
 /**

@@ -1260,6 +1260,13 @@ export type Database = {
         }
         Returns: undefined
       }
+      admin_other_providers: {
+        Args: { p_ids: string[] }
+        Returns: {
+          name: string
+          saas_id: string
+        }[]
+      }
       admin_payment_providers: {
         Args: never
         Returns: {

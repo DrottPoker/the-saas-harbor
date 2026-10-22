@@ -8,6 +8,14 @@ The first release includes accounts, email confirmation and recovery, public mak
 
 Makers can message each other privately (see Messages below), and report products, profiles and messages to the admins, who decide in an admin panel (see Reports and moderation below). They get emails about unread messages and about decisions (see Email notifications below). Other forms of connection, such as following or contact lists, are not implemented.
 
+## What each founder wrote under Other 2026-10-22
+
+At the owner's request, an admin sees on a product's page what its founder wrote under Other: the Revenue panel says Provider: Other, not connected, and Written as with the name. The product lists (Products and an account's products) add Other: and the name under Not connected. A product with neither says so. The names come from `admin_other_providers(ids)` (migration `20261022090000_admin_other_providers.sql`), which checks admin rights and leaves out connected products, as the overview's counts do.
+
+Verified: pgTAP (`payment_providers.test.sql`) covers who may read the names and which products return one; the moderation browser test saves its product with a name and finds it on the product's page and in the list, where its Axe scans run in both themes. `npm run check` (513 unit tests), `npm run test:db` (720 tests) and `npm run test:e2e` (19 tests) pass.
+
+Flaky, cause not found: in one local run the Gumroad browser test failed because the product's editor answered "This page could not be loaded" right after Gumroad's approval (one of its five database reads returned an error); it passed alone and in a full run straight after. The editor did not log which read failed or why, so it now logs the error's code and message before showing the error page. If it happens again, read the server log and the local stack's container logs (`docker logs supabase_rest_the-saas-harbor`, `supabase_kong_the-saas-harbor`) before restarting the stack, which replaces the containers and their logs.
+
 ## Payment provider first in the product form 2026-10-21
 
 New accounts added one or two products a day, and none connected a payment provider. At the owner's request, the product form now starts with the Verified revenue section, before the product's details, and every product needs a choice. Other, last in the list after a line, is for a provider that is not supported, or none yet: it asks for the provider's name instead of a key, and the product is saved without a connection, as before. Connect later is gone. A connected product needs no new choice, and its section shows the connection as before; Other is not offered when replacing a key.
