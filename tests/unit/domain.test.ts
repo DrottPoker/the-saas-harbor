@@ -133,6 +133,10 @@ describe("profile boundaries", () => {
     ));
   it("rejects invalid calendar dates", () =>
     expect(saasSchema.safeParse({ ...product, launched_on: "2026-02-30" }).success).toBe(false));
+  it("needs a launch date", () =>
+    expect(saasSchema.safeParse({ ...product, launched_on: "" }).error?.issues).toEqual([
+      expect.objectContaining({ message: "Enter the launch date." }),
+    ]));
   it("takes launch dates from 1970 until today, wherever today is", () => {
     const launched = (launched_on: string) =>
       saasSchema.safeParse({ ...product, launched_on }).success;

@@ -39,7 +39,7 @@ const differences = [
 const steps = [
   "Create an account with your email address and a username.",
   `Choose your payment provider at the top of the form. Connect ${providerList("or")} with a read-only key to verify your MRR, and choose what to share. For any other provider, or none yet, choose Other and write its name.`,
-  "Add your product: name, tagline, description, category, website, logo and tech stack. It is public when you save it.",
+  "Add your product: name, tagline, description, category, website, launch date, logo and tech stack. It is public when you save it.",
   "If you like, verify your domain with a DNS record and add the badge to your site.",
 ];
 

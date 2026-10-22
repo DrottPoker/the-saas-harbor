@@ -584,7 +584,7 @@ export async function saveSaas(_state: SaveSaasState, form: FormData): Promise<S
       p_category: fields.category,
       p_website: fields.website,
       p_logo_path: uploaded || (form.has("remove_image") ? null : (existing?.logo_path ?? null)),
-      p_launched_on: fields.launched_on || null,
+      p_launched_on: fields.launched_on,
       p_share_revenue: fields.share_revenue,
       p_share_customers: fields.share_customers,
       p_share_launch: fields.share_launch,

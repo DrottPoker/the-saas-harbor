@@ -36,6 +36,7 @@ type DemoProduct = {
   /** Whole dollars. Null keeps MRR private; verified: false means not verified at all. */
   mrr: number | null;
   customers: number | null;
+  /** Null reads Not shared, as for a founder who hides their launch date. */
   launched: string | null;
   verified?: false;
   /** Where the 12-month history starts, as a share of today's MRR. Above 1 means shrinking. */

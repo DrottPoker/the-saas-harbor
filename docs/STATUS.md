@@ -8,6 +8,10 @@ The first release includes accounts, email confirmation and recovery, public mak
 
 Makers can message each other privately (see Messages below), and report products, profiles and messages to the admins, who decide in an admin panel (see Reports and moderation below). They get emails about unread messages and about decisions (see Email notifications below). Other forms of connection, such as following or contact lists, are not implemented.
 
+## Launch date required 2026-10-22
+
+At the owner's request, the product form requires a launch date, in the browser and in `saasSchema` (`Enter the launch date.`). Founders can still hide it. Products saved before may have none, so their page reads Not shared until the founder saves the editor again, which now asks for one. The database still accepts an empty date, so code deployed before this and the test fixtures that save products directly keep working. List your SaaS and How it works name the launch date among a product's details; the browser tests fill it in for every product they add through the form. Verified: `npm run check` (514 unit tests) and `npm run test:e2e` (19 tests) pass.
+
 ## What each founder wrote under Other 2026-10-22
 
 At the owner's request, an admin sees on a product's page what its founder wrote under Other: the Revenue panel says Provider: Other, not connected, and Written as with the name. The product lists (Products and an account's products) add Other: and the name under Not connected. A product with neither says so. The names come from `admin_other_providers(ids)` (migration `20261022090000_admin_other_providers.sql`), which checks admin rights and leaves out connected products, as the overview's counts do.

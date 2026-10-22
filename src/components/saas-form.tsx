@@ -258,11 +258,12 @@ export function SaasForm({
           />
         </Field>
         <div className="grid gap-2.5 sm:max-w-xs">
-          <Field name="launched_on" label="Launch date">
+          <Field name="launched_on" label="Launch date" required>
             <Input
               id="launched_on"
               name="launched_on"
               type="date"
+              required
               defaultValue={state.values?.launched_on ?? settings?.launched_on ?? ""}
             />
           </Field>

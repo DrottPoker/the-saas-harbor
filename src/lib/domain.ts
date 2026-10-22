@@ -136,18 +136,19 @@ export const saasSchema = z.object({
   description: z.string().trim().min(20).max(5000),
   category: z.enum(categories, { message: "Choose a category." }),
   website: optionalUrl.refine(Boolean, "A website is required."),
+  /** Required since 2026-10-22; products saved before may have none until they are saved again. */
   launched_on: z
     .string()
+    .min(1, { message: "Enter the launch date.", abort: true })
     .refine(
       (v) =>
-        !v ||
-        (/^\d{4}-\d{2}-\d{2}$/.test(v) &&
-          !Number.isNaN(Date.parse(v)) &&
-          new Date(v).toISOString().slice(0, 10) === v),
-      "Enter a valid date.",
+        /^\d{4}-\d{2}-\d{2}$/.test(v) &&
+        !Number.isNaN(Date.parse(v)) &&
+        new Date(v).toISOString().slice(0, 10) === v,
+      { message: "Enter a valid date.", abort: true },
     )
     .refine(
-      (v) => !v || (v >= "1970-01-01" && v <= latestDate()),
+      (v) => v >= "1970-01-01" && v <= latestDate(),
       "Enter a launch date between 1970 and today.",
     ),
   /** MRR and revenue from payments are shared or hidden together. */

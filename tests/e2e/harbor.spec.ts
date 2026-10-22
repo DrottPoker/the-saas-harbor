@@ -69,6 +69,7 @@ async function fillProduct(page: Page, name: string) {
   await page.getByLabel("Category").selectOption("Productivity");
   // Without https://, which the server adds.
   await page.getByLabel("Website", { exact: true }).fill("example.com");
+  await page.getByLabel("Launch date", { exact: true }).fill("2025-06-01");
 }
 // A product just added offers, once, to share it on X; tests that go on in the editor close it.
 async function closeShareOffer(page: Page, name: string) {
