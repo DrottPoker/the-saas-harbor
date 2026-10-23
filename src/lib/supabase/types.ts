@@ -92,7 +92,7 @@ export type Database = Omit<GeneratedDatabase, "public"> & {
       save_saas: {
         Args: Nullable<
           Functions["save_saas"]["Args"],
-          "p_logo_path" | "p_launched_on" | "p_other_provider"
+          "p_logo_path" | "p_launched_on" | "p_other_provider" | "p_provider"
         >;
         Returns: string;
       };

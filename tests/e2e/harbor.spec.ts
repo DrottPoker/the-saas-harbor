@@ -1878,6 +1878,7 @@ test("reports reach the admin panel, where admins hide products and suspend acco
     p_share_customers: false,
     p_share_launch: false,
     p_other_provider: "Lemon Squeezy",
+    p_provider: "other",
   });
   if (saveError) throw new Error("Unable to create the reported product.");
   const offer = `Buy my course today ${run}`;
@@ -1940,15 +1941,19 @@ test("reports reach the admin panel, where admins hide products and suspend acco
   await expect(reporterPage).toHaveURL("/dashboard/reports?sent=1");
   await expect(sent).toHaveCount(2);
 
-  // The owner's Telegram chat hears of the product, both reports and the message, but never gets
-  // the message itself.
+  // The owner's Telegram chat hears of the product with its payment provider, both reports and the
+  // message, but never gets the message itself.
   await expect
     .poll(async () => {
       const texts = await telegramMessages(reporterPage.request);
-      const alerted = (start: string, part: string) =>
-        texts.some((text) => text.startsWith(start) && text.includes(part));
+      const alerted = (start: string, ...parts: string[]) =>
+        texts.some((text) => text.startsWith(start) && parts.every((part) => text.includes(part)));
       return [
-        alerted("<b>New product</b>", product),
+        alerted(
+          "<b>New product</b>",
+          product,
+          "Payment provider: Other (&quot;Lemon Squeezy&quot;).",
+        ),
         alerted("<b>New report</b>", `the product ${product}: Misleading or false information`),
         alerted("<b>New report</b>", `a message from ${maker.name}: Spam or advertising`),
         alerted("<b>New message</b>", maker.name),

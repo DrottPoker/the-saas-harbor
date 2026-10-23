@@ -225,11 +225,12 @@ export default function Privacy() {
               feedback, and messages that are reported. Alerts are also sent to the admins&apos;
               chat on Telegram: about new accounts, with the name and username, how the account was
               created and whether its email address is confirmed; about new products, with their
-              name, tagline, category and founder; about reports, with who sent them, what or whom
-              they are about, the reason and the explanation; and about feedback, with who sent it,
-              from which page, and its text, and for a visitor whether they left an email address,
-              never the address itself. So is a notice with your name and username when you write to
-              the site&apos;s own account, but never the message.
+              name, tagline, category, payment provider and founder, and the name written for a
+              provider that is not supported; about reports, with who sent them, what or whom they
+              are about, the reason and the explanation; and about feedback, with who sent it, from
+              which page, and its text, and for a visitor whether they left an email address, never
+              the address itself. So is a notice with your name and username when you write to the
+              site&apos;s own account, but never the message.
             </li>
             <li>
               <strong className="font-medium text-foreground">Service providers:</strong> our

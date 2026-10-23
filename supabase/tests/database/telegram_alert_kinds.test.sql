@@ -2,7 +2,7 @@
 -- what they say, and that they never carry a message. Runs in a rolled-back transaction.
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(15);
+select plan(16);
 
 insert into auth.users(id, email, created_at, raw_app_meta_data, raw_user_meta_data) values
   ('a8000000-0000-4000-8000-000000000001', 'owner@alerts.test', now(), '{"provider": "email"}',
@@ -76,6 +76,20 @@ select results_eq($$ select user_id, saas_id from pgtap_alerts where kind = 'saa
   $$ values ('a8000000-0000-4000-8000-000000000002'::uuid,
     'a8000000-0000-4000-8000-0000000000a1'::uuid) $$,
   'a new product queues an alert');
+-- Products added in the form keep the payment provider chosen, and code deployed before
+-- p_provider names Other through the name alone.
+set local role authenticated;
+select set_config('request.jwt.claim.sub', 'a8000000-0000-4000-8000-000000000002', true);
+select public.save_saas('a8000000-0000-4000-8000-0000000000a2', 'Alert Stripe Product', 'Fixture',
+  'A temporary fixture that is rolled back.', 'Other', 'https://example.com', null, null, true,
+  false, false, null, null, 'stripe');
+select public.save_saas('a8000000-0000-4000-8000-0000000000a3', 'Alert Other Product', 'Fixture',
+  'A temporary fixture that is rolled back.', 'Other', 'https://example.com', null, null, true,
+  false, false, null, 'Harbor Alert Pay');
+select public.save_saas('a8000000-0000-4000-8000-0000000000a4', 'Alert Odd Product', 'Fixture',
+  'A temporary fixture that is rolled back.', 'Other', 'https://example.com', null, null, true,
+  false, false, null, null, 'Not an id!');
+reset role;
 set local role authenticated;
 select set_config('request.jwt.claim.sub', 'a8000000-0000-4000-8000-000000000001', true);
 select public.submit_report('message', m.id, 'spam', '') from public.messages m
@@ -106,10 +120,19 @@ select results_eq(
 select results_eq(
   $$ select c.context ->> 'product', c.context ->> 'username', c.context ->> 'category',
       c.context ->> 'slug', (c.context ->> 'hidden')::boolean
-     from pgtap_claimed c where c.kind = 'saas' $$,
+     from pgtap_claimed c
+     where c.kind = 'saas' and c.context ->> 'product' = 'Alert Test Product' $$,
   $$ select 'Alert Test Product'::text, 'tgwriter'::text, 'Other'::text, s.slug, false
      from public.saas s where s.id = 'a8000000-0000-4000-8000-0000000000a1' $$,
   'a product alert names the product, its founder and its page');
+select results_eq(
+  $$ select c.context ->> 'product', c.context ->> 'payment_provider',
+      c.context ->> 'other_provider'
+     from pgtap_claimed c where c.kind = 'saas' order by c.id $$,
+  $$ values ('Alert Test Product'::text, null::text, null::text),
+    ('Alert Stripe Product', 'stripe', null), ('Alert Other Product', 'other', 'Harbor Alert Pay'),
+    ('Alert Odd Product', null, null) $$,
+  'a product alert names the payment provider chosen, and the name written under Other');
 select results_eq(
   $$ select c.context ->> 'username', c.context ->> 'target', c.context ->> 'subject_name',
       c.context ->> 'reason', c.context ->> 'target_name'
@@ -129,7 +152,8 @@ select is((select (private.telegram_alert_context(a) ->> 'wanted')::boolean
 
 -- Alerts go with the product, and with the sender's account.
 delete from public.saas where id = 'a8000000-0000-4000-8000-0000000000a1';
-select is_empty($$ select 1 from pgtap_alerts where kind = 'saas' $$,
+select is_empty($$ select 1 from pgtap_alerts
+    where kind = 'saas' and saas_id = 'a8000000-0000-4000-8000-0000000000a1' $$,
   'deleting a product deletes its alert');
 select private.remove_account('a8000000-0000-4000-8000-000000000002');
 select is_empty($$ select 1 from pgtap_alerts $$,

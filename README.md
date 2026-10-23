@@ -97,7 +97,7 @@ Makers turn message and milestone emails off, and admins report emails, under Em
 
 ### Telegram alerts
 
-The owner can get an alert in Telegram for every new account (the username, how it signed up, whether the email address is confirmed and the number of accounts), feedback (its kind, the sender, the page and the text), product (its name, tagline, category and founder) and report (who reported what, the reason, the explanation and the number of open reports), each with a link to the site. Messages to the accounts the owner chooses, such as their own, are alerted with the sender's name, once per conversation until it is read, but never the message. Email addresses are never sent. To set it up, once:
+The owner can get an alert in Telegram for every new account (the username, how it signed up, whether the email address is confirmed and the number of accounts), feedback (its kind, the sender, the page and the text), product (its name, tagline, category, founder and the payment provider chosen, with the name written under Other) and report (who reported what, the reason, the explanation and the number of open reports), each with a link to the site. Messages to the accounts the owner chooses, such as their own, are alerted with the sender's name, once per conversation until it is read, but never the message. Email addresses are never sent. To set it up, once:
 
 1. In Telegram, open `@BotFather`, send `/newbot`, and choose a name and a username that ends in `bot`. BotFather answers with the bot's token. Keep it in a password manager: anyone with it can act as the bot.
 2. Open the new bot through the `t.me/<username>` link BotFather gives, and press Start.

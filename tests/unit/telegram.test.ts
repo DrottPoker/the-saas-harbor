@@ -141,6 +141,20 @@ describe("product alerts", () => {
         `<a href="${origin}/saas/querybird">Open the product</a>`,
       ].join("\n"),
     ));
+  it("name the payment provider the founder chose", () => {
+    const render = (context: object) =>
+      renderAlert(alert("saas", { ...product, ...context }), origin)!.split("\n");
+    expect(render({ payment_provider: "gumroad" })).toContain("Payment provider: Gumroad.");
+    expect(
+      render({ payment_provider: "other", other_provider: 'Lemon <Squeezy> & "Co"' }),
+    ).toContain(
+      "Payment provider: Other (&quot;Lemon &lt;Squeezy&gt; &amp; &quot;Co&quot;&quot;).",
+    );
+    expect(render({ payment_provider: "other", other_provider: null })).toContain(
+      "Payment provider: Other.",
+    );
+    expect(render({ payment_provider: "unknown" }).join("\n")).not.toContain("Payment provider");
+  });
 });
 
 describe("report alerts", () => {

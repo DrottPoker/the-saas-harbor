@@ -3,6 +3,7 @@
 // message.
 import { FEEDBACK_KINDS, feedbackLabels, type FeedbackKind } from "../feedback";
 import { REASONS, reasonLabels, type Reason } from "../moderation";
+import { isProviderId, PROVIDERS } from "../revenue/catalog";
 
 export type ClaimedAlert = {
   id: number;
@@ -47,6 +48,17 @@ function reported(c: Record<string, unknown>) {
   return `a message from ${subject}`;
 }
 
+// The payment provider a founder chose for a new product, with the name they wrote under Other.
+function paymentProvider(c: Record<string, unknown>) {
+  if (c.payment_provider === "other") {
+    const name = text(c.other_provider);
+    return `Payment provider: Other${name ? ` (${escape(`"${name}"`)})` : ""}.`;
+  }
+  if (isProviderId(c.payment_provider))
+    return `Payment provider: ${PROVIDERS[c.payment_provider].name}.`;
+  return null;
+}
+
 /** The message for a claimed alert, or null when there is nothing to send any more. */
 export function renderAlert(alert: ClaimedAlert, origin: string): string | null {
   const { context } = alert;
@@ -86,6 +98,7 @@ export function renderAlert(alert: ClaimedAlert, origin: string): string | null 
       "<b>New product</b>",
       `${escape(product)} by ${escape(who(c))}, in ${escape(text(c.category) || "Other")}.`,
       text(c.tagline) ? `<blockquote>${escape(text(c.tagline))}</blockquote>` : null,
+      paymentProvider(c),
       link(`${origin}/saas/${slug}`, "Open the product"),
     ];
   } else if (alert.kind === "report") {

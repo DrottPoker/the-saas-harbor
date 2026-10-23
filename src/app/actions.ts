@@ -591,6 +591,8 @@ export async function saveSaas(_state: SaveSaasState, form: FormData): Promise<S
       p_tech_stack: fields.tech_stack,
       // Null clears a name saved before.
       p_other_provider: choice?.provider === "other" ? choice.name : null,
+      // For a new product's Telegram alert.
+      p_provider: choice?.provider ?? null,
     });
     if (error)
       throw new Error(

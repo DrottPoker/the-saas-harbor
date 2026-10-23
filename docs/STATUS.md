@@ -8,6 +8,14 @@ The first release includes accounts, email confirmation and recovery, public mak
 
 Makers can message each other privately (see Messages below), and report products, profiles and messages to the admins, who decide in an admin panel (see Reports and moderation below). They get emails about unread messages and about decisions (see Email notifications below). Other forms of connection, such as following or contact lists, are not implemented.
 
+## Payment provider in product alerts 2026-10-24
+
+At the owner's request, the Telegram alert about a new product names the payment provider its founder chose, such as `Payment provider: Stripe.`, and under Other the name they wrote: `Payment provider: Other ("Lemon Squeezy").` A supported provider is known only from its connection, which may not exist when the alert is sent (a Gumroad approval still open, a key the provider refused, or the minute job sending before the key was checked), so the alert keeps the choice itself: `saveSaas` passes `p_provider`, `save_saas` sets it for the transaction, and the trigger stores it in `telegram_alerts.provider`. Code deployed before this does not send `p_provider`, so a name under Other alone counts as Other. A value that is not a plain id is left out rather than failing the save, and the alert only names known providers. The privacy policy (updated 2026-10-24) lists the provider among what product alerts carry.
+
+Migration `20261024090000_product_alert_provider.sql` adds the column and a `save_saas` that takes `p_provider` last with a default. pgTAP (`telegram_alert_kinds.test.sql`) covers a supported provider, Other through the name alone, an odd value and a product added without the form; `tests/unit/telegram.test.ts` the line, with the name escaped; the moderation browser test finds the line in the alert at the fake Telegram API.
+
+Verified: `npm run check` (515 unit tests), `npm run test:db` (721 tests) and `npm run test:e2e` (19 tests) pass.
+
 ## Launch date required 2026-10-22
 
 At the owner's request, the product form requires a launch date, in the browser and in `saasSchema` (`Enter the launch date.`). Founders can still hide it. Products saved before may have none, so their page reads Not shared until the founder saves the editor again, which now asks for one. The database still accepts an empty date, so code deployed before this and the test fixtures that save products directly keep working. List your SaaS and How it works name the launch date among a product's details; the browser tests fill it in for every product they add through the form. Verified: `npm run check` (514 unit tests) and `npm run test:e2e` (19 tests) pass.

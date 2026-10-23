@@ -1496,6 +1496,7 @@ export type Database = {
           p_logo_path: string
           p_name: string
           p_other_provider?: string
+          p_provider?: string
           p_share_customers: boolean
           p_share_launch: boolean
           p_share_revenue: boolean
