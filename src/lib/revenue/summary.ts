@@ -26,6 +26,7 @@ const skipped: Record<ProviderId, [string, string]> = {
   ],
   revenuecat: ["subscription was", "subscriptions were"],
   gumroad: ["subscriber without a recent charge was", "subscribers without a recent charge were"],
+  paypal: ["subscription was", "subscriptions were"],
 };
 
 /** What a verification found, in words for the founder. */

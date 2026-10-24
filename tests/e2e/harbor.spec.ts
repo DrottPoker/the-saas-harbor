@@ -4,6 +4,7 @@ import { createHash, randomBytes, randomUUID } from "node:crypto";
 import AxeBuilder from "@axe-core/playwright";
 import { DODO_KEYS, PADDLE_KEYS, POLAR_TOKENS } from "./fake-billing.mjs";
 import { CHARGEBEE, CREEM_KEYS, REVENUECAT, WHOP_KEYS } from "./fake-billing-extra.mjs";
+import { PAYPAL } from "./fake-paypal.mjs";
 import { formatUsd } from "../../src/lib/domain";
 import { termsUpdated } from "../../src/lib/legal";
 
@@ -2964,8 +2965,8 @@ test("founders verify revenue through Paddle, Polar and Dodo Payments", async ({
     await page.goto("/dashboard/saas/new");
     await providerList.focus();
     await page.keyboard.press("Enter");
-    // Nine providers, then Other.
-    await expect(page.getByRole("option")).toHaveCount(10);
+    // Ten providers, then Other.
+    await expect(page.getByRole("option")).toHaveCount(11);
     await expect(page.getByRole("option").last()).toHaveText("Other");
     // The open list moves focus to its first option a moment later; keys pressed before then
     // are lost.
@@ -3161,6 +3162,83 @@ test("founders verify revenue through Creem, Chargebee, Whop and RevenueCat", as
     "whop",
     "revenuecat",
   ]);
+  expect(violations).toEqual([]);
+});
+
+// PayPal asks for an app's Client ID and secret, refuses an app that can do more than search
+// transactions, and counts a subscription with one payment so far as yearly.
+test("founders verify revenue through a PayPal app that can only search transactions", async ({
+  page,
+}) => {
+  const violations: string[] = [];
+  watchPolicy(page, violations);
+  const address = `harbor-paypal-${run}@example.test`;
+  const secret = randomBytes(24).toString("hex");
+  const { data: created, error } = await admin.auth.admin.createUser({
+    email: address,
+    password: secret,
+    email_confirm: true,
+    user_metadata: signup(`paypal-${run}`),
+  });
+  if (error || !created.user) throw new Error("Unable to create the PayPal maker.");
+  userIds.push(created.user.id);
+  await login(page, address, secret);
+  await page.goto("/dashboard/saas/new");
+  await fillProduct(page, `PayPal ${run}`);
+  await hideFigures(page);
+  const revenue = page.locator("#revenue");
+  const clientId = revenue.getByLabel("Client ID", { exact: true });
+  const appSecret = revenue.getByLabel("Secret", { exact: true });
+
+  // An app that can also take payments adds the product without connecting it.
+  await chooseProvider(page, "PayPal");
+  await expect(
+    revenue.getByRole("link", { name: "Open PayPal's apps and credentials" }),
+  ).toBeVisible();
+  await clientId.fill(PAYPAL.wide.clientId);
+  await appSecret.fill(PAYPAL.wide.secret);
+  await page.getByRole("button", { name: "Add SaaS and verify revenue" }).click();
+  await expect(page).toHaveURL(/\/dashboard\/saas\/[0-9a-f-]{36}\?connection=1/);
+  const id = new URL(page.url()).pathname.split("/").at(-1)!;
+  await expect(
+    revenue.getByRole("alert").filter({
+      hasText:
+        /^The product was added, but PayPal was not connected\. The PayPal app can do more than search transactions\./,
+    }),
+  ).toBeVisible();
+  await expect(revenue.getByRole("combobox", { name: "Payment provider" })).toHaveText("PayPal");
+  await expect(appSecret).toHaveValue("");
+
+  // An app with Transaction search alone connects, from the sandbox in the tests.
+  await clientId.fill(PAYPAL.one.clientId);
+  await appSecret.fill(PAYPAL.one.secret);
+  await page.getByRole("button", { name: "Save and verify revenue" }).click();
+  await closeShareOffer(page, `PayPal ${run}`);
+  await expect(revenue.getByText("Connected to PayPal")).toBeVisible();
+  await expect(
+    revenue.getByRole("status").filter({
+      hasText:
+        /^PayPal connected\. Verified MRR: \$40\.42 from 3 subscribers\. 1 subscription counts as yearly until its next payment shows how often it renews\./,
+    }),
+  ).toBeVisible();
+  await expect(revenue.getByText("Test mode")).toBeVisible();
+  await expect(
+    revenue.getByText(`Key ${PAYPAL.one.clientId.slice(0, 8)}… · …${PAYPAL.one.secret.slice(-4)}`),
+  ).toBeVisible();
+  for (const theme of ["dark", "light"] as const) {
+    await setThemeCookie(page, theme);
+    await page.reload();
+    await expect(revenue.getByText("Connected to PayPal")).toBeVisible();
+    await expectAccessible(page);
+  }
+
+  const { data: connection } = await admin
+    .from("revenue_connections")
+    .select("provider, livemode, encrypted_key")
+    .eq("saas_id", id)
+    .single();
+  expect(connection).toMatchObject({ provider: "paypal", livemode: false });
+  expect(connection!.encrypted_key).not.toContain("harborPayPal");
   expect(violations).toEqual([]);
 });
 

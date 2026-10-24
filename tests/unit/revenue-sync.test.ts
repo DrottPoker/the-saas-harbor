@@ -5,6 +5,7 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { DODO_KEYS, PADDLE_KEYS, POLAR_TOKENS } from "../e2e/fake-billing.mjs";
 import { CHARGEBEE, CREEM_KEYS, REVENUECAT, WHOP_KEYS } from "../e2e/fake-billing-extra.mjs";
 import { GUMROAD } from "../e2e/fake-gumroad.mjs";
+import { PAYPAL } from "../e2e/fake-paypal.mjs";
 import {
   exchangeGumroadCode,
   gumroadAuthorizeUrl,
@@ -42,6 +43,7 @@ beforeAll(async () => {
   process.env.CHARGEBEE_API_BASE = `${base}/chargebee`;
   process.env.WHOP_API_BASE = `${base}/whop`;
   process.env.REVENUECAT_API_BASE = `${base}/revenuecat`;
+  process.env.PAYPAL_API_BASE = `${base}/paypal`;
   process.env.GUMROAD_API_BASE = `${base}/gumroad`;
   process.env.GUMROAD_OAUTH_BASE = `${base}/gumroad`;
   process.env.FX_API_BASE = base;
@@ -208,6 +210,7 @@ describe("Dodo Payments verification", () => {
 
 const chargebeeKey = `${CHARGEBEE.site}:${CHARGEBEE.key}`;
 const revenueCatKey = (key: string) => `${REVENUECAT.project}:${key}`;
+const paypalKey = (app: { clientId: string; secret: string }) => `${app.clientId}:${app.secret}`;
 
 describe("Creem verification", () => {
   it("values subscriptions by their products, without included tax, with history", async () => {
@@ -314,6 +317,41 @@ describe("RevenueCat verification", () => {
   });
 });
 
+describe("PayPal verification", () => {
+  it("finds the sandbox, and values subscriptions by their payments, with history", async () => {
+    const result = await verifyRevenue("paypal", paypalKey(PAYPAL.one), null);
+    expect(result).toMatchObject({
+      provider: "paypal",
+      livemode: false,
+      mrrCents: 4_042,
+      customers: 3,
+      skippedItems: 0,
+      currencies: { usd: 3_000, eur: 833 },
+      mrrInvoiceCents: 4_042,
+      mrr30dAgoCents: 4_042,
+      historyNote: null,
+      mrrNote: "1 subscription counts as yearly until its next payment shows how often it renews.",
+    });
+    expect(result.history).toHaveLength(12);
+    expect(sortedMonths(result.history)).toBe(true);
+    expect(result.history![0].mrr_cents).toBe(2_000);
+    expect(result.subscriptionHashes).toHaveLength(3);
+  }, 20_000);
+
+  it("refuses an app that can do more than search, and credentials of no app", async () => {
+    await expect(verifyRevenue("paypal", paypalKey(PAYPAL.wide), null)).rejects.toThrow(
+      /can do more than search transactions/,
+    );
+    await expect(
+      verifyRevenue("paypal", `${PAYPAL.one.clientId}:wrongSecretForTheApp000`, null),
+    ).rejects.toThrow(/PayPal refused the Client ID and secret/);
+    // A sandbox app is not a live one.
+    await expect(verifyRevenue("paypal", paypalKey(PAYPAL.one), true)).rejects.toThrow(
+      /PayPal refused the Client ID and secret/,
+    );
+  });
+});
+
 describe("claims", () => {
   it("hash Stripe ids as before and prefix other providers", async () => {
     const { createHash } = await import("node:crypto");
@@ -338,6 +376,7 @@ describe("hourly verification", () => {
     ["chargebee", chargebeeKey],
     ["whop", WHOP_KEYS.one],
     ["revenuecat", revenueCatKey(REVENUECAT.keys.one)],
+    ["paypal", paypalKey(PAYPAL.one)],
   ] as const)(
     "reads only what MRR needs from %s without the history",
     async (provider, key) => {
@@ -618,6 +657,42 @@ describe("payments", () => {
     expect(kinds[`projharbor1:${day}`]).toBe("unknown");
     expect(payments.length).toBeGreaterThanOrEqual(183);
   });
+
+  it("reads PayPal payments from customers after refunds, without tax", async () => {
+    const { complete, values, kinds } = await recent("paypal", paypalKey(PAYPAL.one));
+    expect(complete).toBe(true);
+    expect(values).toMatchObject({
+      PPMONTHLY0: usd(2000),
+      PPYEARLY: eur(10000),
+      PPQUARTER2: usd(3000),
+      PPCHECKOUT: usd(4000),
+      PPPARTIAL: usd(2000),
+      PPREFUNDED: usd(0),
+      PPSUBREFUND: usd(0),
+    });
+    for (const id of ["PPDONATION", "PPWITHDRAWAL", "PPOUTGOING", "PPPARTIALREFUND"])
+      expect(values).not.toHaveProperty(id);
+    expect(kinds).toMatchObject({ PPMONTHLY0: "subscription", PPCHECKOUT: "one_time" });
+  }, 20_000);
+
+  it("goes on with PayPal in the next run, and stops at the three years PayPal lists", async () => {
+    const { complete, from, payments } = await recent("paypal", paypalKey(PAYPAL.one), {
+      maxPages: 2,
+    });
+    expect(complete).toBe(false);
+    expect(from).toBeGreaterThan(Math.floor(Date.now() / 1000) - 61 * DAY);
+    // Only the 30 days read whole come back.
+    expect(payments.every((payment) => payment.at >= from!)).toBe(true);
+    const older = await adapter("paypal").payments(paypalKey(PAYPAL.one), false, {
+      allowTest: true,
+      since: 0,
+      before: Math.floor(Date.now() / 1000) - 183 * DAY,
+      maxPages: 100,
+      stored: () => null,
+    });
+    expect(older.complete).toBe(true);
+    expect(older.payments.map((payment) => payment.id)).toContain("PPMONTHLY13");
+  }, 30_000);
 });
 
 describe("Gumroad", () => {

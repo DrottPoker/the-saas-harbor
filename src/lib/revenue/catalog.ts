@@ -60,6 +60,14 @@ export const PROVIDERS = {
     placeholder: "",
     oauth: true,
   },
+  // The key is the secret of an app of the founder's, and the account its Client ID.
+  paypal: {
+    name: "PayPal",
+    keyLabel: "Secret",
+    newKeyLabel: "New secret",
+    placeholder: "Secret key 1",
+    account: { label: "Client ID", placeholder: "Client ID of the app" },
+  },
 } as const satisfies Record<
   string,
   {

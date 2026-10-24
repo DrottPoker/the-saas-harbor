@@ -230,7 +230,7 @@ describe("Gumroad OAuth", () => {
     const crafted = (value: object) =>
       decodeConnectionResult(Buffer.from(JSON.stringify(value)).toString("base64url"));
     expect(crafted({ ...result, tone: "bold" })).toBeNull();
-    expect(crafted({ ...result, provider: "paypal" })).toBeNull();
+    expect(crafted({ ...result, provider: "lemonsqueezy" })).toBeNull();
     expect(crafted({ ...result, at: "now" })).toBeNull();
     expect(decodeConnectionResult("not-json")).toBeNull();
     expect(connectionResultPath("saas-1")).toBe("/dashboard/saas/saas-1?connection=1#revenue");

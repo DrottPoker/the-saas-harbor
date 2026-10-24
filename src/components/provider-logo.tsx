@@ -1,6 +1,7 @@
 // Payment provider logos as small app-icon tiles, so marks in different shapes and colors read
 // alike in both themes. Brand colors are allowed for third-party marks. Paths: Simple Icons (CC0)
-// for Stripe, Paddle, Dodo Payments, RevenueCat and Gumroad, and Polar's brand kit for Polar.
+// for Stripe, Paddle, Dodo Payments, RevenueCat, Gumroad and PayPal, and Polar's brand kit for
+// Polar.
 import type { ProviderId } from "@/lib/revenue/catalog";
 import { cn } from "@/lib/utils";
 import { CHARGEBEE_ICON, CREEM_ICON, WHOP_ICON } from "./provider-icons";
@@ -51,6 +52,12 @@ export const PROVIDER_TILES: Record<ProviderId, ProviderTile> = {
     background: "#FF90E8",
     color: "#000000",
     path: "M12 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0Zm-.007 5.12c4.48 0 5.995 3.025 6.064 4.744h-3.239c-.069-.962-.897-2.406-2.896-2.406-2.136 0-3.514 1.857-3.514 4.126 0 2.27 1.378 4.125 3.514 4.125 1.93 0 2.758-1.512 3.103-3.025h-3.103v-1.238h6.509v6.327h-2.855v-3.989c-.207 1.444-1.102 4.264-4.617 4.264-3.516 0-5.584-2.82-5.584-6.326 0-3.645 2.276-6.602 6.618-6.602z",
+  },
+  paypal: {
+    kind: "path",
+    background: "#003087",
+    color: "#FFFFFF",
+    path: "M7.016 19.198h-4.2a.562.562 0 0 1-.555-.65L5.093.584A.692.692 0 0 1 5.776 0h7.222c3.417 0 5.904 2.488 5.846 5.5-.006.25-.027.5-.066.747A6.794 6.794 0 0 1 12.071 12H8.743a.69.69 0 0 0-.682.583l-.325 2.056-.013.083-.692 4.39-.015.087zM19.79 6.142c-.01.087-.01.175-.023.261a7.76 7.76 0 0 1-7.695 6.598H9.007l-.283 1.795-.013.083-.692 4.39-.134.843-.014.088H6.86l-.497 3.15a.562.562 0 0 0 .555.65h3.612c.34 0 .63-.249.683-.585l.952-6.031a.692.692 0 0 1 .683-.584h2.126a6.793 6.793 0 0 0 6.707-5.752c.306-1.95-.466-3.744-1.89-4.906z",
   },
 };
 

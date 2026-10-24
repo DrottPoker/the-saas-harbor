@@ -40,11 +40,20 @@ const DAY = 86_400;
 const iso = (seconds: number) => new Date(seconds * 1000).toISOString();
 
 describe("provider catalog", () => {
-  it("knows the eight providers", () => {
+  it("knows the ten providers", () => {
     expect(
-      ["stripe", "paddle", "polar", "dodo", "creem", "chargebee", "whop", "revenuecat"].every(
-        isProviderId,
-      ),
+      [
+        "stripe",
+        "paddle",
+        "polar",
+        "dodo",
+        "creem",
+        "chargebee",
+        "whop",
+        "revenuecat",
+        "gumroad",
+        "paypal",
+      ].every(isProviderId),
     ).toBe(true);
     expect(isProviderId("lemonsqueezy")).toBe(false);
     expect(isProviderId("toString")).toBe(false);
@@ -54,14 +63,15 @@ describe("provider catalog", () => {
 
   it("names them in a sentence", () => {
     expect(providerList("or")).toBe(
-      "Stripe, Paddle, Polar, Dodo Payments, Creem, Chargebee, Whop, RevenueCat or Gumroad",
+      "Stripe, Paddle, Polar, Dodo Payments, Creem, Chargebee, Whop, RevenueCat, Gumroad or PayPal",
     );
-    expect(providerList("and")).toMatch(/, RevenueCat and Gumroad$/);
+    expect(providerList("and")).toMatch(/, Gumroad and PayPal$/);
   });
 
-  it("asks for a site or project only where the key needs one", () => {
+  it("asks for a site, project or app only where the key needs one", () => {
     expect(providerAccount("chargebee")?.label).toBe("Site");
     expect(providerAccount("revenuecat")?.label).toBe("Project ID");
+    expect(providerAccount("paypal")?.label).toBe("Client ID");
     expect(providerAccount("stripe")).toBeNull();
   });
 

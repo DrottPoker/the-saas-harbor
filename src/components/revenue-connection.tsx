@@ -168,6 +168,24 @@ const guides: Record<ProviderId, Guide> = {
       "Gumroad sends you back here, and the revenue is verified.",
     ],
   },
+  paypal: {
+    dashboard: {
+      href: "https://developer.paypal.com/dashboard/applications/live",
+      label: "Open PayPal's apps and credentials",
+    },
+    reads: "your transactions",
+    steps: [
+      <>
+        Sign in with your PayPal business account, check that {strong("Live")} is selected, and
+        choose {strong("Create App")}.
+      </>,
+      <>
+        In the new app&apos;s features, turn on {strong("Transaction search")} and turn off
+        everything else. An app that can do more than search transactions is refused.
+      </>,
+      "Copy the Client ID and Secret key 1, and paste them below. MRR counts PayPal subscriptions; other payments count as revenue.",
+    ],
+  },
 };
 
 // Where to make the key, with the steps: the dashboard link opens in a new tab.
@@ -206,6 +224,8 @@ const noHistory: Record<ProviderId, string> = {
   whop: "No revenue history: the Whop account has more payments or plans than one verification reads.",
   revenuecat: "No revenue history yet. Refresh to read RevenueCat's MRR chart.",
   gumroad: "No revenue history: the Gumroad account has more sales than one verification reads.",
+  paypal:
+    "No revenue history: the PayPal account has more subscription payments than one verification reads.",
 };
 
 const option =

@@ -32,7 +32,8 @@ export function apiBase(override: string | undefined, origin: string, name: stri
 // limits each IP address to 240 requests a minute and Dodo each business to 240, so reads leave
 // room for other makers and the makers' own use; Polar allows 500 per organization. Chargebee
 // allows 150 a minute on test sites and its smallest plan, Whop 600 per endpoint, and Creem
-// publishes no limit, nor does Gumroad, whose sales come ten to a page. RevenueCat allows 25 chart requests a minute per project; a run that also
+// publishes no limit, nor does Gumroad, whose sales come ten to a page, nor PayPal, which searches
+// 31 days a request. RevenueCat allows 25 chart requests a minute per project; a run that also
 // reads the revenue chart back to its first year sends fewer than 20, so they are not spaced.
 const SPACING: Partial<Record<ProviderId, number>> = {
   paddle: 300,
@@ -42,6 +43,7 @@ const SPACING: Partial<Record<ProviderId, number>> = {
   chargebee: 500,
   whop: 100,
   gumroad: 100,
+  paypal: 200,
 };
 const nextSlot = new Map<ProviderId, number>();
 
@@ -54,7 +56,11 @@ async function throttle(provider: ProviderId) {
   if (slot > now) await new Promise((resolve) => setTimeout(resolve, slot - now));
 }
 
-/** A GET request with a timeout, spaced out per provider. Only ever reads. */
+/**
+ * A GET request with a timeout, spaced out per provider. Only ever reads. The token requests for
+ * Gumroad and PayPal are the only other requests sent to providers (`gumroad/oauth.ts`,
+ * `paypal/client.ts`).
+ */
 export async function providerGet(
   provider: ProviderId,
   name: string,
