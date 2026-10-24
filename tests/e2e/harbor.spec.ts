@@ -786,6 +786,8 @@ test("registration, email confirmation, profile and SaaS editing, storage, priva
   await chooseProvider(page, "Other");
   await expect(revenue.getByRole("alert")).toHaveCount(0);
   await expect(page.getByLabel(HIDE_REVENUE, { exact: true })).toBeHidden();
+  // It says what a connected provider gives instead.
+  await expect(revenue.getByText("Connected products are seen by more visitors")).toBeVisible();
   const otherProvider = revenue.getByLabel("Your payment provider");
   await otherProvider.fill("Lemon Squeezy");
   await page.getByRole("button", { name: "Add SaaS", exact: true }).click();

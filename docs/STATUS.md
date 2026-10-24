@@ -8,6 +8,12 @@ The first release includes accounts, email confirmation and recovery, public mak
 
 Makers can message each other privately (see Messages below), and report products, profiles and messages to the admins, who decide in an admin panel (see Reports and moderation below). They get emails about unread messages and about decisions (see Email notifications below). Other forms of connection, such as following or contact lists, are not implemented.
 
+## Why to connect, under Other 2026-10-24
+
+Many new products are saved under Other, most of them with none as the name. At the owner's request, choosing Other now shows a box above the name field, Connected products are seen by more visitors, that lists what a provider from the list gives: a place on the leaderboard, which is the home page, a place above unranked products on its category and technology pages, and a link to the website that search engines follow even with the figures hidden. Below the list it says that products under Other are not ranked, that their website link is marked nofollow, and that connecting only gives read access. The note under the field keeps that the provider can be connected later and that the name is not shown on the site. Every statement describes how the site works today; none promises a number of visitors. The browser test that saves under Other finds the box.
+
+Verified: `npm run check` (537 unit tests) and the browser test that saves under Other pass. The form under Other was looked at with Playwright at 1440 px light and 390 px dark, with Axe scans of WCAG 2.2 AA (no violations) and no sideways scroll.
+
 ## PayPal 2026-10-24
 
 Users wrote PayPal, Payhip and FamPay under Other, and at the owner's request PayPal verifies revenue too. Payhip's API has coupons and license keys only, and FamPay, a payment app for teenagers in India, has no API for merchants, so neither could be added. PayPal has no key that can only read, so the owner chose an app of the founder's whose only feature is Transaction search, and approved the token request as a second exception to the GET rule (AGENTS.md). The editor asks for the app's Client ID and secret, with steps and a link to PayPal's apps; every read asks PayPal for a token and refuses the app unless the token can search transactions and only read (ARCHITECTURE, Connecting PayPal).

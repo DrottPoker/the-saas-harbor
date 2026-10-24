@@ -109,7 +109,7 @@ The owner can get an alert in Telegram for every new account (the username, how 
 
 ### Revenue verification
 
-In the product form, when adding a product or editing it, the maker chooses the payment provider in the Verified revenue section at the top, and pastes a key that can only read, following the steps shown in a box that links to the page where the key is made. A product that is not connected needs a choice: a maker whose provider is not in the list, or who takes no payments yet, chooses Other and writes its name, which only they and the admins see. One save adds or updates the product and verifies the key; a key the provider refuses never loses the product:
+In the product form, when adding a product or editing it, the maker chooses the payment provider in the Verified revenue section at the top, and pastes a key that can only read, following the steps shown in a box that links to the page where the key is made. A product that is not connected needs a choice: a maker whose provider is not in the list, or who takes no payments yet, chooses Other and writes its name, which only they and the admins see. Above the name, a box lists what a connected provider gives instead: a place on the leaderboard, a place above unranked products on category and technology pages, and a followed link to the website. One save adds or updates the product and verifies the key; a key the provider refuses never loses the product:
 
 | Provider      | Key                                                    | Access                                                                                     |
 | ------------- | ------------------------------------------------------ | ------------------------------------------------------------------------------------------ |

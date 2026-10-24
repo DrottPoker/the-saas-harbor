@@ -420,10 +420,35 @@ function ProviderFields({
   );
 }
 
+// What a connected provider gives that Other does not, so founders who have one connect it.
+const connectedGains = [
+  "A place on the leaderboard, which is the home page.",
+  "A place above unranked products on its category and technology pages.",
+  "A link to your website that search engines follow, even with the figures hidden.",
+];
+
 /** Other: the founder writes which provider they use, which only they and admins see. */
 function OtherProviderField({ defaultValue }: { defaultValue?: string }) {
   return (
     <div className="grid gap-4">
+      <div className="rounded-xl border bg-subtle p-4">
+        <p className="text-sm font-medium">Connected products are seen by more visitors</p>
+        <p className="mt-1 text-sm text-muted-foreground">
+          With a provider from the list, your product gets:
+        </p>
+        <ul className="mt-2 grid gap-1.5 text-sm text-muted-foreground">
+          {connectedGains.map((gain) => (
+            <li key={gain} className="flex gap-2">
+              <Check aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-brand" />
+              {gain}
+            </li>
+          ))}
+        </ul>
+        <p className="mt-3 text-[13px] text-muted-foreground">
+          Revenue from other providers cannot be verified yet, so products under Other are not
+          ranked and their website link is marked nofollow. Connecting only gives read access.
+        </p>
+      </div>
       <Field
         name="other_provider"
         label="Your payment provider"
@@ -440,10 +465,8 @@ function OtherProviderField({ defaultValue }: { defaultValue?: string }) {
         />
       </Field>
       <p className="text-[13px] text-muted-foreground">
-        Revenue from other providers cannot be verified yet, so the product is listed without
-        verified MRR and is not ranked on the leaderboard. You can connect a provider from the list
-        at any time. The name is not shown on the site; we use it to choose which providers to
-        support next.
+        You can connect a provider from the list at any time. The name is not shown on the site; we
+        use it to choose which providers to support next.
       </p>
     </div>
   );
