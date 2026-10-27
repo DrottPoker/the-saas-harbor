@@ -20,6 +20,7 @@ import {
 } from "./connection-result";
 import { VerificationError } from "./errors";
 import { gumroadOAuth } from "./gumroad/oauth";
+import { mercadopagoOAuth } from "./mercadopago/oauth";
 import { adapter } from "./providers";
 import { allowTestKeys } from "./sync";
 import type { ParsedKey } from "./types";
@@ -27,7 +28,7 @@ import { zohoOAuth } from "./zoho/oauth";
 
 /** The providers connected through OAuth that this server is set up for. */
 export function oauthReadyProviders(): ProviderId[] {
-  return [gumroadOAuth, zohoOAuth]
+  return [gumroadOAuth, zohoOAuth, mercadopagoOAuth]
     .filter((provider) => provider.client())
     .map((provider) => provider.id);
 }

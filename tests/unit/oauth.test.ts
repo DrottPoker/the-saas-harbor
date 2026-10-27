@@ -62,7 +62,10 @@ vi.mock("../../src/lib/revenue/connect", () => ({
   beginRevenueCheck: vi.fn(async () => void state.calls.push("begin")),
   keepConnectionResult: vi.fn(async () => undefined),
 }));
-vi.mock("../../src/lib/revenue/sync", () => ({ connectProvider: vi.fn() }));
+vi.mock("../../src/lib/revenue/sync", () => ({
+  connectProvider: vi.fn(),
+  allowTestKeys: () => false,
+}));
 
 const { beginRevenueCheck, keepConnectionResult } = vi.mocked(
   await import("../../src/lib/revenue/connect"),
@@ -250,6 +253,7 @@ describe("Finishing a connection", () => {
     expect(callback.code).toBe("the-code");
     expect(callback.verifier).toBe(flow.verifier);
     expect(callback.params.get("accounts-server")).toBe("https://accounts.zoho.in");
+    expect(callback.allowTest).toBe(false);
     expect(connectProvider).toHaveBeenCalledWith(SAAS, "gumroad", {
       key: "token",
       hint: "…oken",

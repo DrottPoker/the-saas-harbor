@@ -22,6 +22,7 @@ import { handleBilling } from "./fake-billing.mjs";
 import { handleExtraBilling } from "./fake-billing-extra.mjs";
 import { handleGumroad } from "./fake-gumroad.mjs";
 import { handleMollie } from "./fake-mollie.mjs";
+import { handleMercadoPago } from "./fake-mercadopago.mjs";
 import { handleZoho } from "./fake-zoho.mjs";
 import { handleGooglePlay } from "./fake-googleplay.mjs";
 import { handleAppStore } from "./fake-appstore.mjs";
@@ -343,6 +344,7 @@ createServer(async (request, response) => {
   if (await handleGumroad(url, request, response)) return;
   if (await handlePayPal(url, request, response)) return;
   if (await handleMollie(url, request, response)) return;
+  if (await handleMercadoPago(url, request, response)) return;
   if (await handleZoho(url, request, response)) return;
   if (await handleGooglePlay(url, request, response)) return;
   if (await handleAppStore(url, request, response)) return;
@@ -357,7 +359,7 @@ createServer(async (request, response) => {
   if (handleSite(url, request, response)) return;
   if (url.pathname === "/v2/rates") {
     const quotes = (url.searchParams.get("quotes") ?? "").split(",").filter(Boolean);
-    const rates = { eur: 0.8, brl: 5 };
+    const rates = { eur: 0.8, brl: 5, clp: 1000 };
     return send(
       response,
       200,

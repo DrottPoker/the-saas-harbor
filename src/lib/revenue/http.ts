@@ -44,6 +44,7 @@ export function apiBase(override: string | undefined, origin: string, name: stri
 // Apple allows each key about 3,600 requests an hour.
 // Google Play is read with a list and at most 26 downloads a run, so its requests are not spaced.
 // Zoho Billing allows 30 requests a minute per organization before it slows them, and 1,000 a day on its Standard plan; an hourly read sends three.
+// Mercado Pago publishes no limit and sets one per application, which every founder shares.
 const SPACING: Partial<Record<ProviderId, number>> = {
   paddle: 300,
   polar: 150,
@@ -61,6 +62,7 @@ const SPACING: Partial<Record<ProviderId, number>> = {
   superwall: 100,
   appstore: 200,
   zoho: 2000,
+  mercadopago: 200,
 };
 const nextSlot = new Map<ProviderId, number>();
 
@@ -75,8 +77,8 @@ async function throttle(provider: ProviderId) {
 
 /**
  * A GET request with a timeout, spaced out per provider. Only ever reads. The token requests for
- * Gumroad, Zoho Billing, PayPal and Google, the Airwallex login and Superwall's chart query are the only other
- * requests sent to providers (`gumroad/oauth.ts`, `zoho/client.ts`, `paypal/client.ts`, `googleplay/client.ts`,
+ * Gumroad, Zoho Billing, Mercado Pago, PayPal and Google, the Airwallex login and Superwall's chart query are the only other
+ * requests sent to providers (`gumroad/oauth.ts`, `zoho/client.ts`, `mercadopago/oauth.ts`, `paypal/client.ts`, `googleplay/client.ts`,
  * `airwallex/client.ts`, `superwall/client.ts`).
  */
 export async function providerGet(

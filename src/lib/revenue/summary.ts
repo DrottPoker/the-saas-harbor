@@ -54,6 +54,10 @@ const skipped: Record<ProviderId, [string, string]> = {
     "subscription without a readable price or billing period was",
     "subscriptions without a readable price or billing period were",
   ],
+  mercadopago: [
+    "subscription without a readable amount or frequency was",
+    "subscriptions without a readable amount or frequency were",
+  ],
 };
 
 /** What a verification found, in words for the founder. */

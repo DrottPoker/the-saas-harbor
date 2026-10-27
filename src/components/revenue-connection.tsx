@@ -316,6 +316,18 @@ const guides: Record<ProviderId, Guide> = {
       "Zoho sends you back here, and your default Zoho Billing organization is verified. To verify another, make it the default first.",
     ],
   },
+  mercadopago: {
+    dashboard: { href: "https://www.mercadopago.com", label: "Open Mercado Pago" },
+    reads: "your subscriptions and payments",
+    steps: [
+      "Save with the button at the end of the form. Mercado Pago opens, and asks you to sign in if you are not.",
+      <>
+        Allow access. That is the only access asked for: it can {strong("only read")}, and cannot
+        charge, refund or change anything.
+      </>,
+      "Mercado Pago sends you back here, and the revenue is verified.",
+    ],
+  },
 };
 
 // Where to make the key, with the steps: the dashboard link opens in a new tab.
@@ -370,6 +382,8 @@ const noHistory: Record<ProviderId, string> = {
   googleplay:
     "No revenue history: the Google Play sales reports are larger than one verification reads.",
   zoho: "No revenue history: Zoho Billing does not say which period an invoice covers.",
+  mercadopago:
+    "No revenue history: the Mercado Pago account has more payments than one verification reads, or its payments do not name their subscriptions.",
 };
 
 const option =

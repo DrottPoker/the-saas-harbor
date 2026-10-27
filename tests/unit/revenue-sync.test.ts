@@ -10,6 +10,7 @@ import { ASAAS } from "../e2e/fake-asaas.mjs";
 import { CHARGEBEE, CREEM_KEYS, REVENUECAT, WHOP_KEYS } from "../e2e/fake-billing-extra.mjs";
 import { GOOGLE_PLAY } from "../e2e/fake-googleplay.mjs";
 import { GUMROAD } from "../e2e/fake-gumroad.mjs";
+import { MERCADOPAGO } from "../e2e/fake-mercadopago.mjs";
 import { MOLLIE } from "../e2e/fake-mollie.mjs";
 import { PAYPAL } from "../e2e/fake-paypal.mjs";
 import { PAYSTACK } from "../e2e/fake-paystack.mjs";
@@ -20,6 +21,12 @@ import {
   gumroadAuthorizeUrl,
   newGumroadFlow,
 } from "../../src/lib/revenue/gumroad/oauth";
+import {
+  exchangeMercadoPagoCode,
+  mercadoPagoAuthorizeUrl,
+} from "../../src/lib/revenue/mercadopago/oauth";
+import { newOAuthFlow, oauthCallbackUrl } from "../../src/lib/revenue/oauth";
+import { toUsdCents } from "../../src/lib/revenue/money";
 import { adapter } from "../../src/lib/revenue/providers";
 import {
   historyToCarry,
@@ -63,10 +70,14 @@ beforeAll(async () => {
   process.env.GOOGLE_PLAY_API_BASE = `${base}/googleplay`;
   process.env.ZOHO_ACCOUNTS_BASE = `${base}/zoho/accounts`;
   process.env.ZOHO_API_BASE = `${base}/zoho/api`;
+  process.env.MERCADOPAGO_API_BASE = `${base}/mercadopago`;
+  process.env.MERCADOPAGO_OAUTH_BASE = `${base}/mercadopago`;
   process.env.GUMROAD_API_BASE = `${base}/gumroad`;
   process.env.GUMROAD_OAUTH_BASE = `${base}/gumroad`;
   process.env.ZOHO_CLIENT_ID = ZOHO.clientId;
   process.env.ZOHO_CLIENT_SECRET = "harbor-zoho-secret";
+  process.env.MERCADOPAGO_CLIENT_ID = MERCADOPAGO.clientId;
+  process.env.MERCADOPAGO_CLIENT_SECRET = "harbor-mercadopago-secret";
   process.env.FX_API_BASE = base;
   process.env.REVENUE_ALLOW_TEST_KEYS = "true";
   for (let attempt = 0; attempt < 50; attempt++) {
@@ -612,6 +623,60 @@ describe("Zoho Billing verification", () => {
   }, 30_000);
 });
 
+describe("Mercado Pago", () => {
+  const client = { id: MERCADOPAGO.clientId, secret: "harbor-mercadopago-secret" };
+  const redirectUri = () => oauthCallbackUrl("mercadopago");
+  // Approves access on the fake server, as a founder would, and exchanges the code.
+  async function connect(grant?: "wide" | "expiring") {
+    const flow = newOAuthFlow("saas-1", "user-1");
+    const url = new URL(
+      mercadoPagoAuthorizeUrl(client.id, { ...flow, redirectUri: redirectUri() }),
+    );
+    if (grant) url.searchParams.set("fake_grant", grant);
+    const response = await fetch(url, { redirect: "manual" });
+    const back = new URL(response.headers.get("location")!);
+    expect(back.searchParams.get("state")).toBe(flow.state);
+    return exchangeMercadoPagoCode(
+      client,
+      { code: back.searchParams.get("code")!, verifier: flow.verifier, redirectUri: redirectUri() },
+      { allowTest: true },
+    );
+  }
+
+  it("reads authorized subscriptions over their frequency, with history", async () => {
+    const key = await connect();
+    const result = await verifyRevenue("mercadopago", key.key, key.livemode);
+    expect(result).toMatchObject({
+      provider: "mercadopago",
+      mrrCents: 3_500,
+      customers: 3,
+      skippedItems: 1,
+      currencies: { brl: 12_500, clp: 10_000 },
+      renewedKey: null,
+    });
+    expect(result.history).toHaveLength(12);
+  }, 30_000);
+
+  it("refuses access that can also write", async () => {
+    await expect(connect("wide")).rejects.toThrow(/write|read/i);
+  }, 30_000);
+
+  it("renews access that runs out within 30 days, and returns the new key to store", async () => {
+    const key = await connect("expiring");
+    const first = await verifyRevenue("mercadopago", key.key, key.livemode, new Date(), {
+      history: false,
+    });
+    expect(first.renewedKey).toBeTruthy();
+    expect(first.renewedKey).not.toBe(key.key);
+    expect(first.mrrCents).toBe(3_500);
+    const next = await verifyRevenue("mercadopago", first.renewedKey!, key.livemode, new Date(), {
+      history: false,
+    });
+    expect(next.renewedKey).toBeNull();
+    expect(next.mrrCents).toBe(3_500);
+  }, 30_000);
+});
+
 describe("claims", () => {
   it("hash Stripe ids as before and prefix other providers", async () => {
     const { createHash } = await import("node:crypto");
@@ -1077,6 +1142,43 @@ describe("payments", () => {
     });
     expect(values).not.toHaveProperty(id("pay_failed"));
     expect(kinds[id("pay_recent")]).toBe("unknown");
+  }, 30_000);
+
+  it("reads Mercado Pago payments less coupons, tax and refunds", async () => {
+    const flow = newOAuthFlow("saas-1", "user-1");
+    const redirectUri = oauthCallbackUrl("mercadopago");
+    const response = await fetch(
+      mercadoPagoAuthorizeUrl(MERCADOPAGO.clientId, { ...flow, redirectUri }),
+      { redirect: "manual" },
+    );
+    const code = new URL(response.headers.get("location")!).searchParams.get("code")!;
+    const key = await exchangeMercadoPagoCode(
+      { id: MERCADOPAGO.clientId, secret: "harbor-mercadopago-secret" },
+      { code, verifier: flow.verifier, redirectUri },
+      { allowTest: true },
+    );
+    const now = Math.floor(Date.now() / 1000);
+    const read = await adapter("mercadopago").payments(key.key, key.livemode!, {
+      allowTest: true,
+      since: 0,
+      before: null,
+      maxPages: 200,
+      stored: () => null,
+    });
+    expect(read.complete).toBe(true);
+    const totals: Record<string, Record<string, number>> = {};
+    for (const payment of read.payments) {
+      const kind = (totals[payment.kind!] ??= {});
+      kind[payment.value!.currency] = (kind[payment.value!.currency] ?? 0) + payment.value!.amount;
+    }
+    // BRL 1,545 and CLP 60,000 in all: $331 from subscriptions and $38 one-time.
+    const rates = new Map([
+      ["brl", 5],
+      ["clp", 1000],
+    ]);
+    expect(toUsdCents(totals.subscription!, rates)).toBe(33_100);
+    expect(toUsdCents(totals.one_time!, rates)).toBe(3_800);
+    expect(read.payments.every((payment) => payment.at <= now)).toBe(true);
   }, 30_000);
 
   it("reads AbacatePay's revenue as one payment a day", async () => {

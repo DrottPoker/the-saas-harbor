@@ -21,8 +21,16 @@ export type OAuthClient = { id: string; secret: string };
  */
 export type OAuthFlow = { state: string; verifier: string; saasId: string; userId: string };
 
-/** What the callback hands the provider to exchange: the code, the flow's verifier, and the whole query. */
-export type OAuthCallback = { code: string; verifier: string; params: URLSearchParams };
+/**
+ * What the callback hands the provider to exchange: the code, the flow's verifier, the whole
+ * query, and whether test accounts may connect, as test keys may where the server allows them.
+ */
+export type OAuthCallback = {
+  code: string;
+  verifier: string;
+  params: URLSearchParams;
+  allowTest: boolean;
+};
 
 /**
  * A payment provider connected through OAuth. The shared routes check the founder, the state and

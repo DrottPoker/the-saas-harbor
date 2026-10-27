@@ -4039,3 +4039,54 @@ test("founders connect Zoho Billing by approving read access", async ({ page }) 
   await expect(page).toHaveURL(/\/dashboard$/);
   expect(violations).toEqual([]);
 });
+
+// Mercado Pago connects through OAuth too, with an application limited to reading. Its fixture
+// account has $35 of MRR from 3 subscribers in BRL and CLP, one subscription not counted.
+test("founders connect Mercado Pago by approving read access", async ({ page }) => {
+  const violations: string[] = [];
+  watchPolicy(page, violations);
+  const address = `harbor-mercadopago-${run}@example.test`;
+  const secret = randomBytes(24).toString("hex");
+  const { data: created, error } = await admin.auth.admin.createUser({
+    email: address,
+    password: secret,
+    email_confirm: true,
+    user_metadata: signup(`mercadopago-${run}`),
+  });
+  if (error || !created.user) throw new Error("Unable to create the Mercado Pago maker.");
+  userIds.push(created.user.id);
+  await login(page, address, secret);
+  const revenue = page.locator("#revenue");
+  for (const theme of ["dark", "light"] as const) {
+    await setThemeCookie(page, theme);
+    await page.goto("/dashboard/saas/new");
+    await chooseProvider(page, "Mercado Pago");
+    await expectAccessible(page);
+  }
+
+  await expect(revenue.getByText(/That is the only access asked for/)).toBeVisible();
+  await expect(revenue.locator("input:not([type=hidden]):not([type=checkbox])")).toHaveCount(0);
+  await fillProduct(page, `Mercado Pago ${run}`);
+  await page.getByRole("button", { name: "Add SaaS and connect Mercado Pago" }).click();
+  await expect(page).toHaveURL(/\/dashboard\/saas\/[0-9a-f-]{36}\?connection=1/);
+  await closeShareOffer(page, `Mercado Pago ${run}`);
+  const id = new URL(page.url()).pathname.split("/").at(-1)!;
+  await expect(
+    revenue.getByText(
+      /^Mercado Pago connected\. Verified MRR: \$35 from 3 subscribers\. 1 subscription without a readable amount or frequency was not counted\./,
+    ),
+  ).toBeVisible();
+  await expect(revenue.getByText("Connected to Mercado Pago")).toBeVisible();
+  await expect(revenue.getByText(/^Read access …2233/)).toBeVisible();
+  const { data: stored } = await admin
+    .from("revenue_connections")
+    .select("provider, encrypted_key")
+    .eq("saas_id", id)
+    .single();
+  expect(stored).toMatchObject({ provider: "mercadopago" });
+  expect(stored!.encrypted_key).not.toContain("APP_USR");
+
+  await page.goto("/api/mercadopago/callback?code=forged&state=forged");
+  await expect(page).toHaveURL(/\/dashboard$/);
+  expect(violations).toEqual([]);
+});

@@ -22,7 +22,7 @@ import {
   type OAuthProvider,
 } from "./oauth";
 import { summary } from "./summary";
-import { connectProvider } from "./sync";
+import { allowTestKeys, connectProvider } from "./sync";
 
 // The connect and callback routes of every provider connected through OAuth (see `oauth.ts`).
 // They live apart from `oauth.ts` because they use `connect.ts` and `sync.ts`, which import the
@@ -108,7 +108,12 @@ export async function finishOAuth(request: NextRequest, provider: OAuthProvider)
       throw new VerificationError("You can only verify revenue for your own SaaS.");
     // Counts against the same limits as any check a founder starts.
     await beginRevenueCheck(client, flow.saasId, false);
-    const key = await provider.exchange(app, { code, verifier: flow.verifier, params });
+    const key = await provider.exchange(app, {
+      code,
+      verifier: flow.verifier,
+      params,
+      allowTest: allowTestKeys(),
+    });
     const result = await connectProvider(flow.saasId, provider.id, key);
     // A verification may reach a milestone, which queues an email.
     sendQueuedEmails();

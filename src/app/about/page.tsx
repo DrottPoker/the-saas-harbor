@@ -31,7 +31,7 @@ const sections: Section[] = [
   {
     title: "Verified revenue",
     body: [
-      `Revenue is never typed in by founders. Each product connects its payment provider, ${providerList("or")}, with a key that can only read: subscriptions and what was charged for them, with RevenueCat its charts, and with PayPal its transactions. Gumroad's and Zoho Billing's own keys could change the account, so a founder connects them by approving read access on Gumroad or Zoho instead. The key or access is encrypted when stored, used only by our server to read data, and can be revoked with the provider at any time.`,
+      `Revenue is never typed in by founders. Each product connects its payment provider, ${providerList("or")}, with a key that can only read: subscriptions and what was charged for them, with RevenueCat its charts, and with PayPal its transactions. Gumroad's, Zoho Billing's and Mercado Pago's own keys could change the account, so a founder connects them by approving read access with the provider instead. The key or access is encrypted when stored, used only by our server to read data, and can be revoked with the provider at any time.`,
       "MRR is what active subscriptions bring in each month, after ongoing discounts and before tax. It is verified again every hour, and a figure that has not been verified for seven days is hidden and leaves the leaderboard. Revenue is every payment over the last 30 days, the last 12 months and all time, one-time purchases included.",
     ],
     details: {

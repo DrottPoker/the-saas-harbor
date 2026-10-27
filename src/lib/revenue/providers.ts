@@ -9,6 +9,7 @@ import { creem } from "./creem";
 import { dodo } from "./dodo";
 import { googleplay } from "./googleplay";
 import { gumroad } from "./gumroad";
+import { mercadopago } from "./mercadopago";
 import { mollie } from "./mollie";
 import { paddle } from "./paddle";
 import { paypal } from "./paypal";
@@ -41,6 +42,7 @@ const ADAPTERS: Record<ProviderId, ProviderAdapter> = {
   appstore,
   googleplay,
   zoho,
+  mercadopago,
 };
 
 /** How to validate a provider's keys and read its accounts. */

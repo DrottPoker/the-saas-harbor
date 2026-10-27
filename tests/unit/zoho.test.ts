@@ -358,7 +358,12 @@ describe("Zoho Billing against its stand-in", () => {
     expect(params.get("state")).toBe(flow.state);
     expect(params.get("accounts-server")).toBe("https://accounts.zoho.in");
     await expect(
-      exchangeZohoCode(client(), { code: params.get("code")!, verifier: "wrong", params }),
+      exchangeZohoCode(client(), {
+        code: params.get("code")!,
+        verifier: "wrong",
+        params,
+        allowTest: false,
+      }),
     ).rejects.toThrow("Zoho did not complete the connection. Try again.");
     const again = await approve(zohoAuthorizeUrl(ZOHO.clientId, flow));
     expect(
@@ -366,6 +371,7 @@ describe("Zoho Billing against its stand-in", () => {
         code: again.get("code")!,
         verifier: flow.verifier,
         params: again,
+        allowTest: false,
       }),
     ).toEqual({ key: ZOHO.keys.one, hint: "Harbor Labs · …0001", livemode: true });
   });
@@ -379,7 +385,12 @@ describe("Zoho Billing against its stand-in", () => {
     );
     const params = await approve(address.toString());
     await expect(
-      exchangeZohoCode(client(), { code: params.get("code")!, verifier: flow.verifier, params }),
+      exchangeZohoCode(client(), {
+        code: params.get("code")!,
+        verifier: flow.verifier,
+        params,
+        allowTest: false,
+      }),
     ).rejects.toThrow("Zoho granted other access than reading subscriptions and payments");
   });
 

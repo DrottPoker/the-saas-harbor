@@ -141,6 +141,13 @@ export const PROVIDERS = {
     placeholder: "",
     oauth: true,
   },
+  mercadopago: {
+    name: "Mercado Pago",
+    keyLabel: "Mercado Pago account",
+    newKeyLabel: "Another Mercado Pago account",
+    placeholder: "",
+    oauth: true,
+  },
 } as const satisfies Record<string, ProviderEntry>;
 
 type ProviderField = { label: string; placeholder: string };
