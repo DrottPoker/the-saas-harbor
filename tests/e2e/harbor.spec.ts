@@ -15,6 +15,7 @@ import { PAYSTACK } from "./fake-paystack.mjs";
 import { SUPERWALL } from "./fake-superwall.mjs";
 import { formatUsd } from "../../src/lib/domain";
 import { termsUpdated } from "../../src/lib/legal";
+import { PROVIDER_IDS } from "../../src/lib/revenue/catalog";
 
 const url = process.env.TEST_SUPABASE_URL!;
 const mailpit = process.env.TEST_MAILPIT_URL!;
@@ -2975,8 +2976,8 @@ test("founders verify revenue through Paddle, Polar and Dodo Payments", async ({
     await page.goto("/dashboard/saas/new");
     await providerList.focus();
     await page.keyboard.press("Enter");
-    // Ten providers, then Other.
-    await expect(page.getByRole("option")).toHaveCount(11);
+    // Every provider, then Other.
+    await expect(page.getByRole("option")).toHaveCount(PROVIDER_IDS.length + 1);
     await expect(page.getByRole("option").last()).toHaveText("Other");
     // The open list moves focus to its first option a moment later; keys pressed before then
     // are lost.

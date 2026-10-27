@@ -394,9 +394,10 @@ export function siteImage() {
           <div style={{ fontSize: 24, color: night.mutedForeground }}>
             {ogLine("Verify revenue with")}
           </div>
-          <div style={{ display: "flex", gap: 10 }}>
+          {/* Two rows of ten, so twenty providers leave room for the host. */}
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 8, width: 10 * 30 + 9 * 8 }}>
             {PROVIDER_IDS.map((provider) => (
-              <OgProviderTile key={provider} provider={provider} size={40} />
+              <OgProviderTile key={provider} provider={provider} size={30} />
             ))}
           </div>
         </div>
