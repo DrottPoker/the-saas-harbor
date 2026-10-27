@@ -4,6 +4,7 @@ import { createHash, randomBytes, randomUUID } from "node:crypto";
 import AxeBuilder from "@axe-core/playwright";
 import { DODO_KEYS, PADDLE_KEYS, POLAR_TOKENS } from "./fake-billing.mjs";
 import { ABACATEPAY } from "./fake-abacatepay.mjs";
+import { AIRWALLEX } from "./fake-airwallex.mjs";
 import { ASAAS } from "./fake-asaas.mjs";
 import { CHARGEBEE, CREEM_KEYS, REVENUECAT, WHOP_KEYS } from "./fake-billing-extra.mjs";
 import { MOLLIE } from "./fake-mollie.mjs";
@@ -3425,6 +3426,25 @@ test("founders verify revenue through an Asaas key that can only read", async ({
     hint: `${ASAAS.one.slice(0, 11)}…${ASAAS.one.slice(-4)}`,
     livemode: false,
     secretPart: "HarborFixtureOne",
+  });
+});
+
+// Airwallex asks for a scoped API key and its Client ID, and refuses a key that can read balances.
+test("founders verify revenue through an Airwallex scoped key", async ({ page }) => {
+  await connectsWithReadOnlyKey(page, {
+    provider: "Airwallex",
+    slug: "airwallex",
+    link: "Open Airwallex's API keys",
+    fill: async (revenue, which) => {
+      await revenue.getByLabel("Client ID", { exact: true }).fill(AIRWALLEX[which].clientId);
+      await revenue.getByLabel(/^(New )?scoped API key$/i).fill(AIRWALLEX[which].apiKey);
+    },
+    refused: /The key can read more than subscriptions, invoices and payments,/,
+    verified:
+      /Verified MRR: $80.00 from 3 subscribers. 2 usage-based items or subscriptions paid outside Airwallex were not counted./,
+    hint: `${AIRWALLEX.one.clientId.slice(0, 8)}… · …${AIRWALLEX.one.apiKey.slice(-4)}`,
+    livemode: false,
+    secretPart: "harborAirwallexKey",
   });
 });
 

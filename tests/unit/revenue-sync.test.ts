@@ -4,6 +4,7 @@ import { spawn, type ChildProcess } from "node:child_process";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { DODO_KEYS, PADDLE_KEYS, POLAR_TOKENS } from "../e2e/fake-billing.mjs";
 import { ABACATEPAY } from "../e2e/fake-abacatepay.mjs";
+import { AIRWALLEX } from "../e2e/fake-airwallex.mjs";
 import { ASAAS } from "../e2e/fake-asaas.mjs";
 import { CHARGEBEE, CREEM_KEYS, REVENUECAT, WHOP_KEYS } from "../e2e/fake-billing-extra.mjs";
 import { GUMROAD } from "../e2e/fake-gumroad.mjs";
@@ -52,6 +53,7 @@ beforeAll(async () => {
   process.env.PAYSTACK_API_BASE = `${base}/paystack`;
   process.env.ABACATEPAY_API_BASE = `${base}/abacatepay`;
   process.env.ASAAS_API_BASE = `${base}/asaas`;
+  process.env.AIRWALLEX_API_BASE = `${base}/airwallex`;
   process.env.GUMROAD_API_BASE = `${base}/gumroad`;
   process.env.GUMROAD_OAUTH_BASE = `${base}/gumroad`;
   process.env.FX_API_BASE = base;
@@ -219,6 +221,7 @@ describe("Dodo Payments verification", () => {
 const chargebeeKey = `${CHARGEBEE.site}:${CHARGEBEE.key}`;
 const revenueCatKey = (key: string) => `${REVENUECAT.project}:${key}`;
 const paypalKey = (app: { clientId: string; secret: string }) => `${app.clientId}:${app.secret}`;
+const airwallexKey = (key: { clientId: string; apiKey: string }) => `${key.clientId}:${key.apiKey}`;
 const mollieKey = (token: string) => `${MOLLIE.profile}:${token}`;
 
 describe("Creem verification", () => {
@@ -468,6 +471,29 @@ describe("Asaas verification", () => {
   });
 });
 
+describe("Airwallex verification", () => {
+  it("finds the sandbox, and values Billing subscriptions by their prices, with history", async () => {
+    const result = await verifyRevenue("airwallex", airwallexKey(AIRWALLEX.one), null);
+    expect(result).toMatchObject({
+      provider: "airwallex",
+      livemode: false,
+      mrrCents: 8_000,
+      customers: 3,
+      skippedItems: 2,
+      mrrInvoiceCents: 3_000,
+      mrr30dAgoCents: 3_000,
+    });
+    expect(result.history![0].mrr_cents).toBe(2_000);
+    expect(result.history!.at(-1)!.mrr_cents).toBe(3_000);
+  }, 20_000);
+
+  it("refuses a key that can read more than subscriptions, invoices and payments", async () => {
+    await expect(verifyRevenue("airwallex", airwallexKey(AIRWALLEX.wide), null)).rejects.toThrow(
+      /can read more than subscriptions, invoices and payments/,
+    );
+  });
+});
+
 describe("claims", () => {
   it("hash Stripe ids as before and prefix other providers", async () => {
     const { createHash } = await import("node:crypto");
@@ -497,6 +523,7 @@ describe("hourly verification", () => {
     ["paystack", PAYSTACK.one],
     ["abacatepay", ABACATEPAY.one],
     ["asaas", ASAAS.one],
+    ["airwallex", airwallexKey(AIRWALLEX.one)],
   ] as const)(
     "reads only what MRR needs from %s without the history",
     async (provider, key) => {
@@ -855,6 +882,19 @@ describe("payments", () => {
     });
     for (const id of ["pay_pixIn", "pay_cash"]) expect(values).not.toHaveProperty(id);
     expect(kinds).toMatchObject({ pay_monthly0: "subscription", pay_link: "one_time" });
+  }, 20_000);
+
+  it("reads Airwallex payments less refunds, and invoices' tax", async () => {
+    const { complete, values, kinds } = await recent("airwallex", airwallexKey(AIRWALLEX.one));
+    expect(complete).toBe(true);
+    expect(values).toMatchObject({
+      int_inv_monthly_0: usd(2000),
+      int_inv_yearly: usd(12000),
+      int_checkout: usd(3500),
+      int_refunded: usd(0),
+    });
+    expect(values).not.toHaveProperty("int_abandoned");
+    expect(kinds).toMatchObject({ int_inv_monthly_0: "subscription", int_checkout: "one_time" });
   }, 20_000);
 
   it("reads AbacatePay's revenue as one payment a day", async () => {

@@ -1,5 +1,6 @@
 import "server-only";
 import { abacatepay } from "./abacatepay";
+import { airwallex } from "./airwallex";
 import { asaas } from "./asaas";
 import type { ProviderId } from "./catalog";
 import { chargebee } from "./chargebee";
@@ -31,6 +32,7 @@ const ADAPTERS: Record<ProviderId, ProviderAdapter> = {
   paystack,
   abacatepay,
   asaas,
+  airwallex,
 };
 
 /** How to validate a provider's keys and read its accounts. */

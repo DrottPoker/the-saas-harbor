@@ -241,6 +241,21 @@ const guides: Record<ProviderId, Guide> = {
       "Copy the key, which starts with $aact_prod_ and is shown once, and paste it below.",
     ],
   },
+  airwallex: {
+    dashboard: {
+      href: "https://www.airwallex.com/app/settings/developer/api-keys",
+      label: "Open Airwallex's API keys",
+    },
+    reads: "subscriptions, invoices and payments",
+    steps: [
+      <>Under Settings → Developer → API keys, choose {strong("New scoped API key")}.</>,
+      <>
+        Give it Read for Subscriptions and Invoices (Billing) and for Payment Acceptance, and
+        nothing else. A key that can read more is refused.
+      </>,
+      "Copy the key and the Client ID shown with it, and paste them below. MRR counts Airwallex Billing subscriptions; other payments count as revenue.",
+    ],
+  },
 };
 
 // Where to make the key, with the steps: the dashboard link opens in a new tab.
@@ -287,6 +302,8 @@ const noHistory: Record<ProviderId, string> = {
   abacatepay: "No revenue history yet. Refresh to read AbacatePay's daily MRR.",
   asaas:
     "No revenue history: the Asaas account has more subscriptions or charges than one verification reads.",
+  airwallex:
+    "No revenue history: the Airwallex account has more subscription invoices than one verification reads.",
 };
 
 const option =

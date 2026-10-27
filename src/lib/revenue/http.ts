@@ -39,6 +39,7 @@ export function apiBase(override: string | undefined, origin: string, name: stri
 // Paystack allows 600 requests a minute per live integration.
 // AbacatePay publishes no limit, and a run sends at most four requests.
 // Asaas allows 25,000 requests per account every 12 hours, shared with the founder's own use.
+// Airwallex allows 20 requests a second per endpoint.
 const SPACING: Partial<Record<ProviderId, number>> = {
   paddle: 300,
   polar: 150,
@@ -52,6 +53,7 @@ const SPACING: Partial<Record<ProviderId, number>> = {
   paystack: 300,
   abacatepay: 200,
   asaas: 250,
+  airwallex: 100,
 };
 const nextSlot = new Map<ProviderId, number>();
 
@@ -66,8 +68,8 @@ async function throttle(provider: ProviderId) {
 
 /**
  * A GET request with a timeout, spaced out per provider. Only ever reads. The token requests for
- * Gumroad and PayPal are the only other requests sent to providers (`gumroad/oauth.ts`,
- * `paypal/client.ts`).
+ * Gumroad and PayPal and the Airwallex login are the only other requests sent to providers
+ * (`gumroad/oauth.ts`, `paypal/client.ts`, `airwallex/client.ts`).
  */
 export async function providerGet(
   provider: ProviderId,

@@ -40,6 +40,10 @@ const skipped: Record<ProviderId, [string, string]> = {
     "active subscription without a recent payment was",
     "active subscriptions without a recent payment were",
   ],
+  airwallex: [
+    "usage-based item or subscription paid outside Airwallex was",
+    "usage-based items or subscriptions paid outside Airwallex were",
+  ],
 };
 
 /** What a verification found, in words for the founder. */

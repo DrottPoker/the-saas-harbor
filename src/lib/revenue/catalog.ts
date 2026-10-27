@@ -96,6 +96,14 @@ export const PROVIDERS = {
     newKeyLabel: "New API key",
     placeholder: "$aact_prod_...",
   },
+  // The key is a scoped API key, and the account the Client ID shown with it.
+  airwallex: {
+    name: "Airwallex",
+    keyLabel: "Scoped API key",
+    newKeyLabel: "New scoped API key",
+    placeholder: "Scoped API key",
+    account: { label: "Client ID", placeholder: "Client ID shown with your API keys" },
+  },
 } as const satisfies Record<string, ProviderEntry>;
 
 type ProviderField = { label: string; placeholder: string };
