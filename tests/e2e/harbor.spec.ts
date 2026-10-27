@@ -8,6 +8,7 @@ import { AIRWALLEX } from "./fake-airwallex.mjs";
 import { APPSTORE } from "./fake-appstore.mjs";
 import { ASAAS } from "./fake-asaas.mjs";
 import { CHARGEBEE, CREEM_KEYS, REVENUECAT, WHOP_KEYS } from "./fake-billing-extra.mjs";
+import { GOOGLE_PLAY } from "./fake-googleplay.mjs";
 import { MOLLIE } from "./fake-mollie.mjs";
 import { PAYPAL } from "./fake-paypal.mjs";
 import { PAYSTACK } from "./fake-paystack.mjs";
@@ -3488,6 +3489,26 @@ test("founders verify revenue through an App Store Connect key for reports", asy
     verified:
       /Verified MRR: $180.00 from 18 subscribers. 3 subscriptions on a paid offer were not counted./,
     hint: `${APPSTORE.one.keyId} · vendor ${APPSTORE.one.vendor}`,
+    livemode: true,
+    secretPart: "PRIVATE KEY",
+  });
+});
+
+// Google Play asks for a service account's JSON key, the reports bucket and the app, and refuses
+// a service account Google gives more than reading Cloud Storage.
+test("founders verify revenue through a Google Play service account", async ({ page }) => {
+  await connectsWithReadOnlyKey(page, {
+    provider: "Google Play",
+    slug: "googleplay",
+    link: "Open Google Cloud's service accounts",
+    fill: async (revenue, which) => {
+      await revenue.getByLabel("Cloud Storage URI", { exact: true }).fill(GOOGLE_PLAY.uri);
+      await revenue.getByLabel("Package name", { exact: true }).fill(GOOGLE_PLAY.packageName);
+      await revenue.getByLabel(/^(New )?service account JSON key$/i).fill(GOOGLE_PLAY[which]);
+    },
+    refused: /Google gave the service account more access than reading Cloud Storage,/,
+    verified: /Verified MRR: $60.42 from 4 subscribers./,
+    hint: `${GOOGLE_PLAY.packageName} · …fe00`,
     livemode: true,
     secretPart: "PRIVATE KEY",
   });

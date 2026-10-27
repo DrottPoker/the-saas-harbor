@@ -42,6 +42,7 @@ export function apiBase(override: string | undefined, origin: string, name: stri
 // Airwallex allows 20 requests a second per endpoint.
 // Superwall publishes no limit, and a run sends four reads and two chart queries.
 // Apple allows each key about 3,600 requests an hour.
+// Google Play is read with a list and at most 26 downloads a run, so its requests are not spaced.
 const SPACING: Partial<Record<ProviderId, number>> = {
   paddle: 300,
   polar: 150,
@@ -72,9 +73,9 @@ async function throttle(provider: ProviderId) {
 
 /**
  * A GET request with a timeout, spaced out per provider. Only ever reads. The token requests for
- * Gumroad and PayPal, the Airwallex login and Superwall's chart query are the only other requests
- * sent to providers (`gumroad/oauth.ts`, `paypal/client.ts`, `airwallex/client.ts`,
- * `superwall/client.ts`).
+ * Gumroad, PayPal and Google, the Airwallex login and Superwall's chart query are the only other
+ * requests sent to providers (`gumroad/oauth.ts`, `paypal/client.ts`, `googleplay/client.ts`,
+ * `airwallex/client.ts`, `superwall/client.ts`).
  */
 export async function providerGet(
   provider: ProviderId,

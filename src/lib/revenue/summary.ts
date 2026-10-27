@@ -46,6 +46,10 @@ const skipped: Record<ProviderId, [string, string]> = {
   ],
   superwall: ["subscription was", "subscriptions were"],
   appstore: ["subscription on a paid offer was", "subscriptions on a paid offer were"],
+  googleplay: [
+    "subscription charge that could not be read was",
+    "subscription charges that could not be read were",
+  ],
 };
 
 /** What a verification found, in words for the founder. */

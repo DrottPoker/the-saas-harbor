@@ -61,6 +61,7 @@ describe("provider catalog", () => {
       "airwallex",
       "superwall",
       "appstore",
+      "googleplay",
     ]);
     expect(PROVIDER_IDS.every(isProviderId)).toBe(true);
     expect(isProviderId("lemonsqueezy")).toBe(false);
@@ -71,9 +72,9 @@ describe("provider catalog", () => {
 
   it("names them in a sentence", () => {
     expect(providerList("or")).toBe(
-      "Stripe, Paddle, Polar, Dodo Payments, Creem, Chargebee, Whop, RevenueCat, Gumroad, PayPal, Mollie, Paystack, AbacatePay, Asaas, Airwallex, Superwall or App Store",
+      "Stripe, Paddle, Polar, Dodo Payments, Creem, Chargebee, Whop, RevenueCat, Gumroad, PayPal, Mollie, Paystack, AbacatePay, Asaas, Airwallex, Superwall, App Store or Google Play",
     );
-    expect(providerList("and")).toMatch(/, Superwall and App Store$/);
+    expect(providerList("and")).toMatch(/, App Store and Google Play$/);
   });
 
   it("asks for a site, project or app only where the key needs one", () => {

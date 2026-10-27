@@ -7,6 +7,7 @@ import type { ProviderId } from "./catalog";
 import { chargebee } from "./chargebee";
 import { creem } from "./creem";
 import { dodo } from "./dodo";
+import { googleplay } from "./googleplay";
 import { gumroad } from "./gumroad";
 import { mollie } from "./mollie";
 import { paddle } from "./paddle";
@@ -37,6 +38,7 @@ const ADAPTERS: Record<ProviderId, ProviderAdapter> = {
   airwallex,
   superwall,
   appstore,
+  googleplay,
 };
 
 /** How to validate a provider's keys and read its accounts. */

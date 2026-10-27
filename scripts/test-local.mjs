@@ -57,6 +57,7 @@ const env = {
   AIRWALLEX_API_BASE: `${fakeProviders}/airwallex`,
   SUPERWALL_API_BASE: `${fakeProviders}/superwall`,
   APPSTORE_API_BASE: `${fakeProviders}/appstore`,
+  GOOGLE_PLAY_API_BASE: `${fakeProviders}/googleplay`,
   // Gumroad connects through OAuth, whose pages the fake server answers too.
   GUMROAD_API_BASE: `${fakeProviders}/gumroad`,
   GUMROAD_OAUTH_BASE: `${fakeProviders}/gumroad`,

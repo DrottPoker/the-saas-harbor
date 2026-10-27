@@ -8,6 +8,7 @@ import { AIRWALLEX } from "../e2e/fake-airwallex.mjs";
 import { APPSTORE } from "../e2e/fake-appstore.mjs";
 import { ASAAS } from "../e2e/fake-asaas.mjs";
 import { CHARGEBEE, CREEM_KEYS, REVENUECAT, WHOP_KEYS } from "../e2e/fake-billing-extra.mjs";
+import { GOOGLE_PLAY } from "../e2e/fake-googleplay.mjs";
 import { GUMROAD } from "../e2e/fake-gumroad.mjs";
 import { MOLLIE } from "../e2e/fake-mollie.mjs";
 import { PAYPAL } from "../e2e/fake-paypal.mjs";
@@ -58,6 +59,7 @@ beforeAll(async () => {
   process.env.AIRWALLEX_API_BASE = `${base}/airwallex`;
   process.env.SUPERWALL_API_BASE = `${base}/superwall`;
   process.env.APPSTORE_API_BASE = `${base}/appstore`;
+  process.env.GOOGLE_PLAY_API_BASE = `${base}/googleplay`;
   process.env.GUMROAD_API_BASE = `${base}/gumroad`;
   process.env.GUMROAD_OAUTH_BASE = `${base}/gumroad`;
   process.env.FX_API_BASE = base;
@@ -230,6 +232,11 @@ const superwallKey = (key: string) => `${SUPERWALL.application}:${key}`;
 const appStoreKey = (key: { issuer: string; keyId: string; vendor: string; privateKey: string }) =>
   adapter("appstore").parseKey(
     { key: key.privateKey, account: key.issuer, extra: [key.keyId, key.vendor] },
+    { allowTest: true },
+  ).key;
+const googlePlayKey = (json: string) =>
+  adapter("googleplay").parseKey(
+    { key: json, account: GOOGLE_PLAY.uri, extra: [GOOGLE_PLAY.packageName] },
     { allowTest: true },
   ).key;
 const mollieKey = (token: string) => `${MOLLIE.profile}:${token}`;
@@ -556,6 +563,29 @@ describe("App Store verification", () => {
   }, 30_000);
 });
 
+describe("Google Play verification", () => {
+  it("values order chains by their latest charge over their plan's period, with history", async () => {
+    const result = await verifyRevenue("googleplay", googlePlayKey(GOOGLE_PLAY.one), true);
+    expect(result).toMatchObject({
+      provider: "googleplay",
+      livemode: true,
+      mrrCents: 6_042,
+      customers: 4,
+      skippedItems: 0,
+      mrrInvoiceCents: 6_042,
+      mrr30dAgoCents: 4_042,
+    });
+    expect(result.mrrNote).toMatch(/yearly/);
+    expect(result.history![0].mrr_cents).toBe(2_000);
+  }, 20_000);
+
+  it("refuses a token that can do more than read Cloud Storage", async () => {
+    await expect(
+      verifyRevenue("googleplay", googlePlayKey(GOOGLE_PLAY.wide), true),
+    ).rejects.toThrow(/more access than reading Cloud Storage/);
+  });
+});
+
 describe("claims", () => {
   it("hash Stripe ids as before and prefix other providers", async () => {
     const { createHash } = await import("node:crypto");
@@ -588,6 +618,7 @@ describe("hourly verification", () => {
     ["airwallex", airwallexKey(AIRWALLEX.one)],
     ["superwall", superwallKey(SUPERWALL.one)],
     ["appstore", appStoreKey(APPSTORE.one)],
+    ["googleplay", googlePlayKey(GOOGLE_PLAY.one)],
   ] as const)(
     "reads only what MRR needs from %s without the history",
     async (provider, key) => {
@@ -992,6 +1023,19 @@ describe("payments", () => {
     expect(values[`${vendor}:${day(10)}:eur:subscription`]).toEqual(eur(4000));
     expect(kinds[`${vendor}:${day(3)}:usd:one_time`]).toBe("one_time");
   }, 30_000);
+
+  it("reads Google Play sales as daily totals per kind, less refunds", async () => {
+    const { complete, values } = await recent("googleplay", googlePlayKey(GOOGLE_PLAY.one), {
+      livemode: true,
+    });
+    expect(complete).toBe(true);
+    const day = (back: number) =>
+      new Date(Date.now() - back * DAY * 1000).toISOString().slice(0, 10);
+    expect(values[`${day(5)}:subscription:usd`]).toEqual(usd(2000));
+    expect(values[`${day(10)}:subscription:usd`]).toEqual(usd(0));
+    expect(values[`${day(6)}:one_time:usd`]).toEqual(usd(500));
+    expect(values[`${day(12)}:one_time:usd`]).toEqual(usd(600));
+  }, 20_000);
 
   it("reads AbacatePay's revenue as one payment a day", async () => {
     const { complete, values, kinds } = await recent("abacatepay", ABACATEPAY.one, {

@@ -286,6 +286,21 @@ const guides: Record<ProviderId, Guide> = {
       "Download the .p8 file and paste its contents below, with the Issuer ID, the Key ID and your vendor number from Payments and Financial Reports.",
     ],
   },
+  googleplay: {
+    dashboard: {
+      href: "https://console.cloud.google.com/iam-admin/serviceaccounts",
+      label: "Open Google Cloud's service accounts",
+    },
+    reads: "your apps' estimated sales reports",
+    steps: [
+      <>Create a service account without roles, and under Keys add a {strong("JSON")} key.</>,
+      <>
+        In Play Console, open Users and permissions, invite the service account&apos;s email, and
+        give it only {strong("View financial data")}.
+      </>,
+      "On Download reports, copy the Cloud Storage URI of the financial reports, and paste it below with your app's package name and the JSON key. A new permission can take some hours to apply.",
+    ],
+  },
 };
 
 // Where to make the key, with the steps: the dashboard link opens in a new tab.
@@ -337,6 +352,8 @@ const noHistory: Record<ProviderId, string> = {
   superwall: "No revenue history yet. Refresh to read Superwall's MRR chart.",
   appstore:
     "No revenue history yet. Refresh to read Apple's subscription reports of the last 12 months.",
+  googleplay:
+    "No revenue history: the Google Play sales reports are larger than one verification reads.",
 };
 
 const option =

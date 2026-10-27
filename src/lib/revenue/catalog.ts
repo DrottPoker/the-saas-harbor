@@ -124,6 +124,16 @@ export const PROVIDERS = {
       { label: "Vendor number", placeholder: "85012345" },
     ],
   },
+  // The key is a service account's JSON key, the account the reports bucket, and the further
+  // field the app's package names.
+  googleplay: {
+    name: "Google Play",
+    keyLabel: "Service account JSON key",
+    newKeyLabel: "New service account JSON key",
+    placeholder: '{"type": "service_account", ...}',
+    account: { label: "Cloud Storage URI", placeholder: "gs://pubsite_prod_rev_..." },
+    extra: [{ label: "Package name", placeholder: "com.example.app" }],
+  },
 } as const satisfies Record<string, ProviderEntry>;
 
 type ProviderField = { label: string; placeholder: string };
