@@ -41,6 +41,7 @@ export function apiBase(override: string | undefined, origin: string, name: stri
 // Asaas allows 25,000 requests per account every 12 hours, shared with the founder's own use.
 // Airwallex allows 20 requests a second per endpoint.
 // Superwall publishes no limit, and a run sends four reads and two chart queries.
+// Apple allows each key about 3,600 requests an hour.
 const SPACING: Partial<Record<ProviderId, number>> = {
   paddle: 300,
   polar: 150,
@@ -56,6 +57,7 @@ const SPACING: Partial<Record<ProviderId, number>> = {
   asaas: 250,
   airwallex: 100,
   superwall: 100,
+  appstore: 200,
 };
 const nextSlot = new Map<ProviderId, number>();
 

@@ -5,6 +5,7 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { DODO_KEYS, PADDLE_KEYS, POLAR_TOKENS } from "../e2e/fake-billing.mjs";
 import { ABACATEPAY } from "../e2e/fake-abacatepay.mjs";
 import { AIRWALLEX } from "../e2e/fake-airwallex.mjs";
+import { APPSTORE } from "../e2e/fake-appstore.mjs";
 import { ASAAS } from "../e2e/fake-asaas.mjs";
 import { CHARGEBEE, CREEM_KEYS, REVENUECAT, WHOP_KEYS } from "../e2e/fake-billing-extra.mjs";
 import { GUMROAD } from "../e2e/fake-gumroad.mjs";
@@ -56,6 +57,7 @@ beforeAll(async () => {
   process.env.ASAAS_API_BASE = `${base}/asaas`;
   process.env.AIRWALLEX_API_BASE = `${base}/airwallex`;
   process.env.SUPERWALL_API_BASE = `${base}/superwall`;
+  process.env.APPSTORE_API_BASE = `${base}/appstore`;
   process.env.GUMROAD_API_BASE = `${base}/gumroad`;
   process.env.GUMROAD_OAUTH_BASE = `${base}/gumroad`;
   process.env.FX_API_BASE = base;
@@ -225,6 +227,11 @@ const revenueCatKey = (key: string) => `${REVENUECAT.project}:${key}`;
 const paypalKey = (app: { clientId: string; secret: string }) => `${app.clientId}:${app.secret}`;
 const airwallexKey = (key: { clientId: string; apiKey: string }) => `${key.clientId}:${key.apiKey}`;
 const superwallKey = (key: string) => `${SUPERWALL.application}:${key}`;
+const appStoreKey = (key: { issuer: string; keyId: string; vendor: string; privateKey: string }) =>
+  adapter("appstore").parseKey(
+    { key: key.privateKey, account: key.issuer, extra: [key.keyId, key.vendor] },
+    { allowTest: true },
+  ).key;
 const mollieKey = (token: string) => `${MOLLIE.profile}:${token}`;
 
 describe("Creem verification", () => {
@@ -521,6 +528,34 @@ describe("Superwall verification", () => {
   });
 });
 
+describe("App Store verification", () => {
+  it("values standard-price subscriptions from the daily report, with history", async () => {
+    const result = await verifyRevenue("appstore", appStoreKey(APPSTORE.one), true);
+    expect(result).toMatchObject({
+      provider: "appstore",
+      livemode: true,
+      mrrCents: 18_000,
+      customers: 18,
+      skippedItems: 3,
+      currencies: { usd: 13_000, eur: 4_000 },
+      mrrInvoiceCents: 18_000,
+      mrr30dAgoCents: 13_000,
+    });
+    expect(result.history![0].mrr_cents).toBe(10_000);
+    expect(result.subscriptionHashes).toHaveLength(2);
+  }, 30_000);
+
+  it("refuses an Admin key, and reads $0 for a team without subscriptions", async () => {
+    await expect(verifyRevenue("appstore", appStoreKey(APPSTORE.wide), true)).rejects.toThrow(
+      /can do more than download reports/,
+    );
+    const none = await verifyRevenue("appstore", appStoreKey(APPSTORE.none), true, new Date(), {
+      history: false,
+    });
+    expect(none.mrrCents).toBe(0);
+  }, 30_000);
+});
+
 describe("claims", () => {
   it("hash Stripe ids as before and prefix other providers", async () => {
     const { createHash } = await import("node:crypto");
@@ -552,6 +587,7 @@ describe("hourly verification", () => {
     ["asaas", ASAAS.one],
     ["airwallex", airwallexKey(AIRWALLEX.one)],
     ["superwall", superwallKey(SUPERWALL.one)],
+    ["appstore", appStoreKey(APPSTORE.one)],
   ] as const)(
     "reads only what MRR needs from %s without the history",
     async (provider, key) => {
@@ -935,6 +971,27 @@ describe("payments", () => {
     expect(values[`${SUPERWALL.application}:${day(1)}`]).toEqual(usd(840));
     expect(kinds[`${SUPERWALL.application}:${day(1)}`]).toBe("unknown");
   }, 20_000);
+
+  it("reads App Store sales per day, currency and kind, less refunds", async () => {
+    // One request per day, so the test reads two weeks rather than six months.
+    const now = Math.floor(Date.now() / 1000);
+    const read = await adapter("appstore").payments(appStoreKey(APPSTORE.one), true, {
+      allowTest: true,
+      since: now - 14 * DAY,
+      before: null,
+      maxPages: 200,
+      stored: () => null,
+    });
+    expect(read.complete).toBe(true);
+    const values = Object.fromEntries(read.payments.map((p) => [p.id, p.value]));
+    const kinds = Object.fromEntries(read.payments.map((p) => [p.id, p.kind]));
+    const day = (back: number) => new Date((now - back * DAY) * 1000).toISOString().slice(0, 10);
+    const vendor = APPSTORE.one.vendor;
+    expect(values[`${vendor}:${day(3)}:usd:subscription`]).toEqual(usd(4000));
+    expect(values[`${vendor}:${day(3)}:usd:one_time`]).toEqual(usd(998));
+    expect(values[`${vendor}:${day(10)}:eur:subscription`]).toEqual(eur(4000));
+    expect(kinds[`${vendor}:${day(3)}:usd:one_time`]).toBe("one_time");
+  }, 30_000);
 
   it("reads AbacatePay's revenue as one payment a day", async () => {
     const { complete, values, kinds } = await recent("abacatepay", ABACATEPAY.one, {

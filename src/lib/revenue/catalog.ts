@@ -112,6 +112,18 @@ export const PROVIDERS = {
     placeholder: "sk_...",
     account: { label: "Application ID", placeholder: "App dashboard address or ID" },
   },
+  // The key is the private key of a Team key, with its issuer, Key ID and the team's vendor number.
+  appstore: {
+    name: "App Store",
+    keyLabel: "Private key",
+    newKeyLabel: "New private key",
+    placeholder: "Contents of the .p8 file",
+    account: { label: "Issuer ID", placeholder: "57246542-96fe-1a63-e053-0824d011072a" },
+    extra: [
+      { label: "Key ID", placeholder: "2X9R4HXF34" },
+      { label: "Vendor number", placeholder: "85012345" },
+    ],
+  },
 } as const satisfies Record<string, ProviderEntry>;
 
 type ProviderField = { label: string; placeholder: string };

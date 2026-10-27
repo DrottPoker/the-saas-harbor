@@ -5,6 +5,7 @@ import AxeBuilder from "@axe-core/playwright";
 import { DODO_KEYS, PADDLE_KEYS, POLAR_TOKENS } from "./fake-billing.mjs";
 import { ABACATEPAY } from "./fake-abacatepay.mjs";
 import { AIRWALLEX } from "./fake-airwallex.mjs";
+import { APPSTORE } from "./fake-appstore.mjs";
 import { ASAAS } from "./fake-asaas.mjs";
 import { CHARGEBEE, CREEM_KEYS, REVENUECAT, WHOP_KEYS } from "./fake-billing-extra.mjs";
 import { MOLLIE } from "./fake-mollie.mjs";
@@ -3466,6 +3467,29 @@ test("founders verify revenue through a Superwall key that reads charts", async 
     hint: `app ${SUPERWALL.application} · sk_…${SUPERWALL.one.slice(-4)}`,
     livemode: true,
     secretPart: "harborSuperwall",
+  });
+});
+
+// The App Store asks for a Team key's private key, Issuer ID, Key ID and vendor number, and
+// refuses an Admin key, which can do more than download reports.
+test("founders verify revenue through an App Store Connect key for reports", async ({ page }) => {
+  await connectsWithReadOnlyKey(page, {
+    provider: "App Store",
+    slug: "appstore",
+    link: "Open App Store Connect's API keys",
+    fill: async (revenue, which) => {
+      const key = APPSTORE[which];
+      await revenue.getByLabel("Issuer ID", { exact: true }).fill(key.issuer);
+      await revenue.getByLabel("Key ID", { exact: true }).fill(key.keyId);
+      await revenue.getByLabel("Vendor number", { exact: true }).fill(key.vendor);
+      await revenue.getByLabel(/^(New )?private key$/i).fill(key.privateKey);
+    },
+    refused: /The key can do more than download reports,/,
+    verified:
+      /Verified MRR: $180.00 from 18 subscribers. 3 subscriptions on a paid offer were not counted./,
+    hint: `${APPSTORE.one.keyId} · vendor ${APPSTORE.one.vendor}`,
+    livemode: true,
+    secretPart: "PRIVATE KEY",
   });
 });
 

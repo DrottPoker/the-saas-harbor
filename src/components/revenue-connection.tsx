@@ -268,6 +268,24 @@ const guides: Record<ProviderId, Guide> = {
       "Copy the key, which starts with sk_, and paste it below with the address of your app's dashboard.",
     ],
   },
+  appstore: {
+    dashboard: {
+      href: "https://appstoreconnect.apple.com/access/integrations/api",
+      label: "Open App Store Connect's API keys",
+    },
+    reads: "your sales and subscription reports",
+    steps: [
+      <>
+        In Users and Access → Integrations → App Store Connect API, open Team Keys and choose{" "}
+        {strong("Generate API Key")}.
+      </>,
+      <>
+        Under Access, choose {strong("Sales")} with access to reports, or {strong("Finance")}. A key
+        that can do more, such as Admin or App Manager, is refused.
+      </>,
+      "Download the .p8 file and paste its contents below, with the Issuer ID, the Key ID and your vendor number from Payments and Financial Reports.",
+    ],
+  },
 };
 
 // Where to make the key, with the steps: the dashboard link opens in a new tab.
@@ -317,6 +335,8 @@ const noHistory: Record<ProviderId, string> = {
   airwallex:
     "No revenue history: the Airwallex account has more subscription invoices than one verification reads.",
   superwall: "No revenue history yet. Refresh to read Superwall's MRR chart.",
+  appstore:
+    "No revenue history yet. Refresh to read Apple's subscription reports of the last 12 months.",
 };
 
 const option =

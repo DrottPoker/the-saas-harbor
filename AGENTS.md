@@ -10,7 +10,7 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 
 # The SaaS Harbor
 
-Next.js 16 App Router and Supabase platform where independent SaaS products get public profiles and rank on a leaderboard of MRR verified through read-only keys to their payment provider (Stripe, Paddle, Polar, Dodo Payments, Creem, Chargebee, Whop, RevenueCat, Mollie, Paystack, AbacatePay, Asaas, Airwallex or Superwall), a PayPal app that can only search transactions, or read-only OAuth access to Gumroad. Read `README.md`, `docs/ARCHITECTURE.md` and `docs/STATUS.md` before larger changes.
+Next.js 16 App Router and Supabase platform where independent SaaS products get public profiles and rank on a leaderboard of MRR verified through read-only keys to their payment provider (Stripe, Paddle, Polar, Dodo Payments, Creem, Chargebee, Whop, RevenueCat, Mollie, Paystack, AbacatePay, Asaas, Airwallex, Superwall or the App Store), a PayPal app that can only search transactions, or read-only OAuth access to Gumroad. Read `README.md`, `docs/ARCHITECTURE.md` and `docs/STATUS.md` before larger changes.
 
 ## Commands
 
