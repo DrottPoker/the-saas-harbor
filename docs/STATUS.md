@@ -8,6 +8,12 @@ The first release includes accounts, email confirmation and recovery, public mak
 
 Makers can message each other privately (see Messages below), and report products, profiles and messages to the admins, who decide in an admin panel (see Reports and moderation below). They get emails about unread messages and about decisions (see Email notifications below). Other forms of connection, such as following or contact lists, are not implemented.
 
+## Ten more payment providers 2026-10-27
+
+At the owner's request (more providers, with founders in China, India, Africa and Latin America in mind), ten more providers are being added: AbacatePay, Asaas, Paystack, Mollie, Airwallex, Superwall, the App Store, Zoho Billing, Mercado Pago and Google Play. Each was checked against the read-only rules first; the owner decided that whether a provider's figures include tax does not matter, and approved the token requests and read-only POSTs named in AGENTS.md.
+
+Shared groundwork: migration `20261027100000_ten_more_providers.sql` adds the ten to the provider checks (pgTAP covers them), so it must reach production before the code that connects them. A provider may ask for further fields after the account (`extra` in the catalog, `provider_extra_1` and on in the form), which the App Store needs. A provider that rotates its credentials when they are used returns the new key with its reading, and the sync stores it at once through `renew_revenue_key` (migration `20261027090000_renew_revenue_key.sql`, pgTAP `renew_key.test.sql`), which Mercado Pago needs.
+
 ## Why to connect, under Other 2026-10-24
 
 Many new products are saved under Other, most of them with none as the name. At the owner's request, choosing Other now shows a box above the name field, Connected products are seen by more visitors, that lists what a provider from the list gives: a place on the leaderboard, which is the home page, a place above unranked products on its category and technology pages, and a link to the website that search engines follow even with the figures hidden. Below the list it says that products under Other are not ranked, that their website link is marked nofollow, and that connecting only gives read access. The note under the field keeps that the provider can be connected later and that the name is not shown on the site. Every statement describes how the site works today; none promises a number of visitors. The browser test that saves under Other finds the box.

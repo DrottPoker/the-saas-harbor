@@ -20,13 +20,21 @@ export type ProviderReading = {
   /** Paid recurring charges for the history, or null with a note when there are none to read. */
   lines: ServiceLine[] | null;
   historyNote: string | null;
+  /**
+   * What replaces the stored key after this read, where the provider rotates its credentials,
+   * such as a refresh token that is good only once. Stored with the verification.
+   */
+  renewedKey?: string;
 };
 
 /** `history` false reads what MRR needs only, and returns no lines and no note. */
 export type ReadOptions = { allowTest: boolean; now: Date; history: boolean };
 
-/** What a maker pasted: the key, and the site or project it belongs to where one is asked for. */
-export type KeyInput = { key: string; account: string };
+/**
+ * What a maker pasted: the key, the site or project it belongs to where one is asked for, and the
+ * further fields a provider asks for after it, in the catalog's order.
+ */
+export type KeyInput = { key: string; account: string; extra?: string[] };
 
 /**
  * What a payment paid for: a subscription, a one-time purchase, or `unknown` where the provider

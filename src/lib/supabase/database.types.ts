@@ -1444,6 +1444,14 @@ export type Database = {
         Args: { p_country: string }
         Returns: undefined
       }
+      renew_revenue_key: {
+        Args: {
+          p_connected_at: string
+          p_encrypted_key: string
+          p_saas_id: string
+        }
+        Returns: boolean
+      }
       revenue_read_state: {
         Args: { p_from: string; p_months_from?: string; p_saas_id: string }
         Returns: Json

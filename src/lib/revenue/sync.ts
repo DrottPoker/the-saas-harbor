@@ -6,7 +6,12 @@ import { adminClient } from "@/lib/supabase/admin";
 import type { Database } from "@/lib/supabase/types";
 import { providerName, type ProviderId } from "./catalog";
 import { decryptProviderKey, encryptProviderKey } from "./crypto";
-import { changedDuringCheck, makerMessage, VerificationError } from "./errors";
+import {
+  changedDuringCheck,
+  makerMessage,
+  REPLACED_DURING_CHECK,
+  VerificationError,
+} from "./errors";
 import { usdRates } from "./fx";
 import { monthEnds, mrrAt } from "./history";
 import { toUsdCents } from "./money";
@@ -35,6 +40,8 @@ export type Verification = {
   historyAt: string | null;
   /** Revenue from payments, read about once a day and carried over in between. */
   revenue: RevenueFigures | null;
+  /** The key that replaces the stored one, where the provider rotated it during the read. */
+  renewedKey: string | null;
 };
 
 const DAY = 86_400;
@@ -114,6 +121,7 @@ export async function verifyRevenue(
     mrrNote: reading.mrrNote ?? null,
     historyAt: history ? now.toISOString() : null,
     revenue: null,
+    renewedKey: reading.renewedKey ?? null,
   };
 }
 
@@ -156,12 +164,25 @@ async function record(
   if (error) throw new Error(`The verification could not be recorded: ${error.message}`);
 }
 
+// Stores a key the provider rotated during a read, for the connection read only, so a key the
+// founder connected in between is kept and the run then stores nothing.
+async function renewKey(saasId: string, connectedAt: string, key: string) {
+  const { data, error } = await adminClient().rpc("renew_revenue_key", {
+    p_saas_id: saasId,
+    p_connected_at: connectedAt,
+    p_encrypted_key: encryptProviderKey(key, saasId),
+  });
+  if (error) throw new Error(`The renewed key could not be stored: ${error.message}`);
+  if (!data) throw new VerificationError(REPLACED_DURING_CHECK);
+}
+
 // Connects a new or replacement key. The key is verified before anything is stored. Its payments
 // are read once the founder has the answer, marked checked first so a scheduled run skips them.
 export async function connectProvider(saasId: string, provider: ProviderId, key: ParsedKey) {
   const verification = await verifyRevenue(provider, key.key, key.livemode);
+  const stored = verification.renewedKey ?? key.key;
   await record(saasId, verification, {
-    newKey: { encrypted: encryptProviderKey(key.key, saasId), hint: key.hint },
+    newKey: { encrypted: encryptProviderKey(stored, saasId), hint: key.hint },
   });
   after(async () => {
     try {
@@ -278,11 +299,14 @@ export async function syncConnection(
     const read = await verifyRevenue(provider, key, connection.livemode, new Date(), {
       history: !carried,
     });
+    // The old key may no longer work, so the new one is stored before anything else can fail.
+    if (read.renewedKey) await renewKey(saasId, connection.connected_at, read.renewedKey);
+    const current = read.renewedKey ?? key;
     const verification = carried ? { ...read, ...carried } : read;
     verification.revenue = revenueToCarry(latest, provider);
     if (readPayments)
       try {
-        verification.revenue = await readRevenue(saasId, provider, key, connection.livemode, {
+        verification.revenue = await readRevenue(saasId, provider, current, connection.livemode, {
           allowTest: allowTestKeys(),
           connectedAt: connection.connected_at,
         });

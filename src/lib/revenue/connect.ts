@@ -8,6 +8,7 @@ import {
   CHOOSE_PROVIDER,
   connectsWithOAuth,
   isProviderId,
+  providerExtra,
   PROVIDERS,
   type ProviderId,
 } from "./catalog";
@@ -67,6 +68,9 @@ export function chosenProvider(form: FormData): ChosenProvider | null {
     {
       key: String(form.get("provider_key") ?? ""),
       account: String(form.get("provider_account") ?? ""),
+      extra: providerExtra(provider).map((_, index) =>
+        String(form.get(`provider_extra_${index + 1}`) ?? ""),
+      ),
     },
     { allowTest: allowTestKeys() },
   );

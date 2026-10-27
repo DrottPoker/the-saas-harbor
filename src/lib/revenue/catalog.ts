@@ -1,7 +1,8 @@
 // The payment providers that can verify revenue, with what makers see of them. Safe for the
 // browser: it holds names and labels only. `account` is a second field some providers need
-// besides the key, such as the site or project the key belongs to. A provider with `oauth` is
-// connected by approving access with the provider rather than by pasting a key.
+// besides the key, such as the site or project the key belongs to, and `extra` any further
+// fields after it. A provider with `oauth` is connected by approving access with the provider
+// rather than by pasting a key.
 export const PROVIDERS = {
   stripe: {
     name: "Stripe",
@@ -68,17 +69,18 @@ export const PROVIDERS = {
     placeholder: "Secret key 1",
     account: { label: "Client ID", placeholder: "Client ID of the app" },
   },
-} as const satisfies Record<
-  string,
-  {
-    name: string;
-    keyLabel: string;
-    newKeyLabel: string;
-    placeholder: string;
-    account?: { label: string; placeholder: string };
-    oauth?: true;
-  }
->;
+} as const satisfies Record<string, ProviderEntry>;
+
+type ProviderField = { label: string; placeholder: string };
+type ProviderEntry = {
+  name: string;
+  keyLabel: string;
+  newKeyLabel: string;
+  placeholder: string;
+  account?: ProviderField;
+  extra?: readonly ProviderField[];
+  oauth?: true;
+};
 
 export type ProviderId = keyof typeof PROVIDERS;
 export const PROVIDER_IDS = Object.keys(PROVIDERS) as ProviderId[];
@@ -110,6 +112,12 @@ export function providerName(id: string | null | undefined) {
 export function providerAccount(id: ProviderId): { label: string; placeholder: string } | null {
   const provider = PROVIDERS[id];
   return "account" in provider ? provider.account : null;
+}
+
+/** The fields a provider asks for after the account, in order; empty for most. */
+export function providerExtra(id: ProviderId): readonly ProviderField[] {
+  const provider: ProviderEntry = PROVIDERS[id];
+  return provider.extra ?? [];
 }
 
 /** Whether a provider is connected through OAuth rather than with a pasted key. */

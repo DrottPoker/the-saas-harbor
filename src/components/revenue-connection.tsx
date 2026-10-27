@@ -14,6 +14,7 @@ import {
   PROVIDER_IDS,
   PROVIDERS,
   providerAccount,
+  providerExtra,
   type ProviderId,
   type ProviderOption,
 } from "@/lib/revenue/catalog";
@@ -400,6 +401,23 @@ function ProviderFields({
           />
         </Field>
       )}
+      {providerExtra(provider).map((field, index) => {
+        const name = `provider_extra_${index + 1}`;
+        return (
+          <Field key={name} name={name} label={field.label}>
+            <Input
+              key={provider}
+              id={name}
+              name={name}
+              autoComplete="off"
+              spellCheck={false}
+              placeholder={field.placeholder}
+              defaultValue={values?.provider === provider ? values[name] : undefined}
+              required
+            />
+          </Field>
+        );
+      })}
       <Field name="provider_key" label={replace ? newKeyLabel : keyLabel}>
         <Input
           key={provider}

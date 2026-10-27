@@ -56,13 +56,14 @@ select is(
 select lives_ok(
   $$ do $d$ declare p text; begin
        foreach p in array array['creem', 'chargebee', 'whop', 'revenuecat', 'gumroad', 'paypal',
-           'polar'] loop
+           'abacatepay', 'asaas', 'paystack', 'mollie', 'airwallex', 'superwall', 'appstore',
+           'zoho', 'mercadopago', 'googleplay', 'polar'] loop
          perform public.record_revenue_verification('c7100000-0000-4000-8000-000000000001', p,
            'v1:' || p, p || '…xyz', true, 100, 1, '{"usd": 100}', null,
            array[repeat('f', 64)], null, null, null);
        end loop;
      end $d$ $$,
-  'Creem, Chargebee, Whop, RevenueCat, Gumroad and PayPal are accepted too');
+  'the other sixteen providers are accepted too');
 select throws_ok(
   $$ select public.record_revenue_verification('c7100000-0000-4000-8000-000000000001', 'lemon',
     'v1:lemon', 'x', true, 1, 1, '{}', null, '{}', null, null, null) $$,
