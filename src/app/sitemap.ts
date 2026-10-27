@@ -1,18 +1,42 @@
 import type { MetadataRoute } from "next";
+import { headers } from "next/headers";
+import { isLocale, LOCALE_HEADER, localizedPath } from "@/i18n/config";
 import { categoryCounts, directoryStats, revenueRankedCounts, techCounts } from "@/lib/data";
 import { categories, categorySlug } from "@/lib/domain";
 import { REVENUE_WINDOWS } from "@/lib/revenue-figures";
 import { publicClient } from "@/lib/supabase/server";
-import { siteUrl } from "@/lib/seo";
+import { languageAlternates, siteUrl } from "@/lib/seo";
 import { STATS_MINIMUM } from "@/lib/stats";
 import { technologies } from "@/lib/tech";
 
 // Listed products and the makers behind them, read like a visitor would, so hidden products and
-// suspended makers never appear. Built per request, since products change all the time.
+// suspended makers never appear. Built per request, since products change all the time. Each
+// language has its own: /sitemap.xml lists the English addresses and /es/sitemap.xml (which the
+// proxy hands to this route with the language) the Spanish ones, every entry with its versions in
+// the other languages.
 export const dynamic = "force-dynamic";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  const requested = (await headers()).get(LOCALE_HEADER);
+  const locale = isLocale(requested) ? requested : "en";
   const base = siteUrl();
+  // Entries are written with English paths and turned into this language's addresses at the end.
+  const entries = await englishEntries(base);
+  return entries.map((entry) => {
+    const path = entry.url.slice(base.length) || "/";
+    return {
+      ...entry,
+      url: `${base}${localizedPath(locale, path)}`,
+      alternates: {
+        languages: Object.fromEntries(
+          Object.entries(languageAlternates(path)).map(([tag, href]) => [tag, `${base}${href}`]),
+        ),
+      },
+    };
+  });
+}
+
+async function englishEntries(base: string): Promise<MetadataRoute.Sitemap> {
   const pages: MetadataRoute.Sitemap = [
     { url: `${base}/`, changeFrequency: "daily", priority: 1 },
     { url: `${base}/browse`, changeFrequency: "daily", priority: 0.8 },

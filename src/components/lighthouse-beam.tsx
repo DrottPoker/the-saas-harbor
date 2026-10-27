@@ -25,7 +25,9 @@ const style: CSSProperties = {
 /**
  * The light of the lighthouse in the logo, sweeping across the top of the home page. It is
  * placed against the page itself, not the section it sits in, so it starts at the lantern of the
- * logo in the header on every screen size: no ancestor of it may be positioned.
+ * logo in the header on every screen size: no ancestor of it may be positioned. Right to left, the
+ * logo is at the other end of the header, so the box is mirrored and the beam sweeps the other way;
+ * the lantern is then 26 px from the logo's outer edge, since the mark itself is not mirrored.
  */
 export function LighthouseBeam() {
   return (
@@ -34,10 +36,10 @@ export function LighthouseBeam() {
       className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-[48rem] overflow-hidden"
     >
       {/* The same box as the header's, whose padding puts the logo 1 or 1.5 rem in. */}
-      <div className="relative mx-auto h-full max-w-6xl">
+      <div className="relative mx-auto h-full max-w-6xl rtl:-scale-x-100">
         {/* The lantern, 14 px into the logo and 17 px down. Steeper on phones, where the header
             is taller. */}
-        <div className="absolute top-[17px] left-[calc(1rem+14px)] rotate-[34deg] sm:left-[calc(1.5rem+14px)] md:rotate-[24deg]">
+        <div className="absolute top-[17px] left-[calc(1rem+14px)] rotate-[34deg] sm:left-[calc(1.5rem+14px)] md:rotate-[24deg] rtl:left-[calc(1rem+26px)] sm:rtl:left-[calc(1.5rem+26px)]">
           <div
             style={style}
             className="absolute top-0 left-0 aspect-[3/2] w-[36rem] origin-left -translate-y-1/2 animate-beam md:w-[68rem]"

@@ -1,7 +1,7 @@
 import { test, expect, type APIRequestContext, type Locator, type Page } from "@playwright/test";
 import { createClient } from "@supabase/supabase-js";
 import { createHash, randomBytes, randomUUID } from "node:crypto";
-import AxeBuilder from "@axe-core/playwright";
+import { expectAccessible } from "./accessibility";
 import { DODO_KEYS, PADDLE_KEYS, POLAR_TOKENS } from "./fake-billing.mjs";
 import { ABACATEPAY } from "./fake-abacatepay.mjs";
 import { AIRWALLEX } from "./fake-airwallex.mjs";
@@ -151,31 +151,6 @@ function confirmLink(html: string) {
   if (!link?.startsWith(`${test.info().project.use.baseURL}/auth/confirm?token_hash=`))
     throw new Error("A local confirm link is required.");
   return link;
-}
-async function expectAccessible(page: Page) {
-  // Axe measures colors as they are on screen, so it waits for transitions, such as a chip that
-  // changes color when another is chosen, to finish. Endless animations do not count.
-  await page.waitForFunction(() =>
-    document
-      .getAnimations()
-      .every(
-        (animation) =>
-          animation.playState !== "running" ||
-          animation.effect?.getTiming().iterations === Infinity,
-      ),
-  );
-  const accessibility = await new AxeBuilder({ page })
-    .withTags(["wcag2a", "wcag2aa", "wcag21aa"])
-    .analyze();
-  expect
-    .soft(
-      accessibility.violations.map((issue) => ({
-        page: new URL(page.url()).pathname,
-        id: issue.id,
-        nodes: issue.nodes.map((node) => node.target),
-      })),
-    )
-    .toEqual([]);
 }
 
 test.describe.configure({ mode: "serial" });
