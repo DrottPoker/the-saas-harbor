@@ -12,6 +12,7 @@ import {
   CREEM_ICON,
   MOLLIE_ICON,
   PAYSTACK_ICON,
+  SUPERWALL_ICON,
   WHOP_ICON,
 } from "./provider-icons";
 
@@ -77,6 +78,8 @@ export const PROVIDER_TILES: Record<ProviderId, ProviderTile> = {
   asaas: { kind: "image", src: ASAAS_ICON, inset: 0 },
   // Airwallex's icon is already a tile.
   airwallex: { kind: "image", src: AIRWALLEX_ICON, inset: 0 },
+  // Superwall's icon is already a tile.
+  superwall: { kind: "image", src: SUPERWALL_ICON, inset: 0 },
 };
 
 /** A 24-unit tile with the mark in its middle 14 units. */

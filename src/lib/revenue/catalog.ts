@@ -104,6 +104,14 @@ export const PROVIDERS = {
     placeholder: "Scoped API key",
     account: { label: "Client ID", placeholder: "Client ID shown with your API keys" },
   },
+  // The key is an organization API key, and the account the application it reads charts of.
+  superwall: {
+    name: "Superwall",
+    keyLabel: "Organization API key",
+    newKeyLabel: "New organization API key",
+    placeholder: "sk_...",
+    account: { label: "Application ID", placeholder: "App dashboard address or ID" },
+  },
 } as const satisfies Record<string, ProviderEntry>;
 
 type ProviderField = { label: string; placeholder: string };

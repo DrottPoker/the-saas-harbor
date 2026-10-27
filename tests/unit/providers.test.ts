@@ -59,6 +59,7 @@ describe("provider catalog", () => {
       "abacatepay",
       "asaas",
       "airwallex",
+      "superwall",
     ]);
     expect(PROVIDER_IDS.every(isProviderId)).toBe(true);
     expect(isProviderId("lemonsqueezy")).toBe(false);
@@ -69,9 +70,9 @@ describe("provider catalog", () => {
 
   it("names them in a sentence", () => {
     expect(providerList("or")).toBe(
-      "Stripe, Paddle, Polar, Dodo Payments, Creem, Chargebee, Whop, RevenueCat, Gumroad, PayPal, Mollie, Paystack, AbacatePay, Asaas or Airwallex",
+      "Stripe, Paddle, Polar, Dodo Payments, Creem, Chargebee, Whop, RevenueCat, Gumroad, PayPal, Mollie, Paystack, AbacatePay, Asaas, Airwallex or Superwall",
     );
-    expect(providerList("and")).toMatch(/, Asaas and Airwallex$/);
+    expect(providerList("and")).toMatch(/, Airwallex and Superwall$/);
   });
 
   it("asks for a site, project or app only where the key needs one", () => {

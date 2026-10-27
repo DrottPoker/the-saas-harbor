@@ -10,6 +10,7 @@ import { CHARGEBEE, CREEM_KEYS, REVENUECAT, WHOP_KEYS } from "./fake-billing-ext
 import { MOLLIE } from "./fake-mollie.mjs";
 import { PAYPAL } from "./fake-paypal.mjs";
 import { PAYSTACK } from "./fake-paystack.mjs";
+import { SUPERWALL } from "./fake-superwall.mjs";
 import { formatUsd } from "../../src/lib/domain";
 import { termsUpdated } from "../../src/lib/legal";
 
@@ -3445,6 +3446,26 @@ test("founders verify revenue through an Airwallex scoped key", async ({ page })
     hint: `${AIRWALLEX.one.clientId.slice(0, 8)}… · …${AIRWALLEX.one.apiKey.slice(-4)}`,
     livemode: false,
     secretPart: "harborAirwallexKey",
+  });
+});
+
+// Superwall asks for an organization API key and the app, and refuses a key beyond charts.
+test("founders verify revenue through a Superwall key that reads charts", async ({ page }) => {
+  await connectsWithReadOnlyKey(page, {
+    provider: "Superwall",
+    slug: "superwall",
+    link: "Open the Superwall dashboard",
+    fill: async (revenue, which) => {
+      await revenue
+        .getByLabel("Application ID", { exact: true })
+        .fill(`https://superwall.com/applications/${SUPERWALL.application}`);
+      await revenue.getByLabel(/^(New )?organization API key$/i).fill(SUPERWALL[which]);
+    },
+    refused: /The key has more access than charts./,
+    verified: /Verified MRR: $120.50 from 15 subscribers./,
+    hint: `app ${SUPERWALL.application} · sk_…${SUPERWALL.one.slice(-4)}`,
+    livemode: true,
+    secretPart: "harborSuperwall",
   });
 });
 

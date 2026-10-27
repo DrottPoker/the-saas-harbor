@@ -11,6 +11,7 @@ import { GUMROAD } from "../e2e/fake-gumroad.mjs";
 import { MOLLIE } from "../e2e/fake-mollie.mjs";
 import { PAYPAL } from "../e2e/fake-paypal.mjs";
 import { PAYSTACK } from "../e2e/fake-paystack.mjs";
+import { SUPERWALL } from "../e2e/fake-superwall.mjs";
 import {
   exchangeGumroadCode,
   gumroadAuthorizeUrl,
@@ -54,6 +55,7 @@ beforeAll(async () => {
   process.env.ABACATEPAY_API_BASE = `${base}/abacatepay`;
   process.env.ASAAS_API_BASE = `${base}/asaas`;
   process.env.AIRWALLEX_API_BASE = `${base}/airwallex`;
+  process.env.SUPERWALL_API_BASE = `${base}/superwall`;
   process.env.GUMROAD_API_BASE = `${base}/gumroad`;
   process.env.GUMROAD_OAUTH_BASE = `${base}/gumroad`;
   process.env.FX_API_BASE = base;
@@ -222,6 +224,7 @@ const chargebeeKey = `${CHARGEBEE.site}:${CHARGEBEE.key}`;
 const revenueCatKey = (key: string) => `${REVENUECAT.project}:${key}`;
 const paypalKey = (app: { clientId: string; secret: string }) => `${app.clientId}:${app.secret}`;
 const airwallexKey = (key: { clientId: string; apiKey: string }) => `${key.clientId}:${key.apiKey}`;
+const superwallKey = (key: string) => `${SUPERWALL.application}:${key}`;
 const mollieKey = (token: string) => `${MOLLIE.profile}:${token}`;
 
 describe("Creem verification", () => {
@@ -494,6 +497,30 @@ describe("Airwallex verification", () => {
   });
 });
 
+describe("Superwall verification", () => {
+  it("reads MRR, active subscriptions and history from the charts", async () => {
+    const result = await verifyRevenue("superwall", superwallKey(SUPERWALL.one), true);
+    expect(result).toMatchObject({
+      provider: "superwall",
+      livemode: true,
+      mrrCents: 12_050,
+      customers: 15,
+      skippedItems: 0,
+      currencies: { usd: 12_050 },
+      mrrInvoiceCents: 12_050,
+      mrr30dAgoCents: 10_000,
+    });
+    expect(result.history![0].mrr_cents).toBe(10_000);
+    expect(result.subscriptionHashes).toHaveLength(1);
+  }, 20_000);
+
+  it("refuses a key with access beyond charts", async () => {
+    await expect(verifyRevenue("superwall", superwallKey(SUPERWALL.wide), true)).rejects.toThrow(
+      /more access than charts/,
+    );
+  });
+});
+
 describe("claims", () => {
   it("hash Stripe ids as before and prefix other providers", async () => {
     const { createHash } = await import("node:crypto");
@@ -524,6 +551,7 @@ describe("hourly verification", () => {
     ["abacatepay", ABACATEPAY.one],
     ["asaas", ASAAS.one],
     ["airwallex", airwallexKey(AIRWALLEX.one)],
+    ["superwall", superwallKey(SUPERWALL.one)],
   ] as const)(
     "reads only what MRR needs from %s without the history",
     async (provider, key) => {
@@ -895,6 +923,17 @@ describe("payments", () => {
     });
     expect(values).not.toHaveProperty("int_abandoned");
     expect(kinds).toMatchObject({ int_inv_monthly_0: "subscription", int_checkout: "one_time" });
+  }, 20_000);
+
+  it("reads Superwall's proceeds as one payment a day", async () => {
+    const { complete, values, kinds } = await recent("superwall", superwallKey(SUPERWALL.one), {
+      livemode: true,
+    });
+    expect(complete).toBe(true);
+    const day = (back: number) =>
+      new Date(Date.now() - back * DAY * 1000).toISOString().slice(0, 10);
+    expect(values[`${SUPERWALL.application}:${day(1)}`]).toEqual(usd(840));
+    expect(kinds[`${SUPERWALL.application}:${day(1)}`]).toBe("unknown");
   }, 20_000);
 
   it("reads AbacatePay's revenue as one payment a day", async () => {

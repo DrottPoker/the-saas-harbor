@@ -256,6 +256,18 @@ const guides: Record<ProviderId, Guide> = {
       "Copy the key and the Client ID shown with it, and paste them below. MRR counts Airwallex Billing subscriptions; other payments count as revenue.",
     ],
   },
+  superwall: {
+    dashboard: { href: "https://app.superwall.com", label: "Open the Superwall dashboard" },
+    reads: "your app's MRR, active subscriptions and proceeds charts",
+    steps: [
+      <>Under Settings → API Keys, create a key.</>,
+      <>
+        Give it only the {strong("charts:read")} scope, limited to the app&apos;s project if you
+        like. A key with more access is refused.
+      </>,
+      "Copy the key, which starts with sk_, and paste it below with the address of your app's dashboard.",
+    ],
+  },
 };
 
 // Where to make the key, with the steps: the dashboard link opens in a new tab.
@@ -304,6 +316,7 @@ const noHistory: Record<ProviderId, string> = {
     "No revenue history: the Asaas account has more subscriptions or charges than one verification reads.",
   airwallex:
     "No revenue history: the Airwallex account has more subscription invoices than one verification reads.",
+  superwall: "No revenue history yet. Refresh to read Superwall's MRR chart.",
 };
 
 const option =

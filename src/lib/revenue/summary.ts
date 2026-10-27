@@ -44,6 +44,7 @@ const skipped: Record<ProviderId, [string, string]> = {
     "usage-based item or subscription paid outside Airwallex was",
     "usage-based items or subscriptions paid outside Airwallex were",
   ],
+  superwall: ["subscription was", "subscriptions were"],
 };
 
 /** What a verification found, in words for the founder. */

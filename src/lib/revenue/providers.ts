@@ -14,6 +14,7 @@ import { paystack } from "./paystack";
 import { polar } from "./polar";
 import { revenuecat } from "./revenuecat";
 import { stripe } from "./stripe";
+import { superwall } from "./superwall";
 import type { ProviderAdapter } from "./types";
 import { whop } from "./whop";
 
@@ -33,6 +34,7 @@ const ADAPTERS: Record<ProviderId, ProviderAdapter> = {
   abacatepay,
   asaas,
   airwallex,
+  superwall,
 };
 
 /** How to validate a provider's keys and read its accounts. */
