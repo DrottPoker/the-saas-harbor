@@ -4,6 +4,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { cookieOptions } from "@/lib/supabase/config";
 import type { Database } from "@/lib/supabase/types";
 import { otherProviderSchema } from "@/lib/domain";
+import { availableProviders } from "./available";
 import {
   CHOOSE_PROVIDER,
   connectsWithOAuth,
@@ -19,19 +20,9 @@ import {
   type ConnectionResult,
 } from "./connection-result";
 import { VerificationError } from "./errors";
-import { gumroadOAuth } from "./gumroad/oauth";
-import { mercadopagoOAuth } from "./mercadopago/oauth";
 import { adapter } from "./providers";
 import { allowTestKeys } from "./sync";
 import type { ParsedKey } from "./types";
-import { zohoOAuth } from "./zoho/oauth";
-
-/** The providers connected through OAuth that this server is set up for. */
-export function oauthReadyProviders(): ProviderId[] {
-  return [gumroadOAuth, zohoOAuth, mercadopagoOAuth]
-    .filter((provider) => provider.client())
-    .map((provider) => provider.id);
-}
 
 // Every check, successful or not, counts against the limits in begin_revenue_check: a refresh at
 // most every five minutes per product, and 20 checks an hour per maker.
@@ -63,11 +54,10 @@ export function chosenProvider(form: FormData): ChosenProvider | null {
     return { provider, name: name.data };
   }
   if (!isProviderId(provider)) throw new VerificationError(CHOOSE_PROVIDER);
-  if (connectsWithOAuth(provider)) {
-    if (!oauthReadyProviders().includes(provider))
-      throw new VerificationError(`${PROVIDERS[provider].name} is not set up on this server yet.`);
-    return { provider, key: null };
-  }
+  // The form offers only these; a provider this server cannot connect is refused all the same.
+  if (!availableProviders().includes(provider))
+    throw new VerificationError(`${PROVIDERS[provider].name} is not set up on this server yet.`);
+  if (connectsWithOAuth(provider)) return { provider, key: null };
   const key = adapter(provider).parseKey(
     {
       key: String(form.get("provider_key") ?? ""),

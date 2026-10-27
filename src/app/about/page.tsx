@@ -2,6 +2,7 @@ import Link from "next/link";
 import { demoActive } from "@/lib/data";
 import { PageHeader, Shell } from "@/components/shell";
 import { Button } from "@/components/ui/button";
+import { availableProviders } from "@/lib/revenue/available";
 import { providerList } from "@/lib/revenue/catalog";
 import { pageMetadata } from "@/lib/seo";
 
@@ -15,7 +16,7 @@ export const metadata = pageMetadata({
 // The first thing a new founder wants to know, before how the figures are made.
 const steps = [
   "Create a free account with your email address and a username.",
-  `Choose your payment provider. Connecting ${providerList("or")} with a read-only key verifies your MRR, which puts your product on the leaderboard and makes the link to your website one that search engines follow. For any other provider, or none yet, choose Other and write its name.`,
+  `Choose your payment provider. Connecting ${providerList("or", availableProviders())} with a read-only key verifies your MRR, which puts your product on the leaderboard and makes the link to your website one that search engines follow. For any other provider, or none yet, choose Other and write its name.`,
   "Add your product: its name, tagline, description, category, website and launch date. Its page is public as soon as you save it.",
 ];
 
@@ -31,7 +32,7 @@ const sections: Section[] = [
   {
     title: "Verified revenue",
     body: [
-      `Revenue is never typed in by founders. Each product connects its payment provider, ${providerList("or")}, with a key that can only read: subscriptions and what was charged for them, with RevenueCat its charts, and with PayPal its transactions. Gumroad's, Zoho Billing's and Mercado Pago's own keys could change the account, so a founder connects them by approving read access with the provider instead. The key or access is encrypted when stored, used only by our server to read data, and can be revoked with the provider at any time.`,
+      `Revenue is never typed in by founders. Each product connects its payment provider, ${providerList("or", availableProviders())}, with a key that can only read: subscriptions and what was charged for them, with RevenueCat its charts, and with PayPal its transactions. Where a provider's own keys could change the account, as Gumroad's can, a founder connects it by approving read access with the provider instead. The key or access is encrypted when stored, used only by our server to read data, and can be revoked with the provider at any time.`,
       "MRR is what active subscriptions bring in each month, after ongoing discounts and before tax. It is verified again every hour, and a figure that has not been verified for seven days is hidden and leaves the leaderboard. Revenue is every payment over the last 30 days, the last 12 months and all time, one-time purchases included.",
     ],
     details: {

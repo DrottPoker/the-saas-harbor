@@ -4,6 +4,7 @@ import { JsonLd } from "@/components/json-ld";
 import { PageHeader, Shell } from "@/components/shell";
 import { Button } from "@/components/ui/button";
 import { DAILY_PRODUCT_LIMIT, PRODUCT_LIMIT } from "@/lib/moderation";
+import { availableProviders } from "@/lib/revenue/available";
 import { providerList } from "@/lib/revenue/catalog";
 import { pageMetadata } from "@/lib/seo";
 import { faqJsonLd, type FaqItem } from "@/lib/structured-data";
@@ -38,7 +39,7 @@ const differences = [
 
 const steps = [
   "Create an account with your email address and a username.",
-  `Choose your payment provider at the top of the form. Connect ${providerList("or")} with a read-only key to verify your MRR, and choose what to share. For any other provider, or none yet, choose Other and write its name.`,
+  `Choose your payment provider at the top of the form. Connect ${providerList("or", availableProviders())} with a read-only key to verify your MRR, and choose what to share. For any other provider, or none yet, choose Other and write its name.`,
   "Add your product: name, tagline, description, category, website, launch date, logo and tech stack. It is public when you save it.",
   "If you like, verify your domain with a DNS record and add the badge to your site.",
 ];
@@ -66,7 +67,7 @@ const questions: FaqItem[] = [
   },
   {
     question: "Which payment providers can verify revenue?",
-    answer: `${providerList("and")}, one per product, through a key that can only read. Revenue is verified again every hour.`,
+    answer: `${providerList("and", availableProviders())}, one per product, through a key that can only read. Revenue is verified again every hour.`,
   },
   {
     question: "Is the link to my website dofollow?",

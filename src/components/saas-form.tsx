@@ -85,7 +85,7 @@ export function SaasForm({
   settings,
   connection = null,
   snapshot = null,
-  oauthReady,
+  available,
   result = null,
 }: {
   id: string;
@@ -93,8 +93,8 @@ export function SaasForm({
   settings?: SaasSettings | null;
   connection?: RevenueConnection | null;
   snapshot?: RevenueSnapshot | null;
-  /** The providers connected through OAuth that this server is set up for. */
-  oauthReady: ProviderId[];
+  /** The providers this server can connect, which the form offers. */
+  available: ProviderId[];
   /** How connecting this product's provider last went. */
   result?: { provider: ProviderId; tone: "success" | "error"; text: string } | null;
 }) {
@@ -146,7 +146,7 @@ export function SaasForm({
         saasId={id}
         connection={connection}
         snapshot={snapshot}
-        oauthReady={oauthReady}
+        available={available}
         result={shown}
         provider={provider}
         onProvider={(next) => {

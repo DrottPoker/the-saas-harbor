@@ -15,7 +15,7 @@ import { CONNECTION_COLUMNS, type RevenueConnection } from "@/lib/data";
 import { RECORD_LABEL, recordName, recordValue, websiteDomain } from "@/lib/domain-verification";
 import { PRODUCT_LIMIT } from "@/lib/moderation";
 import { newProductId } from "@/lib/new-product";
-import { oauthReadyProviders } from "@/lib/revenue/connect";
+import { availableProviders } from "@/lib/revenue/available";
 import { CONNECTION_RESULT_COOKIE, decodeConnectionResult } from "@/lib/revenue/connection-result";
 import { currentUser, requireUser } from "@/lib/supabase/server";
 import { firstValues, type SearchParams } from "@/lib/params";
@@ -60,7 +60,7 @@ export default async function EditSaas({ params, searchParams }: Props) {
               Delete a product to add another.
             </Notice>
           ) : (
-            <SaasForm id={crypto.randomUUID()} oauthReady={oauthReadyProviders()} />
+            <SaasForm id={crypto.randomUUID()} available={availableProviders()} />
           )}
         </div>
       </Shell>
@@ -145,7 +145,7 @@ export default async function EditSaas({ params, searchParams }: Props) {
           settings={settings.data}
           connection={connection.data as RevenueConnection | null}
           snapshot={connection.data ? snapshot.data : null}
-          oauthReady={oauthReadyProviders()}
+          available={availableProviders()}
           result={result}
         />
         <DomainVerification

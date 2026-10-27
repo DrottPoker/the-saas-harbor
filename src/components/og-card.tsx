@@ -8,7 +8,8 @@ import { imageUrl } from "@/lib/images";
 import { LOGO_BEAM_ORIGIN, LOGO_COLORS, LOGO_VIEWBOX, type LogoTheme, logoSvg } from "@/lib/logo";
 import { excerpt } from "@/lib/moderation";
 import { ogLine, ogLines } from "@/lib/og-text";
-import { PROVIDER_IDS, type ProviderId } from "@/lib/revenue/catalog";
+import { availableProviders } from "@/lib/revenue/available";
+import type { ProviderId } from "@/lib/revenue/catalog";
 import { SITE_NAME, siteUrl } from "@/lib/seo";
 
 export const OG_SIZE = { width: 1200, height: 630 };
@@ -396,7 +397,7 @@ export function siteImage() {
           </div>
           {/* Two rows of ten, so twenty providers leave room for the host. */}
           <div style={{ display: "flex", flexWrap: "wrap", gap: 8, width: 10 * 30 + 9 * 8 }}>
-            {PROVIDER_IDS.map((provider) => (
+            {availableProviders().map((provider) => (
               <OgProviderTile key={provider} provider={provider} size={30} />
             ))}
           </div>

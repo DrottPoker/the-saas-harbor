@@ -11,7 +11,6 @@ import {
   connectsWithOAuth,
   isProviderId,
   isProviderOption,
-  PROVIDER_IDS,
   PROVIDERS,
   providerAccount,
   providerExtra,
@@ -390,11 +389,12 @@ const option =
   "flex cursor-default items-center gap-2.5 rounded-md px-2 py-2 text-sm outline-none select-none data-highlighted:bg-muted";
 
 /**
- * The payment providers to choose from, with their logos, and Other last, for a provider that is
- * not supported. The choice is part of the product form, so saving the form connects the chosen
+ * The payment providers this server can connect, with their logos, and Other last, for a provider
+ * that is not supported. The choice is part of the product form, so saving the form connects the chosen
  * provider. The list is a Radix select, so a hidden field carries the choice.
  */
 function ProviderChoice({
+  providers,
   value,
   onChange,
   offerOther,
@@ -402,6 +402,8 @@ function ProviderChoice({
   onClear,
   clearLabel,
 }: {
+  /** The providers offered, in order. */
+  providers: ProviderId[];
   value: ProviderOption | null;
   onChange: (provider: ProviderOption) => void;
   /** Whether Other is offered, and a choice is required: only while nothing is connected. */
@@ -458,7 +460,7 @@ function ProviderChoice({
             className="z-50 max-h-(--radix-select-content-available-height) w-(--radix-select-trigger-width) overflow-hidden rounded-lg border bg-surface p-1 text-foreground shadow-float"
           >
             <Select.Viewport>
-              {PROVIDER_IDS.map((id) => (
+              {providers.map((id) => (
                 <Select.Item key={id} value={id} className={option}>
                   {/* The logo is part of the item's text, so the closed list shows it too. */}
                   <Select.ItemText>
@@ -515,12 +517,12 @@ const privacyLink = (
 function ProviderFields({
   provider,
   replace,
-  oauthReady,
+  available,
   values,
 }: {
   provider: ProviderId;
   replace: boolean;
-  oauthReady: ProviderId[];
+  available: ProviderId[];
   /** What the form sent last, after a failed save. Keys are never among them. */
   values?: Record<string, string>;
 }) {
@@ -530,9 +532,7 @@ function ProviderFields({
     return (
       <div className="grid gap-4">
         <KeyGuide guide={guide} />
-        {!oauthReady.includes(provider) && (
-          <Notice>{name} is not set up on this server yet.</Notice>
-        )}
+        {!available.includes(provider) && <Notice>{name} is not set up on this server yet.</Notice>}
         <p className="text-[13px] text-muted-foreground">
           The access {name} grants is encrypted and only used to read {guide.reads}. You can remove
           it in {name} at any time. {privacyLink}
@@ -837,7 +837,7 @@ export function RevenueSection({
   saasId,
   connection,
   snapshot,
-  oauthReady,
+  available,
   result,
   provider,
   onProvider,
@@ -849,8 +849,8 @@ export function RevenueSection({
   saasId: string;
   connection: RevenueConnection | null;
   snapshot: RevenueSnapshot | null;
-  /** The providers connected through OAuth that this server is set up for. */
-  oauthReady: ProviderId[];
+  /** The providers this server can connect, which the list offers. */
+  available: ProviderId[];
   /** How the last connection went, in words for the founder. */
   result: { tone: "success" | "error"; text: string } | null;
   provider: ProviderOption | null;
@@ -889,6 +889,7 @@ export function RevenueSection({
           {replacing ? (
             <div className="grid gap-4">
               <ProviderChoice
+                providers={available}
                 value={provider}
                 onChange={onProvider}
                 offerOther={false}
@@ -900,12 +901,7 @@ export function RevenueSection({
                 clearLabel="Keep the current connection"
               />
               {provider && provider !== "other" && (
-                <ProviderFields
-                  provider={provider}
-                  replace
-                  oauthReady={oauthReady}
-                  values={values}
-                />
+                <ProviderFields provider={provider} replace available={available} values={values} />
               )}
             </div>
           ) : (
@@ -923,7 +919,13 @@ export function RevenueSection({
       ) : (
         <div className="grid gap-4">
           <Feedback state={outcome} />
-          <ProviderChoice value={provider} onChange={onProvider} offerOther invalid={invalid} />
+          <ProviderChoice
+            providers={available}
+            value={provider}
+            onChange={onProvider}
+            offerOther
+            invalid={invalid}
+          />
           {provider === "other" ? (
             <OtherProviderField
               defaultValue={
@@ -935,7 +937,7 @@ export function RevenueSection({
               <ProviderFields
                 provider={provider}
                 replace={false}
-                oauthReady={oauthReady}
+                available={available}
                 values={values}
               />
             )

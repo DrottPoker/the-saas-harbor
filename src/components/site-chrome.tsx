@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Plus } from "lucide-react";
 import type { AccountMenuData } from "@/lib/account-menu";
+import { availableProviders } from "@/lib/revenue/available";
 import { providerList } from "@/lib/revenue/catalog";
 import { AccountMenu } from "./account-menu";
 import { FeedbackLink } from "./feedback-button";
@@ -140,8 +141,8 @@ export function SiteFooter() {
           ))}
         </nav>
         <p className="border-t pt-6 text-[13px] text-faint-foreground lg:col-span-2">
-          Revenue is verified through read-only connections to {providerList("and")}, and refreshed
-          every hour.
+          Revenue is verified through read-only connections to{" "}
+          {providerList("and", availableProviders())}, and refreshed every hour.
         </p>
       </div>
     </footer>

@@ -209,8 +209,11 @@ export function providerAccess(id: string | null | undefined) {
   return isProviderId(id) && connectsWithOAuth(id) ? "read-only access" : "a read-only key";
 }
 
-/** Every provider's name in a sentence, such as "Stripe, Paddle or Polar". */
-export function providerList(conjunction: "and" | "or") {
-  const names = PROVIDER_IDS.map((id) => PROVIDERS[id].name);
+/**
+ * The providers' names in a sentence, such as "Stripe, Paddle or Polar": every provider, or the
+ * ones given, such as those this server can connect (`availableProviders`).
+ */
+export function providerList(conjunction: "and" | "or", ids: readonly ProviderId[] = PROVIDER_IDS) {
+  const names = ids.map((id) => PROVIDERS[id].name);
   return `${names.slice(0, -1).join(", ")} ${conjunction} ${names.at(-1)}`;
 }
