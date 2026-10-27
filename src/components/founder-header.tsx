@@ -1,15 +1,12 @@
-import Link from "next/link";
+import Link from "@/components/link";
 import { ArrowRight, Check } from "lucide-react";
+import { getTranslations } from "next-intl/server";
 import { currentUser } from "@/lib/supabase/server";
 import { LighthouseBeam } from "./lighthouse-beam";
 import { Button } from "./ui/button";
 
-const gains = [
-  "A public page for your product",
-  "A dofollow link to your website once you verify revenue",
-  "Page views and messages from other users",
-  "A place on the leaderboard, if you connect your revenue",
-];
+// What a listing gives, as keys in home.founder.
+const gains = ["gainPage", "gainLink", "gainViews", "gainLeaderboard"] as const;
 
 /**
  * The top of the leaderboard, which is the home page: an invitation to list any SaaS, verified or
@@ -17,30 +14,27 @@ const gains = [
  */
 export async function FounderHeader() {
   // Visitors create an account first; signed-in users go straight to the product form.
-  const start = (await currentUser()) ? "/dashboard/saas/new" : "/auth?mode=signup";
+  const [t, user] = await Promise.all([getTranslations("home.founder"), currentUser()]);
+  const start = user ? "/dashboard/saas/new" : "/auth?mode=signup";
   return (
     <div className="grid gap-6 pb-10 lg:grid-cols-[minmax(0,1fr)_20rem] lg:items-center lg:gap-12">
       <LighthouseBeam />
       <div>
         <h1 className="text-4xl font-semibold tracking-tight sm:text-5xl">
-          Get your SaaS seen.
+          {t("titleFirst")}
           <br />
-          List it for free.
+          {t("titleSecond")}
         </h1>
-        <p className="mt-4 max-w-2xl text-base text-muted-foreground sm:text-lg">
-          Every SaaS is welcome, verified or not. You get a public page with a link to your site,
-          and other users can find you and write to you. Connecting your payment provider is
-          optional and puts you on the leaderboard.
-        </p>
+        <p className="mt-4 max-w-2xl text-base text-muted-foreground sm:text-lg">{t("lead")}</p>
         <div className="mt-6 flex flex-wrap items-center gap-x-6 gap-y-3">
           <Button asChild size="lg">
             <Link href={start}>
-              List your SaaS
-              <ArrowRight />
+              {t("cta")}
+              <ArrowRight className="rtl:-scale-x-100" />
             </Link>
           </Button>
           <Link href="/about" className="text-sm font-medium underline-offset-4 hover:underline">
-            How it works
+            {t("howItWorks")}
           </Link>
         </div>
       </div>
@@ -49,19 +43,17 @@ export async function FounderHeader() {
         className="rounded-xl border bg-surface p-5 shadow-card"
       >
         <h2 id="listing-gains" className="font-semibold">
-          Free for every SaaS
+          {t("gainsTitle")}
         </h2>
         <ul className="mt-3 grid gap-2.5 text-sm">
           {gains.map((gain) => (
             <li key={gain} className="flex gap-2.5">
               <Check aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-brand" />
-              {gain}
+              {t(gain)}
             </li>
           ))}
         </ul>
-        <p className="mt-4 border-t pt-3 text-[13px] text-muted-foreground">
-          No payment details and no revenue check needed.
-        </p>
+        <p className="mt-4 border-t pt-3 text-[13px] text-muted-foreground">{t("noPayment")}</p>
       </section>
     </div>
   );

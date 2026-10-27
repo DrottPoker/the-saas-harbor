@@ -1,4 +1,4 @@
-import Link from "next/link";
+import Link from "@/components/link";
 import { Badge } from "@/components/badge";
 import { Contact } from "@/components/legal";
 import { LocalTime } from "@/components/local-time";

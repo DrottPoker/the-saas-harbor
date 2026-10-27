@@ -1,0 +1,5 @@
+{
+  "converted": "Amounts in {currency}, converted from US dollars at the reference rate of {date}.",
+  "rankedInUsd": "Rankings use US dollars.",
+  "inUsd": "{amount} in US dollars"
+}

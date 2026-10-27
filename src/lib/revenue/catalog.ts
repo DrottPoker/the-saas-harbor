@@ -210,8 +210,16 @@ export function providerAccess(id: string | null | undefined) {
 }
 
 /**
- * The providers' names in a sentence, such as "Stripe, Paddle or Polar": every provider, or the
- * ones given, such as those this server can connect (`availableProviders`).
+ * The providers' names, for a list in the page's language (`format.list` in next-intl): every
+ * provider, or the ones given, such as those this server can connect (`availableProviders`).
+ */
+export function providerNames(ids: readonly ProviderId[] = PROVIDER_IDS) {
+  return ids.map((id) => PROVIDERS[id].name);
+}
+
+/**
+ * The providers' names in an English sentence, such as "Stripe, Paddle or Polar", for text that is
+ * the same for everyone: Markdown, llms.txt and sharing images.
  */
 export function providerList(conjunction: "and" | "or", ids: readonly ProviderId[] = PROVIDER_IDS) {
   const names = ids.map((id) => PROVIDERS[id].name);

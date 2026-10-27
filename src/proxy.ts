@@ -1,6 +1,17 @@
 import { createServerClient } from "@supabase/ssr";
 import { createClient } from "@supabase/supabase-js";
-import { NextResponse, type NextRequest } from "next/server";
+import { NextResponse, userAgent, type NextRequest } from "next/server";
+import {
+  DEFAULT_LOCALE,
+  isLocale,
+  isLocalizedPath,
+  LOCALE_COOKIE,
+  LOCALE_HEADER,
+  localizedPath,
+  splitLocale,
+  type Locale,
+} from "@/i18n/config";
+import { negotiateLocale } from "@/i18n/detect";
 import { contentSecurityPolicy, createNonce } from "@/lib/csp";
 import { cookieOptions, supabaseConfig } from "@/lib/supabase/config";
 import type { Database } from "@/lib/supabase/types";
@@ -10,11 +21,22 @@ const PUBLIC_PAGE = /^\/(saas|users)\/([^/]+)$/;
 const MARKDOWN_PAGE = /^\/(saas|users)\/([^/]+)\.md$/;
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
+// next dev and next start run the proxy again for a rewrite's destination, with the headers the
+// first run set. That run would take /es/browse for the English /browse, so the first marks the
+// request with a value only this process knows, and the second leaves such a request alone.
+const PASS_HEADER = "x-harbor-proxy";
+const PASS = crypto.randomUUID();
+
 // Product and maker pages moved from ids to readable addresses. Links with an id or capital
 // letters get a permanent redirect here, before rendering: a page that streams could only redirect
 // in the browser. Only these addresses cost a lookup, and it reads what a visitor may see.
-async function movedAddress(request: NextRequest, config: ReturnType<typeof supabaseConfig>) {
-  const match = request.nextUrl.pathname.match(PUBLIC_PAGE);
+async function movedAddress(
+  request: NextRequest,
+  path: string,
+  locale: Locale,
+  config: ReturnType<typeof supabaseConfig>,
+) {
+  const match = path.match(PUBLIC_PAGE);
   if (!match) return null;
   const [, kind, address] = match;
   let slug: string | null = null;
@@ -37,11 +59,31 @@ async function movedAddress(request: NextRequest, config: ReturnType<typeof supa
   // Never to the address itself, which would loop.
   if (!slug || slug === address) return null;
   const url = request.nextUrl.clone();
-  url.pathname = `/${kind}/${slug}`;
+  url.pathname = localizedPath(locale, `/${kind}/${slug}`);
   return url;
 }
 
+/**
+ * The language to send a visitor to from an English address: their own choice from the menu, else
+ * on a first visit the browser's languages. Crawlers stay on the address they asked for, which
+ * names its other languages with hreflang.
+ */
+function preferredLocale(request: NextRequest): Locale {
+  const chosen = request.cookies.get(LOCALE_COOKIE)?.value;
+  if (isLocale(chosen)) return chosen;
+  if (userAgent(request).isBot) return DEFAULT_LOCALE;
+  return negotiateLocale(request.headers.get("accept-language"));
+}
+
+function redirectTo(url: URL, status: 307 | 308) {
+  const redirect = NextResponse.redirect(url, status);
+  redirect.headers.set("Cache-Control", "private, no-store");
+  redirect.headers.set("Vary", "Cookie, Accept-Language");
+  return redirect;
+}
+
 export async function proxy(request: NextRequest) {
+  if (request.headers.get(PASS_HEADER) === PASS) return NextResponse.next();
   const markdown = request.nextUrl.pathname.match(MARKDOWN_PAGE);
   if (markdown) {
     // The route answers ids, earlier slugs and capital letters with a redirect of its own.
@@ -49,8 +91,34 @@ export async function proxy(request: NextRequest) {
     url.pathname = `/md/${markdown[1]}/${markdown[2]}`;
     return NextResponse.rewrite(url);
   }
+  // Other languages live under /<locale>; English keeps the addresses it always had.
+  const { locale: prefix, path } = splitLocale(request.nextUrl.pathname);
+  if (prefix && path === "/sitemap.xml") {
+    // Each language has its own sitemap, drawn by the same route.
+    const url = request.nextUrl.clone();
+    url.pathname = path;
+    const headers = new Headers(request.headers);
+    headers.set(LOCALE_HEADER, prefix);
+    headers.set(PASS_HEADER, PASS);
+    return NextResponse.rewrite(url, { request: { headers } });
+  }
+  if (prefix === DEFAULT_LOCALE || (prefix && !isLocalizedPath(path))) {
+    // /en/... and files under a prefix have one address only.
+    const url = request.nextUrl.clone();
+    url.pathname = path;
+    return redirectTo(url, 308);
+  }
+  const locale = prefix ?? DEFAULT_LOCALE;
+  if (!prefix && (request.method === "GET" || request.method === "HEAD") && isLocalizedPath(path)) {
+    const wanted = preferredLocale(request);
+    if (wanted !== DEFAULT_LOCALE) {
+      const url = request.nextUrl.clone();
+      url.pathname = localizedPath(wanted, path);
+      return redirectTo(url, 307);
+    }
+  }
   const config = supabaseConfig();
-  const moved = await movedAddress(request, config);
+  const moved = await movedAddress(request, path, locale, config);
   if (moved) {
     // Not cached: a maker's slug follows their name, so an id may point elsewhere later.
     const redirect = NextResponse.redirect(moved, 308);
@@ -66,12 +134,22 @@ export async function proxy(request: NextRequest) {
   });
   // Next.js reads the nonce from the request's policy and puts it on its own scripts; the root
   // layout reads x-nonce for the theme script. Built from the current request headers, so cookies
-  // refreshed below reach the page too.
+  // refreshed below reach the page too. A page in another language is the English route, told its
+  // language by a header that the visitor cannot set themselves.
   const next = () => {
     const headers = new Headers(request.headers);
     headers.set("x-nonce", nonce);
     headers.set("Content-Security-Policy", csp);
-    const response = NextResponse.next({ request: { headers } });
+    headers.set(LOCALE_HEADER, locale);
+    headers.set(PASS_HEADER, PASS);
+    let response: NextResponse;
+    if (prefix) {
+      const url = request.nextUrl.clone();
+      url.pathname = path;
+      response = NextResponse.rewrite(url, { request: { headers } });
+    } else {
+      response = NextResponse.next({ request: { headers } });
+    }
     response.headers.set("Content-Security-Policy", csp);
     response.headers.set("Cache-Control", "private, no-store");
     return response;

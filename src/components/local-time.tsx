@@ -1,6 +1,8 @@
 "use client";
 
 import { createContext, useContext, useSyncExternalStore } from "react";
+import { useLocale } from "next-intl";
+import { LOCALE_INFO } from "@/i18n/config";
 import { formatDay, formatFullTime, formatListTime, formatMessageTime } from "@/lib/time";
 
 /** The server's guess at the visitor's time zone, and the time of the request. */
@@ -22,7 +24,7 @@ export function ServerClockProvider({
 
 const formats: Record<
   "message" | "list" | "full" | "date",
-  (value: string, timeZone: string, now?: Date) => string
+  (value: string, timeZone: string, now: Date | undefined, locale: string) => string
 > = {
   /** The time today, else with the day. */
   message: formatMessageTime,
@@ -56,10 +58,11 @@ export function LocalTime({
   className?: string;
 }) {
   const clock = useContext(ServerClockContext);
+  const locale = LOCALE_INFO[useLocale()].intl;
   const text = useSyncExternalStore(
     subscribe,
-    () => formats[format](value, deviceTimeZone()),
-    () => formats[format](value, clock.timeZone, new Date(clock.now)),
+    () => formats[format](value, deviceTimeZone(), undefined, locale),
+    () => formats[format](value, clock.timeZone, new Date(clock.now), locale),
   );
   return (
     <time dateTime={value} className={className}>

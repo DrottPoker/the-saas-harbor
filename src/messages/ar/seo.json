@@ -1,0 +1,13 @@
+{
+  "siteDescription": "دليل مجاني لمنتجات SaaS المستقلة، الناشئة منها والراسخة، مع لوحة صدارة للإيرادات الشهرية المتكررة (MRR) الموثّقة عبر مزوّدي الدفع.",
+  "laterPage": "{title}، الصفحة {page}",
+  "productTitleMrr": "{name}: MRR موثّق بقيمة {amount}",
+  "productTitleRevenue": "{name}: إيرادات موثّقة بقيمة {amount}",
+  "productMrr": "MRR موثّق: {amount}.",
+  "productMrrSubscribers": "MRR موثّق: {amount} من {count, plural, zero {دون مشتركين} one {مشترك واحد} two {مشتركَين} few {# مشتركين} many {# مشتركًا} other {# مشترك}}.",
+  "productRevenue": "الإيرادات الموثّقة منذ البداية: {amount}.",
+  "founderOf": "مؤسس {products}.",
+  "profileFounder": "{name}، مؤسس {products}، على {site}.",
+  "profileOnSite": "{name} على {site}",
+  "namesMore": "{count} أخرى"
+}

@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import Link from "next/link";
+import Link from "@/components/link";
 import { ConfirmLinkForm } from "@/components/forms";
 import { LogoMark } from "@/components/logo";
 import { emailLink } from "@/lib/domain";

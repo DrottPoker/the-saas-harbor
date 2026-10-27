@@ -1,0 +1,64 @@
+{
+  "skipToContent": "跳到主要内容",
+  "nav": {
+    "label": "主导航",
+    "leaderboard": "排行榜",
+    "browse": "浏览"
+  },
+  "header": {
+    "dashboard": "控制台",
+    "signIn": "登录",
+    "addSaas": "添加 SaaS",
+    "listYourSaas": "提交你的 SaaS",
+    "listSaasShort": "提交 SaaS",
+    "messages": "消息",
+    "messagesUnread": "消息，{count} 条未读"
+  },
+  "theme": {
+    "label": "主题",
+    "light": "浅色",
+    "dark": "深色",
+    "system": "跟随系统"
+  },
+  "preferences": {
+    "label": "语言和货币：{language}，{currency}",
+    "title": "语言和货币",
+    "language": "语言",
+    "currency": "货币",
+    "commonCurrencies": "常用货币",
+    "allCurrencies": "全部货币",
+    "note": "金额按每日参考汇率由美元换算而来。排名以美元计算。"
+  },
+  "account": {
+    "chooseUsername": "选择用户名",
+    "dashboard": "控制台",
+    "yourProfile": "我的主页",
+    "editProfile": "编辑个人资料",
+    "settings": "设置",
+    "yourReports": "我的举报",
+    "adminPanel": "管理后台",
+    "adminPanelReports": "管理后台，{count} 条待处理举报",
+    "signOut": "退出登录"
+  },
+  "feedback": "反馈",
+  "dialogClose": "关闭",
+  "footer": {
+    "label": "页脚",
+    "tagline": "一个免费的目录，收录独立 SaaS 产品及其背后的开发者。",
+    "explore": "探索",
+    "getListed": "提交产品",
+    "about": "关于",
+    "newArrivals": "最新上架",
+    "categories": "类别",
+    "techStacks": "技术栈",
+    "statistics": "统计",
+    "listYourSaas": "提交你的 SaaS",
+    "howItWorks": "运作方式",
+    "whereToLaunch": "去哪里发布",
+    "sendFeedback": "发送反馈",
+    "privacy": "隐私",
+    "terms": "条款",
+    "forAiAssistants": "面向 AI 助手",
+    "providers": "收入通过只读连接 {providers} 进行验证，每小时更新一次。"
+  }
+}

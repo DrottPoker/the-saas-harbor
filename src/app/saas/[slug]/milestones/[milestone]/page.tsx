@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
-import Link from "next/link";
-import { notFound, permanentRedirect, redirect } from "next/navigation";
+import Link from "@/components/link";
+import { notFound } from "next/navigation";
 import {
   milestoneHeadline,
   milestoneObject,
@@ -17,6 +17,7 @@ import { LocalTime } from "@/components/local-time";
 import { Shell } from "@/components/shell";
 import { Button } from "@/components/ui/button";
 import { loadMilestone, type Params } from "./load";
+import { localePermanentRedirect, localeRedirect } from "@/i18n/navigation";
 
 type Props = { params: Params };
 
@@ -41,8 +42,8 @@ export default async function MilestonePage({ params }: Props) {
   if (!found) notFound();
   if ("redirect" in found) {
     // A new address for the product is lasting; a milestone that is not shown may be again.
-    if (found.redirect.includes("/milestones/")) permanentRedirect(found.redirect);
-    redirect(found.redirect);
+    if (found.redirect.includes("/milestones/")) return localePermanentRedirect(found.redirect);
+    return localeRedirect(found.redirect);
   }
   const { item, milestone, key, reachedAt } = found;
   const name = item.name ?? "Product";

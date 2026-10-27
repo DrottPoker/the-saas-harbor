@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import Link from "@/components/link";
 import { startTransition, useEffect, useState } from "react";
 import { saveSaas, type SaveSaasState } from "@/app/actions";
 import type { RevenueConnection, RevenueSnapshot, Saas, SaasSettings } from "@/lib/data";

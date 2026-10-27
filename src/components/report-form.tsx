@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import Link from "@/components/link";
 import { submitReportAction } from "@/app/report-actions";
 import {
   DETAILS_MAX_LENGTH,

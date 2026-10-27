@@ -1,4 +1,4 @@
-import Link from "next/link";
+import Link from "@/components/link";
 import { Flag } from "lucide-react";
 import { reportPath, type ReportTarget } from "@/lib/moderation";
 import { cn } from "@/lib/utils";

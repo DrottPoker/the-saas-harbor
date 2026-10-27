@@ -1,0 +1,20 @@
+{
+  "product": "उत्पाद",
+  "category": "श्रेणी",
+  "trend": "12 महीने",
+  "launched": "लॉन्च",
+  "verified": "सत्यापित",
+  "rank": "रैंक",
+  "demoRevenue": "डेमो राजस्व",
+  "mrrNotShared": "MRR साझा नहीं किया गया",
+  "byFounder": "{name} द्वारा",
+  "joined": "<date></date> को जुड़ा",
+  "launchedOn": "{date} को लॉन्च हुआ",
+  "results": {
+    "label": "पेज",
+    "count": "{count, plural, one {# उत्पाद} other {# उत्पाद}}",
+    "showing": "{count} में से {first}-{last}",
+    "previous": "पिछला",
+    "next": "अगला"
+  }
+}

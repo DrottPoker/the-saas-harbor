@@ -1,4 +1,4 @@
-import Link from "next/link";
+import Link from "@/components/link";
 import { ChevronDown } from "lucide-react";
 import { groupTechStack } from "@/lib/tech";
 import { categoryChip } from "./explore";

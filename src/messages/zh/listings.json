@@ -1,0 +1,20 @@
+{
+  "product": "产品",
+  "category": "类别",
+  "trend": "12 个月",
+  "launched": "发布于",
+  "verified": "验证于",
+  "rank": "排名",
+  "demoRevenue": "演示收入",
+  "mrrNotShared": "MRR 未公开",
+  "byFounder": "创始人：{name}",
+  "joined": "加入于 <date></date>",
+  "launchedOn": "发布于 {date}",
+  "results": {
+    "label": "分页",
+    "count": "{count} 个产品",
+    "showing": "第 {first}-{last} 个，共 {count} 个",
+    "previous": "上一页",
+    "next": "下一页"
+  }
+}

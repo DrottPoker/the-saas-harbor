@@ -11,7 +11,7 @@ import {
 } from "react";
 import { useEditorAction } from "./use-editor-action";
 import { useFormStatus } from "react-dom";
-import Link from "next/link";
+import Link from "@/components/link";
 import { MailCheck } from "lucide-react";
 import {
   authenticate,
@@ -209,7 +209,7 @@ export function UsernameInput(props: Omit<React.ComponentProps<typeof Input>, "t
     <div className="relative">
       <span
         aria-hidden="true"
-        className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-muted-foreground"
+        className="pointer-events-none absolute inset-y-0 start-3 flex items-center text-muted-foreground"
       >
         @
       </span>
@@ -232,7 +232,7 @@ export function UsernameInput(props: Omit<React.ComponentProps<typeof Input>, "t
         }}
         // Read-only while a recent change locks it, and it looks it.
         className={cn(
-          "pl-7 read-only:cursor-not-allowed read-only:bg-subtle read-only:text-muted-foreground",
+          "ps-7 read-only:cursor-not-allowed read-only:bg-subtle read-only:text-muted-foreground",
           props.className,
         )}
       />

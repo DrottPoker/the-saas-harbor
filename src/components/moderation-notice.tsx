@@ -1,4 +1,4 @@
-import Link from "next/link";
+import Link from "@/components/link";
 import { operator } from "@/lib/legal";
 import { decisionLabels, isReason } from "@/lib/moderation";
 import { cn } from "@/lib/utils";

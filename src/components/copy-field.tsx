@@ -64,12 +64,12 @@ export function CopyField({
           <Input
             {...shared}
             aria-describedby={described}
-            className={cn(shared.className, "w-auto flex-1 rounded-r-none")}
+            className={cn(shared.className, "w-auto flex-1 rounded-e-none")}
           />
           <span
             id={`${id}-suffix`}
             title={suffix}
-            className="flex min-w-0 items-center truncate rounded-r-md border border-l-0 border-border-strong bg-subtle px-3 font-mono text-[13px] text-muted-foreground"
+            className="flex min-w-0 items-center truncate rounded-e-md border border-s-0 border-border-strong bg-subtle px-3 font-mono text-[13px] text-muted-foreground"
           >
             {suffix}
           </span>

@@ -1,0 +1,13 @@
+{
+  "all": "كل الفئات",
+  "names": {
+    "ai-machine-learning": "الذكاء الاصطناعي وتعلّم الآلة",
+    "developer-tools": "أدوات المطورين",
+    "productivity": "الإنتاجية",
+    "marketing": "التسويق",
+    "design": "التصميم",
+    "finance": "المالية",
+    "analytics": "التحليلات",
+    "other": "أخرى"
+  }
+}

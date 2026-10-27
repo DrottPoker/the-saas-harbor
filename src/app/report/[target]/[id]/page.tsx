@@ -82,7 +82,7 @@ async function subject(target: ReportTarget, id: string, viewer: string) {
           From <span className="font-medium text-foreground">{sender.name}</span>,{" "}
           <LocalTime value={message.created_at} />
         </figcaption>
-        <blockquote className="w-fit max-w-full rounded-2xl rounded-bl-md bg-muted px-3.5 py-2 leading-6 whitespace-pre-wrap [overflow-wrap:anywhere]">
+        <blockquote className="w-fit max-w-full rounded-2xl rounded-es-md bg-muted px-3.5 py-2 leading-6 whitespace-pre-wrap [overflow-wrap:anywhere]">
           {message.body}
         </blockquote>
       </figure>

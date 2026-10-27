@@ -1,4 +1,4 @@
-import Link from "next/link";
+import Link from "@/components/link";
 import { Circle, CircleCheck, Plus } from "lucide-react";
 import { requireUser } from "@/lib/supabase/server";
 import { ProductLogo } from "@/components/avatars";

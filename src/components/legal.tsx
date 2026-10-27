@@ -21,7 +21,7 @@ export function LegalSection({
 }
 
 export function LegalList({ children }: { children: React.ReactNode }) {
-  return <ul className="grid list-disc gap-2 pl-5 marker:text-faint-foreground">{children}</ul>;
+  return <ul className="grid list-disc gap-2 ps-5 marker:text-faint-foreground">{children}</ul>;
 }
 
 export const legalLink = "font-medium text-foreground underline underline-offset-2";

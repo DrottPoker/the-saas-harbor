@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import Link from "next/link";
+import Link from "@/components/link";
 import { Dialog } from "radix-ui";
 import { MessageSquareHeart } from "lucide-react";
 import { submitFeedbackAction } from "@/app/feedback-actions";

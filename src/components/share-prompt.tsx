@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
+import Link from "@/components/link";
 import { Dialog } from "radix-ui";
 import { LinkedInIcon, XIcon } from "@/components/profile/brand-icons";
 import { DialogPanel } from "@/components/route-dialog";

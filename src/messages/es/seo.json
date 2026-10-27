@@ -1,0 +1,13 @@
+{
+  "siteDescription": "Un directorio gratuito de productos SaaS independientes, nuevos y consolidados, con una clasificación de ingresos recurrentes mensuales (MRR) verificados a través de sus proveedores de pagos.",
+  "laterPage": "{title}, página {page}",
+  "productTitleMrr": "{name}: {amount} de MRR verificado",
+  "productTitleRevenue": "{name}: {amount} de ingresos verificados",
+  "productMrr": "MRR verificado: {amount}.",
+  "productMrrSubscribers": "MRR verificado: {amount} de {count, plural, one {# suscriptor} other {# suscriptores}}.",
+  "productRevenue": "Ingresos verificados históricos: {amount}.",
+  "founderOf": "Fundador de {products}.",
+  "profileFounder": "{name}, fundador de {products}, en {site}.",
+  "profileOnSite": "{name} en {site}",
+  "namesMore": "{count} más"
+}

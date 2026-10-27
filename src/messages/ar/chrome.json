@@ -1,0 +1,64 @@
+{
+  "skipToContent": "انتقل إلى المحتوى",
+  "nav": {
+    "label": "الرئيسية",
+    "leaderboard": "لوحة الصدارة",
+    "browse": "تصفّح"
+  },
+  "header": {
+    "dashboard": "لوحة التحكم",
+    "signIn": "تسجيل الدخول",
+    "addSaas": "أضف SaaS",
+    "listYourSaas": "أدرج منتجك SaaS",
+    "listSaasShort": "أدرج SaaS",
+    "messages": "الرسائل",
+    "messagesUnread": "الرسائل، {count} غير مقروءة"
+  },
+  "theme": {
+    "label": "المظهر",
+    "light": "فاتح",
+    "dark": "داكن",
+    "system": "حسب النظام"
+  },
+  "preferences": {
+    "label": "اللغة والعملة: {language}، {currency}",
+    "title": "اللغة والعملة",
+    "language": "اللغة",
+    "currency": "العملة",
+    "commonCurrencies": "العملات الشائعة",
+    "allCurrencies": "كل العملات",
+    "note": "تُحوَّل المبالغ من الدولار الأمريكي بأسعار الصرف المرجعية اليومية. يعتمد الترتيب على الدولار الأمريكي."
+  },
+  "account": {
+    "chooseUsername": "اختر اسم المستخدم",
+    "dashboard": "لوحة التحكم",
+    "yourProfile": "ملفك الشخصي",
+    "editProfile": "تعديل الملف الشخصي",
+    "settings": "الإعدادات",
+    "yourReports": "بلاغاتك",
+    "adminPanel": "لوحة الإدارة",
+    "adminPanelReports": "لوحة الإدارة، {count, plural, zero {لا بلاغات مفتوحة} one {بلاغ مفتوح واحد} two {بلاغان مفتوحان} few {# بلاغات مفتوحة} many {# بلاغًا مفتوحًا} other {# بلاغ مفتوح}}",
+    "signOut": "تسجيل الخروج"
+  },
+  "feedback": "ملاحظات",
+  "dialogClose": "إغلاق",
+  "footer": {
+    "label": "تذييل الصفحة",
+    "tagline": "دليل مجاني لمنتجات SaaS المستقلة والأشخاص الذين يبنونها.",
+    "explore": "استكشف",
+    "getListed": "أدرج منتجك",
+    "about": "عن الموقع",
+    "newArrivals": "أحدث المنتجات",
+    "categories": "الفئات",
+    "techStacks": "التقنيات",
+    "statistics": "الإحصاءات",
+    "listYourSaas": "أدرج منتجك SaaS",
+    "howItWorks": "كيف يعمل",
+    "whereToLaunch": "أين تطلق منتجك",
+    "sendFeedback": "أرسل ملاحظاتك",
+    "privacy": "الخصوصية",
+    "terms": "الشروط",
+    "forAiAssistants": "لمساعدي الذكاء الاصطناعي",
+    "providers": "يُتحقَّق من الإيرادات عبر اتصالات للقراءة فقط مع {providers}، وتُحدَّث كل ساعة."
+  }
+}

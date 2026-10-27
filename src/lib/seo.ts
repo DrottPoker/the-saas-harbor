@@ -1,9 +1,13 @@
 import type { Metadata } from "next";
+import { getLocale, getTranslations } from "next-intl/server";
+import { LOCALE_INFO, LOCALES, localizedPath, type Locale } from "@/i18n/config";
+import { formatList } from "@/i18n/list";
 import type { Listing } from "./data";
-import { formatUsd } from "./domain";
+import { formatUsdIn } from "./display-money";
 import { safePage } from "./params";
 
 export const SITE_NAME = "The SaaS Harbor";
+/** The site's description in English, for text that is the same for everyone, such as llms.txt. */
 export const SITE_DESCRIPTION =
   "A free directory of independent SaaS products, new and established, with a leaderboard of monthly recurring revenue verified through their payment providers.";
 
@@ -13,10 +17,28 @@ export function siteUrl() {
 }
 
 /**
- * Metadata for a public page: its canonical address and matching social cards. Next.js replaces a
+ * A page's address in every language, keyed by hreflang, with English as the default for
+ * languages the site does not have.
+ */
+export function languageAlternates(path: string) {
+  return {
+    ...Object.fromEntries(
+      LOCALES.map((locale) => [LOCALE_INFO[locale].hreflang, localizedPath(locale, path)]),
+    ),
+    "x-default": localizedPath("en", path),
+  };
+}
+
+/** Open Graph's other languages of a page. */
+const otherOgLocales = (locale: Locale) =>
+  LOCALES.filter((other) => other !== locale).map((other) => LOCALE_INFO[other].og);
+
+/**
+ * Metadata for a public page: its canonical address in the page's language, its versions in the
+ * other languages, and matching social cards. `path` is the English address. Next.js replaces a
  * parent's openGraph object as a whole, so every page repeats the site name.
  */
-export function pageMetadata({
+export async function pageMetadata({
   title,
   description,
   path,
@@ -29,15 +51,26 @@ export function pageMetadata({
   type?: "website" | "profile";
   /** The page has a Markdown version for AI assistants at the same address plus `.md`. */
   markdown?: boolean;
-}): Metadata & { title: string } {
+}): Promise<Metadata & { title: string }> {
+  const locale = await getLocale();
+  const canonical = localizedPath(locale, path);
   return {
     title,
     description,
     alternates: {
-      canonical: path,
+      canonical,
+      languages: languageAlternates(path),
       ...(markdown && { types: { "text/markdown": `${path}.md` } }),
     },
-    openGraph: { title, description, url: path, siteName: SITE_NAME, type, locale: "en_US" },
+    openGraph: {
+      title,
+      description,
+      url: canonical,
+      siteName: SITE_NAME,
+      type,
+      locale: LOCALE_INFO[locale].og,
+      alternateLocale: otherOgLocales(locale),
+    },
     twitter: { card: "summary_large_image", title, description },
   };
 }
@@ -48,50 +81,56 @@ export function pageMetadata({
  * as Google advises for lists split into pages. `laterTitle` names the later pages when the first
  * page's title describes the whole site.
  */
-export function listMetadata(
+export async function listMetadata(
   list: { title: string; description: string; path: string; laterTitle?: string },
   params: Record<string, string | undefined>,
-): Metadata & { title: string } {
+): Promise<Metadata & { title: string }> {
+  const t = await getTranslations("seo");
   const search = !!params.q?.trim();
   const page = search || params.category || params.tech ? 1 : safePage(params.page);
   return {
-    ...pageMetadata({
-      title: page > 1 ? `${list.laterTitle ?? list.title}, page ${page}` : list.title,
+    ...(await pageMetadata({
+      title: page > 1 ? t("laterPage", { title: list.laterTitle ?? list.title, page }) : list.title,
       description: list.description,
       path: page > 1 ? `${list.path}${list.path.includes("?") ? "&" : "?"}page=${page}` : list.path,
-    }),
+    })),
     ...(search && { robots: { index: false, follow: true } }),
   };
 }
 
-/** Text as a sentence: a full stop is added unless it already ends in one. */
-function sentence(text: string) {
+const FULL_STOP: Partial<Record<Locale, string>> = { zh: "。", hi: "।" };
+
+/** Text as a sentence: the language's full stop is added unless it already ends in one. */
+function sentence(text: string, locale: Locale) {
   const line = text.trim();
-  return /[.!?…]$/.test(line) ? line : `${line}.`;
+  return /[.!?…。！？।؟]$/.test(line) ? line : `${line}${FULL_STOP[locale] ?? "."}`;
 }
 
 /**
  * A product page's title and description, as search results and shared links show them. They
  * carry a figure the page shares only when it is above zero: MRR, or else revenue from all
- * payments, which products sold once have instead of MRR.
+ * payments, which products sold once have instead of MRR. Figures are in US dollars, written in the
+ * page's language, so search results do not depend on where a crawler is.
  */
-export function productSummary(item: Pick<Listing, ProductSummaryField>) {
+export async function productSummary(item: Pick<Listing, ProductSummaryField>) {
+  const [t, locale] = await Promise.all([getTranslations("seo"), getLocale()]);
+  const usd = (cents: number) => formatUsdIn(cents, LOCALE_INFO[locale].intl);
   const name = item.name ?? "";
   const mrr = item.revenue_status === "verified" && item.mrr_cents ? item.mrr_cents : null;
   const revenue = item.revenue_total_cents || null;
-  const customers = item.customers
-    ? ` from ${item.customers.toLocaleString("en-US")} ${item.customers === 1 ? "subscriber" : "subscribers"}`
-    : "";
   return {
     title: mrr
-      ? `${name}: ${formatUsd(mrr)} verified MRR`
+      ? t("productTitleMrr", { name, amount: usd(mrr) })
       : revenue
-        ? `${name}: ${formatUsd(revenue)} verified revenue`
+        ? t("productTitleRevenue", { name, amount: usd(revenue) })
         : name,
     description: [
-      sentence(item.tagline ?? ""),
-      mrr && `Verified MRR ${formatUsd(mrr)}${customers}.`,
-      revenue && `Verified revenue, all time: ${formatUsd(revenue)}.`,
+      item.tagline?.trim() && sentence(item.tagline, locale),
+      mrr &&
+        (item.customers
+          ? t("productMrrSubscribers", { amount: usd(mrr), count: item.customers })
+          : t("productMrr", { amount: usd(mrr) })),
+      revenue && t("productRevenue", { amount: usd(revenue) }),
     ]
       .filter(Boolean)
       .join(" "),
@@ -101,27 +140,28 @@ export function productSummary(item: Pick<Listing, ProductSummaryField>) {
 type ProductSummaryField =
   "name" | "tagline" | "revenue_status" | "mrr_cents" | "customers" | "revenue_total_cents";
 
-/** Names joined as a reader would say them: "A", "A and B", "A, B and C", "A, B, C and 2 more". */
-function nameList(names: string[], most = 3) {
-  if (names.length > most)
-    return `${names.slice(0, most).join(", ")} and ${names.length - most} more`;
-  return names.length > 1 ? `${names.slice(0, -1).join(", ")} and ${names.at(-1)}` : names[0];
-}
-
 /**
  * A profile page's description: the headline, and the products the user is the founder of, which
- * people often search for.
+ * people often search for. Names are joined as the language does: "A, B and C", and at most three
+ * before "2 more".
  */
-export function profileDescription(
+export async function profileDescription(
   profile: { name: string; headline: string | null },
   products: string[],
 ) {
-  const founder = products.length ? `Founder of ${nameList(products)}.` : "";
-  const lead = profile.headline ? sentence(profile.headline) : "";
+  const [t, locale] = await Promise.all([getTranslations("seo"), getLocale()]);
+  const most = 3;
+  const names =
+    products.length > most
+      ? [...products.slice(0, most), t("namesMore", { count: products.length - most })]
+      : products;
+  const list = formatList(names, locale);
+  const founder = products.length ? t("founderOf", { products: list }) : "";
+  const lead = profile.headline ? sentence(profile.headline, locale) : "";
   if (lead) return [lead, founder].filter(Boolean).join(" ");
   return products.length
-    ? `${profile.name}, founder of ${nameList(products)}, on ${SITE_NAME}.`
-    : `${profile.name} on ${SITE_NAME}`;
+    ? t("profileFounder", { name: profile.name, products: list, site: SITE_NAME })
+    : t("profileOnSite", { name: profile.name, site: SITE_NAME });
 }
 
 /**

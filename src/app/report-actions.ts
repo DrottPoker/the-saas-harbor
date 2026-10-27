@@ -1,6 +1,5 @@
 "use server";
 
-import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { reportSchema, type ActionState } from "@/lib/domain";
@@ -8,6 +7,7 @@ import { sendQueuedEmails } from "@/lib/email/outbox";
 import { isReportTarget } from "@/lib/moderation";
 import { requireUser } from "@/lib/supabase/server";
 import { sendQueuedTelegramAlerts } from "@/lib/telegram/outbox";
+import { localeRedirect } from "@/i18n/navigation";
 
 export async function submitReportAction(
   target: string,
@@ -41,5 +41,5 @@ export async function submitReportAction(
   sendQueuedEmails();
   sendQueuedTelegramAlerts();
   revalidatePath("/dashboard/reports");
-  redirect("/dashboard/reports?sent=1");
+  return localeRedirect("/dashboard/reports?sent=1");
 }

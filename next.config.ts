@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import createNextIntlPlugin from "next-intl/plugin";
 
 // The public origin. In production every other host, such as the project's vercel.app address,
 // redirects to it, so search engines find one copy of the site. The API answers on any host, so the
@@ -59,4 +60,5 @@ const config: NextConfig = {
     ];
   },
 };
-export default config;
+// next-intl reads each request's language and messages from src/i18n/request.ts.
+export default createNextIntlPlugin("./src/i18n/request.ts")(config);

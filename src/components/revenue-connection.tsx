@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import Link from "@/components/link";
 import { startTransition, useActionState, useState } from "react";
 import { Check, ChevronDown, CircleAlert, CircleCheck, Ellipsis, ExternalLink } from "lucide-react";
 import { Select } from "radix-ui";
@@ -342,7 +342,7 @@ function KeyGuide({ guide }: { guide: Guide }) {
         <span className="underline-offset-2 group-hover:underline">{guide.dashboard.label}</span>
         <ExternalLink aria-hidden="true" className="size-4 shrink-0 text-muted-foreground" />
       </a>
-      <ol className="mt-3 grid list-decimal gap-1.5 pl-5 text-sm text-muted-foreground">
+      <ol className="mt-3 grid list-decimal gap-1.5 ps-5 text-sm text-muted-foreground">
         {guide.steps.map((step, index) => (
           <li key={index}>{step}</li>
         ))}
@@ -445,11 +445,11 @@ function ProviderChoice({
           aria-invalid={invalid || undefined}
           className={cn(
             fieldClasses,
-            "flex h-10 items-center gap-2.5 text-left data-placeholder:text-faint-foreground",
+            "flex h-10 items-center gap-2.5 text-start data-placeholder:text-faint-foreground",
           )}
         >
           <Select.Value placeholder="Choose your payment provider" />
-          <Select.Icon className="ml-auto">
+          <Select.Icon className="ms-auto">
             <ChevronDown aria-hidden="true" className="size-4 text-muted-foreground" />
           </Select.Icon>
         </Select.Trigger>
@@ -469,7 +469,7 @@ function ProviderChoice({
                       {PROVIDERS[id].name}
                     </span>
                   </Select.ItemText>
-                  <Select.ItemIndicator className="ml-auto">
+                  <Select.ItemIndicator className="ms-auto">
                     <Check aria-hidden="true" className="size-4 text-muted-foreground" />
                   </Select.ItemIndicator>
                 </Select.Item>
@@ -489,7 +489,7 @@ function ProviderChoice({
                         Other
                       </span>
                     </Select.ItemText>
-                    <Select.ItemIndicator className="ml-auto">
+                    <Select.ItemIndicator className="ms-auto">
                       <Check aria-hidden="true" className="size-4 text-muted-foreground" />
                     </Select.ItemIndicator>
                   </Select.Item>
@@ -748,7 +748,7 @@ function Connected({
             <p className="font-medium">
               {ok ? `Connected to ${PROVIDERS[provider].name}` : "The last verification failed"}
               {!connection.livemode && (
-                <span className="ml-2 rounded-full border px-2 py-0.5 text-xs font-normal text-muted-foreground">
+                <span className="ms-2 rounded-full border px-2 py-0.5 text-xs font-normal text-muted-foreground">
                   Test mode
                 </span>
               )}
@@ -908,7 +908,7 @@ export function RevenueSection({
             <button
               type="button"
               onClick={() => setReplacing(true)}
-              className="w-fit text-left text-sm text-muted-foreground hover:text-foreground"
+              className="w-fit text-start text-sm text-muted-foreground hover:text-foreground"
             >
               {current && connectsWithOAuth(current)
                 ? "Reconnect or change the provider"

@@ -1,0 +1,13 @@
+{
+  "siteDescription": "一个免费的独立 SaaS 产品目录，收录新老产品，并通过支付服务商验证月经常性收入（MRR）排出排行榜。",
+  "laterPage": "{title}，第 {page} 页",
+  "productTitleMrr": "{name}：已验证 MRR {amount}",
+  "productTitleRevenue": "{name}：已验证收入 {amount}",
+  "productMrr": "已验证 MRR {amount}。",
+  "productMrrSubscribers": "已验证 MRR {amount}，来自 {count} 位订阅用户。",
+  "productRevenue": "已验证累计收入：{amount}。",
+  "founderOf": "{products} 的创始人。",
+  "profileFounder": "{name}，{products} 的创始人，在 {site}。",
+  "profileOnSite": "{name} 在 {site}",
+  "namesMore": "另外 {count} 个"
+}

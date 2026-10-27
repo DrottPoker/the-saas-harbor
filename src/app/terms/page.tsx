@@ -1,4 +1,4 @@
-import Link from "next/link";
+import Link from "@/components/link";
 import { Contact, LegalList, LegalSection, legalLink } from "@/components/legal";
 import { PageHeader, Shell } from "@/components/shell";
 import { legalDate, operator, termsUpdated } from "@/lib/legal";

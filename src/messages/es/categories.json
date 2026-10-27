@@ -1,0 +1,13 @@
+{
+  "all": "Todas las categorías",
+  "names": {
+    "ai-machine-learning": "IA y aprendizaje automático",
+    "developer-tools": "Herramientas para desarrolladores",
+    "productivity": "Productividad",
+    "marketing": "Marketing",
+    "design": "Diseño",
+    "finance": "Finanzas",
+    "analytics": "Analítica",
+    "other": "Otros"
+  }
+}

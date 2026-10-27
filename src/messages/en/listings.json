@@ -1,0 +1,20 @@
+{
+  "product": "Product",
+  "category": "Category",
+  "trend": "12 months",
+  "launched": "Launched",
+  "verified": "Verified",
+  "rank": "Rank",
+  "demoRevenue": "Demo revenue",
+  "mrrNotShared": "MRR not shared",
+  "byFounder": "by {name}",
+  "joined": "Joined <date></date>",
+  "launchedOn": "Launched {date}",
+  "results": {
+    "label": "Pagination",
+    "count": "{count, plural, one {# product} other {# products}}",
+    "showing": "Showing {first}-{last} of {count}",
+    "previous": "Previous",
+    "next": "Next"
+  }
+}

@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import Link from "@/components/link";
 import {
   useActionState,
   useEffect,
@@ -280,8 +280,8 @@ export function Conversation({
                     className={cn(
                       "max-w-[85%] rounded-2xl px-3.5 py-2 leading-6 whitespace-pre-wrap [overflow-wrap:anywhere]",
                       mine
-                        ? "rounded-br-md bg-primary text-primary-foreground"
-                        : "rounded-bl-md bg-muted text-foreground",
+                        ? "rounded-ee-md bg-primary text-primary-foreground"
+                        : "rounded-es-md bg-muted text-foreground",
                     )}
                   >
                     <span className="sr-only">{mine ? "You" : other.name}: </span>

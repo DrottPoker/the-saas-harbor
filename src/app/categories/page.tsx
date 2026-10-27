@@ -1,4 +1,4 @@
-import Link from "next/link";
+import Link from "@/components/link";
 import { JsonLd } from "@/components/json-ld";
 import { PageHeader, Shell } from "@/components/shell";
 import { categoryCounts } from "@/lib/data";

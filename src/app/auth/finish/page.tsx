@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
-import { redirect } from "next/navigation";
 import { signOut } from "@/app/actions";
 import { FinishSignupForm } from "@/components/forms";
 import { LogoMark } from "@/components/logo";
 import { safeNext } from "@/lib/domain";
 import { firstValues, type SearchParams } from "@/lib/params";
 import { requireUser, signupFinished } from "@/lib/supabase/server";
+import { localeRedirect } from "@/i18n/navigation";
 
 export const metadata: Metadata = { title: "Choose your username" };
 
@@ -18,7 +18,7 @@ export default async function FinishSignup({
 }) {
   const { user } = await requireUser({ unfinished: true });
   const next = safeNext(firstValues(await searchParams).next);
-  if (await signupFinished()) redirect(next || "/dashboard");
+  if (await signupFinished()) return localeRedirect(next || "/dashboard");
   return (
     <div className="mx-auto w-full max-w-sm px-4 pt-14 sm:pt-24">
       <LogoMark className="size-14" />

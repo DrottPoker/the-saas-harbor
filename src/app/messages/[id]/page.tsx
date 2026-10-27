@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
-import Link from "next/link";
-import { notFound, redirect } from "next/navigation";
+import Link from "@/components/link";
+import { notFound } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { z } from "zod";
 import { PersonAvatar } from "@/components/avatars";
@@ -10,6 +10,7 @@ import { Notice } from "@/components/shell";
 import { publicProfile } from "@/lib/data";
 import { MESSAGE_COLUMNS, MESSAGE_PAGE_SIZE, type ChatMessage } from "@/lib/messages";
 import { requireUser, serverClient } from "@/lib/supabase/server";
+import { localeRedirect } from "@/i18n/navigation";
 
 type Props = { params: Promise<{ id: string }> };
 
@@ -26,7 +27,7 @@ export default async function ConversationPage({ params }: Props) {
   const { id } = await params;
   if (!z.uuid().safeParse(id).success) notFound();
   const { user } = await requireUser({ next: `/messages/${id}` });
-  if (id === user.id) redirect("/messages");
+  if (id === user.id) return localeRedirect("/messages");
   const other = await publicProfile(id);
   if (!other) notFound();
 
@@ -76,12 +77,12 @@ export default async function ConversationPage({ params }: Props) {
   // The right pane of the messages layout; below md it fills the window alone.
   return (
     <>
-      <div className="flex min-h-14 shrink-0 items-center gap-3 border-b py-2 pr-4 pl-2 md:pl-4">
+      <div className="flex min-h-14 shrink-0 items-center gap-3 border-b py-2 pe-4 ps-2 md:ps-4">
         <Link
           href="/messages"
           className="inline-flex size-9 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-subtle hover:text-foreground md:hidden"
         >
-          <ArrowLeft aria-hidden="true" className="size-4" />
+          <ArrowLeft aria-hidden="true" className="size-4 rtl:-scale-x-100" />
           <span className="sr-only">Back to messages</span>
         </Link>
         <PersonAvatar path={other.avatar_path} name={other.name} size="sm" />

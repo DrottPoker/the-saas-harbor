@@ -1,0 +1,27 @@
+{
+  "notShared": "No compartido",
+  "demo": "Demo",
+  "mrr": "MRR",
+  "verifiedMrr": "MRR verificado",
+  "demoMrr": "MRR de demostración",
+  "windows": {
+    "30d": {
+      "label": "Ingresos, últimos 30 días",
+      "chip": "Ingresos, 30 días",
+      "demo": "Ingresos de demostración, últimos 30 días",
+      "title": "SaaS clasificados por ingresos verificados, 30 días"
+    },
+    "12m": {
+      "label": "Ingresos, últimos 12 meses",
+      "chip": "Ingresos, 12 meses",
+      "demo": "Ingresos de demostración, últimos 12 meses",
+      "title": "SaaS clasificados por ingresos verificados, 12 meses"
+    },
+    "all": {
+      "label": "Ingresos históricos",
+      "chip": "Ingresos históricos",
+      "demo": "Ingresos históricos de demostración",
+      "title": "SaaS clasificados por ingresos verificados históricos"
+    }
+  }
+}

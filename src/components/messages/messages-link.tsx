@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
+import Link from "@/components/link";
 import { MessageSquare } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { browserClient } from "@/lib/supabase/browser";
 import { cn } from "@/lib/utils";
 import { onMessage, onUnreadChange } from "./live";
@@ -17,6 +18,7 @@ export function MessagesLink({
   initialCount: number;
   className?: string;
 }) {
+  const t = useTranslations("chrome.header");
   const [count, setCount] = useState(initialCount);
   const [serverCount, setServerCount] = useState(initialCount);
   // A fresh server render brings a fresh count.
@@ -46,11 +48,11 @@ export function MessagesLink({
   return (
     <Link
       href="/messages"
-      aria-label={count ? `Messages, ${count} unread` : "Messages"}
+      aria-label={count ? t("messagesUnread", { count }) : t("messages")}
       className={cn("inline-flex items-center gap-1.5", className)}
     >
       <MessageSquare aria-hidden="true" className="size-4" />
-      <span className="max-md:hidden">Messages</span>
+      <span className="max-md:hidden">{t("messages")}</span>
       {count > 0 && (
         <span
           aria-hidden="true"

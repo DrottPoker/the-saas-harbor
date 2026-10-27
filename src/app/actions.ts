@@ -1,6 +1,6 @@
 "use server";
 
-import { redirect, RedirectType, unstable_rethrow } from "next/navigation";
+import { RedirectType, unstable_rethrow } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { changePassword, deleteAccount, deleteSignedInAccount } from "@/lib/account";
@@ -45,6 +45,7 @@ import {
   startPage,
 } from "@/lib/supabase/server";
 import { uploadImage } from "@/lib/upload";
+import { localeRedirect } from "@/i18n/navigation";
 
 const value = (form: FormData, key: string) => String(form.get(key) ?? "");
 function message(error: unknown) {
@@ -164,7 +165,7 @@ export async function authenticate(
   if (mode === "login" || mode === "signup") await recordSignInCountry(client);
   revalidatePath("/", "layout");
   // Replaces sign-in in history, so going back, or closing a dialog opened next, skips the form.
-  redirect(
+  return localeRedirect(
     (mode === "login" && safeNext(value(form, "next"))) || "/dashboard",
     RedirectType.replace,
   );
@@ -232,12 +233,12 @@ export async function confirmEmailLinkAction(
     if (!data.session)
       return { success: "Confirmed. Now open the link we sent to your other email address." };
     revalidatePath("/", "layout");
-    redirect("/dashboard/settings?email=changed");
+    return localeRedirect("/dashboard/settings?email=changed");
   }
   await recordSignInCountry(client);
   revalidatePath("/", "layout");
-  if (link.type === "recovery") redirect("/auth?mode=update");
-  redirect(data.user ? await startPage(client, data.user.id) : "/dashboard");
+  if (link.type === "recovery") return localeRedirect("/auth?mode=update");
+  return localeRedirect(data.user ? await startPage(client, data.user.id) : "/dashboard");
 }
 
 // The last step of a sign-up through Google or GitHub: the username and the Terms of Service,
@@ -248,7 +249,7 @@ export async function finishSignupAction(
 ): Promise<ActionState> {
   const { user, client } = await requireUser({ unfinished: true });
   const next = safeNext(value(form, "next"));
-  if (await signupFinished()) redirect(next || "/dashboard");
+  if (await signupFinished()) return localeRedirect(next || "/dashboard");
   if (form.get("terms") !== "on") return { error: "Tick the box to accept the Terms of Service." };
   const { username, problem } = await usernameProblem(client, value(form, "username"));
   if (problem) return { error: problem };
@@ -265,7 +266,7 @@ export async function finishSignupAction(
     };
   sendQueuedTelegramAlerts();
   revalidatePath("/", "layout");
-  redirect(next || (await startPage(client, user.id)));
+  return localeRedirect(next || (await startPage(client, user.id)));
 }
 
 export async function signOut() {
@@ -273,7 +274,7 @@ export async function signOut() {
   const { error } = await client.auth.signOut({ scope: "local" });
   if (error) throw new Error("Unable to sign out. Please try again.");
   revalidatePath("/", "layout");
-  redirect("/");
+  return localeRedirect("/");
 }
 
 // A new email address. Auth sends a link to the current address and one to the new address, and
@@ -380,7 +381,7 @@ export async function deleteAccountAction(
   // The account no longer exists, so this only clears the session cookies in this browser.
   await client.auth.signOut({ scope: "local" });
   revalidatePath("/", "layout");
-  redirect("/account-deleted", RedirectType.replace);
+  return localeRedirect("/account-deleted", RedirectType.replace);
 }
 
 type Client = Awaited<ReturnType<typeof serverClient>>;
@@ -445,7 +446,7 @@ export async function deleteSaasAction(
   }
   announceRemovedProduct(saas.slug);
   revalidatePath("/", "layout");
-  redirect("/dashboard?deleted=1", RedirectType.replace);
+  return localeRedirect("/dashboard?deleted=1", RedirectType.replace);
 }
 
 export async function saveProfile(_state: ActionState, form: FormData): Promise<ActionState> {
@@ -646,7 +647,7 @@ export async function saveSaas(_state: SaveSaasState, form: FormData): Promise<S
   // An existing product's editor keeps the form, so the key or the site can be corrected there.
   if (existed && connectionError) return { connectionError };
   // A connection shows its result in the editor; anything else returns to the dashboard.
-  redirect(
+  return localeRedirect(
     chosen
       ? connectionResultPath(savedId)
       : existed

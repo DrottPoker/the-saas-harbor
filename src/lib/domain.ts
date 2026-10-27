@@ -48,8 +48,8 @@ export function formatUsd(cents: number) {
  * text, as in Markdown and sharing images. Pages show moments with `LocalTime` instead, in the
  * visitor's time zone.
  */
-export function formatDate(value: string | null) {
-  return value ? formatDay(value, "UTC") : "Not shared";
+export function formatDate(value: string | null, locale?: string) {
+  return value ? formatDay(value, "UTC", undefined, locale) : "Not shared";
 }
 /**
  * Whether an address or path holds spaces, control characters or backslashes. A valid one never

@@ -3,10 +3,10 @@ import { cache } from "react";
 import { createServerClient } from "@supabase/ssr";
 import { createClient, type User } from "@supabase/supabase-js";
 import { cookies, headers } from "next/headers";
-import { redirect } from "next/navigation";
 import { countryCode } from "@/lib/analytics";
 import { cookieOptions, supabaseConfig } from "./config";
 import type { Database } from "./types";
+import { localeRedirect } from "@/i18n/navigation";
 
 export async function serverClient() {
   const config = supabaseConfig();
@@ -83,8 +83,8 @@ export async function requireUser({
 }: { unfinished?: boolean; next?: string } = {}) {
   const query = next ? `?next=${encodeURIComponent(next)}` : "";
   const user = await currentUser();
-  if (!user) redirect(`/auth${query}`);
-  if (!unfinished && !(await signupFinished())) redirect(`/auth/finish${query}`);
+  if (!user) return localeRedirect(`/auth${query}`);
+  if (!unfinished && !(await signupFinished())) return localeRedirect(`/auth/finish${query}`);
   return { user, client: await serverClient() };
 }
 /**

@@ -1,30 +1,37 @@
 import type { Metadata } from "next";
+import { getTranslations } from "next-intl/server";
 import { Explore } from "@/components/explore";
 import { JsonLd } from "@/components/json-ld";
 import { revenueRankedCounts } from "@/lib/data";
 import { firstValues, type SearchParams } from "@/lib/params";
-import { rankingFrom, revenueRankingTitle, revenueWindow } from "@/lib/revenue-figures";
+import { rankingFrom, revenueWindow } from "@/lib/revenue-figures";
 import { listMetadata, SITE_NAME } from "@/lib/seo";
 import { siteJsonLd } from "@/lib/structured-data";
 
 type Props = { searchParams: Promise<SearchParams> };
 
 export async function generateMetadata({ searchParams }: Props): Promise<Metadata> {
-  const params = firstValues(await searchParams);
+  const [params, t, common] = await Promise.all([
+    searchParams.then(firstValues),
+    getTranslations("home.meta"),
+    getTranslations("common"),
+  ]);
   // Each revenue ranking is a page of its own.
   const revenue = revenueWindow(rankingFrom(params.by));
-  const metadata = listMetadata(
+  const metadata = await listMetadata(
     revenue
       ? {
-          title: revenueRankingTitle(revenue),
-          description: `Independent SaaS products ranked by the revenue their payment provider verifies ${revenue.ranking === "all" ? "since their first payment" : `for the last ${revenue.short}`}, one-time purchases included.`,
+          title: common(`windows.${revenue.ranking}.title`),
+          description:
+            revenue.ranking === "all"
+              ? t("revenueDescriptionAll")
+              : t("revenueDescription", { window: t(`window${revenue.ranking}`) }),
           path: `/?by=${revenue.ranking}`,
         }
       : {
-          title: "Free SaaS directory and verified MRR leaderboard",
-          laterTitle: "Leaderboard",
-          description:
-            "List your SaaS for free and get a public page with a link to your site. Connect Stripe, Paddle, RevenueCat or another payment provider to rank by verified MRR.",
+          title: t("title"),
+          laterTitle: t("laterTitle"),
+          description: t("description"),
           path: "/",
         },
     params,

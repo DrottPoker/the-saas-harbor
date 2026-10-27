@@ -20,53 +20,73 @@ export function ipTimeZone(value: string | null) {
   return value && isTimeZone(value) ? value : "UTC";
 }
 
-function format(date: Date, timeZone: string, options: Intl.DateTimeFormatOptions) {
-  return new Intl.DateTimeFormat("en-US", { ...options, timeZone }).format(date);
+// Every format takes the `Intl` locale of the page's language (LOCALE_INFO[locale].intl); the
+// examples are en-US, the default.
+function format(
+  date: Date,
+  timeZone: string,
+  options: Intl.DateTimeFormatOptions,
+  locale = "en-US",
+) {
+  return new Intl.DateTimeFormat(locale, { ...options, timeZone }).format(date);
 }
 
-const time = (date: Date, timeZone: string) =>
-  format(date, timeZone, { hour: "numeric", minute: "2-digit" });
+const clock = { hour: "numeric", minute: "2-digit" } as const;
 
 const sameDay = (a: Date, b: Date, timeZone: string) => {
   const options = { year: "numeric", month: "numeric", day: "numeric" } as const;
   return format(a, timeZone, options) === format(b, timeZone, options);
 };
 
-/** "Sep 24" this year, "Sep 24, 2025" before. */
-function shortDay(date: Date, timeZone: string, now: Date) {
+/** The day without its year when it is this year: "Sep 24" this year, "Sep 24, 2025" before. */
+function dayOptions(date: Date, timeZone: string, now: Date): Intl.DateTimeFormatOptions {
   const year = (value: Date) => format(value, timeZone, { year: "numeric" });
-  return format(date, timeZone, {
+  return {
     month: "short",
     day: "numeric",
     ...(year(date) === year(now) ? {} : { year: "numeric" }),
-  });
+  };
 }
 
 /** "3:05 PM" today, "Sep 24, 3:05 PM" this year, "Sep 24, 2025, 3:05 PM" before. */
-export function formatMessageTime(value: string, timeZone: string, now = new Date()) {
+export function formatMessageTime(
+  value: string,
+  timeZone: string,
+  now = new Date(),
+  locale?: string,
+) {
   const date = new Date(value);
-  if (sameDay(date, now, timeZone)) return time(date, timeZone);
-  return `${shortDay(date, timeZone, now)}, ${time(date, timeZone)}`;
+  if (sameDay(date, now, timeZone)) return format(date, timeZone, clock, locale);
+  return format(date, timeZone, { ...dayOptions(date, timeZone, now), ...clock }, locale);
 }
 
 /** The shorter form for the conversation list: "3:05 PM" today, else the day only. */
-export function formatListTime(value: string, timeZone: string, now = new Date()) {
+export function formatListTime(value: string, timeZone: string, now = new Date(), locale?: string) {
   const date = new Date(value);
-  return sameDay(date, now, timeZone) ? time(date, timeZone) : shortDay(date, timeZone, now);
+  return format(
+    date,
+    timeZone,
+    sameDay(date, now, timeZone) ? clock : dayOptions(date, timeZone, now),
+    locale,
+  );
 }
 
 /** The day, with its year, and the time: "Sep 24, 2026, 3:05 PM". */
-export function formatFullTime(value: string, timeZone: string) {
-  return format(new Date(value), timeZone, {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-  });
+export function formatFullTime(value: string, timeZone: string, _now?: Date, locale?: string) {
+  return format(
+    new Date(value),
+    timeZone,
+    { month: "short", day: "numeric", year: "numeric", ...clock },
+    locale,
+  );
 }
 
 /** The day with its year: "Sep 24, 2026". */
-export function formatDay(value: string, timeZone: string) {
-  return format(new Date(value), timeZone, { month: "short", day: "numeric", year: "numeric" });
+export function formatDay(value: string, timeZone: string, _now?: Date, locale?: string) {
+  return format(
+    new Date(value),
+    timeZone,
+    { month: "short", day: "numeric", year: "numeric" },
+    locale,
+  );
 }

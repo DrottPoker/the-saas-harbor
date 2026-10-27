@@ -1,11 +1,12 @@
 import type { Metadata } from "next";
-import { notFound, permanentRedirect } from "next/navigation";
+import { notFound } from "next/navigation";
 import { findSaas, publicProfile } from "@/lib/data";
 import { currentUser, serverClient } from "@/lib/supabase/server";
 import { pageMetadata, productSummary } from "@/lib/seo";
 import { productJsonLd } from "@/lib/structured-data";
 import { JsonLd } from "@/components/json-ld";
 import { ProductProfile } from "@/components/product-profile";
+import { localePermanentRedirect } from "@/i18n/navigation";
 
 type Props = { params: Promise<{ slug: string }> };
 
@@ -26,7 +27,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { item } = found;
   if (!item.name || !item.tagline) return {};
   return pageMetadata({
-    ...productSummary(item),
+    ...(await productSummary(item)),
     path: `/saas/${item.slug}`,
     markdown: true,
   });
@@ -36,7 +37,7 @@ export default async function SaasProfile({ params }: Props) {
   const [found, viewer] = await Promise.all([findSaas((await params).slug), currentUser()]);
   if (!found) notFound();
   // An id, an earlier slug or another letter case moves to the current address.
-  if ("redirect" in found) permanentRedirect(found.redirect);
+  if ("redirect" in found) return localePermanentRedirect(found.redirect);
   const item = found.item;
   // The founder also sees how often the page was viewed.
   const ownId = viewer && item.id && viewer.id === item.owner_id ? item.id : null;

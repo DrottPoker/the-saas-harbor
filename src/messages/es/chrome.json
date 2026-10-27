@@ -1,0 +1,64 @@
+{
+  "skipToContent": "Ir al contenido",
+  "nav": {
+    "label": "Principal",
+    "leaderboard": "Clasificación",
+    "browse": "Explorar"
+  },
+  "header": {
+    "dashboard": "Panel",
+    "signIn": "Iniciar sesión",
+    "addSaas": "Añadir SaaS",
+    "listYourSaas": "Publica tu SaaS",
+    "listSaasShort": "Publicar SaaS",
+    "messages": "Mensajes",
+    "messagesUnread": "Mensajes, {count} sin leer"
+  },
+  "theme": {
+    "label": "Tema",
+    "light": "Claro",
+    "dark": "Oscuro",
+    "system": "Sistema"
+  },
+  "preferences": {
+    "label": "Idioma y moneda: {language}, {currency}",
+    "title": "Idioma y moneda",
+    "language": "Idioma",
+    "currency": "Moneda",
+    "commonCurrencies": "Monedas habituales",
+    "allCurrencies": "Todas las monedas",
+    "note": "Los importes se convierten desde dólares estadounidenses con tipos de cambio de referencia diarios. La clasificación usa dólares estadounidenses."
+  },
+  "account": {
+    "chooseUsername": "Elige tu nombre de usuario",
+    "dashboard": "Panel",
+    "yourProfile": "Tu perfil",
+    "editProfile": "Editar perfil",
+    "settings": "Configuración",
+    "yourReports": "Tus denuncias",
+    "adminPanel": "Panel de administración",
+    "adminPanelReports": "Panel de administración, {count, plural, one {# denuncia abierta} other {# denuncias abiertas}}",
+    "signOut": "Cerrar sesión"
+  },
+  "feedback": "Comentarios",
+  "dialogClose": "Cerrar",
+  "footer": {
+    "label": "Pie de página",
+    "tagline": "Un directorio gratuito de productos SaaS independientes y de las personas que los crean.",
+    "explore": "Explorar",
+    "getListed": "Publica tu producto",
+    "about": "Acerca de",
+    "newArrivals": "Novedades",
+    "categories": "Categorías",
+    "techStacks": "Stacks tecnológicos",
+    "statistics": "Estadísticas",
+    "listYourSaas": "Publica tu SaaS",
+    "howItWorks": "Cómo funciona",
+    "whereToLaunch": "Dónde lanzar",
+    "sendFeedback": "Enviar comentarios",
+    "privacy": "Privacidad",
+    "terms": "Términos",
+    "forAiAssistants": "Para asistentes de IA",
+    "providers": "Los ingresos se verifican mediante conexiones de solo lectura con {providers} y se actualizan cada hora."
+  }
+}

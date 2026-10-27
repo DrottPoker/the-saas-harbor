@@ -1,4 +1,4 @@
-import Link from "next/link";
+import Link from "@/components/link";
 import { ArrowRight, Check } from "lucide-react";
 import { JsonLd } from "@/components/json-ld";
 import { PageHeader, Shell } from "@/components/shell";
@@ -125,7 +125,7 @@ export default async function ListYourSaas() {
       <Button asChild size="lg">
         <Link href={start}>
           List your SaaS
-          <ArrowRight />
+          <ArrowRight className="rtl:-scale-x-100" />
         </Link>
       </Button>
       <Link href="/about" className="text-sm font-medium underline-offset-4 hover:underline">
@@ -174,7 +174,7 @@ export default async function ListYourSaas() {
           <Checks items={differences} />
         </Section>
         <Section id="steps" title="How to list your SaaS">
-          <ol className="grid list-decimal gap-2 pl-5 marker:text-faint-foreground">
+          <ol className="grid list-decimal gap-2 ps-5 marker:text-faint-foreground">
             {steps.map((step) => (
               <li key={step}>{step}</li>
             ))}

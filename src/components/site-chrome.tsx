@@ -1,14 +1,17 @@
-import Link from "next/link";
+import Link from "@/components/link";
 import { Plus } from "lucide-react";
+import { getLocale, getTranslations } from "next-intl/server";
+import type { Currency } from "@/i18n/currencies";
+import { formatList } from "@/i18n/list";
 import type { AccountMenuData } from "@/lib/account-menu";
 import { availableProviders } from "@/lib/revenue/available";
-import { providerList } from "@/lib/revenue/catalog";
+import { providerNames } from "@/lib/revenue/catalog";
 import { AccountMenu } from "./account-menu";
 import { FeedbackLink } from "./feedback-button";
 import { Brand } from "./logo";
 import { MessagesLink } from "./messages/messages-link";
 import { Navigation } from "./navigation";
-import { sections } from "./sections";
+import { PreferencesMenu } from "./preferences-menu";
 import { ThemeMenu } from "./theme-menu";
 import { Button } from "./ui/button";
 
@@ -17,32 +20,41 @@ const quietLink = "text-sm text-muted-foreground transition-colors hover:text-fo
 // dashboard is in the account menu there.
 const iconLink = `${quietLink} inline-flex items-center justify-center gap-1.5 max-md:h-8 max-md:min-w-8`;
 
-export function SiteHeader({
+export async function SiteHeader({
   account,
   unread,
+  currency,
 }: {
   account: AccountMenuData | null;
   unread: number;
+  currency: Currency;
 }) {
+  const t = await getTranslations("chrome.header");
+  // Language, currency and theme sit at the top right; on small screens in the row below.
+  const settings = (className: string) => (
+    <div className={`flex shrink-0 items-center gap-1 ${className}`}>
+      <PreferencesMenu currency={currency} signedIn={!!account} />
+      <ThemeMenu />
+    </div>
+  );
   return (
     <header className="border-b">
       <div className="mx-auto flex h-14 max-w-6xl items-center gap-3 px-4 sm:gap-6 sm:px-6">
         <Brand compact={!!account} />
         <Navigation className="hidden md:flex" />
-        <div className="ml-auto flex items-center gap-2 sm:gap-4">
-          {/* On small screens the theme menu sits in the navigation row below. */}
-          <ThemeMenu className="max-md:hidden" />
+        <div className="ms-auto flex items-center gap-2 sm:gap-4">
+          {settings("max-md:hidden")}
           {account ? (
             <>
               <MessagesLink userId={account.id} initialCount={unread} className={iconLink} />
               {/* Phones reach the dashboard from the account menu, where it has its name. */}
               <Link className={`${quietLink} max-md:hidden`} href="/dashboard">
-                Dashboard
+                {t("dashboard")}
               </Link>
             </>
           ) : (
             <Link className={`${quietLink} whitespace-nowrap`} href="/auth">
-              Sign in
+              {t("signIn")}
             </Link>
           )}
           {/* Visitors create an account first, so they go straight to sign-up. */}
@@ -50,12 +62,13 @@ export function SiteHeader({
             <Link href={account ? "/dashboard/saas/new" : "/auth?mode=signup"}>
               <Plus className={account ? undefined : "max-sm:hidden"} />
               {account ? (
-                <span className="max-sm:sr-only">Add SaaS</span>
+                <span className="max-sm:sr-only">{t("addSaas")}</span>
               ) : (
-                <span>
+                <>
                   {/* The shorter label keeps the header on one line on the narrowest phones. */}
-                  List<span className="max-[359px]:hidden"> your</span> SaaS
-                </span>
+                  <span className="max-[359px]:hidden">{t("listYourSaas")}</span>
+                  <span className="min-[360px]:hidden">{t("listSaasShort")}</span>
+                </>
               )}
             </Link>
           </Button>
@@ -64,74 +77,77 @@ export function SiteHeader({
       </div>
       <div className="flex items-center gap-2 border-t px-2.5 py-1.5 md:hidden">
         <Navigation className="flex min-w-0 overflow-x-auto" />
-        <ThemeMenu className="ml-auto shrink-0" />
+        {settings("ms-auto")}
       </div>
     </header>
   );
 }
 
-// The footer's links, in groups.
-const footerGroups: {
-  title: string;
-  links: readonly (readonly [href: string, label: string])[];
-}[] = [
+// The footer's links, in groups, as message keys in chrome.footer.
+const footerGroups = [
   {
-    title: "Explore",
+    title: "explore",
     links: [
-      ...sections.map(([href, label]) => [href, label] as const),
-      ["/newest", "New arrivals"],
-      ["/categories", "Categories"],
-      ["/tech", "Tech stacks"],
-      ["/stats", "Statistics"],
+      ["/", "leaderboard"],
+      ["/browse", "browse"],
+      ["/newest", "newArrivals"],
+      ["/categories", "categories"],
+      ["/tech", "techStacks"],
+      ["/stats", "statistics"],
     ],
   },
   {
-    title: "Get listed",
+    title: "getListed",
     links: [
-      ["/list-your-saas", "List your SaaS"],
-      ["/about", "How it works"],
-      ["/where-to-launch", "Where to launch"],
+      ["/list-your-saas", "listYourSaas"],
+      ["/about", "howItWorks"],
+      ["/where-to-launch", "whereToLaunch"],
     ],
   },
   {
-    title: "About",
+    title: "about",
     links: [
-      ["/feedback", "Send feedback"],
-      ["/privacy", "Privacy"],
-      ["/terms", "Terms"],
+      ["/feedback", "sendFeedback"],
+      ["/privacy", "privacy"],
+      ["/terms", "terms"],
       // A plain text file, so a full page load rather than client navigation.
-      ["/llms.txt", "For AI assistants"],
+      ["/llms.txt", "forAiAssistants"],
     ],
   },
-];
+] as const;
 
-export function SiteFooter() {
+export async function SiteFooter() {
+  const [t, nav, locale] = await Promise.all([
+    getTranslations("chrome.footer"),
+    getTranslations("chrome.nav"),
+    getLocale(),
+  ]);
+  const label = (key: (typeof footerGroups)[number]["links"][number][1]) =>
+    key === "leaderboard" || key === "browse" ? nav(key) : t(key);
   return (
     <footer className="mt-24 border-t">
       <div className="mx-auto grid max-w-6xl gap-10 px-4 py-12 sm:px-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]">
         <div>
           <Brand />
-          <p className="mt-3 max-w-sm text-sm text-muted-foreground">
-            A free directory of independent SaaS products and the people who build them.
-          </p>
+          <p className="mt-3 max-w-sm text-sm text-muted-foreground">{t("tagline")}</p>
         </div>
-        <nav aria-label="Footer" className="grid grid-cols-2 gap-x-6 gap-y-8 sm:grid-cols-3">
+        <nav aria-label={t("label")} className="grid grid-cols-2 gap-x-6 gap-y-8 sm:grid-cols-3">
           {footerGroups.map(({ title, links }) => (
             <div key={title}>
-              <h2 className="text-[13px] font-medium text-foreground">{title}</h2>
+              <h2 className="text-[13px] font-medium text-foreground">{t(title)}</h2>
               <ul className="mt-3 grid gap-2">
-                {links.map(([href, label]) => (
+                {links.map(([href, key]) => (
                   <li key={href}>
                     {href === "/feedback" ? (
                       // Opens the form with the page the user is on.
-                      <FeedbackLink className={quietLink}>{label}</FeedbackLink>
+                      <FeedbackLink className={quietLink}>{label(key)}</FeedbackLink>
                     ) : href.endsWith(".txt") ? (
                       <a className={quietLink} href={href}>
-                        {label}
+                        {label(key)}
                       </a>
                     ) : (
                       <Link className={quietLink} href={href}>
-                        {label}
+                        {label(key)}
                       </Link>
                     )}
                   </li>
@@ -141,8 +157,9 @@ export function SiteFooter() {
           ))}
         </nav>
         <p className="border-t pt-6 text-[13px] text-faint-foreground lg:col-span-2">
-          Revenue is verified through read-only connections to{" "}
-          {providerList("and", availableProviders())}, and refreshed every hour.
+          {t("providers", {
+            providers: formatList(providerNames(availableProviders()), locale),
+          })}
         </p>
       </div>
     </footer>

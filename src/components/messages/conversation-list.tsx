@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
+import Link from "@/components/link";
 import { useSelectedLayoutSegment } from "next/navigation";
 import { INBOX_COLUMNS, type InboxConversation } from "@/lib/messages";
 import { browserClient } from "@/lib/supabase/browser";

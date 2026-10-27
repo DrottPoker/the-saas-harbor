@@ -1,0 +1,64 @@
+{
+  "skipToContent": "Перейти к содержимому",
+  "nav": {
+    "label": "Основная навигация",
+    "leaderboard": "Рейтинг",
+    "browse": "Каталог"
+  },
+  "header": {
+    "dashboard": "Панель",
+    "signIn": "Войти",
+    "addSaas": "Добавить SaaS",
+    "listYourSaas": "Добавить свой SaaS",
+    "listSaasShort": "Добавить SaaS",
+    "messages": "Сообщения",
+    "messagesUnread": "Сообщения, непрочитанных: {count}"
+  },
+  "theme": {
+    "label": "Тема",
+    "light": "Светлая",
+    "dark": "Тёмная",
+    "system": "Как в системе"
+  },
+  "preferences": {
+    "label": "Язык и валюта: {language}, {currency}",
+    "title": "Язык и валюта",
+    "language": "Язык",
+    "currency": "Валюта",
+    "commonCurrencies": "Основные валюты",
+    "allCurrencies": "Все валюты",
+    "note": "Суммы пересчитаны из долларов США по ежедневным справочным курсам. Рейтинг строится в долларах США."
+  },
+  "account": {
+    "chooseUsername": "Выберите имя пользователя",
+    "dashboard": "Панель",
+    "yourProfile": "Ваш профиль",
+    "editProfile": "Редактировать профиль",
+    "settings": "Настройки",
+    "yourReports": "Ваши жалобы",
+    "adminPanel": "Панель администратора",
+    "adminPanelReports": "Панель администратора, {count, plural, one {# открытая жалоба} few {# открытые жалобы} many {# открытых жалоб} other {# открытой жалобы}}",
+    "signOut": "Выйти"
+  },
+  "feedback": "Отзыв",
+  "dialogClose": "Закрыть",
+  "footer": {
+    "label": "Подвал сайта",
+    "tagline": "Бесплатный каталог независимых SaaS-продуктов и людей, которые их создают.",
+    "explore": "Обзор",
+    "getListed": "Разместить продукт",
+    "about": "О сайте",
+    "newArrivals": "Новинки",
+    "categories": "Категории",
+    "techStacks": "Технологии",
+    "statistics": "Статистика",
+    "listYourSaas": "Добавить свой SaaS",
+    "howItWorks": "Как это работает",
+    "whereToLaunch": "Где запуститься",
+    "sendFeedback": "Оставить отзыв",
+    "privacy": "Конфиденциальность",
+    "terms": "Условия",
+    "forAiAssistants": "Для ИИ-ассистентов",
+    "providers": "Выручка подтверждается через подключения только для чтения к {providers} и обновляется каждый час."
+  }
+}

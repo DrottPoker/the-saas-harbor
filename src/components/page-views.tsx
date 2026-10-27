@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { usePathname } from "next/navigation";
+import { splitLocale } from "@/i18n/config";
+import { usePagePath } from "@/i18n/client";
 import { isAdminPath, type SystemHints } from "@/lib/analytics";
 import { takeShownDialogPath } from "./route-dialog";
 
@@ -118,7 +119,9 @@ function reportTime(view: View | null) {
  * again. Admin pages and automated browsers send nothing.
  */
 export function PageViews() {
-  const path = usePathname();
+  // Without the language prefix, so a page counts as one page in every language, product pages
+  // included, whose views their founders see.
+  const path = usePagePath();
   const last = useRef<string | null>(null);
   const view = useRef<View | null>(null);
   // The view before the current one, paused, which goes on if the current one was a dialog over it.
@@ -154,7 +157,7 @@ export function PageViews() {
       pause(previous);
       earlier.current = previous;
     }
-    const address = `${location.pathname}${location.search}`;
+    const address = `${splitLocale(location.pathname).path}${location.search}`;
     if (first) landing.current = address;
     const current: View = {
       key: newKey(),
@@ -212,7 +215,7 @@ export function PageViews() {
       if (url.origin === location.origin || !/^https?:$/.test(url.protocol)) return;
       send({
         type: "outbound",
-        path: `${location.pathname}${location.search}`,
+        path: `${splitLocale(location.pathname).path}${location.search}`,
         url: url.href,
       }).catch(() => {});
     }

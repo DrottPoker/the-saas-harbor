@@ -1,0 +1,13 @@
+{
+  "siteDescription": "नए और स्थापित स्वतंत्र SaaS उत्पादों की एक मुफ़्त डायरेक्टरी, जिसमें भुगतान प्रदाताओं के ज़रिए सत्यापित मासिक आवर्ती राजस्व (MRR) का लीडरबोर्ड है।",
+  "laterPage": "{title}, पेज {page}",
+  "productTitleMrr": "{name}: {amount} सत्यापित MRR",
+  "productTitleRevenue": "{name}: {amount} सत्यापित राजस्व",
+  "productMrr": "सत्यापित MRR {amount}।",
+  "productMrrSubscribers": "{count, plural, one {# सब्सक्राइबर} other {# सब्सक्राइबर}} से सत्यापित MRR {amount}।",
+  "productRevenue": "अब तक का सत्यापित राजस्व: {amount}।",
+  "founderOf": "{products} के संस्थापक।",
+  "profileFounder": "{name}, {products} के संस्थापक, {site} पर।",
+  "profileOnSite": "{site} पर {name}",
+  "namesMore": "{count} और"
+}

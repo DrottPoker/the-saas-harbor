@@ -1,0 +1,13 @@
+{
+  "siteDescription": "A free directory of independent SaaS products, new and established, with a leaderboard of monthly recurring revenue verified through their payment providers.",
+  "laterPage": "{title}, page {page}",
+  "productTitleMrr": "{name}: {amount} verified MRR",
+  "productTitleRevenue": "{name}: {amount} verified revenue",
+  "productMrr": "Verified MRR {amount}.",
+  "productMrrSubscribers": "Verified MRR {amount} from {count, plural, one {# subscriber} other {# subscribers}}.",
+  "productRevenue": "Verified revenue, all time: {amount}.",
+  "founderOf": "Founder of {products}.",
+  "profileFounder": "{name}, founder of {products}, on {site}.",
+  "profileOnSite": "{name} on {site}",
+  "namesMore": "{count} more"
+}

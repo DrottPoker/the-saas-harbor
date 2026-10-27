@@ -1,0 +1,13 @@
+{
+  "siteDescription": "Бесплатный каталог независимых SaaS-продуктов, новых и зрелых, с рейтингом ежемесячной регулярной выручки (MRR), подтверждённой через платёжные сервисы.",
+  "laterPage": "{title}, страница {page}",
+  "productTitleMrr": "{name}: подтверждённый MRR {amount}",
+  "productTitleRevenue": "{name}: подтверждённая выручка {amount}",
+  "productMrr": "Подтверждённый MRR: {amount}.",
+  "productMrrSubscribers": "Подтверждённый MRR: {amount}, {count, plural, one {# подписчик} few {# подписчика} many {# подписчиков} other {# подписчика}}.",
+  "productRevenue": "Подтверждённая выручка за всё время: {amount}.",
+  "founderOf": "Основатель {products}.",
+  "profileFounder": "{name}, основатель {products}, на {site}.",
+  "profileOnSite": "{name} на {site}",
+  "namesMore": "ещё {count}"
+}

@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Dialog } from "radix-ui";
 import { X } from "lucide-react";
+import { useTranslations } from "next-intl";
+import { splitLocale } from "@/i18n/config";
 import { cn } from "@/lib/utils";
 import { Button } from "./ui/button";
 
@@ -43,7 +45,7 @@ export function RouteDialog({
 }) {
   const router = useRouter();
   useEffect(() => {
-    shownPath = location.pathname;
+    shownPath = splitLocale(location.pathname).path;
   }, []);
   // The link that opened the dialog has focus while it first renders. Radix returns focus to its
   // own trigger, which a dialog opened by an address does not have, so focus goes back here.
@@ -95,6 +97,7 @@ export function DialogPanel({
   onCloseAutoFocus?: (event: Event) => void;
   children: React.ReactNode;
 }) {
+  const t = useTranslations("chrome");
   return (
     <Dialog.Portal>
       <Dialog.Overlay className="fixed inset-0 z-50 bg-overlay backdrop-blur-[2px] data-[state=open]:animate-fade-in-fast" />
@@ -111,7 +114,7 @@ export function DialogPanel({
           ref={titleRef}
           tabIndex={-1}
           className={cn(
-            "pr-8 text-xl font-semibold tracking-tight focus:outline-none",
+            "pe-8 text-xl font-semibold tracking-tight focus:outline-none",
             icon ? "mt-5" : undefined,
           )}
         >
@@ -125,8 +128,8 @@ export function DialogPanel({
           <Button
             variant="ghost"
             size="icon"
-            aria-label="Close"
-            className="absolute top-3 right-3 text-muted-foreground hover:text-foreground"
+            aria-label={t("dialogClose")}
+            className="absolute top-3 end-3 text-muted-foreground hover:text-foreground"
           >
             <X />
           </Button>

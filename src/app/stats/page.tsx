@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import Link from "next/link";
+import Link from "@/components/link";
 import { BarList } from "@/components/charts/bar-list";
 import { Growth } from "@/components/charts/growth";
 import { RevenueHistory } from "@/components/charts/revenue-history";
@@ -55,7 +55,7 @@ function Panel({
   );
 }
 
-const cell = "py-2 text-right tabular-nums";
+const cell = "py-2 text-end tabular-nums";
 
 function Figures({ stats }: { stats: DirectoryStats }) {
   const tile = "rounded-xl border bg-surface shadow-card";
@@ -169,16 +169,16 @@ export default async function Stats() {
             <caption className="sr-only">Ranked products by category</caption>
             <thead>
               <tr className="border-b text-muted-foreground">
-                <th scope="col" className="py-2 text-left font-medium">
+                <th scope="col" className="py-2 text-start font-medium">
                   Category
                 </th>
-                <th scope="col" className="py-2 text-right font-medium">
+                <th scope="col" className="py-2 text-end font-medium">
                   Products
                 </th>
-                <th scope="col" className="py-2 text-right font-medium">
+                <th scope="col" className="py-2 text-end font-medium">
                   Median MRR
                 </th>
-                <th scope="col" className="py-2 text-right font-medium">
+                <th scope="col" className="py-2 text-end font-medium">
                   Combined
                 </th>
               </tr>
@@ -186,7 +186,7 @@ export default async function Stats() {
             <tbody>
               {stats.categories.map((row) => (
                 <tr key={row.category} className="border-b last:border-0">
-                  <th scope="row" className="py-2 text-left font-normal">
+                  <th scope="row" className="py-2 text-start font-normal">
                     <Link
                       href={`/categories/${categorySlug(row.category)}`}
                       className="hover:underline"
@@ -215,13 +215,13 @@ export default async function Stats() {
               <caption className="sr-only">Ranked products by time since launch</caption>
               <thead>
                 <tr className="border-b text-muted-foreground">
-                  <th scope="col" className="py-2 text-left font-medium">
+                  <th scope="col" className="py-2 text-start font-medium">
                     Launched
                   </th>
-                  <th scope="col" className="py-2 text-right font-medium">
+                  <th scope="col" className="py-2 text-end font-medium">
                     Products
                   </th>
-                  <th scope="col" className="py-2 text-right font-medium">
+                  <th scope="col" className="py-2 text-end font-medium">
                     Median MRR
                   </th>
                 </tr>
@@ -229,7 +229,7 @@ export default async function Stats() {
               <tbody>
                 {stats.ages.map((row) => (
                   <tr key={row.min_years} className="border-b last:border-0">
-                    <th scope="row" className="py-2 text-left font-normal">
+                    <th scope="row" className="py-2 text-start font-normal">
                       {ageLabel(row)}
                     </th>
                     <td className={cell}>{row.products}</td>

@@ -1,0 +1,27 @@
+{
+  "notShared": "Not shared",
+  "demo": "Demo",
+  "mrr": "MRR",
+  "verifiedMrr": "Verified MRR",
+  "demoMrr": "Demo MRR",
+  "windows": {
+    "30d": {
+      "label": "Revenue, last 30 days",
+      "chip": "Revenue, 30 days",
+      "demo": "Demo revenue, last 30 days",
+      "title": "SaaS ranked by verified revenue, 30 days"
+    },
+    "12m": {
+      "label": "Revenue, last 12 months",
+      "chip": "Revenue, 12 months",
+      "demo": "Demo revenue, last 12 months",
+      "title": "SaaS ranked by verified revenue, 12 months"
+    },
+    "all": {
+      "label": "Revenue, all time",
+      "chip": "Revenue, all time",
+      "demo": "Demo revenue, all time",
+      "title": "SaaS ranked by verified revenue, all time"
+    }
+  }
+}

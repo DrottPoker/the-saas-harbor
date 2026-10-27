@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import Link from "@/components/link";
 import { deleteAccountAction, deleteSaasAction } from "@/app/actions";
 import { Feedback, Field, Section, Submit } from "./forms";
 import { PROVIDER_NAMES, type OAuthProvider } from "@/lib/auth";

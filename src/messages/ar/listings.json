@@ -1,0 +1,20 @@
+{
+  "product": "المنتج",
+  "category": "الفئة",
+  "trend": "12 شهرًا",
+  "launched": "الإطلاق",
+  "verified": "التوثيق",
+  "rank": "المرتبة",
+  "demoRevenue": "إيرادات تجريبية",
+  "mrrNotShared": "MRR غير معلن",
+  "byFounder": "من {name}",
+  "joined": "انضم في <date></date>",
+  "launchedOn": "أُطلق في {date}",
+  "results": {
+    "label": "التنقل بين الصفحات",
+    "count": "{count, plural, zero {لا منتجات} one {منتج واحد} two {منتجان} few {# منتجات} many {# منتجًا} other {# منتج}}",
+    "showing": "{first}-{last} من {count}",
+    "previous": "السابق",
+    "next": "التالي"
+  }
+}

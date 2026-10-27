@@ -1,6 +1,6 @@
 import { cookies } from "next/headers";
-import Link from "next/link";
-import { notFound, redirect } from "next/navigation";
+import Link from "@/components/link";
+import { notFound } from "next/navigation";
 import { z } from "zod";
 import { BackLink } from "@/components/back-link";
 import { BadgeEmbed } from "@/components/badge-embed";
@@ -22,6 +22,7 @@ import { firstValues, type SearchParams } from "@/lib/params";
 import { siteUrl } from "@/lib/seo";
 import { productShareText } from "@/lib/share";
 import { currentVerifiedDomain } from "@/lib/website-domain";
+import { localeRedirect } from "@/i18n/navigation";
 
 type Props = {
   params: Promise<{ id: string }>;
@@ -36,7 +37,7 @@ export default async function EditSaas({ params, searchParams }: Props) {
   const { id } = await params;
   const isNew = id === "new";
   // Visitors who want to list a product start by creating an account, not by signing in.
-  if (isNew && !(await currentUser())) redirect("/auth?mode=signup");
+  if (isNew && !(await currentUser())) return localeRedirect("/auth?mode=signup");
   const { user, client } = await requireUser();
   if (!isNew && !z.uuid().safeParse(id).success) notFound();
   if (isNew) {

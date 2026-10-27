@@ -81,20 +81,20 @@ function profile(overrides: Partial<Profile> = {}): Profile {
 }
 
 describe("category addresses", () => {
-  it("turn names into slugs and back", () => {
+  it("turn names into slugs and back", async () => {
     expect(categorySlug("AI & Machine Learning")).toBe("ai-machine-learning");
     expect(categorySlug("Developer Tools")).toBe("developer-tools");
     for (const category of categories)
       expect(categoryFromSlug(categorySlug(category))).toBe(category);
   });
-  it("know only the listed categories", () => {
+  it("know only the listed categories", async () => {
     expect(categoryFromSlug("crypto")).toBeNull();
     expect(categoryFromSlug("Developer-Tools")).toBeNull();
   });
 });
 
 describe("structured data", () => {
-  it("describes the site and the organization behind it, with a raster logo", () =>
+  it("describes the site and the organization behind it, with a raster logo", async () =>
     expect(siteJsonLd()).toMatchObject({
       "@graph": [
         {
@@ -112,7 +112,7 @@ describe("structured data", () => {
       ],
     }));
 
-  it("lists the leaderboard's first page in rank order", () =>
+  it("lists the leaderboard's first page in rank order", async () =>
     expect(
       leaderboardJsonLd([listing(), listing({ slug: "second", name: "Second", rank: 2 })]),
     ).toMatchObject({
@@ -127,7 +127,7 @@ describe("structured data", () => {
       },
     }));
 
-  it("gives a revenue ranking its own address and name", () =>
+  it("gives a revenue ranking its own address and name", async () =>
     expect(
       leaderboardJsonLd([listing()], {
         path: "/?by=12m",
@@ -139,7 +139,7 @@ describe("structured data", () => {
       mainEntity: { itemListElement: [{ position: 1, name: "QueryBird" }] },
     }));
 
-  it("repeats a page's questions and answers", () =>
+  it("repeats a page's questions and answers", async () =>
     expect(
       faqJsonLd("/list-your-saas", "List your SaaS for free", [
         { question: "Is it free?", answer: "Yes." },
@@ -157,7 +157,7 @@ describe("structured data", () => {
       ],
     }));
 
-  it("ties every page to the site", () => {
+  it("ties every page to the site", async () => {
     const site = { "@id": "https://harbor.example/#website" };
     expect(productJsonLd(listing())).toMatchObject({ isPartOf: site });
     expect(makerJsonLd(profile())).toMatchObject({ isPartOf: site });
@@ -165,7 +165,7 @@ describe("structured data", () => {
     expect(leaderboardJsonLd([])).toMatchObject({ isPartOf: site });
   });
 
-  it("describes a product with its category, maker and addresses", () =>
+  it("describes a product with its category, maker and addresses", async () =>
     expect(productJsonLd(listing())).toMatchObject({
       url: "https://harbor.example/saas/querybird",
       mainEntity: {
@@ -186,7 +186,7 @@ describe("structured data", () => {
       },
     }));
 
-  it("links a maker's profiles and leaves out empty ones", () => {
+  it("links a maker's profiles and leaves out empty ones", async () => {
     expect(makerJsonLd(profile())).toMatchObject({
       "@type": "ProfilePage",
       mainEntity: { sameAs: ["https://tomas.example", "https://github.com/tomas"] },
@@ -196,7 +196,7 @@ describe("structured data", () => {
     );
   });
 
-  it("lists a category's ranked products in order", () =>
+  it("lists a category's ranked products in order", async () =>
     expect(
       categoryJsonLd("Developer Tools", [
         listing(),
@@ -211,7 +211,7 @@ describe("structured data", () => {
       },
     }));
 
-  it("lists a technology's ranked products under the technology overview", () =>
+  it("lists a technology's ranked products under the technology overview", async () =>
     expect(techJsonLd(techFromSlug("go")!, [listing()])).toMatchObject({
       url: "https://harbor.example/tech/go",
       name: "SaaS built with Go",
@@ -226,12 +226,12 @@ describe("structured data", () => {
       },
     }));
 
-  it("cannot close its script element", () =>
+  it("cannot close its script element", async () =>
     expect(serializeJsonLd({ name: "</script><script>alert(1)</script>" })).not.toContain("<"));
 });
 
 describe("markdown", () => {
-  it("escapes structure in text makers wrote", () => {
+  it("escapes structure in text makers wrote", async () => {
     expect(escapeMarkdown("# Title\n- item\n1. first\n[link](https://x.example) *bold* <b>")).toBe(
       "\\# Title\n\\- item\n1\\. first\n\\[link\\](https://x.example) \\*bold\\* \\<b\\>",
     );
@@ -242,7 +242,7 @@ describe("markdown", () => {
     );
   });
 
-  it("describes a product with its shared figures and history", () => {
+  it("describes a product with its shared figures and history", async () => {
     const text = productMarkdown(listing());
     expect(text).toContain("# QueryBird\n\n> SQL reports for small teams");
     expect(text).toContain("- Page: https://harbor.example/saas/querybird");
@@ -256,7 +256,7 @@ describe("markdown", () => {
     expect(text).toContain("written by the users who list them");
   });
 
-  it("adds revenue besides MRR where the founder shares it", () => {
+  it("adds revenue besides MRR where the founder shares it", async () => {
     expect(productMarkdown(listing())).not.toContain("Revenue, last 30 days");
     const text = productMarkdown(
       listing({
@@ -275,7 +275,7 @@ describe("markdown", () => {
     expect(text).toContain("- Verified with: Stripe");
   });
 
-  it("lists revenue by month where it is shared, split where every month is", () => {
+  it("lists revenue by month where it is shared, split where every month is", async () => {
     const months = [
       { month: "2026-07", cents: 120_000, subscription_cents: 100_000, one_time_cents: 20_000 },
       { month: "2026-08", cents: 150_000, subscription_cents: 110_000, one_time_cents: 40_000 },
@@ -296,7 +296,7 @@ describe("markdown", () => {
     expect(total).toContain("| July 2026 | $1,200 |");
   });
 
-  it("says when the founder verified the website's domain", () => {
+  it("says when the founder verified the website's domain", async () => {
     expect(
       productMarkdown(
         listing({
@@ -310,7 +310,7 @@ describe("markdown", () => {
     expect(productMarkdown(listing())).toContain("- Domain: not verified");
   });
 
-  it("lists the tech stack by group, linking each technology", () => {
+  it("lists the tech stack by group, linking each technology", async () => {
     const text = productMarkdown(listing());
     expect(text).toContain(
       "## Tech stack\n\n- Backend: [Go](https://harbor.example/tech/go)\n- Databases: [PostgreSQL](https://harbor.example/tech/postgresql)",
@@ -319,7 +319,7 @@ describe("markdown", () => {
     expect(productMarkdown(listing({ tech_stack: [] }))).not.toContain("## Tech stack");
   });
 
-  it("says why a figure is missing and shows no history for it", () => {
+  it("says why a figure is missing and shows no history for it", async () => {
     const text = productMarkdown(
       listing({
         revenue_status: "private",
@@ -347,13 +347,13 @@ describe("markdown", () => {
     }
   });
 
-  it("keeps a product name from breaking the page", () => {
+  it("keeps a product name from breaking the page", async () => {
     const text = productMarkdown(listing({ name: "Evil](https://evil.example) # x" }));
     expect(text).toContain("# Evil\\](https://evil.example) # x");
     expect(text).not.toContain("[Evil]");
   });
 
-  it("describes a maker with products and links", () => {
+  it("describes a maker with products and links", async () => {
     const text = makerMarkdown(
       profile(),
       [listing(), listing({ slug: "private-one", name: "Private One", revenue_status: "private" })],
@@ -371,7 +371,7 @@ describe("markdown", () => {
     expect(unshared).toContain("- Subscribers across shared products: not shared");
   });
 
-  it("guides AI assistants through the site", () => {
+  it("guides AI assistants through the site", async () => {
     const counts = new Map([["Developer Tools", { products: 3, ranked: 1 }]]);
     const text = llmsText([listing()], counts, categories);
     expect(text.startsWith("# The SaaS Harbor\n\n> ")).toBe(true);
@@ -402,7 +402,7 @@ describe("markdown", () => {
     );
   });
 
-  it("lists the technologies that products use", () => {
+  it("lists the technologies that products use", async () => {
     const techs = new Map([
       ["nextjs", { products: 2, ranked: 1 }],
       ["cobol", { products: 1, ranked: 0 }],
@@ -419,20 +419,20 @@ describe("markdown", () => {
 describe("list metadata", () => {
   const list = { title: "Browse SaaS products", description: "Every product.", path: "/browse" };
 
-  it("gives the plain list its own address", () =>
-    expect(listMetadata(list, {})).toMatchObject({
+  it("gives the plain list its own address", async () =>
+    expect(await listMetadata(list, {})).toMatchObject({
       title: "Browse SaaS products",
       alternates: { canonical: "/browse" },
       openGraph: { url: "/browse" },
     }));
 
-  it("makes each later page a page of its own", () => {
-    expect(listMetadata(list, { page: "3" })).toMatchObject({
+  it("makes each later page a page of its own", async () => {
+    expect(await listMetadata(list, { page: "3" })).toMatchObject({
       title: "Browse SaaS products, page 3",
       alternates: { canonical: "/browse?page=3" },
     });
     expect(
-      listMetadata(
+      await listMetadata(
         { ...list, title: "The whole site", laterTitle: "Leaderboard", path: "/" },
         {
           page: "2",
@@ -440,51 +440,51 @@ describe("list metadata", () => {
       ),
     ).toMatchObject({ title: "Leaderboard, page 2", alternates: { canonical: "/?page=2" } });
     // An invalid or first page is the plain list.
-    expect(listMetadata(list, { page: "x" })).toMatchObject({
+    expect(await listMetadata(list, { page: "x" })).toMatchObject({
       alternates: { canonical: "/browse" },
     });
   });
 
-  it("points filtered lists at the plain one and keeps searches out of the index", () => {
+  it("points filtered lists at the plain one and keeps searches out of the index", async () => {
     for (const params of [{ category: "Design", page: "2" }, { tech: "go" }])
-      expect(listMetadata(list, params)).toMatchObject({
+      expect(await listMetadata(list, params)).toMatchObject({
         title: "Browse SaaS products",
         alternates: { canonical: "/browse" },
       });
-    expect(listMetadata(list, {})).not.toHaveProperty("robots");
-    expect(listMetadata(list, { q: "query", page: "2" })).toMatchObject({
+    expect(await listMetadata(list, {})).not.toHaveProperty("robots");
+    expect(await listMetadata(list, { q: "query", page: "2" })).toMatchObject({
       robots: { index: false, follow: true },
       alternates: { canonical: "/browse" },
     });
-    expect(listMetadata(list, { q: "  " })).not.toHaveProperty("robots");
+    expect(await listMetadata(list, { q: "  " })).not.toHaveProperty("robots");
   });
 });
 
 describe("product titles and descriptions", () => {
-  it("carry verified MRR and subscribers", () =>
-    expect(productSummary(listing())).toEqual({
+  it("carry verified MRR and subscribers", async () =>
+    expect(await productSummary(listing())).toEqual({
       title: "QueryBird: $4,200 verified MRR",
       description: "SQL reports for small teams. Verified MRR $4,200 from 37 subscribers.",
     }));
 
-  it("end the tagline as a sentence without doubling its punctuation", () => {
-    expect(productSummary(listing({ tagline: "Reports, fast!" })).description).toMatch(
+  it("end the tagline as a sentence without doubling its punctuation", async () => {
+    expect((await productSummary(listing({ tagline: "Reports, fast!" }))).description).toMatch(
       /^Reports, fast! Verified/,
     );
-    expect(productSummary(listing({ tagline: "Reports." })).description).toMatch(
+    expect((await productSummary(listing({ tagline: "Reports." }))).description).toMatch(
       /^Reports\. Verified/,
     );
   });
 
-  it("leave out figures of zero", () =>
-    expect(productSummary(listing({ mrr_cents: 0, customers: 0 }))).toEqual({
+  it("leave out figures of zero", async () =>
+    expect(await productSummary(listing({ mrr_cents: 0, customers: 0 }))).toEqual({
       title: "QueryBird",
       description: "SQL reports for small teams.",
     }));
 
-  it("show revenue from all payments when there is no MRR", () =>
+  it("show revenue from all payments when there is no MRR", async () =>
     expect(
-      productSummary(
+      await productSummary(
         listing({
           mrr_cents: 0,
           customers: 0,
@@ -497,14 +497,14 @@ describe("product titles and descriptions", () => {
       description: "SQL reports for small teams. Verified revenue, all time: $1,500.50.",
     }));
 
-  it("add revenue beside MRR", () =>
-    expect(productSummary(listing({ revenue_total_cents: 5_000_000 })).description).toBe(
+  it("add revenue beside MRR", async () =>
+    expect((await productSummary(listing({ revenue_total_cents: 5_000_000 }))).description).toBe(
       "SQL reports for small teams. Verified MRR $4,200 from 37 subscribers. Verified revenue, all time: $50,000.",
     ));
 
-  it("show only what is shared and verified", () => {
+  it("show only what is shared and verified", async () => {
     for (const overrides of [{ mrr_cents: null }, { revenue_status: "stale" }])
-      expect(productSummary(listing({ ...overrides, customers: null }))).toEqual({
+      expect(await productSummary(listing({ ...overrides, customers: null }))).toEqual({
         title: "QueryBird",
         description: "SQL reports for small teams.",
       });
@@ -514,37 +514,37 @@ describe("product titles and descriptions", () => {
 describe("profile descriptions", () => {
   const person = { name: "Tomas Rivera", headline: "Builds tools for data teams" };
 
-  it("name the products the user is the founder of", () => {
-    expect(profileDescription(person, ["QueryBird"])).toBe(
+  it("name the products the user is the founder of", async () => {
+    expect(await profileDescription(person, ["QueryBird"])).toBe(
       "Builds tools for data teams. Founder of QueryBird.",
     );
-    expect(profileDescription(person, ["A", "B"])).toBe(
+    expect(await profileDescription(person, ["A", "B"])).toBe(
       "Builds tools for data teams. Founder of A and B.",
     );
-    expect(profileDescription(person, ["A", "B", "C", "D", "E"])).toBe(
+    expect(await profileDescription(person, ["A", "B", "C", "D", "E"])).toBe(
       "Builds tools for data teams. Founder of A, B, C and 2 more.",
     );
   });
 
-  it("fall back to the name", () => {
-    expect(profileDescription({ ...person, headline: "" }, ["QueryBird"])).toBe(
+  it("fall back to the name", async () => {
+    expect(await profileDescription({ ...person, headline: "" }, ["QueryBird"])).toBe(
       "Tomas Rivera, founder of QueryBird, on The SaaS Harbor.",
     );
-    expect(profileDescription({ ...person, headline: "" }, [])).toBe(
+    expect(await profileDescription({ ...person, headline: "" }, [])).toBe(
       "Tomas Rivera on The SaaS Harbor",
     );
-    expect(profileDescription(person, [])).toBe("Builds tools for data teams.");
+    expect(await profileDescription(person, [])).toBe("Builds tools for data teams.");
   });
 });
 
 describe("the link to a product's website", () => {
-  it("is followed only while the product's revenue is verified", () => {
+  it("is followed only while the product's revenue is verified", async () => {
     expect(websiteRel("verified")).toBe("noopener");
     expect(websiteRel("private")).toBe("noopener");
     for (const status of ["stale", "unverified", null, undefined])
       expect(websiteRel(status)).toBe("noopener nofollow");
   });
-  it("keeps the referrer, so founders see the visits", () => {
+  it("keeps the referrer, so founders see the visits", async () => {
     expect(websiteRel("verified")).not.toContain("noreferrer");
     expect(websiteRel("unverified")).not.toContain("noreferrer");
   });

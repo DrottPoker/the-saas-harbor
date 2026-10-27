@@ -26,7 +26,7 @@ export function MessagesPanes({
           "md:h-[calc(100dvh-6.5rem-1px)] md:grid-cols-[18rem_minmax(0,1fr)] lg:grid-cols-[21rem_minmax(0,1fr)]",
         )}
       >
-        <div className={cn("flex min-h-0 flex-col md:border-r", open && "max-md:hidden")}>
+        <div className={cn("flex min-h-0 flex-col md:border-e", open && "max-md:hidden")}>
           {list}
         </div>
         <div className={cn("flex min-h-0 flex-col", !open && "max-md:hidden")}>{children}</div>

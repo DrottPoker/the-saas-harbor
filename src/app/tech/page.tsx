@@ -1,4 +1,4 @@
-import Link from "next/link";
+import Link from "@/components/link";
 import { categoryChip } from "@/components/explore";
 import { JsonLd } from "@/components/json-ld";
 import { PageHeader, Shell } from "@/components/shell";
@@ -36,7 +36,7 @@ export default async function TechStacks() {
                       <Link href={`/tech/${tech.slug}`} className={categoryChip}>
                         {tech.name}
                         {!!products && (
-                          <span className="ml-1.5 text-faint-foreground tabular-nums">
+                          <span className="ms-1.5 text-faint-foreground tabular-nums">
                             {products}
                             <span className="sr-only">
                               {products === 1 ? " product" : " products"}

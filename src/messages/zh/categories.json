@@ -1,0 +1,13 @@
+{
+  "all": "全部类别",
+  "names": {
+    "ai-machine-learning": "AI 与机器学习",
+    "developer-tools": "开发者工具",
+    "productivity": "效率工具",
+    "marketing": "营销",
+    "design": "设计",
+    "finance": "财务",
+    "analytics": "数据分析",
+    "other": "其他"
+  }
+}

@@ -1,4 +1,4 @@
-import Link from "next/link";
+import Link from "@/components/link";
 import { ModerationNotice } from "@/components/moderation-notice";
 import { ProfileForm } from "@/components/profile/profile-form";
 import { PageHeader, Shell } from "@/components/shell";

@@ -1,0 +1,20 @@
+{
+  "product": "Продукт",
+  "category": "Категория",
+  "trend": "12 месяцев",
+  "launched": "Запуск",
+  "verified": "Подтверждено",
+  "rank": "Место",
+  "demoRevenue": "Демо-выручка",
+  "mrrNotShared": "MRR не раскрывается",
+  "byFounder": "{name}",
+  "joined": "Добавлен <date></date>",
+  "launchedOn": "Запущен {date}",
+  "results": {
+    "label": "Страницы",
+    "count": "{count, plural, one {# продукт} few {# продукта} many {# продуктов} other {# продукта}}",
+    "showing": "{first}–{last} из {count}",
+    "previous": "Назад",
+    "next": "Далее"
+  }
+}

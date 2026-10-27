@@ -2,13 +2,14 @@
 import { useLayoutEffect, useState } from "react";
 import { DropdownMenu } from "radix-ui";
 import { Check, Monitor, Moon, Sun } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { THEME_COOKIE, type Theme } from "@/lib/theme";
 import { cn } from "@/lib/utils";
 
 const options = [
-  ["light", "Light", Sun],
-  ["dark", "Dark", Moon],
-  ["system", "System", Monitor],
+  ["light", Sun],
+  ["dark", Moon],
+  ["system", Monitor],
 ] as const;
 
 function savedTheme(): Theme {
@@ -28,6 +29,7 @@ function applyTheme(theme: Theme) {
 }
 
 export function ThemeMenu({ className }: { className?: string }) {
+  const t = useTranslations("chrome.theme");
   const [theme, setTheme] = useState<Theme>("system");
 
   // React clears attributes set by the inline script when it draws the page itself: a dev remount,
@@ -40,7 +42,7 @@ export function ThemeMenu({ className }: { className?: string }) {
   return (
     <DropdownMenu.Root onOpenChange={(open) => open && setTheme(savedTheme())}>
       <DropdownMenu.Trigger
-        aria-label="Theme"
+        aria-label={t("label")}
         className={cn(
           "inline-grid size-8 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground data-[state=open]:bg-muted",
           className,
@@ -63,15 +65,15 @@ export function ThemeMenu({ className }: { className?: string }) {
               applyTheme(value as Theme);
             }}
           >
-            {options.map(([value, label, Icon]) => (
+            {options.map(([value, Icon]) => (
               <DropdownMenu.RadioItem
                 key={value}
                 value={value}
                 className="flex cursor-default items-center gap-2 rounded-md px-2 py-1.5 text-sm outline-none select-none data-highlighted:bg-muted"
               >
                 <Icon className="size-4 text-muted-foreground" />
-                {label}
-                <DropdownMenu.ItemIndicator className="ml-auto pl-3">
+                {t(value)}
+                <DropdownMenu.ItemIndicator className="ms-auto ps-3">
                   <Check className="size-4" />
                 </DropdownMenu.ItemIndicator>
               </DropdownMenu.RadioItem>

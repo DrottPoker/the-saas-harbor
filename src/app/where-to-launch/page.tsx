@@ -1,4 +1,4 @@
-import Link from "next/link";
+import Link from "@/components/link";
 import { ArrowUpRight } from "lucide-react";
 import { JsonLd } from "@/components/json-ld";
 import { PageHeader, Shell } from "@/components/shell";
@@ -47,7 +47,10 @@ function Place({ place }: { place: LaunchPlace }) {
             className="inline-flex items-center gap-1 hover:underline"
           >
             {place.name}
-            <ArrowUpRight aria-hidden="true" className="size-4 text-muted-foreground" />
+            <ArrowUpRight
+              aria-hidden="true"
+              className="size-4 text-muted-foreground rtl:-scale-x-100"
+            />
             <span className="sr-only">(opens in a new tab)</span>
           </a>
         )}
@@ -90,7 +93,7 @@ export default function WhereToLaunch() {
           <h2 id="order" className="text-lg font-semibold">
             An order that works
           </h2>
-          <ol className="mt-3 grid list-decimal gap-2 pl-5 leading-7 text-foreground/85 marker:text-faint-foreground">
+          <ol className="mt-3 grid list-decimal gap-2 ps-5 leading-7 text-foreground/85 marker:text-faint-foreground">
             {launchOrder.map((step) => (
               <li key={step}>{step}</li>
             ))}
@@ -113,7 +116,7 @@ export default function WhereToLaunch() {
           <h2 id="cautions" className="text-lg font-semibold">
             What to watch out for
           </h2>
-          <ul className="mt-3 grid list-disc gap-2 pl-5 leading-7 text-foreground/85 marker:text-faint-foreground">
+          <ul className="mt-3 grid list-disc gap-2 ps-5 leading-7 text-foreground/85 marker:text-faint-foreground">
             {launchCautions.map((caution) => (
               <li key={caution}>{caution}</li>
             ))}

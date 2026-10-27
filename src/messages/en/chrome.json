@@ -1,0 +1,64 @@
+{
+  "skipToContent": "Skip to content",
+  "nav": {
+    "label": "Main",
+    "leaderboard": "Leaderboard",
+    "browse": "Browse"
+  },
+  "header": {
+    "dashboard": "Dashboard",
+    "signIn": "Sign in",
+    "addSaas": "Add SaaS",
+    "listYourSaas": "List your SaaS",
+    "listSaasShort": "List SaaS",
+    "messages": "Messages",
+    "messagesUnread": "Messages, {count} unread"
+  },
+  "theme": {
+    "label": "Theme",
+    "light": "Light",
+    "dark": "Dark",
+    "system": "System"
+  },
+  "preferences": {
+    "label": "Language and currency: {language}, {currency}",
+    "title": "Language and currency",
+    "language": "Language",
+    "currency": "Currency",
+    "commonCurrencies": "Common currencies",
+    "allCurrencies": "All currencies",
+    "note": "Amounts are converted from US dollars at daily reference rates. Rankings use US dollars."
+  },
+  "account": {
+    "chooseUsername": "Choose your username",
+    "dashboard": "Dashboard",
+    "yourProfile": "Your profile",
+    "editProfile": "Edit profile",
+    "settings": "Settings",
+    "yourReports": "Your reports",
+    "adminPanel": "Admin panel",
+    "adminPanelReports": "Admin panel, {count, plural, one {# open report} other {# open reports}}",
+    "signOut": "Sign out"
+  },
+  "feedback": "Feedback",
+  "dialogClose": "Close",
+  "footer": {
+    "label": "Footer",
+    "tagline": "A free directory of independent SaaS products and the people who build them.",
+    "explore": "Explore",
+    "getListed": "Get listed",
+    "about": "About",
+    "newArrivals": "New arrivals",
+    "categories": "Categories",
+    "techStacks": "Tech stacks",
+    "statistics": "Statistics",
+    "listYourSaas": "List your SaaS",
+    "howItWorks": "How it works",
+    "whereToLaunch": "Where to launch",
+    "sendFeedback": "Send feedback",
+    "privacy": "Privacy",
+    "terms": "Terms",
+    "forAiAssistants": "For AI assistants",
+    "providers": "Revenue is verified through read-only connections to {providers}, and refreshed every hour."
+  }
+}

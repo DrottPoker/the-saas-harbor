@@ -1,7 +1,7 @@
 "use client";
 
 import { startTransition, useEffect, useRef } from "react";
-import Link from "next/link";
+import Link from "@/components/link";
 import { saveProfile } from "@/app/actions";
 import type { Profile } from "@/lib/data";
 import { USERNAME_CHANGE_DAYS, usernameLockedMessage } from "@/lib/domain";

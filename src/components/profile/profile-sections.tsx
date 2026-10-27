@@ -47,7 +47,7 @@ export function ProfileDetails({ profile }: { profile: Profile }) {
             <Icon aria-hidden="true" className="size-4" />
             {label}
           </dt>
-          <dd className="min-w-0 truncate text-right">
+          <dd className="min-w-0 truncate text-end">
             <a
               href={href}
               target="_blank"

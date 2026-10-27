@@ -1,0 +1,8 @@
+{
+  "title": "No se pudo cargar esta página",
+  "body": "Algo salió mal de nuestro lado. Inténtalo de nuevo o vuelve en unos minutos.",
+  "retry": "Intentar de nuevo",
+  "notFoundTitle": "Página no encontrada",
+  "notFoundBody": "Esta página no existe o no está disponible para ti.",
+  "backToLeaderboard": "Volver a la clasificación"
+}

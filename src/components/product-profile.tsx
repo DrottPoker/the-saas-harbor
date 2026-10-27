@@ -1,4 +1,4 @@
-import Link from "next/link";
+import Link from "@/components/link";
 import { ArrowUpRight, BadgeCheck } from "lucide-react";
 import { historySince, parseHistory, parseRevenueHistory } from "@/lib/charts";
 import type { Listing, PageViewCounts } from "@/lib/data";
@@ -226,7 +226,7 @@ export function ProductProfile({
                 <Button asChild className="max-sm:flex-1">
                   <a href={item.website} target="_blank" rel={websiteRel(item.revenue_status)}>
                     Visit website
-                    <ArrowUpRight />
+                    <ArrowUpRight className="rtl:-scale-x-100" />
                   </a>
                 </Button>
               )}
@@ -353,12 +353,12 @@ export function ProductProfile({
           <dl className="grid gap-3 rounded-xl border bg-surface p-5 text-sm shadow-card">
             <div className="flex justify-between gap-4">
               <dt className="text-muted-foreground">Category</dt>
-              <dd className="text-right">{item.category}</dd>
+              <dd className="text-end">{item.category}</dd>
             </div>
             {site && (
               <div className="flex justify-between gap-4">
                 <dt className="text-muted-foreground">Website</dt>
-                <dd className="truncate text-right">{site}</dd>
+                <dd className="truncate text-end">{site}</dd>
               </div>
             )}
             {/* Verifying the domain is optional; the founder adds a DNS record from the editor. */}
@@ -366,19 +366,19 @@ export function ProductProfile({
               <div className="flex justify-between gap-4">
                 <dt className="text-muted-foreground">Domain</dt>
                 {domainVerified ? (
-                  <dd className="flex items-center gap-1.5 text-right">
+                  <dd className="flex items-center gap-1.5 text-end">
                     <BadgeCheck aria-hidden="true" className="size-4 shrink-0 text-brand" />
                     Verified
                   </dd>
                 ) : (
-                  <dd className="text-right text-muted-foreground">Not verified</dd>
+                  <dd className="text-end text-muted-foreground">Not verified</dd>
                 )}
               </div>
             )}
             {item.created_at && (
               <div className="flex justify-between gap-4">
                 <dt className="text-muted-foreground">Listed</dt>
-                <dd className="text-right">
+                <dd className="text-end">
                   <LocalTime format="date" value={item.created_at} />
                 </dd>
               </div>

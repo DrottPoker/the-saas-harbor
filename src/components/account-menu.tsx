@@ -1,5 +1,5 @@
 "use client";
-import Link from "next/link";
+import Link from "@/components/link";
 import { DropdownMenu } from "radix-ui";
 import {
   ChevronDown,
@@ -11,6 +11,7 @@ import {
   ShieldCheck,
   UserRound,
 } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { signOut } from "@/app/actions";
 import type { AccountMenuData } from "@/lib/account-menu";
 import { PersonAvatar } from "./avatars";
@@ -28,12 +29,13 @@ function MenuLink({ href, children }: { href: string; children: React.ReactNode 
 
 /** The signed-in user's picture and name in the header, with their profile and account pages. */
 export function AccountMenu({ account }: { account: AccountMenuData }) {
+  const t = useTranslations("chrome.account");
   const { name, slug, avatarPath, suspended, unfinished, sentReports, openReports } = account;
   return (
     // Not modal: a modal menu hides the rest of the page from screen readers while it is open.
     <DropdownMenu.Root modal={false}>
       {/* The name is the button's label; below xl only screen readers get it, so the header fits. */}
-      <DropdownMenu.Trigger className="flex min-w-0 items-center gap-2 rounded-full text-sm text-muted-foreground transition-colors hover:text-foreground xl:py-0.5 xl:pr-2 xl:pl-0.5 xl:hover:bg-muted xl:data-[state=open]:bg-muted xl:data-[state=open]:text-foreground">
+      <DropdownMenu.Trigger className="flex min-w-0 items-center gap-2 rounded-full text-sm text-muted-foreground transition-colors hover:text-foreground xl:py-0.5 xl:pe-2 xl:ps-0.5 xl:hover:bg-muted xl:data-[state=open]:bg-muted xl:data-[state=open]:text-foreground">
         <PersonAvatar path={avatarPath} name={name} size="sm" />
         <span className="max-w-36 truncate max-xl:sr-only">{name}</span>
         <ChevronDown aria-hidden="true" className="size-4 shrink-0 max-xl:hidden" />
@@ -57,32 +59,32 @@ export function AccountMenu({ account }: { account: AccountMenuData }) {
           {unfinished ? (
             <MenuLink href="/auth/finish">
               <UserRound />
-              Choose your username
+              {t("chooseUsername")}
             </MenuLink>
           ) : (
             <>
               <MenuLink href="/dashboard">
                 <LayoutDashboard />
-                Dashboard
+                {t("dashboard")}
               </MenuLink>
               {slug && !suspended && (
                 <MenuLink href={`/users/${slug}`}>
                   <UserRound />
-                  Your profile
+                  {t("yourProfile")}
                 </MenuLink>
               )}
               <MenuLink href="/dashboard/profile">
                 <Pencil />
-                Edit profile
+                {t("editProfile")}
               </MenuLink>
               <MenuLink href="/dashboard/settings">
                 <Settings />
-                Settings
+                {t("settings")}
               </MenuLink>
               {sentReports && (
                 <MenuLink href="/dashboard/reports">
                   <Flag />
-                  Your reports
+                  {t("yourReports")}
                 </MenuLink>
               )}
               {openReports !== null && (
@@ -90,17 +92,15 @@ export function AccountMenu({ account }: { account: AccountMenuData }) {
                   <Link
                     href="/admin"
                     aria-label={
-                      openReports
-                        ? `Admin panel, ${openReports} open ${openReports === 1 ? "report" : "reports"}`
-                        : "Admin panel"
+                      openReports ? t("adminPanelReports", { count: openReports }) : t("adminPanel")
                     }
                   >
                     <ShieldCheck />
-                    Admin panel
+                    {t("adminPanel")}
                     {openReports > 0 && (
                       <span
                         aria-hidden="true"
-                        className="ml-auto min-w-5 rounded-full bg-brand px-1.5 text-center text-xs leading-5 font-medium text-primary-foreground tabular-nums"
+                        className="ms-auto min-w-5 rounded-full bg-brand px-1.5 text-center text-xs leading-5 font-medium text-primary-foreground tabular-nums"
                       >
                         {openReports > 99 ? "99+" : openReports}
                       </span>
@@ -120,7 +120,7 @@ export function AccountMenu({ account }: { account: AccountMenuData }) {
             >
               <button type="submit">
                 <LogOut />
-                Sign out
+                {t("signOut")}
               </button>
             </DropdownMenu.Item>
           </form>

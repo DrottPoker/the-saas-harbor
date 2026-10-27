@@ -1,0 +1,5 @@
+{
+  "converted": "金额以 {currency} 显示，按 {date} 的参考汇率由美元换算。",
+  "rankedInUsd": "排名以美元计算。",
+  "inUsd": "合 {amount}（美元）"
+}

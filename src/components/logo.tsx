@@ -1,5 +1,5 @@
 import { useId } from "react";
-import Link from "next/link";
+import Link from "@/components/link";
 import { isGradient, LOGO_GRADIENTS, LOGO_PARTS, LOGO_VIEWBOX, type LogoColor } from "@/lib/logo";
 import { SITE_NAME } from "@/lib/seo";
 import { cn } from "@/lib/utils";

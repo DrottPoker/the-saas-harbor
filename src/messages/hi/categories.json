@@ -1,0 +1,13 @@
+{
+  "all": "सभी श्रेणियाँ",
+  "names": {
+    "ai-machine-learning": "AI और मशीन लर्निंग",
+    "developer-tools": "डेवलपर टूल",
+    "productivity": "उत्पादकता",
+    "marketing": "मार्केटिंग",
+    "design": "डिज़ाइन",
+    "finance": "वित्त",
+    "analytics": "एनालिटिक्स",
+    "other": "अन्य"
+  }
+}

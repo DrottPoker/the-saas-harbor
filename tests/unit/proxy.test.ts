@@ -1,6 +1,7 @@
 import { unstable_doesMiddlewareMatch } from "next/experimental/testing/server";
+import { NextRequest } from "next/server";
 import { describe, expect, it } from "vitest";
-import { config } from "../../src/proxy";
+import { config, proxy } from "../../src/proxy";
 
 const runs = (url: string) => unstable_doesMiddlewareMatch({ config, url });
 
@@ -45,5 +46,87 @@ describe("proxy matcher", () => {
       "/logo.png",
     ])
       expect(runs(url), url).toBe(false);
+  });
+});
+
+// Unit tests have no Supabase settings, so the proxy answers without refreshing a session.
+const visit = (path: string, headers: Record<string, string> = {}, method = "GET") =>
+  proxy(new NextRequest(`http://localhost${path}`, { headers, method }));
+const chrome =
+  "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/140.0 Safari/537.36";
+
+describe("addresses in other languages", () => {
+  it("serve the English route with the language as a header", async () => {
+    const response = await visit("/es/browse?category=Design");
+    expect(response.headers.get("x-middleware-rewrite")).toBe(
+      "http://localhost/browse?category=Design",
+    );
+    expect(response.headers.get("x-middleware-request-x-harbor-locale")).toBe("es");
+  });
+  it("tell English pages they are English, whatever the visitor sends", async () => {
+    const response = await visit("/browse", { "x-harbor-locale": "ar" });
+    expect(response.headers.get("x-middleware-rewrite")).toBeNull();
+    expect(response.headers.get("x-middleware-request-x-harbor-locale")).toBe("en");
+  });
+  it("give English and files one address", async () => {
+    for (const [from, to] of [
+      ["/en/browse", "/browse"],
+      ["/en", "/"],
+      ["/es/admin", "/admin"],
+      ["/ru/saas/solofy.md", "/saas/solofy.md"],
+    ]) {
+      const response = await visit(from);
+      expect(response.status, from).toBe(308);
+      expect(new URL(response.headers.get("location")!).pathname, from).toBe(to);
+    }
+  });
+  it("draw each language's sitemap", async () => {
+    const response = await visit("/zh/sitemap.xml");
+    expect(response.headers.get("x-middleware-rewrite")).toBe("http://localhost/sitemap.xml");
+    expect(response.headers.get("x-middleware-request-x-harbor-locale")).toBe("zh");
+  });
+});
+
+describe("a first visit to an English address", () => {
+  it("goes to the browser's language", async () => {
+    const response = await visit("/saas/solofy?x=1", {
+      "accept-language": "es-MX,es;q=0.9",
+      "user-agent": chrome,
+    });
+    expect(response.status).toBe(307);
+    expect(response.headers.get("location")).toBe("http://localhost/es/saas/solofy?x=1");
+    expect(response.headers.get("vary")).toContain("Accept-Language");
+  });
+  it("goes to the language the visitor chose, which wins over the browser's", async () => {
+    const chosen = await visit("/", {
+      cookie: "locale=hi",
+      "accept-language": "es",
+      "user-agent": chrome,
+    });
+    expect(chosen.headers.get("location")).toBe("http://localhost/hi");
+    const english = await visit("/", {
+      cookie: "locale=en",
+      "accept-language": "es",
+      "user-agent": chrome,
+    });
+    expect(english.headers.get("location")).toBeNull();
+  });
+  it("stays in English for crawlers, form posts, files and English browsers", async () => {
+    for (const [path, headers, method] of [
+      [
+        "/",
+        {
+          "accept-language": "es",
+          "user-agent": "Googlebot/2.1 (+http://www.google.com/bot.html)",
+        },
+        "GET",
+      ],
+      ["/dashboard", { "accept-language": "ru", "user-agent": chrome }, "POST"],
+      ["/admin", { "accept-language": "ru", "user-agent": chrome }, "GET"],
+      ["/browse", { "accept-language": "en-IN,hi;q=0.8", "user-agent": chrome }, "GET"],
+    ] as const) {
+      const response = await visit(path, headers, method);
+      expect(response.headers.get("location"), path).toBeNull();
+    }
   });
 });

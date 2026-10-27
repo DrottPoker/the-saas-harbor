@@ -161,7 +161,8 @@
   --color-initial: var(--initial);
   --color-overlay: var(--overlay);
   --color-initial-bg: var(--initial-bg);
-  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-sans:
+    var(--font-geist-sans), var(--font-script, ui-sans-serif), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-geist-mono), ui-monospace, monospace;
   --radius-md: 8px;
   --radius-lg: 10px;
@@ -232,6 +233,28 @@
   }
 }
 
+/*
+ * Scripts that Geist lacks. Geist draws Latin and Cyrillic, digits included, and the language's
+ * own font the rest: Noto Sans Arabic and Noto Sans Devanagari, loaded by the root layout only
+ * when a page uses them, and the system's Chinese fonts, since a web font for Chinese is several
+ * megabytes. Tight tracking would pull joined Arabic and Devanagari letters apart.
+ */
+:root:lang(ar) {
+  --font-script: var(--font-arabic);
+  --tracking-tight: 0em;
+  --heading-tracking: 0em;
+}
+:root:lang(hi) {
+  --font-script: var(--font-devanagari);
+  --tracking-tight: 0em;
+  --heading-tracking: 0em;
+}
+:root:lang(zh) {
+  --font-script:
+    "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans CJK SC", "Source Han Sans SC";
+  --heading-tracking: 0em;
+}
+
 @layer base {
   * {
     border-color: var(--border);
@@ -251,7 +274,7 @@
   h1,
   h2,
   h3 {
-    letter-spacing: -0.02em;
+    letter-spacing: var(--heading-tracking, -0.02em);
     text-wrap: balance;
   }
   p {

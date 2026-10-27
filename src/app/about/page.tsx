@@ -1,4 +1,4 @@
-import Link from "next/link";
+import Link from "@/components/link";
 import { demoActive } from "@/lib/data";
 import { PageHeader, Shell } from "@/components/shell";
 import { Button } from "@/components/ui/button";

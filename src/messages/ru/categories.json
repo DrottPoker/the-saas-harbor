@@ -1,0 +1,13 @@
+{
+  "all": "Все категории",
+  "names": {
+    "ai-machine-learning": "ИИ и машинное обучение",
+    "developer-tools": "Инструменты разработчика",
+    "productivity": "Продуктивность",
+    "marketing": "Маркетинг",
+    "design": "Дизайн",
+    "finance": "Финансы",
+    "analytics": "Аналитика",
+    "other": "Другое"
+  }
+}

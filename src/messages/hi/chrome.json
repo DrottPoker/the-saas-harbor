@@ -1,0 +1,64 @@
+{
+  "skipToContent": "मुख्य सामग्री पर जाएँ",
+  "nav": {
+    "label": "मुख्य",
+    "leaderboard": "लीडरबोर्ड",
+    "browse": "ब्राउज़ करें"
+  },
+  "header": {
+    "dashboard": "डैशबोर्ड",
+    "signIn": "साइन इन करें",
+    "addSaas": "SaaS जोड़ें",
+    "listYourSaas": "अपना SaaS जोड़ें",
+    "listSaasShort": "SaaS जोड़ें",
+    "messages": "संदेश",
+    "messagesUnread": "संदेश, {count} अपठित"
+  },
+  "theme": {
+    "label": "थीम",
+    "light": "लाइट",
+    "dark": "डार्क",
+    "system": "सिस्टम"
+  },
+  "preferences": {
+    "label": "भाषा और मुद्रा: {language}, {currency}",
+    "title": "भाषा और मुद्रा",
+    "language": "भाषा",
+    "currency": "मुद्रा",
+    "commonCurrencies": "प्रचलित मुद्राएँ",
+    "allCurrencies": "सभी मुद्राएँ",
+    "note": "राशियाँ दैनिक संदर्भ दरों पर अमेरिकी डॉलर से बदली जाती हैं। रैंकिंग अमेरिकी डॉलर में होती है।"
+  },
+  "account": {
+    "chooseUsername": "अपना यूज़रनेम चुनें",
+    "dashboard": "डैशबोर्ड",
+    "yourProfile": "आपकी प्रोफ़ाइल",
+    "editProfile": "प्रोफ़ाइल संपादित करें",
+    "settings": "सेटिंग्स",
+    "yourReports": "आपकी रिपोर्ट",
+    "adminPanel": "एडमिन पैनल",
+    "adminPanelReports": "एडमिन पैनल, {count, plural, one {# खुली रिपोर्ट} other {# खुली रिपोर्ट}}",
+    "signOut": "साइन आउट करें"
+  },
+  "feedback": "सुझाव",
+  "dialogClose": "बंद करें",
+  "footer": {
+    "label": "फ़ुटर",
+    "tagline": "स्वतंत्र SaaS उत्पादों और उन्हें बनाने वाले लोगों की एक मुफ़्त डायरेक्टरी।",
+    "explore": "खोजें",
+    "getListed": "लिस्ट करवाएँ",
+    "about": "जानकारी",
+    "newArrivals": "नए उत्पाद",
+    "categories": "श्रेणियाँ",
+    "techStacks": "टेक स्टैक",
+    "statistics": "आँकड़े",
+    "listYourSaas": "अपना SaaS जोड़ें",
+    "howItWorks": "यह कैसे काम करता है",
+    "whereToLaunch": "कहाँ लॉन्च करें",
+    "sendFeedback": "सुझाव भेजें",
+    "privacy": "गोपनीयता",
+    "terms": "शर्तें",
+    "forAiAssistants": "AI असिस्टेंट के लिए",
+    "providers": "राजस्व {providers} से केवल-पढ़ने वाले कनेक्शन के ज़रिए सत्यापित होता है, और हर घंटे अपडेट होता है।"
+  }
+}

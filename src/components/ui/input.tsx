@@ -12,7 +12,7 @@ function Input({ className, type, ...props }: React.ComponentProps<"input">) {
       data-slot="input"
       className={cn(
         fieldClasses,
-        "h-10 file:mr-3 file:h-full file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground",
+        "h-10 file:me-3 file:h-full file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground",
         type === "file" && "h-auto py-2",
         className,
       )}

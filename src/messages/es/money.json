@@ -1,0 +1,5 @@
+{
+  "converted": "Importes en {currency}, convertidos desde dólares estadounidenses con el tipo de cambio de referencia del {date}.",
+  "rankedInUsd": "La clasificación usa dólares estadounidenses.",
+  "inUsd": "{amount} en dólares estadounidenses"
+}

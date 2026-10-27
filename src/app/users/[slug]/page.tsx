@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
-import Link from "next/link";
-import { notFound, permanentRedirect } from "next/navigation";
+import Link from "@/components/link";
+import { notFound } from "next/navigation";
 import { BadgeCheck, Pencil } from "lucide-react";
 import { PersonAvatar } from "@/components/avatars";
 import { ListingGrid, ResultsFooter } from "@/components/listings";
@@ -17,6 +17,7 @@ import { makerJsonLd } from "@/lib/structured-data";
 import { JsonLd } from "@/components/json-ld";
 import { currentUser } from "@/lib/supabase/server";
 import { firstValues, safePage } from "@/lib/params";
+import { localePermanentRedirect } from "@/i18n/navigation";
 
 type Props = { params: Promise<{ slug: string }>; searchParams: Promise<{ page?: string }> };
 
@@ -26,13 +27,13 @@ export async function generateMetadata({ params }: Pick<Props, "params">): Promi
   const profile = found.item;
   const totals = await makerTotals(profile.id);
   return {
-    ...pageMetadata({
+    ...(await pageMetadata({
       title: profile.name,
-      description: profileDescription(profile, totals.names),
+      description: await profileDescription(profile, totals.names),
       path: `/users/${profile.slug}`,
       type: "profile",
       markdown: true,
-    }),
+    })),
     // A profile without products or a headline has nothing for search engines yet, and the sitemap
     // leaves out profiles without products.
     ...(!totals.products && !profile.headline && { robots: { index: false } }),
@@ -46,7 +47,7 @@ export default async function Maker({ params, searchParams }: Props) {
   const found = await findProfile((await params).slug);
   if (!found) notFound();
   // An id or another letter case moves to the current address.
-  if ("redirect" in found) permanentRedirect(found.redirect);
+  if ("redirect" in found) return localePermanentRedirect(found.redirect);
   const profile = found.item;
   const id = profile.id;
   const page = safePage(firstValues(await searchParams).page);
