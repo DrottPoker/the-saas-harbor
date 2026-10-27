@@ -14,6 +14,7 @@ import { MOLLIE } from "../e2e/fake-mollie.mjs";
 import { PAYPAL } from "../e2e/fake-paypal.mjs";
 import { PAYSTACK } from "../e2e/fake-paystack.mjs";
 import { SUPERWALL } from "../e2e/fake-superwall.mjs";
+import { ZOHO } from "../e2e/fake-zoho.mjs";
 import {
   exchangeGumroadCode,
   gumroadAuthorizeUrl,
@@ -60,8 +61,12 @@ beforeAll(async () => {
   process.env.SUPERWALL_API_BASE = `${base}/superwall`;
   process.env.APPSTORE_API_BASE = `${base}/appstore`;
   process.env.GOOGLE_PLAY_API_BASE = `${base}/googleplay`;
+  process.env.ZOHO_ACCOUNTS_BASE = `${base}/zoho/accounts`;
+  process.env.ZOHO_API_BASE = `${base}/zoho/api`;
   process.env.GUMROAD_API_BASE = `${base}/gumroad`;
   process.env.GUMROAD_OAUTH_BASE = `${base}/gumroad`;
+  process.env.ZOHO_CLIENT_ID = ZOHO.clientId;
+  process.env.ZOHO_CLIENT_SECRET = "harbor-zoho-secret";
   process.env.FX_API_BASE = base;
   process.env.REVENUE_ALLOW_TEST_KEYS = "true";
   for (let attempt = 0; attempt < 50; attempt++) {
@@ -586,6 +591,27 @@ describe("Google Play verification", () => {
   });
 });
 
+describe("Zoho Billing verification", () => {
+  it("reads the default organization's subscriptions in its data centre, without history", async () => {
+    const result = await verifyRevenue("zoho", ZOHO.keys.one, true);
+    expect(result).toMatchObject({
+      provider: "zoho",
+      livemode: true,
+      mrrCents: 7_400,
+      customers: 4,
+      skippedItems: 1,
+      history: null,
+      mrrInvoiceCents: null,
+    });
+    expect(result.historyNote).toMatch(/no revenue history/);
+    expect(result.subscriptionHashes).toHaveLength(7);
+  }, 30_000);
+
+  it("refuses a token that can change subscriptions", async () => {
+    await expect(verifyRevenue("zoho", ZOHO.keys.wide, true)).rejects.toThrow(/read/);
+  }, 30_000);
+});
+
 describe("claims", () => {
   it("hash Stripe ids as before and prefix other providers", async () => {
     const { createHash } = await import("node:crypto");
@@ -619,6 +645,7 @@ describe("hourly verification", () => {
     ["superwall", superwallKey(SUPERWALL.one)],
     ["appstore", appStoreKey(APPSTORE.one)],
     ["googleplay", googlePlayKey(GOOGLE_PLAY.one)],
+    ["zoho", ZOHO.keys.one],
   ] as const)(
     "reads only what MRR needs from %s without the history",
     async (provider, key) => {
@@ -1036,6 +1063,21 @@ describe("payments", () => {
     expect(values[`${day(6)}:one_time:usd`]).toEqual(usd(500));
     expect(values[`${day(12)}:one_time:usd`]).toEqual(usd(600));
   }, 20_000);
+
+  it("reads Zoho Billing payments less refunds, of unknown kind", async () => {
+    const { complete, values, kinds } = await recent("zoho", ZOHO.keys.one, { livemode: true });
+    expect(complete).toBe(true);
+    const id = (payment: string) => `${ZOHO.organization}:${payment}`;
+    expect(values).toMatchObject({
+      [id("pay_recent")]: usd(2900),
+      [id("pay_eur")]: eur(1000),
+      [id("pay_partial")]: usd(3000),
+      [id("pay_refunded")]: usd(0),
+      [id("pay_yearly")]: usd(24000),
+    });
+    expect(values).not.toHaveProperty(id("pay_failed"));
+    expect(kinds[id("pay_recent")]).toBe("unknown");
+  }, 30_000);
 
   it("reads AbacatePay's revenue as one payment a day", async () => {
     const { complete, values, kinds } = await recent("abacatepay", ABACATEPAY.one, {

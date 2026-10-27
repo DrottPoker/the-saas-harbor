@@ -1,6 +1,6 @@
 # The SaaS Harbor
 
-A focused, responsive home for independent SaaS: public maker profiles, product discovery, and a leaderboard of monthly recurring revenue, or of revenue from all payments over 30 days, 12 months or all time, verified through each product's payment provider: Stripe, Paddle, Polar, Dodo Payments, Creem, Chargebee, Whop, RevenueCat, Gumroad, PayPal, Mollie, Paystack, AbacatePay, Asaas, Airwallex, Superwall, the App Store or Google Play.
+A focused, responsive home for independent SaaS: public maker profiles, product discovery, and a leaderboard of monthly recurring revenue, or of revenue from all payments over 30 days, 12 months or all time, verified through each product's payment provider: Stripe, Paddle, Polar, Dodo Payments, Creem, Chargebee, Whop, RevenueCat, Gumroad, PayPal, Mollie, Paystack, AbacatePay, Asaas, Airwallex, Superwall, the App Store, Google Play or Zoho Billing.
 
 ## Included
 
@@ -9,7 +9,7 @@ A focused, responsive home for independent SaaS: public maker profiles, product 
 - Personal maker profiles laid out like product pages: photo, headline, location, key figures across the maker's products, products, and links to a website, LinkedIn, GitHub and X.
 - Multiple SaaS profiles per maker, with a logo, pitch, description, category, website and tech stack.
 - An account menu at the top right of the header, with the user's photo and name: the dashboard, their public profile, Edit profile, Settings, Your reports once they have sent one, the admin panel for admins, and Sign out. On phones the dashboard is reached from this menu. The dashboard lists the user's products, with next steps toward a complete listing (a logo, a profile photo and headline, a payment provider and a verified domain) until they are done.
-- Revenue verified through a read-only key to the product's payment provider (Stripe, Paddle, Polar, Dodo Payments, Creem, Chargebee, Whop, RevenueCat, Gumroad, PayPal, Mollie, Paystack, AbacatePay, Asaas, Airwallex, Superwall, the App Store or Google Play, one per product): MRR and subscribers are read from the provider, never typed in, and re-verified every hour. Revenue from every payment, one-time purchases included, is read every day and shown for the last 30 days, the last 12 months and all time, and by month, split into subscriptions and one-time purchases.
+- Revenue verified through a read-only key to the product's payment provider (Stripe, Paddle, Polar, Dodo Payments, Creem, Chargebee, Whop, RevenueCat, Gumroad, PayPal, Mollie, Paystack, AbacatePay, Asaas, Airwallex, Superwall, the App Store, Google Play or Zoho Billing, one per product): MRR and subscribers are read from the provider, never typed in, and re-verified every hour. Revenue from every payment, one-time purchases included, is read every day and shown for the last 30 days, the last 12 months and all time, and by month, split into subscriptions and one-time purchases.
 - Optional domain verification: a founder adds a DNS TXT record with a code for the product to the website's domain, and the product page's details then show the domain as Verified instead of Not verified. The record is looked up again every day; after three days without it, or when the website moves to another domain, the mark goes.
 - Verified revenue (MRR and revenue from payments together), the subscriber count and launch date, each with an independent public-sharing choice. Products without a connected provider are listed but not ranked.
 - A leaderboard ranked by verified MRR, or with `?by=30d`, `12m` or `all` by revenue over that window, with a choice of ranking above the categories. Each row also shows revenue of all time (MRR in the all-time ranking) and a twelve-month trend of the figure ranked by. Equal amounts are ordered by revenue of all time, then by the date the product was listed.
@@ -38,7 +38,7 @@ A focused, responsive home for independent SaaS: public maker profiles, product 
 - Supabase RLS, owner checks in Server Actions, owner-scoped image uploads, and a Content Security Policy with a fresh nonce per request.
 - Light and dark themes.
 
-Sales, escrow, company profiles and payment providers other than Stripe, Paddle, Polar, Dodo Payments, Creem, Chargebee, Whop, RevenueCat, Gumroad, PayPal, Mollie, Paystack, AbacatePay, Asaas, Airwallex, Superwall, the App Store and Google Play are outside this release. Lemon Squeezy (its keys always have full access) was left out on purpose. Shopify stores are planned for later (see `docs/STATUS.md`, known issue 25).
+Sales, escrow, company profiles and payment providers other than Stripe, Paddle, Polar, Dodo Payments, Creem, Chargebee, Whop, RevenueCat, Gumroad, PayPal, Mollie, Paystack, AbacatePay, Asaas, Airwallex, Superwall, the App Store, Google Play and Zoho Billing are outside this release. Lemon Squeezy (its keys always have full access) was left out on purpose. Shopify stores are planned for later (see `docs/STATUS.md`, known issue 25).
 
 ## Run locally
 
@@ -122,6 +122,7 @@ In the product form, when adding a product or editing it, the maker chooses the 
 | Whop          | Account API key                                        | member:basic:read, plan:basic:read, payment:basic:read and promo_code:basic:read           |
 | RevenueCat    | V2 secret API key, `sk_`, with the project ID          | Charts & metrics read only, no other access                                                |
 | Gumroad       | No key: the founder approves access on Gumroad (OAuth) | View sales (`view_sales`) only                                                             |
+| Zoho Billing  | No key: the founder approves access on Zoho (OAuth)    | READ scopes for settings, subscriptions and payments only                                  |
 | PayPal        | Client ID and secret of a new app, created under Live  | Transaction search only, every other feature of the app turned off                         |
 | Mollie        | Advanced access token, `access_`, with the profile ID  | Read for Payments and Subscriptions, no other permission                                   |
 | Paystack      | Restricted key, `rk_live_`                             | plans:read, transactions:read and disputes_refunds:read                                    |
@@ -133,6 +134,8 @@ In the product form, when adding a product or editing it, the maker chooses the 
 | Google Play   | Service account JSON key, reports bucket, package name | View financial data in Play Console, no Google Cloud roles                                 |
 
 Gumroad's own access tokens can do anything on the account, so the form has no key field for it: saving the form with Gumroad chosen sends the founder to Gumroad to approve read access to their sales, and Gumroad sends them back with a code that the server exchanges for a token that can only view sales. A pasted token is refused. The site's OAuth application with Gumroad needs `GUMROAD_CLIENT_ID` and `GUMROAD_CLIENT_SECRET`; without them the editor says Gumroad is not set up. Create it on Gumroad under Settings → Advanced → Applications, with `https://thesaasharbor.com/api/gumroad/callback` as the redirect URI, and `http://localhost:3001/api/gumroad/callback` on its own line to try it locally (then open the app at `localhost:3001`, not `127.0.0.1`, so the session cookie comes back with the founder).
+
+Zoho Billing connects the same way: saving the form sends the founder to Zoho to approve READ access to settings, subscriptions and payments, and Zoho sends them back with the data centre their account is in, whose addresses come from a fixed list. The server stores the refresh token, which does not expire, with the data centre and the default organization, and exchanges it for an access token on every read (`POST /oauth/v2/token`, which with the code exchange is approved by the owner on 2026-10-27, since they only issue tokens). A grant with any scope beyond reading is refused. The site's client needs `ZOHO_CLIENT_ID` and `ZOHO_CLIENT_SECRET`: create a Server-based Application in Zoho's API console (api-console.zoho.com) with `https://thesaasharbor.com/api/zoho/callback` as the redirect URI, turn on multi-DC so accounts in every data centre can use it, and add `http://localhost:3001/api/zoho/callback` to try it locally. Zoho Billing's subscription list gives amounts with tax and its invoices do not say which period they cover, so MRR counts amounts as charged and there is no history; revenue counts customer payments less refunds.
 
 PayPal has no key that can only read, so the founder makes an app in the PayPal Developer Dashboard whose only feature is Transaction search. Each verification asks PayPal for a token with the app's Client ID and secret, the one request besides Gumroad's code exchange that is not a GET, and refuses the app unless the token can search transactions and holds nothing beyond reading (`paypal/client.ts`). PayPal keeps issuing an app's old token for up to nine hours after its features change, so a new app connects at once where a changed one may not yet. MRR counts PayPal subscriptions only; payments a founder's own system charges count as revenue.
 
@@ -176,6 +179,7 @@ Demo accounts from `npm run db:seed` are `<name>@demo.harbor.test` (for example 
 | `MESSAGE_EMAIL_DELAY_SECONDS`                | How long a message email waits for the recipient to read the message first; default 300                         |
 | `DEMO_PRODUCTS`                              | `off` hides the demo products at once; by default they show until 12 real products share verified MRR           |
 | `GUMROAD_CLIENT_ID`, `GUMROAD_CLIENT_SECRET` | The site's OAuth application with Gumroad (see Revenue verification); without them Gumroad cannot be connected  |
+| `ZOHO_CLIENT_ID`, `ZOHO_CLIENT_SECRET`       | The site's client with Zoho (see Revenue verification); without them Zoho Billing cannot be connected           |
 
 ### Admins
 
@@ -253,6 +257,7 @@ Production runs on three services, all in the EU where they allow it:
 | `SMTP_USER`, `SMTP_PASS`                     | `resend`, the Resend API key for Vercel                                                           |
 | `EMAIL_FROM`                                 | `The SaaS Harbor <notifications@thesaasharbor.com>`                                               |
 | `GUMROAD_CLIENT_ID`, `GUMROAD_CLIENT_SECRET` | From the OAuth application on Gumroad (see Revenue verification); mark the secret as Sensitive    |
+| `ZOHO_CLIENT_ID`, `ZOHO_CLIENT_SECRET`       | From the client in Zoho's API console (see Revenue verification); mark the secret as Sensitive    |
 | `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID`     | Optional: the bot's token and the owner's chat (see Telegram alerts); mark the token as Sensitive |
 
 Leave `REVENUE_ALLOW_TEST_KEYS`, `LOCAL_MAILPIT_URL` and the `*_API_BASE` overrides unset. Generate each secret in your own terminal with `node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"` and paste it straight into Vercel. Losing `STRIPE_KEY_ENCRYPTION_KEY` makes every stored provider key unreadable.

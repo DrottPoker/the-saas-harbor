@@ -19,6 +19,7 @@ import { stripe } from "./stripe";
 import { superwall } from "./superwall";
 import type { ProviderAdapter } from "./types";
 import { whop } from "./whop";
+import { zoho } from "./zoho";
 
 const ADAPTERS: Record<ProviderId, ProviderAdapter> = {
   stripe,
@@ -39,6 +40,7 @@ const ADAPTERS: Record<ProviderId, ProviderAdapter> = {
   superwall,
   appstore,
   googleplay,
+  zoho,
 };
 
 /** How to validate a provider's keys and read its accounts. */

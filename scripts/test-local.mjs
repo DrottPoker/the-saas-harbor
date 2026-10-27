@@ -58,11 +58,15 @@ const env = {
   SUPERWALL_API_BASE: `${fakeProviders}/superwall`,
   APPSTORE_API_BASE: `${fakeProviders}/appstore`,
   GOOGLE_PLAY_API_BASE: `${fakeProviders}/googleplay`,
+  ZOHO_ACCOUNTS_BASE: `${fakeProviders}/zoho/accounts`,
+  ZOHO_API_BASE: `${fakeProviders}/zoho/api`,
   // Gumroad connects through OAuth, whose pages the fake server answers too.
   GUMROAD_API_BASE: `${fakeProviders}/gumroad`,
   GUMROAD_OAUTH_BASE: `${fakeProviders}/gumroad`,
   GUMROAD_CLIENT_ID: "harbor-test-client",
   GUMROAD_CLIENT_SECRET: randomBytes(16).toString("hex"),
+  ZOHO_CLIENT_ID: "harbor-zoho-client",
+  ZOHO_CLIENT_SECRET: randomBytes(16).toString("hex"),
   FX_API_BASE: fakeProviders,
   // Domain checks ask the fake server's DNS (tests/e2e/fake-site.mjs).
   DOMAIN_DNS_SERVERS: "127.0.0.1:3053",

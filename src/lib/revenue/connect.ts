@@ -19,14 +19,17 @@ import {
   type ConnectionResult,
 } from "./connection-result";
 import { VerificationError } from "./errors";
-import { gumroadClient } from "./gumroad/oauth";
+import { gumroadOAuth } from "./gumroad/oauth";
 import { adapter } from "./providers";
 import { allowTestKeys } from "./sync";
 import type { ParsedKey } from "./types";
+import { zohoOAuth } from "./zoho/oauth";
 
 /** The providers connected through OAuth that this server is set up for. */
 export function oauthReadyProviders(): ProviderId[] {
-  return gumroadClient() ? ["gumroad"] : [];
+  return [gumroadOAuth, zohoOAuth]
+    .filter((provider) => provider.client())
+    .map((provider) => provider.id);
 }
 
 // Every check, successful or not, counts against the limits in begin_revenue_check: a refresh at

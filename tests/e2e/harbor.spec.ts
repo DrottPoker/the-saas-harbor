@@ -3366,7 +3366,7 @@ test("founders verify revenue through a Mollie token that can only read", async 
         .fill(which === "wide" ? MOLLIE.tokens.wide : MOLLIE.tokens.one);
     },
     refused: /The token can do more than read,/,
-    verified: /Verified MRR: \$60\.00 from 3 subscribers\./,
+    verified: /Verified MRR: \$60 from 3 subscribers\./,
     hint: `${MOLLIE.profile} · access_…${MOLLIE.tokens.one.slice(-4)}`,
     livemode: false,
     secretPart: "HarborMollie",
@@ -3386,7 +3386,7 @@ test("founders verify revenue through a Paystack restricted key", async ({ page 
     },
     refused: /This is your Paystack secret key/,
     refusedBeforeSave: true,
-    verified: /Verified MRR: $40.00 from 3 subscribers./,
+    verified: /Verified MRR: \$40 from 3 subscribers\./,
     hint: `rk_test_…${PAYSTACK.one.slice(-4)}`,
     livemode: false,
     secretPart: "harborpaystack",
@@ -3406,7 +3406,7 @@ test("founders verify revenue through AbacatePay's Trust MRR token", async ({ pa
     },
     refused: /This is an AbacatePay API key/,
     refusedBeforeSave: true,
-    verified: /Verified MRR: $100.00 from 4 subscribers./,
+    verified: /Verified MRR: \$100 from 4 subscribers\./,
     hint: `mrr_…${ABACATEPAY.one.slice(-4)}`,
     livemode: true,
     secretPart: "harborfixture0001AbCdEf",
@@ -3425,7 +3425,7 @@ test("founders verify revenue through an Asaas key that can only read", async ({
     },
     refused: /The key can read more than subscriptions and charges,/,
     verified:
-      /Verified MRR: $57.98 from 2 subscribers. 1 active subscription without a recent payment was not counted./,
+      /Verified MRR: \$57\.98 from 2 subscribers\. 1 active subscription without a recent payment was not counted\./,
     hint: `${ASAAS.one.slice(0, 11)}…${ASAAS.one.slice(-4)}`,
     livemode: false,
     secretPart: "HarborFixtureOne",
@@ -3444,7 +3444,7 @@ test("founders verify revenue through an Airwallex scoped key", async ({ page })
     },
     refused: /The key can read more than subscriptions, invoices and payments,/,
     verified:
-      /Verified MRR: $80.00 from 3 subscribers. 2 usage-based items or subscriptions paid outside Airwallex were not counted./,
+      /Verified MRR: \$80 from 3 subscribers\. 2 usage-based items or subscriptions paid outside Airwallex were not counted\./,
     hint: `${AIRWALLEX.one.clientId.slice(0, 8)}… · …${AIRWALLEX.one.apiKey.slice(-4)}`,
     livemode: false,
     secretPart: "harborAirwallexKey",
@@ -3463,8 +3463,8 @@ test("founders verify revenue through a Superwall key that reads charts", async 
         .fill(`https://superwall.com/applications/${SUPERWALL.application}`);
       await revenue.getByLabel(/^(New )?organization API key$/i).fill(SUPERWALL[which]);
     },
-    refused: /The key has more access than charts./,
-    verified: /Verified MRR: $120.50 from 15 subscribers./,
+    refused: /The key has more access than charts\./,
+    verified: /Verified MRR: \$120\.50 from 15 subscribers\./,
     hint: `app ${SUPERWALL.application} · sk_…${SUPERWALL.one.slice(-4)}`,
     livemode: true,
     secretPart: "harborSuperwall",
@@ -3487,7 +3487,7 @@ test("founders verify revenue through an App Store Connect key for reports", asy
     },
     refused: /The key can do more than download reports,/,
     verified:
-      /Verified MRR: $180.00 from 18 subscribers. 3 subscriptions on a paid offer were not counted./,
+      /Verified MRR: \$180 from 18 subscribers\. 3 subscriptions on a paid offer were not counted\./,
     hint: `${APPSTORE.one.keyId} · vendor ${APPSTORE.one.vendor}`,
     livemode: true,
     secretPart: "PRIVATE KEY",
@@ -3507,7 +3507,7 @@ test("founders verify revenue through a Google Play service account", async ({ p
       await revenue.getByLabel(/^(New )?service account JSON key$/i).fill(GOOGLE_PLAY[which]);
     },
     refused: /Google gave the service account more access than reading Cloud Storage,/,
-    verified: /Verified MRR: $60.42 from 4 subscribers./,
+    verified: /Verified MRR: \$60\.42 from 4 subscribers\./,
     hint: `${GOOGLE_PLAY.packageName} · …fe00`,
     livemode: true,
     secretPart: "PRIVATE KEY",
@@ -3984,5 +3984,58 @@ test("founders connect Gumroad by approving read access to their sales", async (
     .select("id", { count: "exact", head: true })
     .eq("saas_id", id);
   expect(count).toBe(1);
+  expect(violations).toEqual([]);
+});
+
+// Zoho Billing connects through OAuth like Gumroad, in the founder's own data centre: the fake
+// server starts approval in the US one and sends the founder back with the Indian one. Its default
+// organization has $74 of MRR from 4 subscribers and no history.
+test("founders connect Zoho Billing by approving read access", async ({ page }) => {
+  const violations: string[] = [];
+  watchPolicy(page, violations);
+  const address = `harbor-zoho-${run}@example.test`;
+  const secret = randomBytes(24).toString("hex");
+  const { data: created, error } = await admin.auth.admin.createUser({
+    email: address,
+    password: secret,
+    email_confirm: true,
+    user_metadata: signup(`zoho-${run}`),
+  });
+  if (error || !created.user) throw new Error("Unable to create the Zoho Billing maker.");
+  userIds.push(created.user.id);
+  await login(page, address, secret);
+  const revenue = page.locator("#revenue");
+  for (const theme of ["dark", "light"] as const) {
+    await setThemeCookie(page, theme);
+    await page.goto("/dashboard/saas/new");
+    await chooseProvider(page, "Zoho Billing");
+    await expectAccessible(page);
+  }
+
+  await expect(revenue.getByText(/That is the only access asked for/)).toBeVisible();
+  await expect(revenue.locator("input:not([type=hidden]):not([type=checkbox])")).toHaveCount(0);
+  await fillProduct(page, `Zoho ${run}`);
+  await page.getByRole("button", { name: "Add SaaS and connect Zoho Billing" }).click();
+  await expect(page).toHaveURL(/\/dashboard\/saas\/[0-9a-f-]{36}\?connection=1/);
+  await closeShareOffer(page, `Zoho ${run}`);
+  const id = new URL(page.url()).pathname.split("/").at(-1)!;
+  await expect(
+    revenue.getByText(
+      /^Zoho Billing connected\. Verified MRR: \$74 from 4 subscribers\. 1 subscription without a readable price or billing period was not counted\./,
+    ),
+  ).toBeVisible();
+  await expect(revenue.getByText("Connected to Zoho Billing")).toBeVisible();
+  await expect(revenue.getByText(/^Read access Harbor Labs · …0001/)).toBeVisible();
+  const { data: stored } = await admin
+    .from("revenue_connections")
+    .select("provider, livemode, encrypted_key")
+    .eq("saas_id", id)
+    .single();
+  expect(stored).toMatchObject({ provider: "zoho", livemode: true });
+  expect(stored!.encrypted_key).not.toContain("harborzohorefresh");
+
+  // A return without a connection in progress leads to the dashboard.
+  await page.goto("/api/zoho/callback?code=forged&state=forged");
+  await expect(page).toHaveURL(/\/dashboard$/);
   expect(violations).toEqual([]);
 });

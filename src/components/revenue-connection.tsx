@@ -301,6 +301,21 @@ const guides: Record<ProviderId, Guide> = {
       "On Download reports, copy the Cloud Storage URI of the financial reports, and paste it below with your app's package name and the JSON key. A new permission can take some hours to apply.",
     ],
   },
+  zoho: {
+    dashboard: {
+      href: "https://accounts.zoho.com/home#sessions/userconnectedapps",
+      label: "See the apps connected to your Zoho account",
+    },
+    reads: "your organizations, subscriptions and payments",
+    steps: [
+      "Save with the button at the end of the form. Zoho opens, and asks you to sign in if you are not.",
+      <>
+        Approve {strong("read access")} to settings, subscriptions and payments. That is the only
+        access asked for: it cannot change anything.
+      </>,
+      "Zoho sends you back here, and your default Zoho Billing organization is verified. To verify another, make it the default first.",
+    ],
+  },
 };
 
 // Where to make the key, with the steps: the dashboard link opens in a new tab.
@@ -354,6 +369,7 @@ const noHistory: Record<ProviderId, string> = {
     "No revenue history yet. Refresh to read Apple's subscription reports of the last 12 months.",
   googleplay:
     "No revenue history: the Google Play sales reports are larger than one verification reads.",
+  zoho: "No revenue history: Zoho Billing does not say which period an invoice covers.",
 };
 
 const option =

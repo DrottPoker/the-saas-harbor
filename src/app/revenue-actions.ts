@@ -56,7 +56,7 @@ export async function disconnectProviderAction(saasId: string): Promise<ActionSt
       .maybeSingle();
     await disconnectProvider(client, saasId);
     revalidatePath("/", "layout");
-    // Gumroad gave access the founder approved rather than a key they pasted.
+    // A provider connected through OAuth gave access the founder approved, not a pasted key.
     const oauth =
       !!connection && isProviderId(connection.provider) && connectsWithOAuth(connection.provider);
     return {

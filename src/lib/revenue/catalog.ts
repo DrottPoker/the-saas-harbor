@@ -134,6 +134,13 @@ export const PROVIDERS = {
     account: { label: "Cloud Storage URI", placeholder: "gs://pubsite_prod_rev_..." },
     extra: [{ label: "Package name", placeholder: "com.example.app" }],
   },
+  zoho: {
+    name: "Zoho Billing",
+    keyLabel: "Zoho Billing account",
+    newKeyLabel: "Another Zoho Billing organization",
+    placeholder: "",
+    oauth: true,
+  },
 } as const satisfies Record<string, ProviderEntry>;
 
 type ProviderField = { label: string; placeholder: string };

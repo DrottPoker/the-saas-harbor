@@ -50,6 +50,10 @@ const skipped: Record<ProviderId, [string, string]> = {
     "subscription charge that could not be read was",
     "subscription charges that could not be read were",
   ],
+  zoho: [
+    "subscription without a readable price or billing period was",
+    "subscriptions without a readable price or billing period were",
+  ],
 };
 
 /** What a verification found, in words for the founder. */

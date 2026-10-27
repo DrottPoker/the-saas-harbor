@@ -17,13 +17,12 @@ import {
   encodeConnectionResult,
 } from "../../src/lib/revenue/connection-result";
 import {
-  decodeGumroadFlow,
-  encodeGumroadFlow,
   gumroadAuthorizeUrl,
   newGumroadFlow,
   readOnlyScopes,
 } from "../../src/lib/revenue/gumroad/oauth";
 import { summaryPayments } from "../../src/lib/revenue/gumroad/payments";
+import { decodeOAuthFlow, encodeOAuthFlow } from "../../src/lib/revenue/oauth";
 
 const at = (iso: string) => Date.parse(iso) / 1000;
 const NOW = new Date("2026-09-28T12:00:00Z");
@@ -216,9 +215,9 @@ describe("Gumroad OAuth", () => {
 
   it("carries the flow and the outcome in cookies, and ignores anything else", () => {
     const flow = newGumroadFlow("saas-1", "user-1");
-    expect(decodeGumroadFlow(encodeGumroadFlow(flow))).toEqual(flow);
-    expect(decodeGumroadFlow("not-json")).toBeNull();
-    expect(decodeGumroadFlow(Buffer.from('{"state":""}').toString("base64url"))).toBeNull();
+    expect(decodeOAuthFlow(encodeOAuthFlow(flow))).toEqual(flow);
+    expect(decodeOAuthFlow("not-json")).toBeNull();
+    expect(decodeOAuthFlow(Buffer.from('{"state":""}').toString("base64url"))).toBeNull();
     const result = {
       saasId: "saas-1",
       provider: "gumroad" as const,
