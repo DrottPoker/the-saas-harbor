@@ -22,6 +22,7 @@ import { handleBilling } from "./fake-billing.mjs";
 import { handleExtraBilling } from "./fake-billing-extra.mjs";
 import { handleGumroad } from "./fake-gumroad.mjs";
 import { handleMollie } from "./fake-mollie.mjs";
+import { handleAbacatePay } from "./fake-abacatepay.mjs";
 import { handlePaystack } from "./fake-paystack.mjs";
 import { handlePayPal } from "./fake-paypal.mjs";
 import { handleSite } from "./fake-site.mjs";
@@ -336,6 +337,7 @@ createServer(async (request, response) => {
   if (await handleGumroad(url, request, response)) return;
   if (await handlePayPal(url, request, response)) return;
   if (await handleMollie(url, request, response)) return;
+  if (await handleAbacatePay(url, request, response)) return;
   if (await handlePaystack(url, request, response)) return;
   if (await handleTelegram(url, request, response)) return;
   if (handleBilling(url, request, response)) return;
@@ -343,7 +345,7 @@ createServer(async (request, response) => {
   if (handleSite(url, request, response)) return;
   if (url.pathname === "/v2/rates") {
     const quotes = (url.searchParams.get("quotes") ?? "").split(",").filter(Boolean);
-    const rates = { eur: 0.8 };
+    const rates = { eur: 0.8, brl: 5 };
     return send(
       response,
       200,

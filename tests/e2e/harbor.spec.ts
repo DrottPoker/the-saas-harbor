@@ -3,6 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 import { createHash, randomBytes, randomUUID } from "node:crypto";
 import AxeBuilder from "@axe-core/playwright";
 import { DODO_KEYS, PADDLE_KEYS, POLAR_TOKENS } from "./fake-billing.mjs";
+import { ABACATEPAY } from "./fake-abacatepay.mjs";
 import { CHARGEBEE, CREEM_KEYS, REVENUECAT, WHOP_KEYS } from "./fake-billing-extra.mjs";
 import { MOLLIE } from "./fake-mollie.mjs";
 import { PAYPAL } from "./fake-paypal.mjs";
@@ -3384,6 +3385,26 @@ test("founders verify revenue through a Paystack restricted key", async ({ page 
     hint: `rk_test_…${PAYSTACK.one.slice(-4)}`,
     livemode: false,
     secretPart: "harborpaystack",
+  });
+});
+
+// AbacatePay asks for the token of its Trust MRR app, and refuses an API key before saving.
+test("founders verify revenue through AbacatePay's Trust MRR token", async ({ page }) => {
+  await connectsWithReadOnlyKey(page, {
+    provider: "AbacatePay",
+    slug: "abacatepay",
+    link: "Open the AbacatePay dashboard",
+    fill: async (revenue, which) => {
+      await revenue
+        .getByLabel(/^(New )?Trust MRR token$/i)
+        .fill(which === "wide" ? ABACATEPAY.wide : ABACATEPAY.one);
+    },
+    refused: /This is an AbacatePay API key/,
+    refusedBeforeSave: true,
+    verified: /Verified MRR: $100.00 from 4 subscribers./,
+    hint: `mrr_…${ABACATEPAY.one.slice(-4)}`,
+    livemode: true,
+    secretPart: "harborfixture0001AbCdEf",
   });
 });
 

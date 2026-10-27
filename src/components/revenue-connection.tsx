@@ -214,6 +214,18 @@ const guides: Record<ProviderId, Guide> = {
       "Confirm with your dashboard password, then copy the key, which starts with rk_ and is shown once, and paste it below.",
     ],
   },
+  abacatepay: {
+    dashboard: { href: "https://app.abacatepay.com", label: "Open the AbacatePay dashboard" },
+    reads: "your store's MRR, active subscriptions and revenue by day",
+    steps: [
+      "Leave test mode (Modo teste), open Apps and find Trust MRR.",
+      <>
+        Turn the app on and choose {strong("Salvar configurações")}. API keys, which start with
+        abc_, are refused.
+      </>,
+      "Copy the token, which starts with mrr_, and paste it below.",
+    ],
+  },
 };
 
 // Where to make the key, with the steps: the dashboard link opens in a new tab.
@@ -257,6 +269,7 @@ const noHistory: Record<ProviderId, string> = {
   mollie: "No revenue history: the Mollie profile has more payments than one verification reads.",
   paystack:
     "No revenue history: the key cannot read transactions, or the Paystack account has more of them than one verification reads.",
+  abacatepay: "No revenue history yet. Refresh to read AbacatePay's daily MRR.",
 };
 
 const option =

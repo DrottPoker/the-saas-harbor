@@ -5,6 +5,7 @@
 import type { ProviderId } from "@/lib/revenue/catalog";
 import { cn } from "@/lib/utils";
 import {
+  ABACATEPAY_ICON,
   CHARGEBEE_ICON,
   CREEM_ICON,
   MOLLIE_ICON,
@@ -69,6 +70,7 @@ export const PROVIDER_TILES: Record<ProviderId, ProviderTile> = {
   mollie: { kind: "image", src: MOLLIE_ICON, inset: 0 },
   // Paystack's icon is already a tile.
   paystack: { kind: "image", src: PAYSTACK_ICON, inset: 0 },
+  abacatepay: { kind: "image", src: ABACATEPAY_ICON, inset: 3, background: "#FFFFFF" },
 };
 
 /** A 24-unit tile with the mark in its middle 14 units. */

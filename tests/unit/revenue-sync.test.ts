@@ -3,6 +3,7 @@
 import { spawn, type ChildProcess } from "node:child_process";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { DODO_KEYS, PADDLE_KEYS, POLAR_TOKENS } from "../e2e/fake-billing.mjs";
+import { ABACATEPAY } from "../e2e/fake-abacatepay.mjs";
 import { CHARGEBEE, CREEM_KEYS, REVENUECAT, WHOP_KEYS } from "../e2e/fake-billing-extra.mjs";
 import { GUMROAD } from "../e2e/fake-gumroad.mjs";
 import { MOLLIE } from "../e2e/fake-mollie.mjs";
@@ -48,6 +49,7 @@ beforeAll(async () => {
   process.env.PAYPAL_API_BASE = `${base}/paypal`;
   process.env.MOLLIE_API_BASE = `${base}/mollie`;
   process.env.PAYSTACK_API_BASE = `${base}/paystack`;
+  process.env.ABACATEPAY_API_BASE = `${base}/abacatepay`;
   process.env.GUMROAD_API_BASE = `${base}/gumroad`;
   process.env.GUMROAD_OAUTH_BASE = `${base}/gumroad`;
   process.env.FX_API_BASE = base;
@@ -415,6 +417,31 @@ describe("Paystack verification", () => {
   });
 });
 
+describe("AbacatePay verification", () => {
+  it("reads AbacatePay's own MRR and daily history in BRL", async () => {
+    const result = await verifyRevenue("abacatepay", ABACATEPAY.one, true);
+    expect(result).toMatchObject({
+      provider: "abacatepay",
+      livemode: true,
+      mrrCents: 10_000,
+      customers: 4,
+      skippedItems: 0,
+      currencies: { brl: 50_000 },
+      mrrInvoiceCents: 10_000,
+      mrr30dAgoCents: 10_000,
+    });
+    expect(result.history![0].mrr_cents).toBe(5_000);
+    expect(result.history!.at(-1)!.mrr_cents).toBe(10_000);
+    expect(result.subscriptionHashes).toHaveLength(1);
+  }, 20_000);
+
+  it("refuses an API key before sending anything", () => {
+    expect(() =>
+      adapter("abacatepay").parseKey({ key: ABACATEPAY.wide, account: "" }, { allowTest: true }),
+    ).toThrow(/AbacatePay API key/);
+  });
+});
+
 describe("claims", () => {
   it("hash Stripe ids as before and prefix other providers", async () => {
     const { createHash } = await import("node:crypto");
@@ -442,6 +469,7 @@ describe("hourly verification", () => {
     ["paypal", paypalKey(PAYPAL.one)],
     ["mollie", mollieKey(MOLLIE.tokens.one)],
     ["paystack", PAYSTACK.one],
+    ["abacatepay", ABACATEPAY.one],
   ] as const)(
     "reads only what MRR needs from %s without the history",
     async (provider, key) => {
@@ -785,6 +813,18 @@ describe("payments", () => {
     });
     expect(values).not.toHaveProperty("6000000005");
     expect(kinds).toMatchObject({ "5000000001": "subscription", "6000000001": "one_time" });
+  }, 20_000);
+
+  it("reads AbacatePay's revenue as one payment a day", async () => {
+    const { complete, values, kinds } = await recent("abacatepay", ABACATEPAY.one, {
+      livemode: true,
+    });
+    expect(complete).toBe(true);
+    const day = (back: number) =>
+      new Date(Date.now() - back * DAY * 1000).toISOString().slice(0, 10);
+    expect(values[`store_harborfixture:${day(10)}`]).toEqual({ currency: "brl", amount: 50_000 });
+    expect(values[`store_harborfixture:${day(3)}`]).toEqual({ currency: "brl", amount: 12_000 });
+    expect(kinds[`store_harborfixture:${day(3)}`]).toBe("unknown");
   }, 20_000);
 });
 

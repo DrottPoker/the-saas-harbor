@@ -35,6 +35,7 @@ const skipped: Record<ProviderId, [string, string]> = {
     "subscription without a readable plan was",
     "subscriptions without a readable plan were",
   ],
+  abacatepay: ["subscription was", "subscriptions were"],
 };
 
 /** What a verification found, in words for the founder. */

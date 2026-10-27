@@ -37,6 +37,7 @@ export function apiBase(override: string | undefined, origin: string, name: stri
 // reads the revenue chart back to its first year sends fewer than 20, so they are not spaced.
 // Mollie sets read limits per merchant, such as 20 payment lists a second.
 // Paystack allows 600 requests a minute per live integration.
+// AbacatePay publishes no limit, and a run sends at most four requests.
 const SPACING: Partial<Record<ProviderId, number>> = {
   paddle: 300,
   polar: 150,
@@ -48,6 +49,7 @@ const SPACING: Partial<Record<ProviderId, number>> = {
   paypal: 200,
   mollie: 100,
   paystack: 300,
+  abacatepay: 200,
 };
 const nextSlot = new Map<ProviderId, number>();
 

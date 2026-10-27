@@ -83,6 +83,13 @@ export const PROVIDERS = {
     newKeyLabel: "New restricted key",
     placeholder: "rk_live_...",
   },
+  // The key is the token of the Trust MRR app, which reaches only the public MRR figures.
+  abacatepay: {
+    name: "AbacatePay",
+    keyLabel: "Trust MRR token",
+    newKeyLabel: "New Trust MRR token",
+    placeholder: "mrr_...",
+  },
 } as const satisfies Record<string, ProviderEntry>;
 
 type ProviderField = { label: string; placeholder: string };
