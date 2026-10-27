@@ -6,6 +6,7 @@ import { DODO_KEYS, PADDLE_KEYS, POLAR_TOKENS } from "./fake-billing.mjs";
 import { CHARGEBEE, CREEM_KEYS, REVENUECAT, WHOP_KEYS } from "./fake-billing-extra.mjs";
 import { MOLLIE } from "./fake-mollie.mjs";
 import { PAYPAL } from "./fake-paypal.mjs";
+import { PAYSTACK } from "./fake-paystack.mjs";
 import { formatUsd } from "../../src/lib/domain";
 import { termsUpdated } from "../../src/lib/legal";
 
@@ -3246,9 +3247,10 @@ test("founders verify revenue through a PayPal app that can only search transact
 });
 
 /**
- * One provider connected with pasted values: a credential with too much access adds the product
- * without connecting it, then one that can only read connects, in both themes. `fill` types a
- * credential's values into the revenue section.
+ * One provider connected with pasted values: a credential with too much access is refused, then
+ * one that can only read connects, in both themes. The provider refuses the first after the
+ * product is added, or with `refusedBeforeSave` its form does, and nothing is saved. `fill` types
+ * a credential's values into the revenue section.
  */
 async function connectsWithReadOnlyKey(
   page: Page,
@@ -3258,6 +3260,7 @@ async function connectsWithReadOnlyKey(
     link,
     fill,
     refused,
+    refusedBeforeSave = false,
     verified,
     hint,
     livemode,
@@ -3268,6 +3271,7 @@ async function connectsWithReadOnlyKey(
     link: string;
     fill: (revenue: Locator, which: "wide" | "one") => Promise<void>;
     refused: RegExp;
+    refusedBeforeSave?: boolean;
     verified: RegExp;
     hint: string;
     livemode: boolean;
@@ -3296,20 +3300,27 @@ async function connectsWithReadOnlyKey(
   await expect(revenue.getByRole("link", { name: link })).toBeVisible();
   await fill(revenue, "wide");
   await page.getByRole("button", { name: "Add SaaS and verify revenue" }).click();
-  await expect(page).toHaveURL(/\/dashboard\/saas\/[0-9a-f-]{36}\?connection=1/);
-  const id = new URL(page.url()).pathname.split("/").at(-1)!;
-  await expect(
-    revenue.getByRole("alert").filter({
-      hasText: new RegExp(
-        `^The product was added, but ${provider} was not connected\\. ${refused.source}`,
-      ),
-    }),
-  ).toBeVisible();
+  if (refusedBeforeSave) {
+    await expect(revenue.getByRole("alert").filter({ hasText: refused })).toBeVisible();
+    await expect(page).toHaveURL(/\/dashboard\/saas\/new/);
+  } else {
+    await expect(page).toHaveURL(/\/dashboard\/saas\/[0-9a-f-]{36}\?connection=1/);
+    await expect(
+      revenue.getByRole("alert").filter({
+        hasText: new RegExp(
+          `^The product was added, but ${provider} was not connected\\. ${refused.source}`,
+        ),
+      }),
+    ).toBeVisible();
+  }
   await expect(revenue.getByRole("combobox", { name: "Payment provider" })).toHaveText(provider);
 
   await fill(revenue, "one");
-  await page.getByRole("button", { name: "Save and verify revenue" }).click();
+  const save = refusedBeforeSave ? "Add SaaS and verify revenue" : "Save and verify revenue";
+  await page.getByRole("button", { name: save }).click();
   await closeShareOffer(page, `${provider} ${run}`);
+  await expect(page).toHaveURL(/\/dashboard\/saas\/[0-9a-f-]{36}/);
+  const id = new URL(page.url()).pathname.split("/").at(-1)!;
   await expect(revenue.getByText(`Connected to ${provider}`)).toBeVisible();
   await expect(
     revenue.getByRole("status").filter({
@@ -3353,6 +3364,26 @@ test("founders verify revenue through a Mollie token that can only read", async 
     hint: `${MOLLIE.profile} · access_…${MOLLIE.tokens.one.slice(-4)}`,
     livemode: false,
     secretPart: "HarborMollie",
+  });
+});
+
+// Paystack asks for a restricted key, and refuses the secret key before anything is saved.
+test("founders verify revenue through a Paystack restricted key", async ({ page }) => {
+  await connectsWithReadOnlyKey(page, {
+    provider: "Paystack",
+    slug: "paystack",
+    link: "Open the Paystack dashboard",
+    fill: async (revenue, which) => {
+      await revenue
+        .getByLabel(/^(New )?restricted key$/i)
+        .fill(which === "wide" ? PAYSTACK.secret : PAYSTACK.one);
+    },
+    refused: /This is your Paystack secret key/,
+    refusedBeforeSave: true,
+    verified: /Verified MRR: $40.00 from 3 subscribers./,
+    hint: `rk_test_…${PAYSTACK.one.slice(-4)}`,
+    livemode: false,
+    secretPart: "harborpaystack",
   });
 });
 

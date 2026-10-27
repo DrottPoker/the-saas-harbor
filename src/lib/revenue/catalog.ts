@@ -77,6 +77,12 @@ export const PROVIDERS = {
     placeholder: "access_...",
     account: { label: "Profile ID", placeholder: "pfl_..." },
   },
+  paystack: {
+    name: "Paystack",
+    keyLabel: "Restricted key",
+    newKeyLabel: "New restricted key",
+    placeholder: "rk_live_...",
+  },
 } as const satisfies Record<string, ProviderEntry>;
 
 type ProviderField = { label: string; placeholder: string };

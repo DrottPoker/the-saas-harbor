@@ -7,6 +7,7 @@ import { CHARGEBEE, CREEM_KEYS, REVENUECAT, WHOP_KEYS } from "../e2e/fake-billin
 import { GUMROAD } from "../e2e/fake-gumroad.mjs";
 import { MOLLIE } from "../e2e/fake-mollie.mjs";
 import { PAYPAL } from "../e2e/fake-paypal.mjs";
+import { PAYSTACK } from "../e2e/fake-paystack.mjs";
 import {
   exchangeGumroadCode,
   gumroadAuthorizeUrl,
@@ -46,6 +47,7 @@ beforeAll(async () => {
   process.env.REVENUECAT_API_BASE = `${base}/revenuecat`;
   process.env.PAYPAL_API_BASE = `${base}/paypal`;
   process.env.MOLLIE_API_BASE = `${base}/mollie`;
+  process.env.PAYSTACK_API_BASE = `${base}/paystack`;
   process.env.GUMROAD_API_BASE = `${base}/gumroad`;
   process.env.GUMROAD_OAUTH_BASE = `${base}/gumroad`;
   process.env.FX_API_BASE = base;
@@ -388,6 +390,31 @@ describe("Mollie verification", () => {
   });
 });
 
+describe("Paystack verification", () => {
+  it("values active, non-renewing and failed renewals over their plans, with history", async () => {
+    for (const key of [PAYSTACK.one, PAYSTACK.plans]) {
+      const result = await verifyRevenue("paystack", key, false);
+      expect(result).toMatchObject({
+        provider: "paystack",
+        livemode: false,
+        mrrCents: 4_000,
+        customers: 3,
+        skippedItems: 0,
+        currencies: { usd: 4_000 },
+        mrrInvoiceCents: 3_000,
+        mrr30dAgoCents: 3_000,
+      });
+      expect(result.history![0].mrr_cents).toBe(2_000);
+    }
+  }, 20_000);
+
+  it("refuses a secret key before sending anything", () => {
+    expect(() =>
+      adapter("paystack").parseKey({ key: PAYSTACK.secret, account: "" }, { allowTest: true }),
+    ).toThrow(/secret key/);
+  });
+});
+
 describe("claims", () => {
   it("hash Stripe ids as before and prefix other providers", async () => {
     const { createHash } = await import("node:crypto");
@@ -414,6 +441,7 @@ describe("hourly verification", () => {
     ["revenuecat", revenueCatKey(REVENUECAT.keys.one)],
     ["paypal", paypalKey(PAYPAL.one)],
     ["mollie", mollieKey(MOLLIE.tokens.one)],
+    ["paystack", PAYSTACK.one],
   ] as const)(
     "reads only what MRR needs from %s without the history",
     async (provider, key) => {
@@ -743,6 +771,20 @@ describe("payments", () => {
     });
     for (const id of ["tr_HarborFailed", "tr_HarborOpen"]) expect(values).not.toHaveProperty(id);
     expect(kinds).toMatchObject({ tr_HarborMonthly0: "subscription", tr_HarborOnce: "one_time" });
+  }, 20_000);
+
+  it("reads Paystack transactions at the requested amount, less refunds", async () => {
+    const { complete, values, kinds } = await recent("paystack", PAYSTACK.one);
+    expect(complete).toBe(true);
+    expect(values).toMatchObject({
+      "5000000001": usd(2000),
+      "6000000001": usd(5000),
+      "6000000002": usd(2000),
+      "6000000003": usd(0),
+      "6000000004": usd(4000),
+    });
+    expect(values).not.toHaveProperty("6000000005");
+    expect(kinds).toMatchObject({ "5000000001": "subscription", "6000000001": "one_time" });
   }, 20_000);
 });
 

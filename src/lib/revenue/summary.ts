@@ -31,6 +31,10 @@ const skipped: Record<ProviderId, [string, string]> = {
     "subscription with an unreadable billing interval was",
     "subscriptions with an unreadable billing interval were",
   ],
+  paystack: [
+    "subscription without a readable plan was",
+    "subscriptions without a readable plan were",
+  ],
 };
 
 /** What a verification found, in words for the founder. */

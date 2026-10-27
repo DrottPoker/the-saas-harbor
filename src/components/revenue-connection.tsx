@@ -202,6 +202,18 @@ const guides: Record<ProviderId, Guide> = {
       "Copy the ID of this product's website profile, which starts with pfl_, from Developers → API keys. MRR counts Mollie subscriptions; other payments count as revenue.",
     ],
   },
+  paystack: {
+    dashboard: { href: "https://dashboard.paystack.com", label: "Open the Paystack dashboard" },
+    reads: "subscriptions, plans, transactions and refunds",
+    steps: [
+      "Switch the dashboard to Live, open Developers and create a restricted key.",
+      <>
+        Give it only plans:read, transactions:read and disputes_refunds:read. Never paste your
+        secret key (sk_), which can do everything.
+      </>,
+      "Confirm with your dashboard password, then copy the key, which starts with rk_ and is shown once, and paste it below.",
+    ],
+  },
 };
 
 // Where to make the key, with the steps: the dashboard link opens in a new tab.
@@ -243,6 +255,8 @@ const noHistory: Record<ProviderId, string> = {
   paypal:
     "No revenue history: the PayPal account has more subscription payments than one verification reads.",
   mollie: "No revenue history: the Mollie profile has more payments than one verification reads.",
+  paystack:
+    "No revenue history: the key cannot read transactions, or the Paystack account has more of them than one verification reads.",
 };
 
 const option =

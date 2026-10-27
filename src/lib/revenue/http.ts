@@ -36,6 +36,7 @@ export function apiBase(override: string | undefined, origin: string, name: stri
 // 31 days a request. RevenueCat allows 25 chart requests a minute per project; a run that also
 // reads the revenue chart back to its first year sends fewer than 20, so they are not spaced.
 // Mollie sets read limits per merchant, such as 20 payment lists a second.
+// Paystack allows 600 requests a minute per live integration.
 const SPACING: Partial<Record<ProviderId, number>> = {
   paddle: 300,
   polar: 150,
@@ -46,6 +47,7 @@ const SPACING: Partial<Record<ProviderId, number>> = {
   gumroad: 100,
   paypal: 200,
   mollie: 100,
+  paystack: 300,
 };
 const nextSlot = new Map<ProviderId, number>();
 

@@ -4,7 +4,13 @@
 // Polar.
 import type { ProviderId } from "@/lib/revenue/catalog";
 import { cn } from "@/lib/utils";
-import { CHARGEBEE_ICON, CREEM_ICON, MOLLIE_ICON, WHOP_ICON } from "./provider-icons";
+import {
+  CHARGEBEE_ICON,
+  CREEM_ICON,
+  MOLLIE_ICON,
+  PAYSTACK_ICON,
+  WHOP_ICON,
+} from "./provider-icons";
 
 export type ProviderTile =
   | { kind: "path"; background: string; color: string; path: string; viewBox?: number }
@@ -61,6 +67,8 @@ export const PROVIDER_TILES: Record<ProviderId, ProviderTile> = {
   },
   // Mollie's icon is already a tile.
   mollie: { kind: "image", src: MOLLIE_ICON, inset: 0 },
+  // Paystack's icon is already a tile.
+  paystack: { kind: "image", src: PAYSTACK_ICON, inset: 0 },
 };
 
 /** A 24-unit tile with the mark in its middle 14 units. */
