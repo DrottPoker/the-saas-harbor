@@ -1,18 +1,19 @@
 import type { Metadata } from "next";
+import { getTranslations } from "next-intl/server";
 import { Explore } from "@/components/explore";
 import { firstValues, type SearchParams } from "@/lib/params";
-import { listMetadata } from "@/lib/seo";
+import { listMetadata, SITE_NAME } from "@/lib/seo";
 
 type Props = { searchParams: Promise<SearchParams> };
 
 export async function generateMetadata({ searchParams }: Props): Promise<Metadata> {
+  const [params, t] = await Promise.all([
+    searchParams.then(firstValues),
+    getTranslations("lists.newest"),
+  ]);
   return listMetadata(
-    {
-      title: "New SaaS products",
-      description: "The latest independent SaaS products listed on The SaaS Harbor, newest first.",
-      path: "/newest",
-    },
-    firstValues(await searchParams),
+    { title: t("title"), description: t("description", { site: SITE_NAME }), path: "/newest" },
+    params,
   );
 }
 

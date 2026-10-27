@@ -1,1 +1,15 @@
-{}
+{
+  "editProfile": "Editar perfil",
+  "products": "Productos",
+  "subscribers": "Suscriptores",
+  "across": "De {count, plural, one {# producto} other {# productos}}",
+  "figuresNote": "Las cifras están verificadas con el proveedor de pagos de cada producto e incluyen solo los productos que las comparten.",
+  "addHeadline": "Agrega un titular para que otros te conozcan.",
+  "noProductsTitle": "Sin productos publicados",
+  "noProductsBody": "<name></name> todavía no ha publicado ningún producto.",
+  "report": "Denunciar este perfil",
+  "details": {
+    "website": "Sitio web",
+    "link": "Enlace"
+  }
+}

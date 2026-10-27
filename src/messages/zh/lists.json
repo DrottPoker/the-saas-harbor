@@ -1,1 +1,47 @@
-{}
+{
+  "browse": {
+    "title": "浏览 SaaS 产品",
+    "description": "{site} 收录的全部独立 SaaS 产品，按名称从 A 到 Z 排列，包括不公开收入的产品。"
+  },
+  "newest": {
+    "title": "最新 SaaS 产品",
+    "description": "{site} 最新收录的独立 SaaS 产品，最新的排在最前。"
+  },
+  "breadcrumb": "面包屑导航",
+  "listYourSaas": "提交你的 SaaS",
+  "rankedTitle": "按已验证 MRR 排名",
+  "unrankedNote": "未进入 MRR 排行榜，按名称从 A 到 Z 排列。",
+  "categories": {
+    "title": "类别",
+    "description": "按类别查看独立 SaaS 产品，每个类别都按经产品支付服务商验证的月经常性收入（MRR）排名。",
+    "none": "暂无产品",
+    "count": "{count} 个产品",
+    "countRanked": "{count} 个产品，{ranked} 个已上榜"
+  },
+  "category": {
+    "metaTitle": "{category}类 SaaS 已验证 MRR 排名",
+    "title": "{category}类 SaaS",
+    "intro": "{category}类独立产品，按经各产品支付服务商验证的月经常性收入（MRR）排名。",
+    "emptyTitle": "暂无{category}类产品",
+    "emptyBody": "创始人将产品提交到这个类别后，产品会显示在这里。",
+    "allRanked": "全部 {count} 个已上榜的{category}类产品",
+    "more": "更多{category}类产品",
+    "products": "{category}类产品",
+    "browseAll": "浏览全部{category}类产品"
+  },
+  "techs": {
+    "title": "技术栈",
+    "description": "按所用技术查看独立 SaaS 产品，技术由创始人自行填写，每项技术下的产品都按经产品支付服务商验证的月经常性收入（MRR）排名。",
+    "count": "{count} 个产品"
+  },
+  "tech": {
+    "title": "使用 {tech} 构建的 SaaS",
+    "intro": "使用 {tech} 构建的独立 SaaS 产品（由创始人自行填写），按经各产品支付服务商验证的月经常性收入（MRR）排名。",
+    "emptyTitle": "暂无使用 {tech} 构建的产品",
+    "emptyBody": "创始人将 {tech} 添加到技术栈后，产品会显示在这里。",
+    "allRanked": "全部 {count} 个已上榜的 {tech} 产品",
+    "more": "更多使用 {tech} 构建的产品",
+    "products": "使用 {tech} 构建的产品",
+    "browseAll": "浏览全部使用 {tech} 构建的产品"
+  }
+}

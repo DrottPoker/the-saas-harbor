@@ -1,1 +1,15 @@
-{}
+{
+  "editProfile": "编辑个人资料",
+  "products": "产品",
+  "subscribers": "订阅用户",
+  "across": "来自 {count} 个产品",
+  "figuresNote": "数据均经各产品的支付服务商验证，只包含公开这些数据的产品。",
+  "addHeadline": "添加一句话简介，让其他人更了解你。",
+  "noProductsTitle": "暂无产品",
+  "noProductsBody": "<name></name> 还没有提交产品。",
+  "report": "举报此个人主页",
+  "details": {
+    "website": "网站",
+    "link": "链接"
+  }
+}

@@ -1,7 +1,10 @@
 // The statistics page's figures, from public.directory_stats(): shared, fresh, verified MRR of
 // listed products only, the same figures the leaderboard shows one by one.
+import { getLocale, getTranslations } from "next-intl/server";
 import { z } from "zod";
+import { LOCALE_INFO } from "@/i18n/config";
 import type { MrrPoint } from "./charts";
+import { formatUsdIn } from "./display-money";
 
 /** Below this many ranked products the page shows no statistics, as they would say little. */
 export const STATS_MINIMUM = 5;
@@ -57,40 +60,33 @@ export function parseStats(value: unknown): DirectoryStats {
   return statsSchema.parse(value);
 }
 
-// Whole dollars, rounded down, so $9,999.99 reads as $9,999 at the top of its bucket.
-const dollars = (cents: number) =>
-  new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-    maximumFractionDigits: 0,
-  }).format(Math.floor(cents / 100));
-
-/** "$0", "Under $1,000", "$1,000 to $9,999", "$100,000 or more". */
-export function bucketLabel({
-  min_cents,
-  max_cents,
-}: {
-  min_cents: number;
-  max_cents: number | null;
-}) {
-  if (max_cents === 0) return "$0";
-  if (max_cents === null) return `${dollars(min_cents)} or more`;
-  if (min_cents <= 1) return `Under ${dollars(max_cents + 1)}`;
-  return `${dollars(min_cents)} to ${dollars(max_cents)}`;
-}
-
-/** "Less than a year ago", "1 to 2 years ago", "5 or more years ago". */
-export function ageLabel({
-  min_years,
-  max_years,
-}: {
-  min_years: number;
-  max_years: number | null;
-}) {
-  if (max_years === null) return `${min_years} or more years ago`;
-  if (min_years === 0)
-    return max_years === 1 ? "Less than a year ago" : `Less than ${max_years} years ago`;
-  return `${min_years} to ${max_years} years ago`;
+/**
+ * The names of the MRR buckets and of the bands of time since launch, in the page's language. The
+ * buckets stay in US dollars, which the database counts them by, written the way the language
+ * writes money: "$0", "Under $1,000", "$1,000 to $9,999", "$100,000 or more". The bands read "Less
+ * than a year ago", "1 to 2 years ago", "5 or more years ago".
+ */
+export async function statsLabels() {
+  const [t, locale] = await Promise.all([getTranslations("stats"), getLocale()]);
+  // Whole dollars, rounded down, so $9,999.99 reads as $9,999 at the top of its bucket.
+  const dollars = (cents: number) =>
+    formatUsdIn(Math.floor(cents / 100) * 100, LOCALE_INFO[locale].intl);
+  return {
+    bucket({ min_cents, max_cents }: { min_cents: number; max_cents: number | null }) {
+      if (max_cents === 0) return dollars(0);
+      if (max_cents === null) return t("buckets.atLeast", { amount: dollars(min_cents) });
+      if (min_cents <= 1) return t("buckets.under", { amount: dollars(max_cents + 1) });
+      return t("buckets.between", { min: dollars(min_cents), max: dollars(max_cents) });
+    },
+    age({ min_years, max_years }: { min_years: number; max_years: number | null }) {
+      if (max_years === null) return t("launchBands.atLeast", { min: min_years });
+      if (min_years === 0)
+        return max_years === 1
+          ? t("launchBands.underOne")
+          : t("launchBands.under", { max: max_years });
+      return t("launchBands.between", { min: min_years, max: max_years });
+    },
+  };
 }
 
 /** The combined month-end history in the chart's shape. */

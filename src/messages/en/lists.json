@@ -1,1 +1,47 @@
-{}
+{
+  "browse": {
+    "title": "Browse SaaS products",
+    "description": "Every independent SaaS product listed on {site}, A to Z, including those that keep their revenue private."
+  },
+  "newest": {
+    "title": "New SaaS products",
+    "description": "The latest independent SaaS products listed on {site}, newest first."
+  },
+  "breadcrumb": "Breadcrumb",
+  "listYourSaas": "List your SaaS",
+  "rankedTitle": "Ranked by verified MRR",
+  "unrankedNote": "Not on the MRR leaderboard, A to Z.",
+  "categories": {
+    "title": "Categories",
+    "description": "Independent SaaS products by category, each ranked by monthly recurring revenue verified through the product's payment provider.",
+    "none": "No products yet",
+    "count": "{count, plural, one {# product} other {# products}}",
+    "countRanked": "{count, plural, one {# product} other {# products}}, {ranked} ranked"
+  },
+  "category": {
+    "metaTitle": "{category} SaaS ranked by verified MRR",
+    "title": "{category} SaaS",
+    "intro": "Independent {category} products, ranked by monthly recurring revenue verified through each product's payment provider.",
+    "emptyTitle": "No {category} products yet",
+    "emptyBody": "Products appear here when their founders list them in this category.",
+    "allRanked": "All {count} ranked {category} products",
+    "more": "More {category} products",
+    "products": "{category} products",
+    "browseAll": "Browse all {category} products"
+  },
+  "techs": {
+    "title": "Tech stacks",
+    "description": "Independent SaaS products by the technologies they are built with, as their founders list them, each ranked by monthly recurring revenue verified through the product's payment provider.",
+    "count": "{count, plural, one {# product} other {# products}}"
+  },
+  "tech": {
+    "title": "SaaS built with {tech}",
+    "intro": "Independent SaaS products built with {tech}, as their founders list them, ranked by monthly recurring revenue verified through each product's payment provider.",
+    "emptyTitle": "No products built with {tech} yet",
+    "emptyBody": "Products appear here when their founders add {tech} to their tech stack.",
+    "allRanked": "All {count} ranked products built with {tech}",
+    "more": "More products built with {tech}",
+    "products": "Products built with {tech}",
+    "browseAll": "Browse all products built with {tech}"
+  }
+}

@@ -1,1 +1,15 @@
-{}
+{
+  "editProfile": "Edit profile",
+  "products": "Products",
+  "subscribers": "Subscribers",
+  "across": "Across {count, plural, one {# product} other {# products}}",
+  "figuresNote": "Figures are verified with each product's payment provider and include only the products that share them.",
+  "addHeadline": "Add a headline so others get to know you.",
+  "noProductsTitle": "No products listed",
+  "noProductsBody": "<name></name> has not listed a product yet.",
+  "report": "Report this profile",
+  "details": {
+    "website": "Website",
+    "link": "Link"
+  }
+}

@@ -1,5 +1,6 @@
-import { describe, expect, it } from "vitest";
-import { ageLabel, bucketLabel, historyPoints, parseStats, percent } from "../../src/lib/stats";
+import { afterEach, describe, expect, it } from "vitest";
+import { historyPoints, parseStats, percent, statsLabels } from "../../src/lib/stats";
+import { setTestLocale } from "./support/next-intl-server";
 
 const result = {
   ranked: 4,
@@ -34,23 +35,57 @@ describe("statistics", () => {
     expect(() => parseStats(null)).toThrow();
   });
 
-  it("names the MRR buckets in whole dollars", () =>
-    expect(result.buckets.map(bucketLabel)).toEqual([
+  const bands = [
+    { min_years: 0, max_years: 1 },
+    { min_years: 0, max_years: 2 },
+    { min_years: 1, max_years: 2 },
+    { min_years: 2, max_years: 5 },
+    { min_years: 5, max_years: null },
+  ];
+
+  it("names the MRR buckets in whole dollars", async () => {
+    const { bucket } = await statsLabels();
+    expect(result.buckets.map(bucket)).toEqual([
       "$0",
       "Under $1,000",
       "$1,000 to $9,999",
       "$10,000 to $99,999",
       "$100,000 or more",
-    ]));
+    ]);
+  });
 
-  it("names the time since launch", () =>
-    expect(
-      [
-        { min_years: 0, max_years: 1 },
-        { min_years: 1, max_years: 2 },
-        { min_years: 5, max_years: null },
-      ].map(ageLabel),
-    ).toEqual(["Less than a year ago", "1 to 2 years ago", "5 or more years ago"]));
+  it("names the time since launch", async () => {
+    const { age } = await statsLabels();
+    expect(bands.map(age)).toEqual([
+      "Less than a year ago",
+      "Less than 2 years ago",
+      "1 to 2 years ago",
+      "2 to 5 years ago",
+      "5 or more years ago",
+    ]);
+  });
+
+  describe("in another language", () => {
+    afterEach(() => setTestLocale("en"));
+
+    it("keeps the buckets in US dollars, written as the language writes them", async () => {
+      setTestLocale("es");
+      const { bucket } = await statsLabels();
+      expect(bucket(result.buckets[2]!).replace(/\s/g, " ")).toBe("De USD 1,000 a USD 9,999");
+    });
+
+    it("uses the language's plural forms", async () => {
+      setTestLocale("ru");
+      const { age } = await statsLabels();
+      expect(bands.map(age)).toEqual([
+        "Менее года назад",
+        "Менее 2 лет назад",
+        "От 1 до 2 лет назад",
+        "От 2 до 5 лет назад",
+        "5 лет назад или раньше",
+      ]);
+    });
+  });
 
   it("gives whole percentages and none of nothing", () => {
     expect(percent(1, 3)).toBe(33);

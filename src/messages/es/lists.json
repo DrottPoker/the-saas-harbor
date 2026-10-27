@@ -1,1 +1,47 @@
-{}
+{
+  "browse": {
+    "title": "Explorar productos SaaS",
+    "description": "Todos los productos SaaS independientes publicados en {site}, de la A a la Z, incluidos los que mantienen sus ingresos en privado."
+  },
+  "newest": {
+    "title": "Nuevos productos SaaS",
+    "description": "Los productos SaaS independientes publicados más recientemente en {site}, primero los más nuevos."
+  },
+  "breadcrumb": "Ruta de navegación",
+  "listYourSaas": "Publica tu SaaS",
+  "rankedTitle": "Clasificados por MRR verificado",
+  "unrankedNote": "Fuera de la clasificación por MRR, de la A a la Z.",
+  "categories": {
+    "title": "Categorías",
+    "description": "Productos SaaS independientes por categoría, cada una clasificada por ingresos recurrentes mensuales (MRR) verificados a través del proveedor de pagos de cada producto.",
+    "none": "Aún no hay productos",
+    "count": "{count, plural, one {# producto} other {# productos}}",
+    "countRanked": "{count, plural, one {# producto} other {# productos}}, {ranked} en la clasificación"
+  },
+  "category": {
+    "metaTitle": "SaaS de {category} clasificados por MRR verificado",
+    "title": "SaaS de {category}",
+    "intro": "Productos independientes de la categoría {category}, clasificados por ingresos recurrentes mensuales (MRR) verificados a través del proveedor de pagos de cada producto.",
+    "emptyTitle": "Aún no hay productos en {category}",
+    "emptyBody": "Los productos aparecen aquí cuando sus fundadores los publican en esta categoría.",
+    "allRanked": "Los {count} productos de {category} en la clasificación",
+    "more": "Más productos de {category}",
+    "products": "Productos de {category}",
+    "browseAll": "Explorar todos los productos de {category}"
+  },
+  "techs": {
+    "title": "Stacks tecnológicos",
+    "description": "Productos SaaS independientes según las tecnologías con las que están hechos, tal como las indican sus fundadores, cada uno clasificado por ingresos recurrentes mensuales (MRR) verificados a través del proveedor de pagos del producto.",
+    "count": "{count, plural, one {# producto} other {# productos}}"
+  },
+  "tech": {
+    "title": "SaaS hechos con {tech}",
+    "intro": "Productos SaaS independientes hechos con {tech}, según indican sus fundadores, clasificados por ingresos recurrentes mensuales (MRR) verificados a través del proveedor de pagos de cada producto.",
+    "emptyTitle": "Aún no hay productos hechos con {tech}",
+    "emptyBody": "Los productos aparecen aquí cuando sus fundadores agregan {tech} a su stack tecnológico.",
+    "allRanked": "Los {count} productos hechos con {tech} en la clasificación",
+    "more": "Más productos hechos con {tech}",
+    "products": "Productos hechos con {tech}",
+    "browseAll": "Explorar todos los productos hechos con {tech}"
+  }
+}

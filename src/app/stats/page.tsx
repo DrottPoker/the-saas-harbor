@@ -1,37 +1,42 @@
 import type { Metadata } from "next";
+import { getLocale, getTranslations } from "next-intl/server";
 import Link from "@/components/link";
 import { BarList } from "@/components/charts/bar-list";
 import { Growth } from "@/components/charts/growth";
 import { RevenueHistory } from "@/components/charts/revenue-history";
+import { ConversionNote } from "@/components/conversion-note";
 import { Metric } from "@/components/metric";
 import { EmptyState, PageHeader, Shell } from "@/components/shell";
 import { Button } from "@/components/ui/button";
+import { LOCALE_INFO } from "@/i18n/config";
+import { categoryKey } from "@/i18n/names";
 import { directoryStats } from "@/lib/data";
-import { categorySlug, formatUsd } from "@/lib/domain";
+import { getMoney } from "@/lib/display-currency";
+import {
+  formatCount,
+  formatMoney,
+  formatUsdIn,
+  isConverted,
+  type Money,
+} from "@/lib/display-money";
+import { categorySlug } from "@/lib/domain";
 import { pageMetadata } from "@/lib/seo";
 import {
-  ageLabel,
-  bucketLabel,
   historyPoints,
   percent,
   STATS_MINIMUM,
+  statsLabels,
   type DirectoryStats,
 } from "@/lib/stats";
 
-const description =
-  "Monthly recurring revenue across the products that share it, verified through their payment providers.";
-
 // Until enough products share verified MRR there are no figures for search engines.
 export async function generateMetadata(): Promise<Metadata> {
-  const stats = await directoryStats();
+  const [stats, t] = await Promise.all([directoryStats(), getTranslations("stats")]);
   return {
-    ...pageMetadata({ title: "Statistics", description, path: "/stats" }),
+    ...(await pageMetadata({ title: t("title"), description: t("description"), path: "/stats" })),
     ...(stats.ranked < STATS_MINIMUM && { robots: { index: false } }),
   };
 }
-
-const products = (count: number) =>
-  `${count.toLocaleString("en-US")} ${count === 1 ? "product" : "products"}`;
 
 function Panel({
   id,
@@ -57,28 +62,29 @@ function Panel({
 
 const cell = "py-2 text-end tabular-nums";
 
-function Figures({ stats }: { stats: DirectoryStats }) {
+async function Figures({ stats, money }: { stats: DirectoryStats; money: Money }) {
+  const t = await getTranslations("stats.figures");
   const tile = "rounded-xl border bg-surface shadow-card";
   return (
     <dl className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-      <Metric className={tile} label="Verified MRR, combined" value={formatUsd(stats.mrr_cents)} />
+      <Metric className={tile} label={t("combined")} value={formatMoney(stats.mrr_cents, money)} />
       <Metric
         className={tile}
-        label="Products ranked"
-        value={stats.ranked.toLocaleString("en-US")}
+        label={t("ranked")}
+        value={formatCount(stats.ranked, money.locale)}
       />
       <Metric
         className={tile}
-        label="Median MRR"
-        value={stats.median_mrr_cents == null ? null : formatUsd(stats.median_mrr_cents)}
+        label={t("median")}
+        value={stats.median_mrr_cents == null ? null : formatMoney(stats.median_mrr_cents, money)}
       />
       <Metric
         className={tile}
-        label="Subscribers"
-        value={stats.customers == null ? null : stats.customers.toLocaleString("en-US")}
+        label={t("subscribers")}
+        value={stats.customers == null ? null : formatCount(stats.customers, money.locale)}
         detail={
           <span className="text-xs text-muted-foreground">
-            Across the {products(stats.customer_products)} that share them
+            {t("subscribersAcross", { count: stats.customer_products })}
           </span>
         }
       />
@@ -87,99 +93,119 @@ function Figures({ stats }: { stats: DirectoryStats }) {
 }
 
 export default async function Stats() {
-  const stats = await directoryStats();
+  const [stats, t, categoryNames, money, locale, labels] = await Promise.all([
+    directoryStats(),
+    getTranslations("stats"),
+    getTranslations("categories"),
+    getMoney(),
+    getLocale(),
+    statsLabels(),
+  ]);
   if (stats.ranked < STATS_MINIMUM)
     return (
       <Shell>
-        <PageHeader title="Statistics" description={description} />
+        <PageHeader title={t("title")} description={t("description")} />
         <EmptyState
-          title="Not enough products yet"
+          title={t("empty.title")}
           action={
             <Button asChild size="sm">
-              <Link href="/dashboard/saas/new">List your SaaS</Link>
+              <Link href="/dashboard/saas/new">{t("empty.listYourSaas")}</Link>
             </Button>
           }
         >
-          Statistics appear once {STATS_MINIMUM} products share verified MRR.{" "}
-          {stats.ranked === 1 ? "1 product does" : `${stats.ranked} products do`} so now.
+          {t("empty.body", { minimum: STATS_MINIMUM, count: stats.ranked })}
         </EmptyState>
       </Shell>
     );
 
+  const intl = LOCALE_INFO[locale].intl;
+  const count = (value: number) => formatCount(value, intl);
+  const percentFormat = new Intl.NumberFormat(intl, { style: "percent" });
+  // A count with its whole-number share of a total, such as "3 (25%)".
+  const share = (part: number, total: number) =>
+    t("share", { count: count(part), share: percentFormat.format(percent(part, total) / 100) });
   const history = historyPoints(stats);
   const growth = stats.growth;
   const withAge = stats.ages.reduce((sum, age) => sum + age.products, 0);
   return (
     <Shell>
-      <PageHeader title="Statistics" description={description} />
-      <Figures stats={stats} />
+      <PageHeader title={t("title")} description={t("description")} />
+      <Figures stats={stats} money={money} />
+      <ConversionNote className="mt-3" />
       {history.length > 1 && (
         <RevenueHistory
           history={history}
           className="mt-10"
-          title="Combined MRR at month end"
-          description="The MRR of the products ranked today, added up at each month end. Reconstructed from paid invoices and converted to USD at today's rates."
+          title={t("history.title")}
+          description={t("history.description")}
         />
       )}
 
       <div className="mt-10 grid gap-6 lg:grid-cols-2">
-        <Panel id="distribution" title="Products by MRR">
+        {/* The database counts the buckets by US dollar amounts, so they stay in US dollars. */}
+        <Panel
+          id="distribution"
+          title={t("distribution.title")}
+          note={isConverted(money) ? t("distribution.inUsd") : undefined}
+        >
           <BarList
-            label="Products by MRR"
+            label={t("distribution.title")}
             rows={stats.buckets.map((bucket) => ({
-              label: bucketLabel(bucket),
+              label: labels.bucket(bucket),
               value: bucket.products,
-              text: `${bucket.products} (${percent(bucket.products, stats.ranked)}%)`,
+              text: share(bucket.products, stats.ranked),
             }))}
           />
         </Panel>
         <Panel
           id="growth"
-          title="Change over 30 days"
+          title={t("growth.title")}
           note={
             growth.median_pct == null
-              ? "No product has figures from 30 days ago yet."
-              : `Among the ${products(growth.products)} with figures from 30 days ago.`
+              ? t("growth.none")
+              : t("growth.among", { count: growth.products })
           }
         >
           {growth.median_pct != null && (
             <>
               <p className="mb-5 flex items-center gap-2 text-sm">
-                <span className="text-muted-foreground">Median change</span>
+                <span className="text-muted-foreground">{t("growth.median")}</span>
                 <Growth pct={growth.median_pct} className="text-sm" />
               </p>
               <BarList
-                label="Products by change over 30 days"
-                rows={[
-                  ["Growing", growth.growing],
-                  ["Unchanged", growth.flat],
-                  ["Shrinking", growth.shrinking],
-                ].map(([label, value]) => ({
-                  label: label as string,
-                  value: value as number,
-                  text: `${value} (${percent(value as number, growth.products)}%)`,
+                label={t("growth.label")}
+                rows={(
+                  [
+                    ["growing", growth.growing],
+                    ["unchanged", growth.flat],
+                    ["shrinking", growth.shrinking],
+                  ] as const
+                ).map(([key, value]) => ({
+                  label: t(`growth.${key}`),
+                  value,
+                  text: share(value, growth.products),
                 }))}
               />
             </>
           )}
         </Panel>
 
-        <Panel id="categories" title="By category">
+        <Panel id="categories" title={t("byCategory.title")}>
           <table className="w-full text-sm">
-            <caption className="sr-only">Ranked products by category</caption>
+            <caption className="sr-only">{t("byCategory.caption")}</caption>
             <thead>
               <tr className="border-b text-muted-foreground">
                 <th scope="col" className="py-2 text-start font-medium">
-                  Category
+                  {t("byCategory.category")}
                 </th>
                 <th scope="col" className="py-2 text-end font-medium">
-                  Products
+                  {t("byCategory.products")}
                 </th>
                 <th scope="col" className="py-2 text-end font-medium">
-                  Median MRR
+                  {t("byCategory.median")}
                 </th>
                 <th scope="col" className="py-2 text-end font-medium">
-                  Combined
+                  {t("byCategory.combined")}
                 </th>
               </tr>
             </thead>
@@ -191,12 +217,12 @@ export default async function Stats() {
                       href={`/categories/${categorySlug(row.category)}`}
                       className="hover:underline"
                     >
-                      {row.category}
+                      {categoryNames(categoryKey(row.category))}
                     </Link>
                   </th>
-                  <td className={cell}>{row.products}</td>
-                  <td className={cell}>{formatUsd(row.median_mrr_cents)}</td>
-                  <td className={cell}>{formatUsd(row.mrr_cents)}</td>
+                  <td className={cell}>{count(row.products)}</td>
+                  <td className={cell}>{formatMoney(row.median_mrr_cents, money)}</td>
+                  <td className={cell}>{formatMoney(row.mrr_cents, money)}</td>
                 </tr>
               ))}
             </tbody>
@@ -205,24 +231,22 @@ export default async function Stats() {
 
         <Panel
           id="ages"
-          title="By time since launch"
-          note={
-            withAge ? `Among the ${products(withAge)} that share their launch date.` : undefined
-          }
+          title={t("ages.title")}
+          note={withAge ? t("ages.among", { count: withAge }) : undefined}
         >
           {withAge ? (
             <table className="w-full text-sm">
-              <caption className="sr-only">Ranked products by time since launch</caption>
+              <caption className="sr-only">{t("ages.caption")}</caption>
               <thead>
                 <tr className="border-b text-muted-foreground">
                   <th scope="col" className="py-2 text-start font-medium">
-                    Launched
+                    {t("ages.launched")}
                   </th>
                   <th scope="col" className="py-2 text-end font-medium">
-                    Products
+                    {t("ages.products")}
                   </th>
                   <th scope="col" className="py-2 text-end font-medium">
-                    Median MRR
+                    {t("ages.median")}
                   </th>
                 </tr>
               </thead>
@@ -230,20 +254,20 @@ export default async function Stats() {
                 {stats.ages.map((row) => (
                   <tr key={row.min_years} className="border-b last:border-0">
                     <th scope="row" className="py-2 text-start font-normal">
-                      {ageLabel(row)}
+                      {labels.age(row)}
                     </th>
-                    <td className={cell}>{row.products}</td>
+                    <td className={cell}>{count(row.products)}</td>
                     <td className={cell}>
-                      {row.median_mrr_cents == null ? "None" : formatUsd(row.median_mrr_cents)}
+                      {row.median_mrr_cents == null
+                        ? t("ages.none")
+                        : formatMoney(row.median_mrr_cents, money)}
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
           ) : (
-            <p className="text-sm text-muted-foreground">
-              No ranked product shares its launch date yet.
-            </p>
+            <p className="text-sm text-muted-foreground">{t("ages.noneYet")}</p>
           )}
         </Panel>
       </div>
@@ -251,10 +275,11 @@ export default async function Stats() {
       {stats.fastest.length > 0 && (
         <section aria-labelledby="fastest" className="mt-10">
           <h2 id="fastest" className="text-lg font-semibold">
-            Fastest growing
+            {t("fastest.title")}
           </h2>
           <p className="mt-1 mb-4 text-sm text-muted-foreground">
-            The largest change over 30 days among products with at least $1,000 MRR.
+            {/* The database's threshold, in US dollars. */}
+            {t("fastest.description", { amount: formatUsdIn(100000, intl) })}
           </p>
           <ol className="divide-y rounded-xl border bg-surface shadow-card">
             {stats.fastest.map((item) => (
@@ -263,9 +288,13 @@ export default async function Stats() {
                   href={`/saas/${item.slug}`}
                   className="flex items-center justify-between gap-4 px-5 py-3.5 transition-colors hover:bg-subtle"
                 >
-                  <span className="min-w-0 font-medium [overflow-wrap:anywhere]">{item.name}</span>
+                  <span dir="auto" className="min-w-0 font-medium [overflow-wrap:anywhere]">
+                    {item.name}
+                  </span>
                   <span className="flex shrink-0 flex-col items-end">
-                    <span className="font-semibold tabular-nums">{formatUsd(item.mrr_cents)}</span>
+                    <span className="font-semibold tabular-nums">
+                      {formatMoney(item.mrr_cents, money)}
+                    </span>
                     <Growth pct={item.mrr_growth_pct} />
                   </span>
                 </Link>
@@ -276,10 +305,9 @@ export default async function Stats() {
       )}
 
       <p className="mt-8 max-w-2xl text-[13px] text-faint-foreground">
-        These figures come from the leaderboard: products that share MRR verified in the last seven
-        days. Demo products are never counted.{" "}
+        {t("footnote")}{" "}
         <Link href="/about" className="underline underline-offset-2 hover:text-foreground">
-          How verification works
+          {t("howVerificationWorks")}
         </Link>
       </p>
     </Shell>

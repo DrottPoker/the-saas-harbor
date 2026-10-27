@@ -1,4 +1,5 @@
 import { Globe, Link2 } from "lucide-react";
+import { useTranslations } from "next-intl";
 import type { Profile } from "@/lib/data";
 import { GitHubIcon, LinkedInIcon, XIcon } from "./brand-icons";
 
@@ -21,8 +22,10 @@ function handle(url: string) {
 
 /** Links with their icons, in the same card as a product's details. */
 export function ProfileDetails({ profile }: { profile: Profile }) {
+  const t = useTranslations("profile.details");
+  // Brand names stay as they are; addresses and handles read left to right in every language.
   const links = [
-    { label: "Website", href: profile.website, text: hostname(profile.website), Icon: Globe },
+    { label: t("website"), href: profile.website, text: hostname(profile.website), Icon: Globe },
     {
       label: "LinkedIn",
       href: profile.linkedin_url,
@@ -36,7 +39,7 @@ export function ProfileDetails({ profile }: { profile: Profile }) {
       Icon: GitHubIcon,
     },
     { label: "X", href: profile.x_url, text: `@${handle(profile.x_url)}`, Icon: XIcon },
-    { label: "Link", href: profile.social_url, text: hostname(profile.social_url), Icon: Link2 },
+    { label: t("link"), href: profile.social_url, text: hostname(profile.social_url), Icon: Link2 },
   ].filter((link) => link.href);
   if (!links.length) return null;
   return (
@@ -50,6 +53,7 @@ export function ProfileDetails({ profile }: { profile: Profile }) {
           <dd className="min-w-0 truncate text-end">
             <a
               href={href}
+              dir="ltr"
               target="_blank"
               rel="noopener noreferrer nofollow"
               className="hover:underline"

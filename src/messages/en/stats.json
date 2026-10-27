@@ -1,1 +1,70 @@
-{}
+{
+  "title": "Statistics",
+  "description": "Monthly recurring revenue across the products that share it, verified through their payment providers.",
+  "empty": {
+    "title": "Not enough products yet",
+    "listYourSaas": "List your SaaS",
+    "body": "Statistics appear once {minimum} products share verified MRR. {count, plural, one {# product does} other {# products do}} so now."
+  },
+  "figures": {
+    "combined": "Verified MRR, combined",
+    "ranked": "Products ranked",
+    "median": "Median MRR",
+    "subscribers": "Subscribers",
+    "subscribersAcross": "Across the {count, plural, one {# product} other {# products}} that share them"
+  },
+  "history": {
+    "title": "Combined MRR at month end",
+    "description": "The MRR of the products ranked today, added up at each month end. Reconstructed from paid invoices and converted to USD at today's rates."
+  },
+  "share": "{count} ({share})",
+  "distribution": {
+    "title": "Products by MRR",
+    "inUsd": "Ranges in US dollars."
+  },
+  "growth": {
+    "title": "Change over 30 days",
+    "none": "No product has figures from 30 days ago yet.",
+    "among": "Among the {count, plural, one {# product} other {# products}} with figures from 30 days ago.",
+    "median": "Median change",
+    "label": "Products by change over 30 days",
+    "growing": "Growing",
+    "unchanged": "Unchanged",
+    "shrinking": "Shrinking"
+  },
+  "byCategory": {
+    "title": "By category",
+    "caption": "Ranked products by category",
+    "category": "Category",
+    "products": "Products",
+    "median": "Median MRR",
+    "combined": "Combined"
+  },
+  "ages": {
+    "title": "By time since launch",
+    "among": "Among the {count, plural, one {# product} other {# products}} that share their launch date.",
+    "caption": "Ranked products by time since launch",
+    "launched": "Launched",
+    "products": "Products",
+    "median": "Median MRR",
+    "none": "None",
+    "noneYet": "No ranked product shares its launch date yet."
+  },
+  "fastest": {
+    "title": "Fastest growing",
+    "description": "The largest change over 30 days among products with at least {amount} MRR."
+  },
+  "footnote": "These figures come from the leaderboard: products that share MRR verified in the last seven days. Demo products are never counted.",
+  "howVerificationWorks": "How verification works",
+  "buckets": {
+    "under": "Under {amount}",
+    "between": "{min} to {max}",
+    "atLeast": "{amount} or more"
+  },
+  "launchBands": {
+    "underOne": "Less than a year ago",
+    "under": "Less than {max} years ago",
+    "between": "{min} to {max} years ago",
+    "atLeast": "{min} or more years ago"
+  }
+}

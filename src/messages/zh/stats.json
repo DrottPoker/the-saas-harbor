@@ -1,1 +1,70 @@
-{}
+{
+  "title": "统计",
+  "description": "公开月经常性收入（MRR）的产品的汇总数据，均经各自的支付服务商验证。",
+  "empty": {
+    "title": "产品数量还不够",
+    "listYourSaas": "提交你的 SaaS",
+    "body": "当有 {minimum} 个产品公开已验证 MRR 时，这里会显示统计数据。目前有 {count} 个产品公开。"
+  },
+  "figures": {
+    "combined": "已验证 MRR 合计",
+    "ranked": "上榜产品",
+    "median": "MRR 中位数",
+    "subscribers": "订阅用户",
+    "subscribersAcross": "来自公开订阅用户数的 {count} 个产品"
+  },
+  "history": {
+    "title": "月末 MRR 合计",
+    "description": "当前上榜产品在每个月末的 MRR 之和。根据已支付的账单重建，并按今天的汇率换算为美元。"
+  },
+  "share": "{count}（{share}）",
+  "distribution": {
+    "title": "按 MRR 分布的产品",
+    "inUsd": "区间以美元计。"
+  },
+  "growth": {
+    "title": "30 天变化",
+    "none": "还没有产品拥有 30 天前的数据。",
+    "among": "统计范围为拥有 30 天前数据的 {count} 个产品。",
+    "median": "变化中位数",
+    "label": "按 30 天变化分布的产品",
+    "growing": "增长",
+    "unchanged": "持平",
+    "shrinking": "下降"
+  },
+  "byCategory": {
+    "title": "按类别",
+    "caption": "按类别统计的上榜产品",
+    "category": "类别",
+    "products": "产品",
+    "median": "MRR 中位数",
+    "combined": "合计"
+  },
+  "ages": {
+    "title": "按发布时长",
+    "among": "统计范围为公开发布日期的 {count} 个产品。",
+    "caption": "按发布时长统计的上榜产品",
+    "launched": "发布时间",
+    "products": "产品",
+    "median": "MRR 中位数",
+    "none": "无",
+    "noneYet": "还没有上榜产品公开发布日期。"
+  },
+  "fastest": {
+    "title": "增长最快",
+    "description": "在 MRR 不低于 {amount} 的产品中，30 天内增幅最大的产品。"
+  },
+  "footnote": "这些数据来自排行榜：过去七天内验证过 MRR 并公开的产品。演示产品从不计入。",
+  "howVerificationWorks": "验证方式",
+  "buckets": {
+    "under": "低于 {amount}",
+    "between": "{min} 至 {max}",
+    "atLeast": "{amount} 及以上"
+  },
+  "launchBands": {
+    "underOne": "不到一年前",
+    "under": "不到 {max} 年前",
+    "between": "{min} 至 {max} 年前",
+    "atLeast": "{min} 年前或更早"
+  }
+}

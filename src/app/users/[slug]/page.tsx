@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
+import { getTranslations } from "next-intl/server";
 import Link from "@/components/link";
 import { notFound } from "next/navigation";
 import { BadgeCheck, Pencil } from "lucide-react";
 import { PersonAvatar } from "@/components/avatars";
+import { ConversionNote } from "@/components/conversion-note";
 import { ListingGrid, ResultsFooter } from "@/components/listings";
 import { SendMessageButton } from "@/components/messages/send-message-button";
 import { Metric } from "@/components/metric";
@@ -11,7 +13,8 @@ import { ReportLink } from "@/components/report-link";
 import { EmptyState, Notice, Shell } from "@/components/shell";
 import { Button } from "@/components/ui/button";
 import { findProfile, listings, makerTotals, PAGE_SIZE } from "@/lib/data";
-import { formatUsd } from "@/lib/domain";
+import { getMoney } from "@/lib/display-currency";
+import { formatCount, formatMoney } from "@/lib/display-money";
 import { pageMetadata, profileDescription } from "@/lib/seo";
 import { makerJsonLd } from "@/lib/structured-data";
 import { JsonLd } from "@/components/json-ld";
@@ -40,8 +43,6 @@ export async function generateMetadata({ params }: Pick<Props, "params">): Promi
   };
 }
 
-const across = (count: number) => `Across ${count} ${count === 1 ? "product" : "products"}`;
-
 // Laid out like the product page: a header, key figures, then the story with details at the side.
 export default async function Maker({ params, searchParams }: Props) {
   const found = await findProfile((await params).slug);
@@ -51,12 +52,18 @@ export default async function Maker({ params, searchParams }: Props) {
   const profile = found.item;
   const id = profile.id;
   const page = safePage(firstValues(await searchParams).page);
-  const [totals, result, viewer] = await Promise.all([
+  const [totals, result, viewer, t, common, money] = await Promise.all([
     makerTotals(id),
     listings({ owner: id, page }),
     currentUser(),
+    getTranslations("profile"),
+    getTranslations("common"),
+    getMoney(),
   ]);
   const own = viewer?.id === id;
+  const across = (count: number) => (
+    <span className="text-xs text-muted-foreground">{t("across", { count })}</span>
+  );
 
   return (
     <Shell size="medium">
@@ -64,57 +71,64 @@ export default async function Maker({ params, searchParams }: Props) {
       <header className="flex flex-col gap-5 sm:flex-row sm:items-start">
         <PersonAvatar path={profile.avatar_path} name={profile.name} size="xl" decorative={false} />
         <div className="min-w-0 flex-1">
-          <h1 className="text-3xl font-semibold tracking-tight [overflow-wrap:anywhere]">
+          <h1 dir="auto" className="text-3xl font-semibold tracking-tight [overflow-wrap:anywhere]">
             {profile.name}
           </h1>
-          <p className="mt-0.5 text-sm text-muted-foreground">@{profile.slug}</p>
+          <p className="mt-0.5 text-sm text-muted-foreground">
+            <bdi dir="ltr">@{profile.slug}</bdi>
+          </p>
           {profile.headline && (
-            <p className="mt-1.5 text-lg text-muted-foreground [overflow-wrap:anywhere]">
+            <p dir="auto" className="mt-1.5 text-lg text-muted-foreground [overflow-wrap:anywhere]">
               {profile.headline}
             </p>
           )}
           {profile.location && (
-            <p className="mt-3 text-sm text-muted-foreground">{profile.location}</p>
+            <p dir="auto" className="mt-3 text-sm text-muted-foreground">
+              {profile.location}
+            </p>
           )}
         </div>
         {own ? (
           <Button asChild variant="outline" className="self-start">
             <Link href="/dashboard/profile">
               <Pencil />
-              Edit profile
+              {t("editProfile")}
             </Link>
           </Button>
         ) : (
+          // A Server Component, so its messages need not go to the browser.
           <SendMessageButton makerId={id} viewerId={viewer?.id ?? null} className="self-start" />
         )}
       </header>
 
       <dl className="mt-10 grid divide-y rounded-xl border bg-surface shadow-card sm:grid-cols-3 sm:divide-x sm:divide-y-0">
-        <Metric label="Products" value={String(totals.products)} />
+        <Metric label={t("products")} value={formatCount(totals.products, money.locale)} />
         <Metric
-          label="Verified MRR"
-          value={totals.mrr.total === null ? null : formatUsd(totals.mrr.total)}
-          detail={<span className="text-xs text-muted-foreground">{across(totals.mrr.count)}</span>}
+          label={common("verifiedMrr")}
+          value={totals.mrr.total === null ? null : formatMoney(totals.mrr.total, money)}
+          detail={across(totals.mrr.count)}
         />
         <Metric
-          label="Subscribers"
-          value={totals.customers.total?.toLocaleString("en-US") ?? null}
-          detail={
-            <span className="text-xs text-muted-foreground">{across(totals.customers.count)}</span>
+          label={t("subscribers")}
+          value={
+            totals.customers.total === null
+              ? null
+              : formatCount(totals.customers.total, money.locale)
           }
+          detail={across(totals.customers.count)}
         />
       </dl>
       <p className="mt-3 flex items-center gap-1.5 text-[13px] text-muted-foreground">
         <BadgeCheck aria-hidden="true" className="size-4 shrink-0 text-brand" />
-        Figures are verified with each product's payment provider and include only the products that
-        share them.
+        {t("figuresNote")}
       </p>
+      <ConversionNote className="mt-1.5" />
 
       {own && !profile.headline && (
         <Notice className="mt-6">
-          Add a headline so others get to know you.{" "}
+          {t("addHeadline")}{" "}
           <Link href="/dashboard/profile" className="font-medium underline">
-            Edit profile
+            {t("editProfile")}
           </Link>
         </Notice>
       )}
@@ -123,14 +137,14 @@ export default async function Maker({ params, searchParams }: Props) {
         <div className="grid min-w-0 content-start gap-12">
           <section aria-labelledby="products">
             <h2 id="products" className="text-lg font-semibold">
-              Products
+              {t("products")}
             </h2>
             <div className="mt-4">
               {result.error ? (
                 <Notice tone="error">{result.error}</Notice>
               ) : !result.rows.length ? (
-                <EmptyState title="No products listed">
-                  {profile.name} has not listed a product yet.
+                <EmptyState title={t("noProductsTitle")}>
+                  {t.rich("noProductsBody", { name: () => <bdi>{profile.name}</bdi> })}
                 </EmptyState>
               ) : (
                 <>
@@ -151,7 +165,7 @@ export default async function Maker({ params, searchParams }: Props) {
           <ProfileDetails profile={profile} />
           {!own && (
             <ReportLink target="profile" id={id} className="mt-1">
-              Report this profile
+              {t("report")}
             </ReportLink>
           )}
         </aside>

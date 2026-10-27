@@ -1,1 +1,70 @@
-{}
+{
+  "title": "Estadísticas",
+  "description": "Ingresos recurrentes mensuales (MRR) de los productos que los comparten, verificados a través de sus proveedores de pagos.",
+  "empty": {
+    "title": "Aún no hay suficientes productos",
+    "listYourSaas": "Publica tu SaaS",
+    "body": "Las estadísticas aparecen cuando {minimum} productos comparten MRR verificado. {count, plural, =0 {Ahora no lo hace ninguno} one {Ahora lo hace # producto} other {Ahora lo hacen # productos}}."
+  },
+  "figures": {
+    "combined": "MRR verificado, total",
+    "ranked": "Productos en la clasificación",
+    "median": "MRR mediano",
+    "subscribers": "Suscriptores",
+    "subscribersAcross": "De {count, plural, one {el # producto que los comparte} other {los # productos que los comparten}}"
+  },
+  "history": {
+    "title": "MRR total a fin de mes",
+    "description": "El MRR de los productos que están hoy en la clasificación, sumado al final de cada mes. Reconstruido a partir de facturas pagadas y convertido a USD con las tasas de hoy."
+  },
+  "share": "{count} ({share})",
+  "distribution": {
+    "title": "Productos por MRR",
+    "inUsd": "Rangos en dólares estadounidenses."
+  },
+  "growth": {
+    "title": "Cambio en 30 días",
+    "none": "Ningún producto tiene cifras de hace 30 días todavía.",
+    "among": "Entre {count, plural, one {el # producto} other {los # productos}} con cifras de hace 30 días.",
+    "median": "Cambio mediano",
+    "label": "Productos por cambio en 30 días",
+    "growing": "En crecimiento",
+    "unchanged": "Sin cambios",
+    "shrinking": "En descenso"
+  },
+  "byCategory": {
+    "title": "Por categoría",
+    "caption": "Productos de la clasificación por categoría",
+    "category": "Categoría",
+    "products": "Productos",
+    "median": "MRR mediano",
+    "combined": "Total"
+  },
+  "ages": {
+    "title": "Por tiempo desde el lanzamiento",
+    "among": "Entre {count, plural, one {el # producto que comparte} other {los # productos que comparten}} su fecha de lanzamiento.",
+    "caption": "Productos de la clasificación por tiempo desde el lanzamiento",
+    "launched": "Lanzamiento",
+    "products": "Productos",
+    "median": "MRR mediano",
+    "none": "Ninguno",
+    "noneYet": "Ningún producto de la clasificación comparte su fecha de lanzamiento todavía."
+  },
+  "fastest": {
+    "title": "Mayor crecimiento",
+    "description": "El mayor cambio en 30 días entre los productos con al menos {amount} de MRR."
+  },
+  "footnote": "Estas cifras vienen de la clasificación: productos que comparten MRR verificado en los últimos siete días. Los productos de demostración nunca se cuentan.",
+  "howVerificationWorks": "Cómo funciona la verificación",
+  "buckets": {
+    "under": "Menos de {amount}",
+    "between": "De {min} a {max}",
+    "atLeast": "{amount} o más"
+  },
+  "launchBands": {
+    "underOne": "Hace menos de un año",
+    "under": "Hace menos de {max} años",
+    "between": "Hace entre {min} y {max} años",
+    "atLeast": "Hace {min} años o más"
+  }
+}
