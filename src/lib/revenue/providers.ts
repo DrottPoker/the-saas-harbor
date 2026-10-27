@@ -4,6 +4,7 @@ import { chargebee } from "./chargebee";
 import { creem } from "./creem";
 import { dodo } from "./dodo";
 import { gumroad } from "./gumroad";
+import { mollie } from "./mollie";
 import { paddle } from "./paddle";
 import { paypal } from "./paypal";
 import { polar } from "./polar";
@@ -23,6 +24,7 @@ const ADAPTERS: Record<ProviderId, ProviderAdapter> = {
   revenuecat,
   gumroad,
   paypal,
+  mollie,
 };
 
 /** How to validate a provider's keys and read its accounts. */

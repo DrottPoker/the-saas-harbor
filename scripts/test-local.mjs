@@ -50,6 +50,7 @@ const env = {
   WHOP_API_BASE: `${fakeProviders}/whop`,
   REVENUECAT_API_BASE: `${fakeProviders}/revenuecat`,
   PAYPAL_API_BASE: `${fakeProviders}/paypal`,
+  MOLLIE_API_BASE: `${fakeProviders}/mollie`,
   // Gumroad connects through OAuth, whose pages the fake server answers too.
   GUMROAD_API_BASE: `${fakeProviders}/gumroad`,
   GUMROAD_OAUTH_BASE: `${fakeProviders}/gumroad`,

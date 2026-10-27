@@ -1,9 +1,10 @@
-import { test, expect, type APIRequestContext, type Page } from "@playwright/test";
+import { test, expect, type APIRequestContext, type Locator, type Page } from "@playwright/test";
 import { createClient } from "@supabase/supabase-js";
 import { createHash, randomBytes, randomUUID } from "node:crypto";
 import AxeBuilder from "@axe-core/playwright";
 import { DODO_KEYS, PADDLE_KEYS, POLAR_TOKENS } from "./fake-billing.mjs";
 import { CHARGEBEE, CREEM_KEYS, REVENUECAT, WHOP_KEYS } from "./fake-billing-extra.mjs";
+import { MOLLIE } from "./fake-mollie.mjs";
 import { PAYPAL } from "./fake-paypal.mjs";
 import { formatUsd } from "../../src/lib/domain";
 import { termsUpdated } from "../../src/lib/legal";
@@ -3242,6 +3243,117 @@ test("founders verify revenue through a PayPal app that can only search transact
   expect(connection).toMatchObject({ provider: "paypal", livemode: false });
   expect(connection!.encrypted_key).not.toContain("harborPayPal");
   expect(violations).toEqual([]);
+});
+
+/**
+ * One provider connected with pasted values: a credential with too much access adds the product
+ * without connecting it, then one that can only read connects, in both themes. `fill` types a
+ * credential's values into the revenue section.
+ */
+async function connectsWithReadOnlyKey(
+  page: Page,
+  {
+    provider,
+    slug,
+    link,
+    fill,
+    refused,
+    verified,
+    hint,
+    livemode,
+    secretPart,
+  }: {
+    provider: string;
+    slug: string;
+    link: string;
+    fill: (revenue: Locator, which: "wide" | "one") => Promise<void>;
+    refused: RegExp;
+    verified: RegExp;
+    hint: string;
+    livemode: boolean;
+    secretPart: string;
+  },
+) {
+  const violations: string[] = [];
+  watchPolicy(page, violations);
+  const address = `harbor-${slug}-${run}@example.test`;
+  const secret = randomBytes(24).toString("hex");
+  const { data: created, error } = await admin.auth.admin.createUser({
+    email: address,
+    password: secret,
+    email_confirm: true,
+    user_metadata: signup(`${slug}-${run}`),
+  });
+  if (error || !created.user) throw new Error(`Unable to create the ${provider} maker.`);
+  userIds.push(created.user.id);
+  await login(page, address, secret);
+  await page.goto("/dashboard/saas/new");
+  await fillProduct(page, `${provider} ${run}`);
+  await hideFigures(page);
+  const revenue = page.locator("#revenue");
+
+  await chooseProvider(page, provider);
+  await expect(revenue.getByRole("link", { name: link })).toBeVisible();
+  await fill(revenue, "wide");
+  await page.getByRole("button", { name: "Add SaaS and verify revenue" }).click();
+  await expect(page).toHaveURL(/\/dashboard\/saas\/[0-9a-f-]{36}\?connection=1/);
+  const id = new URL(page.url()).pathname.split("/").at(-1)!;
+  await expect(
+    revenue.getByRole("alert").filter({
+      hasText: new RegExp(
+        `^The product was added, but ${provider} was not connected\\. ${refused.source}`,
+      ),
+    }),
+  ).toBeVisible();
+  await expect(revenue.getByRole("combobox", { name: "Payment provider" })).toHaveText(provider);
+
+  await fill(revenue, "one");
+  await page.getByRole("button", { name: "Save and verify revenue" }).click();
+  await closeShareOffer(page, `${provider} ${run}`);
+  await expect(revenue.getByText(`Connected to ${provider}`)).toBeVisible();
+  await expect(
+    revenue.getByRole("status").filter({
+      hasText: new RegExp(`^${provider} connected\\. ${verified.source}`),
+    }),
+  ).toBeVisible();
+  if (!livemode) await expect(revenue.getByText("Test mode")).toBeVisible();
+  await expect(revenue.getByText(`Key ${hint}`)).toBeVisible();
+  for (const theme of ["dark", "light"] as const) {
+    await setThemeCookie(page, theme);
+    await page.reload();
+    await expect(revenue.getByText(`Connected to ${provider}`)).toBeVisible();
+    await expectAccessible(page);
+  }
+
+  const { data: connection } = await admin
+    .from("revenue_connections")
+    .select("provider, livemode, encrypted_key")
+    .eq("saas_id", id)
+    .single();
+  expect(connection).toMatchObject({ provider: slug, livemode });
+  expect(connection!.encrypted_key).not.toContain(secretPart);
+  expect(violations).toEqual([]);
+}
+
+// Mollie asks for an advanced access token and the website profile, and refuses a token that can
+// do more than read.
+test("founders verify revenue through a Mollie token that can only read", async ({ page }) => {
+  await connectsWithReadOnlyKey(page, {
+    provider: "Mollie",
+    slug: "mollie",
+    link: "Open Mollie's API access tokens",
+    fill: async (revenue, which) => {
+      await revenue.getByLabel("Profile ID", { exact: true }).fill(MOLLIE.profile);
+      await revenue
+        .getByLabel(/^(New )?advanced access token$/i)
+        .fill(which === "wide" ? MOLLIE.tokens.wide : MOLLIE.tokens.one);
+    },
+    refused: /The token can do more than read,/,
+    verified: /Verified MRR: \$60\.00 from 3 subscribers\./,
+    hint: `${MOLLIE.profile} · access_…${MOLLIE.tokens.one.slice(-4)}`,
+    livemode: false,
+    secretPart: "HarborMollie",
+  });
 });
 
 // A founder proves that the website's domain is theirs with a DNS record, which the tests' DNS

@@ -69,6 +69,14 @@ export const PROVIDERS = {
     placeholder: "Secret key 1",
     account: { label: "Client ID", placeholder: "Client ID of the app" },
   },
+  // The key is an advanced access token, and the account the website profile it reads.
+  mollie: {
+    name: "Mollie",
+    keyLabel: "Advanced access token",
+    newKeyLabel: "New advanced access token",
+    placeholder: "access_...",
+    account: { label: "Profile ID", placeholder: "pfl_..." },
+  },
 } as const satisfies Record<string, ProviderEntry>;
 
 type ProviderField = { label: string; placeholder: string };

@@ -3,8 +3,10 @@ import {
   CHOOSE_PROVIDER,
   isProviderId,
   isProviderOption,
+  PROVIDER_IDS,
   providerAccess,
   providerAccount,
+  providerExtra,
   providerList,
   providerName,
 } from "../../src/lib/revenue/catalog";
@@ -40,21 +42,21 @@ const DAY = 86_400;
 const iso = (seconds: number) => new Date(seconds * 1000).toISOString();
 
 describe("provider catalog", () => {
-  it("knows the ten providers", () => {
-    expect(
-      [
-        "stripe",
-        "paddle",
-        "polar",
-        "dodo",
-        "creem",
-        "chargebee",
-        "whop",
-        "revenuecat",
-        "gumroad",
-        "paypal",
-      ].every(isProviderId),
-    ).toBe(true);
+  it("knows the supported providers", () => {
+    expect(PROVIDER_IDS).toEqual([
+      "stripe",
+      "paddle",
+      "polar",
+      "dodo",
+      "creem",
+      "chargebee",
+      "whop",
+      "revenuecat",
+      "gumroad",
+      "paypal",
+      "mollie",
+    ]);
+    expect(PROVIDER_IDS.every(isProviderId)).toBe(true);
     expect(isProviderId("lemonsqueezy")).toBe(false);
     expect(isProviderId("toString")).toBe(false);
     expect(providerName("dodo")).toBe("Dodo Payments");
@@ -63,16 +65,18 @@ describe("provider catalog", () => {
 
   it("names them in a sentence", () => {
     expect(providerList("or")).toBe(
-      "Stripe, Paddle, Polar, Dodo Payments, Creem, Chargebee, Whop, RevenueCat, Gumroad or PayPal",
+      "Stripe, Paddle, Polar, Dodo Payments, Creem, Chargebee, Whop, RevenueCat, Gumroad, PayPal or Mollie",
     );
-    expect(providerList("and")).toMatch(/, Gumroad and PayPal$/);
+    expect(providerList("and")).toMatch(/, PayPal and Mollie$/);
   });
 
   it("asks for a site, project or app only where the key needs one", () => {
     expect(providerAccount("chargebee")?.label).toBe("Site");
     expect(providerAccount("revenuecat")?.label).toBe("Project ID");
     expect(providerAccount("paypal")?.label).toBe("Client ID");
+    expect(providerAccount("mollie")?.label).toBe("Profile ID");
     expect(providerAccount("stripe")).toBeNull();
+    expect(providerExtra("stripe")).toEqual([]);
   });
 
   it("says a key for pasted keys and access for OAuth", () => {

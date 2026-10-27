@@ -35,6 +35,7 @@ export function apiBase(override: string | undefined, origin: string, name: stri
 // publishes no limit, nor does Gumroad, whose sales come ten to a page, nor PayPal, which searches
 // 31 days a request. RevenueCat allows 25 chart requests a minute per project; a run that also
 // reads the revenue chart back to its first year sends fewer than 20, so they are not spaced.
+// Mollie sets read limits per merchant, such as 20 payment lists a second.
 const SPACING: Partial<Record<ProviderId, number>> = {
   paddle: 300,
   polar: 150,
@@ -44,6 +45,7 @@ const SPACING: Partial<Record<ProviderId, number>> = {
   whop: 100,
   gumroad: 100,
   paypal: 200,
+  mollie: 100,
 };
 const nextSlot = new Map<ProviderId, number>();
 

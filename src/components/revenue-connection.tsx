@@ -187,6 +187,21 @@ const guides: Record<ProviderId, Guide> = {
       "Copy the Client ID and Secret key 1, and paste them below. MRR counts PayPal subscriptions; other payments count as revenue.",
     ],
   },
+  mollie: {
+    dashboard: {
+      href: "https://my.mollie.com/dashboard/developers/api-access-tokens",
+      label: "Open Mollie's API access tokens",
+    },
+    reads: "your subscriptions and payments",
+    steps: [
+      <>
+        Choose {strong("Build your own")} advanced access token, and give it Read for Payments and
+        Subscriptions only. A token that can do more than read is refused.
+      </>,
+      "Copy the token, which starts with access_. API keys (live_ or test_) can create payments and are not accepted.",
+      "Copy the ID of this product's website profile, which starts with pfl_, from Developers → API keys. MRR counts Mollie subscriptions; other payments count as revenue.",
+    ],
+  },
 };
 
 // Where to make the key, with the steps: the dashboard link opens in a new tab.
@@ -227,6 +242,7 @@ const noHistory: Record<ProviderId, string> = {
   gumroad: "No revenue history: the Gumroad account has more sales than one verification reads.",
   paypal:
     "No revenue history: the PayPal account has more subscription payments than one verification reads.",
+  mollie: "No revenue history: the Mollie profile has more payments than one verification reads.",
 };
 
 const option =

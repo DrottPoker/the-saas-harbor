@@ -5,6 +5,7 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { DODO_KEYS, PADDLE_KEYS, POLAR_TOKENS } from "../e2e/fake-billing.mjs";
 import { CHARGEBEE, CREEM_KEYS, REVENUECAT, WHOP_KEYS } from "../e2e/fake-billing-extra.mjs";
 import { GUMROAD } from "../e2e/fake-gumroad.mjs";
+import { MOLLIE } from "../e2e/fake-mollie.mjs";
 import { PAYPAL } from "../e2e/fake-paypal.mjs";
 import {
   exchangeGumroadCode,
@@ -44,6 +45,7 @@ beforeAll(async () => {
   process.env.WHOP_API_BASE = `${base}/whop`;
   process.env.REVENUECAT_API_BASE = `${base}/revenuecat`;
   process.env.PAYPAL_API_BASE = `${base}/paypal`;
+  process.env.MOLLIE_API_BASE = `${base}/mollie`;
   process.env.GUMROAD_API_BASE = `${base}/gumroad`;
   process.env.GUMROAD_OAUTH_BASE = `${base}/gumroad`;
   process.env.FX_API_BASE = base;
@@ -211,6 +213,7 @@ describe("Dodo Payments verification", () => {
 const chargebeeKey = `${CHARGEBEE.site}:${CHARGEBEE.key}`;
 const revenueCatKey = (key: string) => `${REVENUECAT.project}:${key}`;
 const paypalKey = (app: { clientId: string; secret: string }) => `${app.clientId}:${app.secret}`;
+const mollieKey = (token: string) => `${MOLLIE.profile}:${token}`;
 
 describe("Creem verification", () => {
   it("values subscriptions by their products, without included tax, with history", async () => {
@@ -352,6 +355,39 @@ describe("PayPal verification", () => {
   });
 });
 
+describe("Mollie verification", () => {
+  it("finds test mode, and values active subscriptions over their intervals, with history", async () => {
+    const result = await verifyRevenue("mollie", mollieKey(MOLLIE.tokens.one), null);
+    expect(result).toMatchObject({
+      provider: "mollie",
+      livemode: false,
+      mrrCents: 6_000,
+      customers: 3,
+      skippedItems: 0,
+      currencies: { eur: 4_000, usd: 1_000 },
+      mrrInvoiceCents: 6_000,
+      mrr30dAgoCents: 6_000,
+      historyNote: null,
+    });
+    expect(result.history).toHaveLength(12);
+    expect(sortedMonths(result.history)).toBe(true);
+    expect(result.history![0].mrr_cents).toBe(2_500);
+    expect(result.subscriptionHashes).toHaveLength(3);
+  }, 20_000);
+
+  it("refuses a token that can do more than read, and an API key", async () => {
+    await expect(verifyRevenue("mollie", mollieKey(MOLLIE.tokens.wide), null)).rejects.toThrow(
+      /can do more than read/,
+    );
+    expect(() =>
+      adapter("mollie").parseKey(
+        { key: "live_HarborMollieApiKey000000000", account: MOLLIE.profile },
+        { allowTest: true },
+      ),
+    ).toThrow(/Mollie API key/);
+  });
+});
+
 describe("claims", () => {
   it("hash Stripe ids as before and prefix other providers", async () => {
     const { createHash } = await import("node:crypto");
@@ -377,6 +413,7 @@ describe("hourly verification", () => {
     ["whop", WHOP_KEYS.one],
     ["revenuecat", revenueCatKey(REVENUECAT.keys.one)],
     ["paypal", paypalKey(PAYPAL.one)],
+    ["mollie", mollieKey(MOLLIE.tokens.one)],
   ] as const)(
     "reads only what MRR needs from %s without the history",
     async (provider, key) => {
@@ -693,6 +730,20 @@ describe("payments", () => {
     expect(older.complete).toBe(true);
     expect(older.payments.map((payment) => payment.id)).toContain("PPMONTHLY13");
   }, 30_000);
+
+  it("reads Mollie payments after refunds and chargebacks, without line VAT", async () => {
+    const { complete, values, kinds } = await recent("mollie", mollieKey(MOLLIE.tokens.one));
+    expect(complete).toBe(true);
+    expect(values).toMatchObject({
+      tr_HarborMonthly0: eur(2000),
+      tr_HarborOnce: eur(10000),
+      tr_HarborPartial: usd(2000),
+      tr_HarborRefunded: eur(0),
+      tr_HarborChargeback: usd(0),
+    });
+    for (const id of ["tr_HarborFailed", "tr_HarborOpen"]) expect(values).not.toHaveProperty(id);
+    expect(kinds).toMatchObject({ tr_HarborMonthly0: "subscription", tr_HarborOnce: "one_time" });
+  }, 20_000);
 });
 
 describe("Gumroad", () => {
