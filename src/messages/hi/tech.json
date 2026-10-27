@@ -1,1 +1,13 @@
-{}
+{
+  "groups": {
+    "frontend": "फ़्रंटएंड",
+    "mobileAndDesktop": "मोबाइल और डेस्कटॉप",
+    "noCode": "नो-कोड",
+    "backend": "बैकएंड",
+    "databases": "डेटाबेस",
+    "hosting": "होस्टिंग और इन्फ़्रास्ट्रक्चर",
+    "payments": "भुगतान",
+    "ai": "AI",
+    "services": "सेवाएँ"
+  }
+}

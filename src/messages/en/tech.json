@@ -1,1 +1,13 @@
-{}
+{
+  "groups": {
+    "frontend": "Frontend",
+    "mobileAndDesktop": "Mobile and desktop",
+    "noCode": "No-code",
+    "backend": "Backend",
+    "databases": "Databases",
+    "hosting": "Hosting and infrastructure",
+    "payments": "Payments",
+    "ai": "AI",
+    "services": "Services"
+  }
+}

@@ -1,1 +1,13 @@
-{}
+{
+  "groups": {
+    "frontend": "前端",
+    "mobileAndDesktop": "移动端与桌面端",
+    "noCode": "无代码",
+    "backend": "后端",
+    "databases": "数据库",
+    "hosting": "托管与基础设施",
+    "payments": "支付",
+    "ai": "AI",
+    "services": "服务"
+  }
+}

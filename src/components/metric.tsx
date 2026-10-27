@@ -1,10 +1,11 @@
+import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
 
 /** One figure in the bordered row of key figures on product and maker pages. */
 export function Metric({
   label,
   value,
-  empty = "Not shared",
+  empty,
   detail,
   className,
 }: {
@@ -14,6 +15,7 @@ export function Metric({
   detail?: React.ReactNode;
   className?: string;
 }) {
+  const t = useTranslations("common");
   return (
     <div className={cn("px-5 py-4", className)}>
       <dt className="text-sm text-muted-foreground">{label}</dt>
@@ -23,7 +25,7 @@ export function Metric({
           value ? "text-2xl font-semibold tracking-tight" : "text-base text-faint-foreground",
         )}
       >
-        {value ?? empty}
+        {value ?? empty ?? t("notShared")}
       </dd>
       {value && detail && <dd className="mt-1">{detail}</dd>}
     </div>

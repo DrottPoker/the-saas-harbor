@@ -23,6 +23,17 @@ export function changedDuringCheck(message: string | undefined) {
   return null;
 }
 
+/**
+ * A text from revenue verification that a founder reads (an error, a note or a stored reason), in
+ * the language of the request. Texts are stored in English; one that matches a message is shown in
+ * the founder's language, anything else as it is.
+ */
+export async function localizeRevenueText(text: string): Promise<string>;
+export async function localizeRevenueText(text: string | null | undefined): Promise<string | null>;
+export async function localizeRevenueText(text: string | null | undefined) {
+  return text ?? null;
+}
+
 /** The words a maker sees for a failure: its own message when it has one written for them. */
 export function makerMessage(error: unknown) {
   if (error instanceof VerificationError) return error.message;

@@ -23,5 +23,8 @@
       "demo": "Demo revenue, all time",
       "title": "SaaS ranked by verified revenue, all time"
     }
-  }
+  },
+  "loading": "Loading",
+  "copy": "Copy {label}",
+  "copied": "Copied"
 }

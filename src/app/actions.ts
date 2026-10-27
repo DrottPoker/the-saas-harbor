@@ -45,6 +45,7 @@ import {
   startPage,
 } from "@/lib/supabase/server";
 import { uploadImage } from "@/lib/upload";
+import { getLocale } from "next-intl/server";
 import { localeRedirect } from "@/i18n/navigation";
 
 const value = (form: FormData, key: string) => String(form.get(key) ?? "");
@@ -123,7 +124,11 @@ export async function authenticate(
       password,
       // Triggers create the profile with the username (as name and address) and copy the
       // accepted version of the terms into private.terms_acceptances.
-      options: { emailRedirectTo: confirm, data: { terms_version: termsUpdated, username } },
+      // The language is kept with the account for the emails it gets (src/lib/email).
+      options: {
+        emailRedirectTo: confirm,
+        data: { terms_version: termsUpdated, username, locale: await getLocale() },
+      },
     });
     if (error)
       return {

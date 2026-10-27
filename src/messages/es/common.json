@@ -23,5 +23,8 @@
       "demo": "Ingresos históricos de demostración",
       "title": "SaaS clasificados por ingresos verificados históricos"
     }
-  }
+  },
+  "loading": "Cargando",
+  "copy": "Copiar {label}",
+  "copied": "Copiado"
 }

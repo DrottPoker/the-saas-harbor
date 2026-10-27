@@ -1,3 +1,4 @@
+import { useTranslations } from "next-intl";
 import { Shell } from "@/components/shell";
 
 /**
@@ -6,9 +7,10 @@ import { Shell } from "@/components/shell";
  * answer 404. `inShell` is for segments whose layout already draws the Shell.
  */
 export function PageSkeleton({ inShell = false }: { inShell?: boolean }) {
+  const t = useTranslations("common");
   const placeholder = (
     <div role="status" className="animate-pulse">
-      <span className="sr-only">Loading</span>
+      <span className="sr-only">{t("loading")}</span>
       <div className="h-9 w-80 max-w-full rounded-md bg-muted" />
       <div className="mt-4 h-5 w-96 max-w-full rounded-md bg-muted" />
       <div className="mt-10 grid gap-3">

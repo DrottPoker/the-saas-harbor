@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Check, Copy } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
 import { Field } from "./forms";
 import { Button } from "./ui/button";
@@ -15,7 +16,7 @@ export function CopyField({
   value,
   hint,
   suffix,
-  copyLabel = `Copy ${label}`,
+  copyLabel,
   multiline = false,
 }: {
   id: string;
@@ -28,6 +29,7 @@ export function CopyField({
   copyLabel?: string;
   multiline?: boolean;
 }) {
+  const t = useTranslations("common");
   const [copied, setCopied] = useState(false);
   const copy = async () => {
     try {
@@ -51,7 +53,7 @@ export function CopyField({
   const aside = (
     <Button type="button" variant="ghost" size="sm" onClick={copy}>
       {copied ? <Check /> : <Copy />}
-      <span aria-live="polite">{copied ? "Copied" : copyLabel}</span>
+      <span aria-live="polite">{copied ? t("copied") : (copyLabel ?? t("copy", { label }))}</span>
     </Button>
   );
   if (suffix) {

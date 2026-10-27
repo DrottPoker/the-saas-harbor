@@ -1,1 +1,13 @@
-{}
+{
+  "groups": {
+    "frontend": "Frontend",
+    "mobileAndDesktop": "Móvil y escritorio",
+    "noCode": "No-code",
+    "backend": "Backend",
+    "databases": "Bases de datos",
+    "hosting": "Alojamiento e infraestructura",
+    "payments": "Pagos",
+    "ai": "IA",
+    "services": "Servicios"
+  }
+}

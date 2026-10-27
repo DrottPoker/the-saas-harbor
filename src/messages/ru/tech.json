@@ -1,1 +1,13 @@
-{}
+{
+  "groups": {
+    "frontend": "Фронтенд",
+    "mobileAndDesktop": "Мобильные и десктопные",
+    "noCode": "No-code",
+    "backend": "Бэкенд",
+    "databases": "Базы данных",
+    "hosting": "Хостинг и инфраструктура",
+    "payments": "Платежи",
+    "ai": "ИИ",
+    "services": "Сервисы"
+  }
+}
