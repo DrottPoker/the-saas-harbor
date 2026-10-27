@@ -226,6 +226,21 @@ const guides: Record<ProviderId, Guide> = {
       "Copy the token, which starts with mrr_, and paste it below.",
     ],
   },
+  asaas: {
+    dashboard: {
+      href: "https://www.asaas.com/customerApiAccessToken/index",
+      label: "Open Asaas's API keys",
+    },
+    reads: "subscriptions and charges",
+    steps: [
+      <>As an administrator, open Integrações → Chaves de API and create a key.</>,
+      <>
+        Give it {strong("Read")} for Assinaturas (Subscriptions) and Cobranças (Charges) only, with
+        no IP allowlist. A key created without permissions has full access and is refused.
+      </>,
+      "Copy the key, which starts with $aact_prod_ and is shown once, and paste it below.",
+    ],
+  },
 };
 
 // Where to make the key, with the steps: the dashboard link opens in a new tab.
@@ -270,6 +285,8 @@ const noHistory: Record<ProviderId, string> = {
   paystack:
     "No revenue history: the key cannot read transactions, or the Paystack account has more of them than one verification reads.",
   abacatepay: "No revenue history yet. Refresh to read AbacatePay's daily MRR.",
+  asaas:
+    "No revenue history: the Asaas account has more subscriptions or charges than one verification reads.",
 };
 
 const option =

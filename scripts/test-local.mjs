@@ -53,6 +53,7 @@ const env = {
   MOLLIE_API_BASE: `${fakeProviders}/mollie`,
   PAYSTACK_API_BASE: `${fakeProviders}/paystack`,
   ABACATEPAY_API_BASE: `${fakeProviders}/abacatepay`,
+  ASAAS_API_BASE: `${fakeProviders}/asaas`,
   // Gumroad connects through OAuth, whose pages the fake server answers too.
   GUMROAD_API_BASE: `${fakeProviders}/gumroad`,
   GUMROAD_OAUTH_BASE: `${fakeProviders}/gumroad`,

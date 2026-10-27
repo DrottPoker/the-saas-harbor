@@ -4,6 +4,7 @@ import { createHash, randomBytes, randomUUID } from "node:crypto";
 import AxeBuilder from "@axe-core/playwright";
 import { DODO_KEYS, PADDLE_KEYS, POLAR_TOKENS } from "./fake-billing.mjs";
 import { ABACATEPAY } from "./fake-abacatepay.mjs";
+import { ASAAS } from "./fake-asaas.mjs";
 import { CHARGEBEE, CREEM_KEYS, REVENUECAT, WHOP_KEYS } from "./fake-billing-extra.mjs";
 import { MOLLIE } from "./fake-mollie.mjs";
 import { PAYPAL } from "./fake-paypal.mjs";
@@ -3405,6 +3406,25 @@ test("founders verify revenue through AbacatePay's Trust MRR token", async ({ pa
     hint: `mrr_…${ABACATEPAY.one.slice(-4)}`,
     livemode: true,
     secretPart: "harborfixture0001AbCdEf",
+  });
+});
+
+// Asaas asks for a key with Read for subscriptions and charges, and refuses a key created without
+// permissions, which has full access.
+test("founders verify revenue through an Asaas key that can only read", async ({ page }) => {
+  await connectsWithReadOnlyKey(page, {
+    provider: "Asaas",
+    slug: "asaas",
+    link: "Open Asaas's API keys",
+    fill: async (revenue, which) => {
+      await revenue.getByLabel(/^(New )?API key$/i).fill(which === "wide" ? ASAAS.wide : ASAAS.one);
+    },
+    refused: /The key can read more than subscriptions and charges,/,
+    verified:
+      /Verified MRR: $57.98 from 2 subscribers. 1 active subscription without a recent payment was not counted./,
+    hint: `${ASAAS.one.slice(0, 11)}…${ASAAS.one.slice(-4)}`,
+    livemode: false,
+    secretPart: "HarborFixtureOne",
   });
 });
 

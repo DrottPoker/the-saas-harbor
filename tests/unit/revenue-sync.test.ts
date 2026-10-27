@@ -4,6 +4,7 @@ import { spawn, type ChildProcess } from "node:child_process";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { DODO_KEYS, PADDLE_KEYS, POLAR_TOKENS } from "../e2e/fake-billing.mjs";
 import { ABACATEPAY } from "../e2e/fake-abacatepay.mjs";
+import { ASAAS } from "../e2e/fake-asaas.mjs";
 import { CHARGEBEE, CREEM_KEYS, REVENUECAT, WHOP_KEYS } from "../e2e/fake-billing-extra.mjs";
 import { GUMROAD } from "../e2e/fake-gumroad.mjs";
 import { MOLLIE } from "../e2e/fake-mollie.mjs";
@@ -50,6 +51,7 @@ beforeAll(async () => {
   process.env.MOLLIE_API_BASE = `${base}/mollie`;
   process.env.PAYSTACK_API_BASE = `${base}/paystack`;
   process.env.ABACATEPAY_API_BASE = `${base}/abacatepay`;
+  process.env.ASAAS_API_BASE = `${base}/asaas`;
   process.env.GUMROAD_API_BASE = `${base}/gumroad`;
   process.env.GUMROAD_OAUTH_BASE = `${base}/gumroad`;
   process.env.FX_API_BASE = base;
@@ -442,6 +444,30 @@ describe("AbacatePay verification", () => {
   });
 });
 
+describe("Asaas verification", () => {
+  it("finds the sandbox, and counts subscriptions a paid charge covers, with history", async () => {
+    const result = await verifyRevenue("asaas", ASAAS.one, null);
+    expect(result).toMatchObject({
+      provider: "asaas",
+      livemode: false,
+      mrrCents: 5_798,
+      customers: 2,
+      skippedItems: 1,
+      currencies: { brl: 28_990 },
+      mrrInvoiceCents: 5_798,
+      mrr30dAgoCents: 5_798,
+    });
+    expect(result.history![0].mrr_cents).toBe(2_798);
+    expect(result.history!.at(-1)!.mrr_cents).toBe(5_798);
+  }, 20_000);
+
+  it("refuses a key created without permissions", async () => {
+    await expect(verifyRevenue("asaas", ASAAS.wide, null)).rejects.toThrow(
+      /can read more than subscriptions and charges/,
+    );
+  });
+});
+
 describe("claims", () => {
   it("hash Stripe ids as before and prefix other providers", async () => {
     const { createHash } = await import("node:crypto");
@@ -470,6 +496,7 @@ describe("hourly verification", () => {
     ["mollie", mollieKey(MOLLIE.tokens.one)],
     ["paystack", PAYSTACK.one],
     ["abacatepay", ABACATEPAY.one],
+    ["asaas", ASAAS.one],
   ] as const)(
     "reads only what MRR needs from %s without the history",
     async (provider, key) => {
@@ -813,6 +840,21 @@ describe("payments", () => {
     });
     expect(values).not.toHaveProperty("6000000005");
     expect(kinds).toMatchObject({ "5000000001": "subscription", "6000000001": "one_time" });
+  }, 20_000);
+
+  it("reads Asaas charges once paid, less refunds, without transfers or cash", async () => {
+    const { complete, values, kinds } = await recent("asaas", ASAAS.one);
+    expect(complete).toBe(true);
+    const brl = (amount: number) => ({ currency: "brl", amount });
+    expect(values).toMatchObject({
+      pay_monthly0: brl(9_990),
+      pay_link: brl(20_000),
+      pay_partial: brl(10_000),
+      pay_refunded: brl(0),
+      pay_card: brl(6_000),
+    });
+    for (const id of ["pay_pixIn", "pay_cash"]) expect(values).not.toHaveProperty(id);
+    expect(kinds).toMatchObject({ pay_monthly0: "subscription", pay_link: "one_time" });
   }, 20_000);
 
   it("reads AbacatePay's revenue as one payment a day", async () => {

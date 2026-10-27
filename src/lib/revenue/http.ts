@@ -38,6 +38,7 @@ export function apiBase(override: string | undefined, origin: string, name: stri
 // Mollie sets read limits per merchant, such as 20 payment lists a second.
 // Paystack allows 600 requests a minute per live integration.
 // AbacatePay publishes no limit, and a run sends at most four requests.
+// Asaas allows 25,000 requests per account every 12 hours, shared with the founder's own use.
 const SPACING: Partial<Record<ProviderId, number>> = {
   paddle: 300,
   polar: 150,
@@ -50,6 +51,7 @@ const SPACING: Partial<Record<ProviderId, number>> = {
   mollie: 100,
   paystack: 300,
   abacatepay: 200,
+  asaas: 250,
 };
 const nextSlot = new Map<ProviderId, number>();
 

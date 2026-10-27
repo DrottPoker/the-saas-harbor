@@ -90,6 +90,12 @@ export const PROVIDERS = {
     newKeyLabel: "New Trust MRR token",
     placeholder: "mrr_...",
   },
+  asaas: {
+    name: "Asaas",
+    keyLabel: "API key",
+    newKeyLabel: "New API key",
+    placeholder: "$aact_prod_...",
+  },
 } as const satisfies Record<string, ProviderEntry>;
 
 type ProviderField = { label: string; placeholder: string };

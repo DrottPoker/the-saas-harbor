@@ -1,6 +1,6 @@
 # The SaaS Harbor
 
-A focused, responsive home for independent SaaS: public maker profiles, product discovery, and a leaderboard of monthly recurring revenue, or of revenue from all payments over 30 days, 12 months or all time, verified through each product's payment provider: Stripe, Paddle, Polar, Dodo Payments, Creem, Chargebee, Whop, RevenueCat, Gumroad, PayPal, Mollie, Paystack or AbacatePay.
+A focused, responsive home for independent SaaS: public maker profiles, product discovery, and a leaderboard of monthly recurring revenue, or of revenue from all payments over 30 days, 12 months or all time, verified through each product's payment provider: Stripe, Paddle, Polar, Dodo Payments, Creem, Chargebee, Whop, RevenueCat, Gumroad, PayPal, Mollie, Paystack, AbacatePay or Asaas.
 
 ## Included
 
@@ -9,7 +9,7 @@ A focused, responsive home for independent SaaS: public maker profiles, product 
 - Personal maker profiles laid out like product pages: photo, headline, location, key figures across the maker's products, products, and links to a website, LinkedIn, GitHub and X.
 - Multiple SaaS profiles per maker, with a logo, pitch, description, category, website and tech stack.
 - An account menu at the top right of the header, with the user's photo and name: the dashboard, their public profile, Edit profile, Settings, Your reports once they have sent one, the admin panel for admins, and Sign out. On phones the dashboard is reached from this menu. The dashboard lists the user's products, with next steps toward a complete listing (a logo, a profile photo and headline, a payment provider and a verified domain) until they are done.
-- Revenue verified through a read-only key to the product's payment provider (Stripe, Paddle, Polar, Dodo Payments, Creem, Chargebee, Whop, RevenueCat, Gumroad, PayPal, Mollie, Paystack or AbacatePay, one per product): MRR and subscribers are read from the provider, never typed in, and re-verified every hour. Revenue from every payment, one-time purchases included, is read every day and shown for the last 30 days, the last 12 months and all time, and by month, split into subscriptions and one-time purchases.
+- Revenue verified through a read-only key to the product's payment provider (Stripe, Paddle, Polar, Dodo Payments, Creem, Chargebee, Whop, RevenueCat, Gumroad, PayPal, Mollie, Paystack, AbacatePay or Asaas, one per product): MRR and subscribers are read from the provider, never typed in, and re-verified every hour. Revenue from every payment, one-time purchases included, is read every day and shown for the last 30 days, the last 12 months and all time, and by month, split into subscriptions and one-time purchases.
 - Optional domain verification: a founder adds a DNS TXT record with a code for the product to the website's domain, and the product page's details then show the domain as Verified instead of Not verified. The record is looked up again every day; after three days without it, or when the website moves to another domain, the mark goes.
 - Verified revenue (MRR and revenue from payments together), the subscriber count and launch date, each with an independent public-sharing choice. Products without a connected provider are listed but not ranked.
 - A leaderboard ranked by verified MRR, or with `?by=30d`, `12m` or `all` by revenue over that window, with a choice of ranking above the categories. Each row also shows revenue of all time (MRR in the all-time ranking) and a twelve-month trend of the figure ranked by. Equal amounts are ordered by revenue of all time, then by the date the product was listed.
@@ -38,7 +38,7 @@ A focused, responsive home for independent SaaS: public maker profiles, product 
 - Supabase RLS, owner checks in Server Actions, owner-scoped image uploads, and a Content Security Policy with a fresh nonce per request.
 - Light and dark themes.
 
-Sales, escrow, company profiles and payment providers other than Stripe, Paddle, Polar, Dodo Payments, Creem, Chargebee, Whop, RevenueCat, Gumroad, PayPal, Mollie, Paystack and AbacatePay are outside this release. Lemon Squeezy (its keys always have full access) and Superwall (its MRR can only be read with a POST request) were left out on purpose. Shopify stores are planned for later (see `docs/STATUS.md`, known issue 25).
+Sales, escrow, company profiles and payment providers other than Stripe, Paddle, Polar, Dodo Payments, Creem, Chargebee, Whop, RevenueCat, Gumroad, PayPal, Mollie, Paystack, AbacatePay and Asaas are outside this release. Lemon Squeezy (its keys always have full access) and Superwall (its MRR can only be read with a POST request) were left out on purpose. Shopify stores are planned for later (see `docs/STATUS.md`, known issue 25).
 
 ## Run locally
 
@@ -126,6 +126,7 @@ In the product form, when adding a product or editing it, the maker chooses the 
 | Mollie        | Advanced access token, `access_`, with the profile ID  | Read for Payments and Subscriptions, no other permission                                   |
 | Paystack      | Restricted key, `rk_live_`                             | plans:read, transactions:read and disputes_refunds:read                                    |
 | AbacatePay    | Token of the Trust MRR app, `mrr_`                     | The public MRR figures only, by design                                                     |
+| Asaas         | API key, `$aact_prod_`                                 | Read for Subscriptions (Assinaturas) and Charges (Cobranças), nothing else                 |
 
 Gumroad's own access tokens can do anything on the account, so the form has no key field for it: saving the form with Gumroad chosen sends the founder to Gumroad to approve read access to their sales, and Gumroad sends them back with a code that the server exchanges for a token that can only view sales. A pasted token is refused. The site's OAuth application with Gumroad needs `GUMROAD_CLIENT_ID` and `GUMROAD_CLIENT_SECRET`; without them the editor says Gumroad is not set up. Create it on Gumroad under Settings → Advanced → Applications, with `https://thesaasharbor.com/api/gumroad/callback` as the redirect URI, and `http://localhost:3001/api/gumroad/callback` on its own line to try it locally (then open the app at `localhost:3001`, not `127.0.0.1`, so the session cookie comes back with the founder).
 
@@ -136,6 +137,8 @@ Mollie's API keys (`live_`, `test_`) can create payments and refunds, so the fou
 Paystack's secret keys (`sk_`) can do everything, so the founder makes a restricted key (`rk_`) with read scopes. Paystack still offers restricted keys to some accounts only, and cannot say which scopes a key holds, so the editor asks for read scopes and refuses secret and public keys by their prefix. Paystack gives no tax, so amounts count as charged.
 
 AbacatePay offers a Trust MRR app made for sites like this one: its token, `mrr_`, reaches only the store's MRR, active subscriptions and revenue by day, so its figures are AbacatePay's own, as with RevenueCat. Its API keys (`abc_`) can do more and are refused.
+
+An Asaas key created without permissions has full access, and Asaas cannot say which permissions a key holds, so every verification checks that the key is refused transfers and customers, with filters that match nothing. Asaas keeps a subscription active while its boleto or Pix charges go unpaid, so a subscription counts only while a paid charge covers it; charges marked received in cash and Pix transfers into the account are not sales.
 
 Whop and RevenueCat keys are checked on every verification: Whop's permissions must all be reads, and a RevenueCat key must be refused everything outside its charts. RevenueCat gives only its own MRR chart, which differs a little from the site's definition (see ARCHITECTURE). Stripe needs Charges, Checkout Sessions and Disputes for revenue beyond MRR only: a key without them verifies MRR, and the editor names the permission that is missing.
 

@@ -22,6 +22,7 @@ import { handleBilling } from "./fake-billing.mjs";
 import { handleExtraBilling } from "./fake-billing-extra.mjs";
 import { handleGumroad } from "./fake-gumroad.mjs";
 import { handleMollie } from "./fake-mollie.mjs";
+import { handleAsaas } from "./fake-asaas.mjs";
 import { handleAbacatePay } from "./fake-abacatepay.mjs";
 import { handlePaystack } from "./fake-paystack.mjs";
 import { handlePayPal } from "./fake-paypal.mjs";
@@ -337,6 +338,7 @@ createServer(async (request, response) => {
   if (await handleGumroad(url, request, response)) return;
   if (await handlePayPal(url, request, response)) return;
   if (await handleMollie(url, request, response)) return;
+  if (await handleAsaas(url, request, response)) return;
   if (await handleAbacatePay(url, request, response)) return;
   if (await handlePaystack(url, request, response)) return;
   if (await handleTelegram(url, request, response)) return;
