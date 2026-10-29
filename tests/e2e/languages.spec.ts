@@ -144,6 +144,7 @@ for (const locale of ["ar", "es"])
           "/categories/design",
           "/tech",
           "/tech/nextjs",
+          "/demo/metricfold",
           "/stats",
           "/about",
           "/list-your-saas",
@@ -178,6 +179,11 @@ test("search and binding English legal links keep the visitor's choice", async (
   await page.getByRole("searchbox").fill("Metricfold");
   await page.getByRole("searchbox").press("Enter");
   await expect(page).toHaveURL(/\/es\/browse\?q=Metricfold/);
+  const demoTagline =
+    "MRR, cancelaciones y cohortes desde tu cuenta de Stripe, sin hojas de cálculo.";
+  await expect(page.getByText(demoTagline, { exact: true })).toBeVisible();
+  await page.goto("/es/demo/metricfold");
+  await expect(page.getByText(demoTagline, { exact: true })).toBeVisible();
   await page.goto("/es/privacy");
   await page.getByRole("link", { name: "versión en inglés", exact: true }).click();
   await expect(page).toHaveURL(/\/privacy$/);

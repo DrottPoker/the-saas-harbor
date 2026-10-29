@@ -2,7 +2,7 @@ import "server-only";
 import { cache } from "react";
 import { getTranslations } from "next-intl/server";
 import { publicClient } from "./supabase/server";
-import { demoFill, demoListings, type DemoDetails } from "./demo";
+import { demoFill, demoListings, translateDemos, type DemoDetails } from "./demo";
 import { categories, containsPattern } from "./domain";
 import { REVENUE_WINDOWS, type Ranking } from "./revenue-figures";
 import { parseStats } from "./stats";
@@ -223,12 +223,13 @@ export async function demoRows({
   const room = PAGE_SIZE - count;
   // A full or later page has no room, so it needs no count of the leaderboard either.
   if (options.page !== 1 || room <= 0 || !(await demoActive())) return [];
-  return demoFill(demoListings(), { ...options, room });
+  return demoFill(await translateDemos(demoListings()), { ...options, room });
 }
 /** A demo product for its page, while demo products show. */
 export async function demoProduct(slug: string) {
   if (!(await demoActive())) return null;
-  return demoListings().find((item) => item.slug === slug) ?? null;
+  const item = demoListings().find((entry) => entry.slug === slug);
+  return item ? (await translateDemos([item]))[0] : null;
 }
 // Cached per request so metadata and page rendering share one query.
 export const publicSaas = cache(async (id: string) => {
