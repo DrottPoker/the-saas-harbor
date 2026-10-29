@@ -17,6 +17,7 @@ const signup = {
   provider: "google",
   confirmed: true,
   accounts: 1234,
+  country: "SE",
 };
 const feedback = { name: "Lena Berg", username: "lena", feedback_kind: "bug", page: "/dashboard" };
 
@@ -26,6 +27,7 @@ describe("sign-up alerts", () => {
       [
         "<b>New account</b>",
         "@lena signed up with Google.",
+        "Country: Sweden (SE).",
         "1,234 accounts in all.",
         `<a href="${origin}/admin/accounts/${userId}">Open the account</a>`,
       ].join("\n"),
@@ -38,6 +40,20 @@ describe("sign-up alerts", () => {
     )!;
     expect(message).toContain("Lena Berg (@lena) signed up with email.");
     expect(message).toContain("The email address is not confirmed yet.");
+  });
+  it("shows the country without inferring it from the language or currency", () => {
+    expect(renderAlert(alert("signup", { ...signup, country: "IN" }), origin)).toContain(
+      "Country: India (IN).",
+    );
+    expect(renderAlert(alert("signup", { ...signup, country: "BR" }), origin)).toContain(
+      "Country: Brazil (BR).",
+    );
+  });
+  it("uses Unknown when geolocation is missing or invalid", () => {
+    for (const country of [null, undefined, "XX", "Sweden", "<b>SE</b>", 42])
+      expect(renderAlert(alert("signup", { ...signup, country }), origin)).toContain(
+        "Country: Unknown.",
+      );
   });
 });
 

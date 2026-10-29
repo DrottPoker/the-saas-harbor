@@ -2,13 +2,13 @@
 -- alerts go with the account and the feedback. Runs in a rolled-back transaction.
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(18);
+select plan(21);
 
 -- Sign-up sets created_at and the provider; the username arrives as user metadata.
 insert into auth.users(id, email, created_at, email_confirmed_at, raw_app_meta_data,
   raw_user_meta_data) values
   ('a7000000-0000-4000-8000-000000000001', 'newcomer@telegram.test', now(), null,
-    '{"provider": "email"}', '{"username": "tgnewcomer", "terms_version": "2026-09-27"}'),
+    '{"provider": "email"}', '{"username": "tgnewcomer", "terms_version": "2026-09-27", "signup_country": "SE"}'),
   ('a7000000-0000-4000-8000-000000000002', 'googler@telegram.test', now(), now(),
     '{"provider": "google"}', '{}'),
   ('a7000000-0000-4000-8000-000000000003', 'veteran@telegram.test', now() - interval '3 days',
@@ -23,6 +23,7 @@ select results_eq($$ select kind, user_id from pgtap_alerts $$,
 -- A Google sign-up is new once it is finished; an older account's first profile is not.
 set local role authenticated;
 select set_config('request.jwt.claim.sub', 'a7000000-0000-4000-8000-000000000002', true);
+select public.record_sign_in_country('IN');
 select public.complete_signup('tggoogler', current_date);
 reset role;
 insert into public.profiles(id, name) values ('a7000000-0000-4000-8000-000000000003', 'Old Hand');
@@ -33,6 +34,7 @@ select results_eq($$ select kind, user_id from pgtap_alerts order by id $$,
 
 set local role authenticated;
 select set_config('request.jwt.claim.sub', 'a7000000-0000-4000-8000-000000000001', true);
+select public.record_sign_in_country('GB');
 select public.submit_feedback('bug', 'The <b>chart</b> is empty in Safari', '/dashboard');
 reset role;
 select results_eq(
@@ -61,15 +63,30 @@ reset role;
 select results_eq($$ select kind, context from pgtap_claimed order by id $$,
   $$ values
     ('signup'::text, jsonb_build_object('name', 'tgnewcomer', 'username', 'tgnewcomer',
-      'provider', 'email', 'confirmed', false, 'accounts', (select count(*) from auth.users))),
+      'provider', 'email', 'confirmed', false, 'country', 'SE', 'accounts', (select count(*) from auth.users))),
     ('signup', jsonb_build_object('name', 'tggoogler', 'username', 'tggoogler',
-      'provider', 'google', 'confirmed', true, 'accounts', (select count(*) from auth.users))),
+      'provider', 'google', 'confirmed', true, 'country', 'IN', 'accounts', (select count(*) from auth.users))),
     ('feedback', jsonb_build_object('name', 'tgnewcomer', 'username', 'tgnewcomer',
       'feedback_kind', 'bug', 'message', 'The <b>chart</b> is empty in Safari',
       'page', '/dashboard')) $$,
   'alerts name the user, how a new account signed up, and the feedback');
 select is_empty($$ select 1 from pgtap_claimed where context::text like '%@telegram.test%' $$,
   'no alert carries an email address');
+
+-- Registration wins over a later sign-in. Invalid or absent data is never guessed.
+update auth.users set raw_user_meta_data = jsonb_set(raw_user_meta_data, '{signup_country}', '"<b>SE</b>"')
+where id = 'a7000000-0000-4000-8000-000000000001';
+select is((select private.telegram_alert_context(a) ->> 'country' from private.telegram_alerts a
+  where a.kind = 'signup' and a.user_id = 'a7000000-0000-4000-8000-000000000001'),
+  'GB', 'an invalid registration country falls back to the recorded sign-in');
+update auth.users set raw_user_meta_data = raw_user_meta_data - 'signup_country'
+where id = 'a7000000-0000-4000-8000-000000000001';
+delete from private.sign_in_countries where user_id = 'a7000000-0000-4000-8000-000000000001';
+select is((select private.telegram_alert_context(a) ->> 'country' from private.telegram_alerts a
+  where a.kind = 'signup' and a.user_id = 'a7000000-0000-4000-8000-000000000001'),
+  null, 'an account without geolocation has no country');
+update auth.users set raw_user_meta_data = jsonb_set(raw_user_meta_data, '{signup_country}', '"SE"')
+where id = 'a7000000-0000-4000-8000-000000000001';
 
 set local role service_role;
 select is_empty(
@@ -146,6 +163,9 @@ select is_empty($$ select 1 from pgtap_alerts
     where kind = 'feedback' and user_id = 'a7000000-0000-4000-8000-000000000002' $$,
   'deleting feedback deletes its alert');
 select private.remove_account('a7000000-0000-4000-8000-000000000001');
+select is_empty($$ select raw_user_meta_data from auth.users
+  where id = 'a7000000-0000-4000-8000-000000000001' $$,
+  'deleting the account removes the registration country');
 select is_empty($$ select 1 from pgtap_alerts
     where user_id = 'a7000000-0000-4000-8000-000000000001' $$,
   'deleting an account deletes its alerts');

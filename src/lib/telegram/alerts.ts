@@ -2,6 +2,8 @@
 // Pure, so they are unit-tested. They name the user but never contain an email address or a
 // message.
 import { FEEDBACK_KINDS, feedbackLabels, type FeedbackKind } from "../feedback";
+import { countryCode } from "../analytics";
+import { countryName } from "../analytics-reports";
 import { REASONS, reasonLabels, type Reason } from "../moderation";
 import { isProviderId, PROVIDERS } from "../revenue/catalog";
 
@@ -67,9 +69,11 @@ export function renderAlert(alert: ClaimedAlert, origin: string): string | null 
   let lines: (string | null)[];
   if (alert.kind === "signup") {
     const provider = providers[text(c.provider)] ?? "email";
+    const country = countryCode(text(c.country));
     lines = [
       "<b>New account</b>",
       `${escape(who(c))} signed up with ${provider}.`,
+      country ? `Country: ${escape(countryName(country))} (${country}).` : "Country: Unknown.",
       c.confirmed === false ? "The email address is not confirmed yet." : null,
       typeof c.accounts === "number"
         ? `${c.accounts.toLocaleString("en-US")} accounts in all.`

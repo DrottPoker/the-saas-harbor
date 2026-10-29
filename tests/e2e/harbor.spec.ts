@@ -570,6 +570,7 @@ test("registration, email confirmation, profile and SaaS editing, storage, priva
   request,
 }) => {
   test.setTimeout(180000);
+  await page.setExtraHTTPHeaders({ "x-vercel-ip-country": "SE" });
   await page.goto("/auth?mode=signup");
   await page.getByLabel("Email address").fill(email);
   await page.getByLabel("Password", { exact: true }).fill(password);
@@ -602,6 +603,18 @@ test("registration, email confirmation, profile and SaaS editing, storage, priva
   await expect(sent).toBeFocused();
   await expect(page.getByText(email, { exact: true })).toBeVisible();
   await expect(page.getByLabel("Username")).toHaveCount(0);
+  // The new-account alert carries the registration country before email confirmation.
+  await expect
+    .poll(async () =>
+      (await telegramMessages(request)).some(
+        (message) =>
+          message.startsWith("<b>New account</b>") &&
+          message.includes(`@tester-${run}`) &&
+          message.includes("Country: Sweden (SE).") &&
+          message.includes("The email address is not confirmed yet."),
+      ),
+    )
+    .toBe(true);
   let messageId = "";
   await expect
     .poll(async () => {
@@ -638,6 +651,7 @@ test("registration, email confirmation, profile and SaaS editing, storage, priva
   userIds.push(firstUserId);
   // Sign-up sends the accepted version, which the database records (terms.test.sql).
   expect(signedUp.user_metadata.terms_version).toBe(termsUpdated);
+  expect(signedUp.user_metadata.signup_country).toBe("SE");
   // The username, typed with an @ and capitals, is the profile's name and address to begin with.
   await page.goto(`/users/tester-${run}`);
   await expect(page.getByRole("heading", { name: `tester-${run}`, exact: true })).toBeVisible();

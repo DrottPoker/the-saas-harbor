@@ -2,6 +2,7 @@
 
 import { RedirectType, unstable_rethrow } from "next/navigation";
 import { revalidatePath } from "next/cache";
+import { headers } from "next/headers";
 import { z } from "zod";
 import {
   changePassword,
@@ -10,6 +11,7 @@ import {
   usernameLockDays,
 } from "@/lib/account";
 import { recordAccountSource } from "@/lib/account-source";
+import { countryCode } from "@/lib/analytics";
 import { rememberAccountPreferences } from "@/lib/account-preferences";
 import { wantedCurrency } from "@/lib/display-currency";
 import { confirmationMethod, PROVIDER_NAMES, signedInWithin } from "@/lib/auth";
@@ -149,6 +151,7 @@ export async function authenticate(
           username,
           locale: await getLocale(),
           currency: await wantedCurrency(),
+          signup_country: countryCode((await headers()).get("x-vercel-ip-country")),
         },
       },
     });
