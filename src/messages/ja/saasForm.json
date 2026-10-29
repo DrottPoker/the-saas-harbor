@@ -1,0 +1,82 @@
+{
+  "meta": {
+    "add": "SaaSを追加",
+    "edit": "SaaSを編集"
+  },
+  "editor": {
+    "back": "ダッシュボード",
+    "addTitle": "SaaSを追加",
+    "addDescription": "まず決済サービスを選びましょう。読み取り専用キーで接続するとMRRを検証できます。一覧にない場合は「その他」を選んでください。プロダクト情報は公開されます。",
+    "limit": "アカウントの掲載上限である{limit}件に達しています。別のプロダクトを追加するには、既存のものを削除してください。",
+    "editTitle": "{name}を編集",
+    "editDescription": "プロダクト情報と検証済み数値は公開されます。数値は非公開にできます。",
+    "viewPage": "ページを見る"
+  },
+  "chooseProvider": "決済サービスを選んでください。一覧にない場合は「その他」を選んでください。",
+  "figures": {
+    "title": "公開する数値",
+    "description": "検証済み数値は、非公開にしない限り公開されます。公開した売上は、MRR、直近30日間、12か月間、累計売上のランキング対象になります。",
+    "hideRevenue": "MRRを含む検証済み売上を非公開にする",
+    "hideCustomers": "有料契約者数を非公開にする"
+  },
+  "details": {
+    "title": "プロダクト",
+    "description": "公開プロダクトページと一覧に表示されます。*は必須項目です。",
+    "name": "プロダクト名",
+    "category": "カテゴリー",
+    "chooseCategory": "カテゴリーを選択",
+    "tagline": "キャッチコピー",
+    "taglineHint": "140文字以内の1文で入力してください。",
+    "taglinePlaceholder": "ユーザーのどのような課題を解決しますか？",
+    "productDescription": "説明",
+    "descriptionPlaceholder": "対象ユーザー、機能、ほかとの違いを説明してください。",
+    "website": "ウェブサイト",
+    "launchDate": "公開日",
+    "hideLaunch": "公開日を非公開にする"
+  },
+  "logo": {
+    "title": "ロゴ",
+    "description": "正方形のロゴがおすすめです。",
+    "upload": "ロゴをアップロード"
+  },
+  "tech": {
+    "title": "技術スタック",
+    "description": "使用している技術を{max}件まで登録できます。プロダクトページに表示され、同じ技術を使うほかのプロダクトへのリンクが付きます。"
+  },
+  "actions": {
+    "cancel": "キャンセル",
+    "add": "SaaSを追加",
+    "save": "変更を保存",
+    "addAndConnect": "SaaSを追加して{provider}を接続",
+    "saveAndConnect": "保存して{provider}を接続",
+    "addAndVerify": "SaaSを追加して売上を検証",
+    "saveAndVerify": "保存して売上を検証",
+    "verifying": "売上を検証中...",
+    "saving": "保存中..."
+  },
+  "badge": {
+    "title": "自分のサイト用バッジ",
+    "description": "自分のサイトに検証済みMRRを表示し、プロダクトページへリンクします。MRRは公開中のみ表示し、それ以外は「Listed on {site}」と表示します。",
+    "theme": "バッジのテーマ",
+    "light": "ライト",
+    "dark": "ダーク",
+    "preview": "バッジのプレビュー：{site}の{name}"
+  },
+  "save": {
+    "loadFailed": "SaaSの情報を読み込めませんでした。",
+    "notOwner": "編集できるのは自分のSaaSだけです。",
+    "failed": "SaaSの情報を保存できませんでした。入力内容を確認して再度お試しください。",
+    "usernameFirst": "先にユーザー名を設定してください。",
+    "productLimit": "1アカウントにつき{limit}件まで掲載できます。",
+    "dailyLimit": "1日に追加できるプロダクトは{limit}件までです。明日またお試しください。",
+    "savedNotConnected": "変更は保存しましたが、{provider}を接続できませんでした。{reason}",
+    "addedNotConnected": "プロダクトは追加しましたが、{provider}を接続できませんでした。{reason}"
+  },
+  "delete": {
+    "notOwner": "削除できるのは自分のSaaSだけです。",
+    "loadFailed": "SaaSの情報を読み込めませんでした。",
+    "confirmName": "確認のため、表示されているプロダクト名を正確に入力してください。",
+    "logoFailed": "ロゴを削除できなかったため、プロダクトは削除していません。再度お試しください。",
+    "failed": "SaaSを削除できませんでした。再度お試しください。"
+  }
+}

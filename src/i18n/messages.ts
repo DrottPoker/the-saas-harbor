@@ -11,6 +11,7 @@ const loaders: Record<Exclude<Locale, "en">, () => Promise<{ default: unknown }>
   ar: () => import("@/messages/ar"),
   es: () => import("@/messages/es"),
   ru: () => import("@/messages/ru"),
+  ja: () => import("@/messages/ja"),
 };
 
 type Tree = { [key: string]: string | Tree };

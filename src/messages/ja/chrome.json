@@ -1,0 +1,64 @@
+{
+  "skipToContent": "本文へ移動",
+  "nav": {
+    "label": "メイン",
+    "leaderboard": "ランキング",
+    "browse": "探す"
+  },
+  "header": {
+    "dashboard": "ダッシュボード",
+    "signIn": "ログイン",
+    "addSaas": "SaaSを追加",
+    "listYourSaas": "SaaSを掲載",
+    "listSaasShort": "SaaSを掲載",
+    "messages": "メッセージ",
+    "messagesUnread": "メッセージ、未読{count}件"
+  },
+  "theme": {
+    "label": "テーマ",
+    "light": "ライト",
+    "dark": "ダーク",
+    "system": "システム設定"
+  },
+  "preferences": {
+    "label": "言語と通貨：{language}、{currency}",
+    "title": "言語と通貨",
+    "language": "言語",
+    "currency": "通貨",
+    "commonCurrencies": "主な通貨",
+    "allCurrencies": "すべての通貨",
+    "note": "金額は日次の参照為替レートで米ドルから換算されます。ランキングは米ドルを基準とします。"
+  },
+  "account": {
+    "chooseUsername": "ユーザー名を設定",
+    "dashboard": "ダッシュボード",
+    "yourProfile": "プロフィール",
+    "editProfile": "プロフィールを編集",
+    "settings": "設定",
+    "yourReports": "送信した報告",
+    "adminPanel": "管理画面",
+    "adminPanelReports": "管理画面、未対応の報告{count}件",
+    "signOut": "ログアウト"
+  },
+  "feedback": "フィードバック",
+  "dialogClose": "閉じる",
+  "footer": {
+    "label": "フッター",
+    "tagline": "独立したSaaSプロダクトと、その開発者のための無料ディレクトリ。",
+    "explore": "探す",
+    "getListed": "掲載する",
+    "about": "サイトについて",
+    "newArrivals": "新着",
+    "categories": "カテゴリー",
+    "techStacks": "技術スタック",
+    "statistics": "統計",
+    "listYourSaas": "SaaSを掲載",
+    "howItWorks": "仕組み",
+    "whereToLaunch": "公開先を探す",
+    "sendFeedback": "フィードバックを送信",
+    "privacy": "プライバシー",
+    "terms": "利用規約",
+    "forAiAssistants": "AIアシスタント向け",
+    "providers": "売上は{providers}への読み取り専用接続で検証し、1時間ごとに更新します。"
+  }
+}

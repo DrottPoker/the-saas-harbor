@@ -1,0 +1,35 @@
+{
+  "forms": {
+    "saving": "保存中...",
+    "imageHint": "PNG、JPEG、WebP形式、2 MBまで。画像は公開されます。",
+    "removeImage": "現在の画像を削除"
+  },
+  "notShared": "非公開",
+  "demo": "デモ",
+  "mrr": "MRR",
+  "verifiedMrr": "検証済みMRR",
+  "demoMrr": "デモMRR",
+  "windows": {
+    "30d": {
+      "label": "直近30日間の売上",
+      "chip": "売上・30日間",
+      "demo": "デモ売上・直近30日間",
+      "title": "検証済み売上によるSaaSランキング・直近30日間"
+    },
+    "12m": {
+      "label": "直近12か月間の売上",
+      "chip": "売上・12か月間",
+      "demo": "デモ売上・直近12か月間",
+      "title": "検証済み売上によるSaaSランキング・直近12か月間"
+    },
+    "all": {
+      "label": "累計売上",
+      "chip": "累計売上",
+      "demo": "デモ累計売上",
+      "title": "検証済み累計売上によるSaaSランキング"
+    }
+  },
+  "loading": "読み込み中",
+  "copy": "{label}をコピー",
+  "copied": "コピーしました"
+}

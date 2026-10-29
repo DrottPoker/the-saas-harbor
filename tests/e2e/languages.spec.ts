@@ -5,8 +5,8 @@ import { expectAccessible } from "./accessibility";
 import { LOCALES, LOCALE_INFO, localizedPath } from "../../src/i18n/config";
 
 // The fake exchange-rate server (tests/e2e/fake-providers.mjs) gives 0.8 euros per dollar on
-// 2026-09-24, and no rate for most other currencies.
-const PREFERENCES = /Language and currency|Idioma y moneda|اللغة والعملة/;
+// 2026-09-24, 150 yen per dollar, and no rate for most other currencies.
+const PREFERENCES = /Language and currency|Idioma y moneda|اللغة والعملة|言語と通貨/;
 
 test("crawlers receive localized metadata and structured data in the initial HTML", async ({
   request,
@@ -31,7 +31,7 @@ test("crawlers receive localized metadata and structured data in the initial HTM
       expect(head, address).toContain(
         `rel="canonical" href="http://127.0.0.1:3002${address === "/" ? "" : address}"`,
       );
-      expect((head.match(/hrefLang=/g) ?? []).length, address).toBe(7);
+      expect((head.match(/hrefLang=/g) ?? []).length, address).toBe(LOCALES.length + 1);
       const documents = [
         ...html.matchAll(/<script[^>]*type="application\/ld\+json"[^>]*>([\s\S]*?)<\/script>/g),
       ].flatMap((match) => {
@@ -117,6 +117,7 @@ test("a first visit follows the browser's language, and crawlers find every lang
     ["hi-IN", "/hi"],
     ["ru-RU", "/ru"],
     ["ar-EG", "/ar"],
+    ["ja-JP", "/ja"],
     ["en-GB", "/"],
     ["pt-BR", "/"],
   ] as const) {
@@ -145,6 +146,7 @@ test("a first visit follows the browser's language, and crawlers find every lang
     ["ar", "/ar"],
     ["es", "/es"],
     ["ru", "/ru"],
+    ["ja", "/ja"],
     ["x-default", ""],
   ])
     expect(new URL(alternates[hreflang]!).pathname, hreflang).toBe(`${prefix}/about`);
@@ -159,7 +161,7 @@ test("a first visit follows the browser's language, and crawlers find every lang
   await context.close();
 });
 
-for (const locale of ["ar", "es"])
+for (const locale of ["ar", "es", "ja"])
   for (const theme of ["light", "dark"] as const)
     for (const width of [390, 1440])
       test(`${locale} pages are accessible at ${width} px in ${theme} mode`, async ({ page }) => {
@@ -230,6 +232,141 @@ test("search and binding English legal links keep the visitor's choice", async (
   await page.getByRole("link", { name: "versión en inglés", exact: true }).click();
   await expect(page).toHaveURL(/\/privacy$/);
   await expect(page.locator("html")).toHaveAttribute("lang", "en");
+});
+
+test("Japanese visitors use yen, register and receive Japanese email and form errors", async ({
+  browser,
+  request,
+}) => {
+  test.setTimeout(180000);
+  const url = process.env.TEST_SUPABASE_URL!;
+  const mailpit = process.env.TEST_MAILPIT_URL!;
+  for (const local of [url, mailpit])
+    if (!local || new URL(local).hostname !== "127.0.0.1")
+      throw new Error("Only the local test stack is allowed.");
+  const admin = createClient(url, process.env.TEST_SUPABASE_SECRET_KEY!, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+  const run = randomUUID().slice(0, 8);
+  const email = `harbor-japanese-${run}@example.test`;
+  const password = randomBytes(24).toString("hex");
+  const context = await browser.newContext({
+    locale: "ja-JP",
+    extraHTTPHeaders: { "x-vercel-ip-country": "JP" },
+  });
+  const confirmationContext = await browser.newContext({
+    locale: "en-US",
+    extraHTTPHeaders: { "x-vercel-ip-country": "JP" },
+  });
+  let userId: string | undefined;
+  try {
+    const page = await context.newPage();
+    await page.goto("/");
+    await expect(page).toHaveURL(/\/ja$/);
+    await expect(page.locator("html")).toHaveAttribute("lang", "ja");
+    await expect(page.locator("html")).toHaveAttribute("dir", "ltr");
+    await expect(page.getByRole("button", { name: /言語と通貨.*JPY/ })).toBeVisible();
+    await expect(page.getByText(/^￥[\d,]+$/).first()).toBeVisible();
+    await expect(page.getByText(/金額は.*米ドルから.*JPY.*換算/)).toBeVisible();
+    await choose(page, "currency", "EUR");
+    await expect(page.getByRole("button", { name: /言語と通貨.*EUR/ })).toBeVisible();
+    await page.keyboard.press("Escape");
+    await choose(page, "currency", "JPY");
+    await page.keyboard.press("Escape");
+    await page.goto("/ja/auth?mode=signup");
+    await page.getByLabel("メールアドレス", { exact: true }).fill(email);
+    await page.getByLabel("パスワード", { exact: true }).fill(password);
+    await page.getByRole("button", { name: "続ける", exact: true }).click();
+    await page.getByLabel("ユーザー名", { exact: true }).fill(`japanese-${run}`);
+    await page.getByRole("checkbox").check();
+    await page.getByRole("button", { name: "アカウントを作成", exact: true }).click();
+    await expect(page.getByRole("heading", { name: "受信トレイをご確認ください" })).toBeVisible();
+    let messageId = "";
+    await expect
+      .poll(async () => {
+        const messages = await (
+          await request.get(`${mailpit}/api/v1/search?query=${encodeURIComponent(`to:"${email}"`)}`)
+        ).json();
+        messageId = messages.messages[0]?.ID ?? "";
+        return !!messageId;
+      })
+      .toBe(true);
+    const message = await (await request.get(`${mailpit}/api/v1/message/${messageId}`)).json();
+    expect(message.Subject).toBe("The SaaS Harborのメールアドレスを確認");
+    expect(message.HTML).toContain('<html lang="ja">');
+    const link = message.HTML.match(/href="([^"]*\/ja\/auth\/confirm\?[^"]*)"/)?.[1]?.replaceAll(
+      "&amp;",
+      "&",
+    );
+    expect(link).toBeTruthy();
+    const signedIn = await confirmationContext.newPage();
+    await signedIn.goto(link!);
+    await signedIn.getByRole("button", { name: "メールアドレスを確認", exact: true }).click();
+    await expect(signedIn).toHaveURL(/\/ja\/dashboard\/saas\/new$/);
+    userId = (await admin.auth.admin.listUsers()).data.users.find(
+      (user) => user.email === email,
+    )?.id;
+    expect(userId).toBeTruthy();
+    const user = (await admin.auth.admin.getUserById(userId!)).data.user!;
+    expect(user.user_metadata).toMatchObject({
+      locale: "ja",
+      currency: "JPY",
+      signup_country: "JP",
+    });
+    await signedIn.getByLabel("プロダクト名", { exact: true }).fill(`Japanese test ${run}`);
+    await signedIn
+      .getByLabel("キャッチコピー", { exact: true })
+      .fill("A local Japanese form fixture.");
+    await signedIn
+      .getByLabel("説明", { exact: true })
+      .fill(
+        "A product used only to check Japanese form errors and deleted with this local account.",
+      );
+    await signedIn.getByLabel("カテゴリー", { exact: true }).selectOption("Productivity");
+    await signedIn.getByLabel("ウェブサイト", { exact: true }).fill("example.com");
+    await signedIn.getByLabel("公開日", { exact: true }).fill("2025-06-01");
+    await signedIn.getByRole("combobox", { name: "決済サービス", exact: true }).click();
+    await signedIn.getByRole("option", { name: "Stripe", exact: true }).click();
+    await signedIn.getByLabel("制限付きキー", { exact: true }).fill("not-a-stripe-key");
+    await signedIn.getByRole("button", { name: "SaaSを追加して売上を検証", exact: true }).click();
+    await expect(
+      signedIn.getByRole("alert").filter({ hasText: /Stripe.*キー.*貼り付け/ }),
+    ).toBeVisible();
+    for (const theme of ["light", "dark"] as const) {
+      await signedIn.emulateMedia({ colorScheme: theme });
+      for (const width of [390, 1440]) {
+        await signedIn.setViewportSize({ width, height: 900 });
+        for (const path of [
+          "/dashboard",
+          "/dashboard/profile",
+          "/dashboard/settings",
+          "/messages",
+          "/dashboard/saas/new",
+        ]) {
+          await signedIn.goto(`/ja${path}`);
+          await expectNoHorizontalScroll(signedIn);
+          await expectAccessible(signedIn);
+        }
+        await signedIn.screenshot({
+          path: `test-results/ja-form-${theme}-${width}.png`,
+          fullPage: true,
+        });
+      }
+    }
+    expect((await admin.rpc("set_admin", { p_email: email, p_admin: true })).error).toBeNull();
+    await signedIn.goto(`/admin/accounts?q=${encodeURIComponent(email)}`);
+    await expect(
+      signedIn.getByText("Language: Japanese · Currency: JPY", { exact: true }),
+    ).toBeVisible();
+  } finally {
+    await context.close().catch(() => undefined);
+    await confirmationContext.close().catch(() => undefined);
+    if (!userId)
+      userId = (await admin.auth.admin.listUsers()).data.users.find(
+        (user) => user.email === email,
+      )?.id;
+    if (userId) expect((await admin.auth.admin.deleteUser(userId)).error).toBeNull();
+  }
 });
 
 test("Spanish sign-up, emails, provider errors and Arabic account pages work together", async ({

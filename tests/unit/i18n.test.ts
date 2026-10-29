@@ -29,6 +29,7 @@ describe("the language of a first visit", () => {
     expect(negotiateLocale("hi-IN")).toBe("hi");
     expect(negotiateLocale("ar-EG,ar;q=0.9")).toBe("ar");
     expect(negotiateLocale("ru")).toBe("ru");
+    expect(negotiateLocale("ja-JP,ja;q=0.9,en;q=0.8")).toBe("ja");
     expect(negotiateLocale("en-IN,hi;q=0.9")).toBe("en");
   });
   it("follows the weights, then the order", () => {
@@ -56,6 +57,8 @@ describe("the currency of a first visit", () => {
     expect(detectCurrency("EC", null)).toBe("USD");
     expect(detectCurrency("NG", null)).toBe("NGN");
     expect(detectCurrency("RU", null)).toBe("RUB");
+    expect(detectCurrency("JP", "en-US")).toBe("JPY");
+    expect(detectCurrency(null, "ja-JP")).toBe("JPY");
   });
   it("is USD where the official rate would mislead", () => {
     for (const country of ["VE", "IR", "SY", "LB", "CU", "KP"])
@@ -128,6 +131,7 @@ describe("addresses in other languages", () => {
       ar: "/ar/saas/querybird",
       es: "/es/saas/querybird",
       ru: "/ru/saas/querybird",
+      ja: "/ja/saas/querybird",
       "x-default": "/saas/querybird",
     }));
 });

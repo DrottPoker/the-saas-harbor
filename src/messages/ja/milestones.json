@@ -1,0 +1,24 @@
+{
+  "headline": "{kind, select, mrr {MRR {amount}} first {第1位} other {トップ{place}}}",
+  "sentence": "{kind, select, mrr {{name}の月次経常収益が{exact}に達しました。} first {{name}が{site}の検証済み売上ランキングで第1位になりました。} other {{name}が{site}の検証済み売上ランキングでトップ{place}に入りました。}}",
+  "post": "{kind, select, mrr {{name}のMRRが{amount}に到達。{site}で検証済みです。} first {{name}が{site}の検証済み売上ランキングで第1位になりました。} other {{name}が{site}の検証済み売上ランキングでトップ{place}に入りました。}}",
+  "meta": {
+    "title": "{kind, select, mrr {{name}のMRRが{amount}に到達} first {{name}が第1位を獲得} other {{name}がトップ{place}入り}}",
+    "description": "{sentence}{site}で検証された売上です。"
+  },
+  "breadcrumb": "パンくずリスト",
+  "browse": "探す",
+  "milestone": "マイルストーン",
+  "reachedOn": "達成日：<date></date>",
+  "verifiedThrough": "売上は{provider}を通じて検証しています。",
+  "viewProduct": "プロダクトを見る",
+  "share": {
+    "title": "マイルストーンを共有",
+    "body": "このリンクを共有すると、マイルストーンのカードが投稿に表示されます。",
+    "x": "Xで共有",
+    "linkedin": "LinkedInで共有",
+    "download": "画像をダウンロード",
+    "link": "リンク",
+    "copyLink": "リンクをコピー"
+  }
+}

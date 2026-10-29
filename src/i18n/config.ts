@@ -1,7 +1,7 @@
 // The site's languages and how their addresses are built. Shared by the proxy, the server and the
 // browser, so it holds no server-only code.
 
-export const LOCALES = ["en", "zh", "hi", "ar", "es", "ru"] as const;
+export const LOCALES = ["en", "zh", "hi", "ar", "es", "ru", "ja"] as const;
 export type Locale = (typeof LOCALES)[number];
 export const DEFAULT_LOCALE: Locale = "en";
 
@@ -33,6 +33,7 @@ export const LOCALE_INFO: Record<Locale, LocaleInfo> = {
   ar: { name: "العربية", short: "عربي", lang: "ar", intl: "ar-u-nu-latn", hreflang: "ar", og: "ar_AR", dir: "rtl" },
   es: { name: "Español", short: "ES", lang: "es", intl: "es-419", hreflang: "es", og: "es_LA", dir: "ltr" },
   ru: { name: "Русский", short: "RU", lang: "ru", intl: "ru-RU", hreflang: "ru", og: "ru_RU", dir: "ltr" },
+  ja: { name: "日本語", short: "日本語", lang: "ja", intl: "ja-JP", hreflang: "ja", og: "ja_JP", dir: "ltr" },
 }; // prettier-ignore
 
 export function isLocale(value: unknown): value is Locale {

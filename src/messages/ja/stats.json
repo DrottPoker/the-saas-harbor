@@ -1,0 +1,70 @@
+{
+  "title": "統計",
+  "description": "数値を公開しているプロダクト全体の月次経常収益です。各決済サービスを通じて検証しています。",
+  "empty": {
+    "title": "プロダクト数がまだ不足しています",
+    "listYourSaas": "SaaSを掲載",
+    "body": "検証済みMRRを公開するプロダクトが{minimum}件に達すると統計を表示します。現在は{count}件です。"
+  },
+  "figures": {
+    "combined": "検証済みMRRの合計",
+    "ranked": "ランキング掲載数",
+    "median": "MRRの中央値",
+    "subscribers": "有料契約者数",
+    "subscribersAcross": "契約者数を公開している{count}件の合計"
+  },
+  "history": {
+    "title": "月末MRRの合計",
+    "description": "現在ランキングに掲載されているプロダクトの各月末のMRR合計です。支払済み請求書から再構成し、現在の為替レートで米ドルに換算しています。"
+  },
+  "share": "{count}（{share}）",
+  "distribution": {
+    "title": "MRR別プロダクト数",
+    "inUsd": "区分は米ドル基準です。"
+  },
+  "growth": {
+    "title": "30日間の変化",
+    "none": "30日前の数値があるプロダクトはまだありません。",
+    "among": "30日前の数値がある{count}件のプロダクトが対象です。",
+    "median": "変化率の中央値",
+    "label": "30日間の変化別プロダクト数",
+    "growing": "増加",
+    "unchanged": "変化なし",
+    "shrinking": "減少"
+  },
+  "byCategory": {
+    "title": "カテゴリー別",
+    "caption": "カテゴリー別のランキング掲載プロダクト",
+    "category": "カテゴリー",
+    "products": "プロダクト数",
+    "median": "MRRの中央値",
+    "combined": "合計"
+  },
+  "ages": {
+    "title": "公開からの期間別",
+    "among": "公開日を公開している{count}件のプロダクトが対象です。",
+    "caption": "公開からの期間別ランキング掲載プロダクト",
+    "launched": "公開時期",
+    "products": "プロダクト数",
+    "median": "MRRの中央値",
+    "none": "なし",
+    "noneYet": "公開日を公開しているランキング掲載プロダクトはまだありません。"
+  },
+  "fastest": {
+    "title": "成長率の高いプロダクト",
+    "description": "MRRが{amount}以上のプロダクトのうち、直近30日間の変化が最も大きいものです。"
+  },
+  "footnote": "直近7日以内に検証したMRRを公開している、ランキング掲載プロダクトの数値です。デモプロダクトは含みません。",
+  "howVerificationWorks": "検証の仕組み",
+  "buckets": {
+    "under": "{amount}未満",
+    "between": "{min}〜{max}",
+    "atLeast": "{amount}以上"
+  },
+  "launchBands": {
+    "underOne": "1年未満",
+    "under": "{max}年未満",
+    "between": "{min}〜{max}年前",
+    "atLeast": "{min}年以上前"
+  }
+}

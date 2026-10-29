@@ -11,6 +11,7 @@ const words: Record<Locale, { title: string; body: string; retry: string }> = {
   ar: { title: "تعذّر تحميل The SaaS Harbor", body: "حاول مرة أخرى بعد قليل.", retry: "حاول مرة أخرى" },
   es: { title: "No se pudo cargar The SaaS Harbor", body: "Inténtalo de nuevo en un momento.", retry: "Intentar de nuevo" },
   ru: { title: "Не удалось загрузить The SaaS Harbor", body: "Попробуйте ещё раз через минуту.", retry: "Попробовать снова" },
+  ja: { title: "The SaaS Harborを読み込めませんでした", body: "しばらくしてから再度お試しください。", retry: "再試行" },
 }; // prettier-ignore
 
 // Replaces the root layout when it fails, so it renders its own document. It has no inline

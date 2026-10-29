@@ -49,13 +49,14 @@ describe("account preferences", () => {
     expect(log).toHaveBeenCalledExactlyOnceWith("Saving account preferences failed:", "failed");
   });
   it("shows English admin labels for all supported languages", () => {
-    expect(["en", "zh", "hi", "ar", "es", "ru"].map(accountLanguageLabel)).toEqual([
+    expect(["en", "zh", "hi", "ar", "es", "ru", "ja"].map(accountLanguageLabel)).toEqual([
       "English",
       "Simplified Chinese",
       "Hindi",
       "Arabic",
       "Spanish",
       "Russian",
+      "Japanese",
     ]);
     expect(accountCurrencyLabel("CNY")).toBe("CNY");
   });

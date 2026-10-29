@@ -16,11 +16,12 @@ import ar from "@/messages/ar/emails.json";
 import en from "@/messages/en/emails.json";
 import es from "@/messages/es/emails.json";
 import hi from "@/messages/hi/emails.json";
+import ja from "@/messages/ja/emails.json";
 import ru from "@/messages/ru/emails.json";
 import zh from "@/messages/zh/emails.json";
 import { emailButton, emailDocument, emailParagraph, escapeHtml } from "./layout";
 
-const catalog: Record<Locale, typeof en> = { en, zh, hi, ar, es, ru };
+const catalog: Record<Locale, typeof en> = { en, zh, hi, ar, es, ru, ja };
 const note = "{{/* Generated from src/lib/email/auth-templates.ts. Do not edit by hand. */}}";
 const userLocale = `(printf "%v" .Data.locale)`;
 // English last, as the branch for every other value.

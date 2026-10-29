@@ -1,0 +1,13 @@
+{
+  "groups": {
+    "frontend": "フロントエンド",
+    "mobileAndDesktop": "モバイル・デスクトップ",
+    "noCode": "ノーコード",
+    "backend": "バックエンド",
+    "databases": "データベース",
+    "hosting": "ホスティング・インフラ",
+    "payments": "決済",
+    "ai": "AI",
+    "services": "サービス"
+  }
+}

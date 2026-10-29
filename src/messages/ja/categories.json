@@ -1,0 +1,13 @@
+{
+  "all": "すべてのカテゴリー",
+  "names": {
+    "ai-machine-learning": "AI・機械学習",
+    "developer-tools": "開発者ツール",
+    "productivity": "業務効率化",
+    "marketing": "マーケティング",
+    "design": "デザイン",
+    "finance": "財務・会計",
+    "analytics": "分析",
+    "other": "その他"
+  }
+}

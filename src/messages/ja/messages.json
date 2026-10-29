@@ -1,0 +1,71 @@
+{
+  "meta": {
+    "title": "メッセージ",
+    "with": "{name}とのメッセージ"
+  },
+  "inbox": {
+    "title": "会話を選択",
+    "body": "一覧から会話を選んでください。新しい会話は、ユーザーのプロフィールで「メッセージを送信」を選ぶと始められます。"
+  },
+  "list": {
+    "heading": "メッセージ",
+    "label": "会話",
+    "userFallback": "ユーザー",
+    "blocked": "ブロック済み",
+    "fromYou": "自分：<body></body>",
+    "unread": "{count}<hidden>件の未読</hidden>",
+    "emptyBeside": "メッセージを送受信すると、ここに会話が表示されます。",
+    "emptyTitle": "メッセージはまだありません",
+    "emptyBody": "プロダクトまたはユーザーのプロフィールを開き、「メッセージを送信」を選んで会話を始めましょう。",
+    "browse": "プロダクトを探す"
+  },
+  "header": {
+    "back": "メッセージに戻る",
+    "viewProfile": "プロフィールを見る"
+  },
+  "closed": {
+    "noProfile": "メッセージを送信する前に<link>プロフィール</link>を設定してください。ほかのユーザーには名前と写真が表示されます。",
+    "suspended": "アカウントが停止されているため、メッセージを送信できません。理由は<link>ダッシュボード</link>で確認できます。",
+    "blocked": "{name}をブロックしています。解除するまで、お互いにメッセージを送信できません。"
+  },
+  "conversation": {
+    "log": "{name}とのメッセージ",
+    "privacy": "この会話を読めるのは、あなたと{name}だけです。",
+    "loadingEarlier": "読み込み中...",
+    "showEarlier": "以前のメッセージを表示",
+    "empty": "メッセージはまだありません。{name}に挨拶してみましょう。",
+    "fromYou": "自分：",
+    "from": "{name}：",
+    "delivered": "配信済み",
+    "seen": "既読<hidden>・{name}</hidden>",
+    "report": "報告<hidden>・{name}からのこのメッセージ</hidden>",
+    "field": "{name}へのメッセージ",
+    "placeholder": "{name}にメッセージを書く",
+    "send": "送信",
+    "sending": "送信中...",
+    "keys": "Enterで送信。Shift+Enterで改行。"
+  },
+  "block": {
+    "block": "ブロック<hidden>・{name}</hidden>",
+    "unblock": "ブロック解除<hidden>・{name}</hidden>",
+    "blocking": "ブロック中...",
+    "unblocking": "解除中..."
+  },
+  "sendButton": "メッセージを送信",
+  "loading": "読み込み中",
+  "errors": {
+    "userNotFound": "このユーザーが見つかりません。",
+    "empty": "メッセージを入力してください。",
+    "tooLong": "メッセージは{max}文字までです。",
+    "sendFailed": "メッセージを送信できませんでした。再度お試しください。",
+    "chooseOther": "別のユーザーを選んでください。",
+    "noProfile": "メッセージを送信する前にプロフィールを設定してください。",
+    "suspended": "アカウントが停止されているため、メッセージを送信できません。",
+    "cannotReceive": "このユーザーはメッセージを受信できません。",
+    "blocked": "このユーザーとのメッセージはブロックされています。",
+    "tooFast": "メッセージの送信間隔が短すぎます。後ほど再度お試しください。",
+    "tooManyConversations": "本日開始できる会話の上限に達しました。明日またお試しください。",
+    "blockFailed": "ユーザーをブロックできませんでした。再度お試しください。",
+    "unblockFailed": "ブロックを解除できませんでした。再度お試しください。"
+  }
+}

@@ -1,0 +1,240 @@
+{
+  "choose": "決済サービスを選んでください。一覧にない場合は「その他」を選んでください。",
+  "fallback": "決済サービス",
+  "notSetUp": "このサーバーでは{provider}がまだ設定されていません。",
+  "verifiedWith": "{access, select, oauth {読み取り専用アクセス} other {読み取り専用キー}}により、{provider}で検証済み。",
+  "fields": {
+    "site": "サイト",
+    "projectId": "プロジェクトID",
+    "clientId": "クライアントID",
+    "profileId": "プロフィールID",
+    "applicationId": "アプリケーションID",
+    "issuerId": "発行者ID（Issuer ID）",
+    "keyId": "キーID",
+    "vendorNumber": "ベンダー番号",
+    "cloudStorageUri": "Cloud Storage URI",
+    "packageName": "パッケージ名"
+  },
+  "placeholders": {
+    "dodoKey": "読み取り専用APIキー",
+    "paypalAccount": "アプリのClient ID",
+    "airwallexKey": "スコープ付きAPIキー",
+    "airwallexAccount": "APIキーと一緒に表示されるClient ID",
+    "superwallAccount": "アプリのダッシュボードURLまたはID",
+    "appstoreKey": ".p8ファイルの内容"
+  },
+  "stripe": {
+    "keyLabel": "制限付きキー",
+    "newKeyLabel": "新しい制限付きキー",
+    "dashboard": "Stripeで読み取り専用キーを作成",
+    "reads": "サブスクリプション、請求書、決済、Checkout Sessions、異議申し立て",
+    "step1": "Stripeで名前と権限が入力された新しい制限付きキーの作成画面が開きます。",
+    "step2": "{permissions}が<b>Read</b>、それ以外がNoneであることを確認し、<b>Create key</b>を選んでください。",
+    "step3": "rk_live_で始まるキーをコピーして、下に貼り付けてください。",
+    "noHistory": "売上履歴はまだありません。Invoices: Readも許可したキーに変更すると、直近12か月のグラフを表示できます。",
+    "skipped": "{count}件の従量課金項目を集計対象から除外しました。"
+  },
+  "paddle": {
+    "keyLabel": "APIキー",
+    "newKeyLabel": "新しいAPIキー",
+    "dashboard": "PaddleのAPIキーを開く",
+    "reads": "サブスクリプションと取引",
+    "step1": "Developer tools → Authenticationで<b>New API key</b>を選んでください。",
+    "step2": "SubscriptionsとTransactionsのみ<b>Read</b>を許可し、それ以外の権限は付けないでください。有効期限は空欄にしてください。設定すると期限後にキーが使えなくなります。",
+    "step3": "pdl_live_apikey_で始まるキーをコピーして、下に貼り付けてください。",
+    "noHistory": "Paddleの取引数が1回の検証で取得できる上限を超えているため、売上履歴はありません。",
+    "skipped": "支払済みの請求がない{count}件のサブスクリプションを除外しました。"
+  },
+  "polar": {
+    "keyLabel": "組織アクセストークン",
+    "newKeyLabel": "新しい組織アクセストークン",
+    "dashboard": "Polarのダッシュボードを開く",
+    "reads": "組織、サブスクリプション、注文",
+    "step1": "組織のSettings → Developersで<b>New Token</b>を選んでください。",
+    "step2": "organizations:read、subscriptions:read、orders:readのみを選び、<b>No expiration</b>を設定してください。",
+    "step3": "polar_oat_で始まるトークンをコピーして、下に貼り付けてください。",
+    "noHistory": "Polarの注文数が1回の検証で取得できる上限を超えているため、売上履歴はありません。",
+    "skipped": "{count}件のサブスクリプションを集計対象から除外しました。"
+  },
+  "dodo": {
+    "keyLabel": "APIキー",
+    "newKeyLabel": "新しいAPIキー",
+    "dashboard": "Dodo Paymentsのダッシュボードを開く",
+    "reads": "サブスクリプションと支払い",
+    "step1": "Developer → API Keysで<b>Add API Key</b>を選んでください。",
+    "step2": "<b>Enable write access</b>をオフにし、読み取り専用にしてください。",
+    "step3": "一度だけ表示されるキーをコピーして、下に貼り付けてください。",
+    "noHistory": "Dodo Paymentsは決済の対象期間を提供しないため、売上履歴はありません。",
+    "skipped": "税込契約で支払いが見つからない{count}件を除外しました。"
+  },
+  "creem": {
+    "keyLabel": "APIキー",
+    "newKeyLabel": "新しいAPIキー",
+    "dashboard": "Creemの開発者設定を開く",
+    "reads": "プロダクト、サブスクリプション、取引",
+    "step1": "Developers → API keysで新しいキーを作成してください。",
+    "step2": "スコープ選択でproducts、subscriptions、transactionsの<b>read</b>のみを許可してください。",
+    "step3": "creem_で始まるキーをコピーして、下に貼り付けてください。",
+    "noHistory": "Creemの取引数が1回の検証で取得できる上限を超えているため、売上履歴はありません。",
+    "skipped": "価格または支払いを取得できない{count}件の契約を除外しました。"
+  },
+  "chargebee": {
+    "keyLabel": "読み取り専用APIキー",
+    "newKeyLabel": "新しい読み取り専用APIキー",
+    "dashboard": "Chargebeeにログイン",
+    "reads": "サブスクリプション、請求書、返金",
+    "step1": "Settings → Configure Chargebee → API keys and eventsで<b>Add API key</b>を選んでください。",
+    "step2": "すべてのデータ、または取引データに限定した<b>Read-only key</b>を選んでください。",
+    "step3": "キーをコピーし、ダッシュボードURLの.chargebee.comの前にあるサイト名も入力してください。",
+    "noHistory": "Chargebeeの請求書数が1回の検証で取得できる上限を超えているため、売上履歴はありません。",
+    "skipped": "支払済み請求書がない{count}件の契約を除外しました。"
+  },
+  "whop": {
+    "keyLabel": "APIキー",
+    "newKeyLabel": "新しいAPIキー",
+    "dashboard": "Whopのダッシュボードを開く",
+    "reads": "会員契約、プラン、プロモーションコード、支払い",
+    "step1": "事業を選び、Developer → Account API keysでカスタム権限のキーを作成してください。",
+    "step2": "member:basic:read、plan:basic:read、payment:basic:read、promo_code:basic:readのみを許可してください。読み取り以外の権限があるキーは受け付けません。",
+    "step3": "キーをコピーして、下に貼り付けてください。",
+    "noHistory": "Whopの支払いまたはプラン数が1回の検証で取得できる上限を超えているため、売上履歴はありません。",
+    "skipped": "税込会員契約で支払いが見つからない{count}件を除外しました。"
+  },
+  "revenuecat": {
+    "keyLabel": "シークレットAPIキー",
+    "newKeyLabel": "新しいシークレットAPIキー",
+    "dashboard": "RevenueCatのダッシュボードを開く",
+    "reads": "プロジェクトのMRR、有効な契約、売上グラフ",
+    "step1": "プロジェクトのProject settings → API keysでV2の<b>New secret API key</b>を選んでください。",
+    "step2": "Charts & metricsを<b>Read only</b>、それ以外をNo accessにしてください。追加の権限があるキーは受け付けません。",
+    "step3": "sk_で始まるキーと、プロジェクトのページURLで/projects/の後にあるプロジェクトIDをコピーしてください。",
+    "noHistory": "売上履歴はまだありません。更新してRevenueCatのMRRグラフを取得してください。",
+    "skipped": "{count}件のサブスクリプションを集計対象から除外しました。"
+  },
+  "gumroad": {
+    "dashboard": "Gumroadアカウントに接続されたアプリを見る",
+    "reads": "プロダクト、会員契約、売上",
+    "step1": "フォーム末尾のボタンで保存するとGumroadが開きます。未ログインの場合はログインしてください。",
+    "step2": "<b>View your sales</b>を承認してください。要求するのはこの権限のみで、プロダクトの変更、返金、顧客へのメール送信はできません。",
+    "step3": "Gumroadからこのページに戻り、売上を検証します。",
+    "noHistory": "Gumroadの売上件数が1回の検証で取得できる上限を超えているため、売上履歴はありません。",
+    "skipped": "最近の課金がない{count}件の有料契約を除外しました。"
+  },
+  "paypal": {
+    "keyLabel": "シークレット",
+    "newKeyLabel": "新しいシークレット",
+    "dashboard": "PayPalのアプリと認証情報を開く",
+    "reads": "取引",
+    "step1": "PayPalビジネスアカウントでログインし、<b>Live</b>が選択されていることを確認して、<b>Create App</b>を選んでください。",
+    "step2": "新しいアプリの機能で<b>Transaction search</b>だけを有効にし、それ以外を無効にしてください。取引検索以外の機能があるアプリは受け付けません。",
+    "step3": "Client IDとSecret key 1をコピーして下に貼り付けてください。MRRはPayPalの継続契約を集計し、その他の支払いは売上に含めます。",
+    "noHistory": "PayPalの継続課金件数が1回の検証で取得できる上限を超えているため、売上履歴はありません。",
+    "skipped": "{count}件のサブスクリプションを集計対象から除外しました。"
+  },
+  "mollie": {
+    "keyLabel": "高度なアクセストークン",
+    "newKeyLabel": "新しい高度なアクセストークン",
+    "dashboard": "MollieのAPIアクセストークンを開く",
+    "reads": "サブスクリプションと支払い",
+    "step1": "高度なアクセストークンで<b>Build your own</b>を選び、PaymentsとSubscriptionsのみReadを許可してください。読み取り以外も可能なトークンは受け付けません。",
+    "step2": "access_で始まるトークンをコピーしてください。live_やtest_で始まるAPIキーは決済を作成できるため受け付けません。",
+    "step3": "Developers → API keysから、このプロダクトのウェブサイトプロフィールのpfl_で始まるIDをコピーしてください。MRRはMollieの契約を集計し、その他の支払いは売上に含めます。",
+    "noHistory": "Mollieプロフィールの決済件数が1回の検証で取得できる上限を超えているため、売上履歴はありません。",
+    "skipped": "請求間隔を取得できない{count}件の契約を除外しました。"
+  },
+  "paystack": {
+    "keyLabel": "制限付きキー",
+    "newKeyLabel": "新しい制限付きキー",
+    "dashboard": "Paystackのダッシュボードを開く",
+    "reads": "サブスクリプション、プラン、取引、返金",
+    "step1": "ダッシュボードをLiveに切り替え、Developersで制限付きキーを作成してください。",
+    "step2": "plans:read、transactions:read、disputes_refunds:readのみを許可してください。すべての操作が可能なシークレットキー（sk_）は貼り付けないでください。",
+    "step3": "ダッシュボードのパスワードで確認し、一度だけ表示されるrk_で始まるキーをコピーして下に貼り付けてください。",
+    "noHistory": "キーに取引の読み取り権限がないか、Paystackの取引数が取得上限を超えているため、売上履歴はありません。",
+    "skipped": "プランを取得できない{count}件の契約を除外しました。"
+  },
+  "abacatepay": {
+    "keyLabel": "Trust MRRトークン",
+    "newKeyLabel": "新しいTrust MRRトークン",
+    "dashboard": "AbacatePayのダッシュボードを開く",
+    "reads": "ストアのMRR、有効な契約、日別売上",
+    "step1": "テストモード（Modo teste）を終了し、AppsでTrust MRRを探してください。",
+    "step2": "アプリを有効にして<b>Salvar configurações</b>を選んでください。abc_で始まるAPIキーは受け付けません。",
+    "step3": "mrr_で始まるトークンをコピーして、下に貼り付けてください。",
+    "noHistory": "売上履歴はまだありません。更新してAbacatePayの日次MRRを取得してください。",
+    "skipped": "{count}件のサブスクリプションを集計対象から除外しました。"
+  },
+  "asaas": {
+    "keyLabel": "APIキー",
+    "newKeyLabel": "新しいAPIキー",
+    "dashboard": "AsaasのAPIキーを開く",
+    "reads": "サブスクリプションと請求",
+    "step1": "管理者としてIntegrações → Chaves de APIを開き、キーを作成してください。",
+    "step2": "Assinaturas（Subscriptions）とCobranças（Charges）の<b>Read</b>のみを許可し、IP許可リストは設定しないでください。権限を指定せず作成したキーはフルアクセスになるため受け付けません。",
+    "step3": "$aact_prod_で始まるキーを、一度だけ表示される画面からコピーして下に貼り付けてください。",
+    "noHistory": "Asaasの契約または請求件数が1回の検証で取得できる上限を超えているため、売上履歴はありません。",
+    "skipped": "有効でも最近の支払いがない{count}件の契約を除外しました。"
+  },
+  "airwallex": {
+    "keyLabel": "スコープ付きAPIキー",
+    "newKeyLabel": "新しいスコープ付きAPIキー",
+    "dashboard": "AirwallexのAPIキーを開く",
+    "reads": "サブスクリプション、請求書、支払い",
+    "step1": "Settings → Developer → API keysで<b>New scoped API key</b>を選んでください。",
+    "step2": "SubscriptionsとInvoices（Billing）、およびPayment AcceptanceのReadのみを許可してください。それ以外も読み取れるキーは受け付けません。",
+    "step3": "キーと、一緒に表示されるClient IDをコピーして下に貼り付けてください。MRRはAirwallex Billingの契約を集計し、その他の支払いは売上に含めます。",
+    "noHistory": "Airwallexの契約請求書数が1回の検証で取得できる上限を超えているため、売上履歴はありません。",
+    "skipped": "従量課金項目、またはAirwallex外で支払われた契約を{count}件除外しました。"
+  },
+  "superwall": {
+    "keyLabel": "組織APIキー",
+    "newKeyLabel": "新しい組織APIキー",
+    "dashboard": "Superwallのダッシュボードを開く",
+    "reads": "アプリのMRR、有効な契約、収益グラフ",
+    "step1": "Settings → API Keysでキーを作成してください。",
+    "step2": "<b>charts:read</b>のみを許可してください。必要に応じて対象アプリのプロジェクトに限定できます。追加の権限があるキーは受け付けません。",
+    "step3": "sk_で始まるキーをコピーし、アプリのダッシュボードURLとともに下に貼り付けてください。",
+    "noHistory": "売上履歴はまだありません。更新してSuperwallのMRRグラフを取得してください。",
+    "skipped": "{count}件のサブスクリプションを集計対象から除外しました。"
+  },
+  "appstore": {
+    "keyLabel": "秘密キー",
+    "newKeyLabel": "新しい秘密キー",
+    "dashboard": "App Store ConnectのAPIキーを開く",
+    "reads": "売上とサブスクリプションのレポート",
+    "step1": "Users and Access → Integrations → App Store Connect APIでTeam Keysを開き、<b>Generate API Key</b>を選んでください。",
+    "step2": "Accessでレポートへのアクセスがある<b>Sales</b>、または<b>Finance</b>を選んでください。AdminやApp Managerなど、それ以外の操作もできるキーは受け付けません。",
+    "step3": ".p8ファイルをダウンロードし、その内容、Issuer ID、Key ID、Payments and Financial Reportsのベンダー番号を入力してください。",
+    "noHistory": "売上履歴はまだありません。更新してAppleの直近12か月の契約レポートを取得してください。",
+    "skipped": "有料オファー中の{count}件の契約を除外しました。"
+  },
+  "googleplay": {
+    "keyLabel": "サービスアカウントのJSONキー",
+    "newKeyLabel": "新しいサービスアカウントのJSONキー",
+    "dashboard": "Google Cloudのサービスアカウントを開く",
+    "reads": "アプリの推定売上レポート",
+    "step1": "ロールを付与せずサービスアカウントを作成し、Keysで<b>JSON</b>キーを追加してください。",
+    "step2": "Play ConsoleのUsers and permissionsでサービスアカウントのメールアドレスを招待し、<b>View financial data</b>のみを許可してください。",
+    "step3": "Download reportsで財務レポートのCloud Storage URIをコピーし、アプリのパッケージ名とJSONキーとともに下に入力してください。権限の反映には数時間かかる場合があります。",
+    "noHistory": "Google Playの売上レポートが1回の検証で取得できるサイズを超えているため、売上履歴はありません。",
+    "skipped": "読み取れない{count}件のサブスクリプション課金を除外しました。"
+  },
+  "zoho": {
+    "dashboard": "Zohoアカウントに接続されたアプリを見る",
+    "reads": "組織、サブスクリプション、支払い",
+    "step1": "フォーム末尾のボタンで保存するとZohoが開きます。未ログインの場合はログインしてください。",
+    "step2": "設定、サブスクリプション、支払いの<b>読み取りアクセス</b>を承認してください。要求するのはこの権限のみで、変更操作はできません。",
+    "step3": "Zohoからこのページに戻り、既定のZoho Billing組織を検証します。別の組織を検証する場合は、先にその組織を既定に設定してください。",
+    "noHistory": "Zoho Billingは請求書の対象期間を提供しないため、売上履歴はありません。",
+    "skipped": "価格または請求期間を取得できない{count}件の契約を除外しました。"
+  },
+  "mercadopago": {
+    "dashboard": "Mercado Pagoを開く",
+    "reads": "サブスクリプションと支払い",
+    "step1": "フォーム末尾のボタンで保存するとMercado Pagoが開きます。未ログインの場合はログインしてください。",
+    "step2": "アクセスを許可してください。要求するのは<b>読み取りのみ</b>の権限で、課金、返金、変更操作はできません。",
+    "step3": "Mercado Pagoからこのページに戻り、売上を検証します。",
+    "noHistory": "Mercado Pagoの決済件数が取得上限を超えているか、決済に契約情報がないため、売上履歴はありません。",
+    "skipped": "金額または更新頻度を取得できない{count}件の契約を除外しました。"
+  }
+}

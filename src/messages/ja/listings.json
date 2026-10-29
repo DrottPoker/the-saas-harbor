@@ -1,0 +1,20 @@
+{
+  "product": "プロダクト",
+  "category": "カテゴリー",
+  "trend": "12か月間",
+  "launched": "公開日",
+  "verified": "検証済み",
+  "rank": "順位",
+  "demoRevenue": "デモ売上",
+  "mrrNotShared": "MRRは非公開",
+  "byFounder": "創業者：{name}",
+  "joined": "登録日：<date></date>",
+  "launchedOn": "公開日：{date}",
+  "results": {
+    "label": "ページ送り",
+    "count": "{count}件のプロダクト",
+    "showing": "{count}件中{first}〜{last}件を表示",
+    "previous": "前へ",
+    "next": "次へ"
+  }
+}

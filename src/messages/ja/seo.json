@@ -1,0 +1,13 @@
+{
+  "siteDescription": "新規から成長中まで、独立したSaaSプロダクトを紹介する無料ディレクトリ。決済サービスで検証した月次経常収益のランキングも掲載しています。",
+  "laterPage": "{title}・{page}ページ",
+  "productTitleMrr": "{name}：検証済みMRR {amount}",
+  "productTitleRevenue": "{name}：検証済み売上 {amount}",
+  "productMrr": "検証済みMRRは{amount}。",
+  "productMrrSubscribers": "有料契約者{count}人による検証済みMRRは{amount}。",
+  "productRevenue": "検証済み累計売上：{amount}。",
+  "founderOf": "{products}の創業者。",
+  "profileFounder": "{site}に登録している、{products}の創業者{name}。",
+  "profileOnSite": "{site}の{name}",
+  "namesMore": "ほか{count}件"
+}

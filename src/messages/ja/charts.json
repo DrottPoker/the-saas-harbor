@@ -1,0 +1,56 @@
+{
+  "axisWithYear": "{year}年{month}",
+  "summary": {
+    "mrr": "月末MRRは{firstMonth}の{first}から{endMonth}の{end}になりました。",
+    "mrrOne": "{month}末のMRRは{value}でした。",
+    "revenue": "{firstMonth}から{endMonth}までの月別売上。合計{total}。",
+    "revenueOne": "{month}の売上は{value}でした。"
+  },
+  "periods": {
+    "months": "{months}か月",
+    "year": "1年",
+    "all": "全期間",
+    "name": "{label}、{long}",
+    "last": "直近{months}か月",
+    "whole": "全{months}か月",
+    "in": "{months}か月間",
+    "over": "直近{months}か月間",
+    "inMonth": "{month}",
+    "inLast": "直近{months}か月間"
+  },
+  "mrr": {
+    "tab": "MRR",
+    "title": "月末MRR",
+    "note": "直近{months}か月の月末MRR。支払済みの請求から再構成し、現在の為替レートで米ドルに換算しています。",
+    "month": "月",
+    "value": "MRR"
+  },
+  "revenue": {
+    "tab": "売上",
+    "title": "月別売上",
+    "note": "各月の顧客の支払額から割引と返金を差し引き、税金を除いた金額です。現在の為替レートで米ドルに換算しています。",
+    "noteSplit": "各月のサブスクリプションと買い切りの支払額から割引と返金を差し引き、税金を除いた金額です。現在の為替レートで米ドルに換算しています。",
+    "month": "月",
+    "subscriptions": "サブスクリプション",
+    "oneTime": "買い切り",
+    "value": "売上"
+  },
+  "table": "表で表示",
+  "history": {
+    "tabs": "グラフ",
+    "periods": "グラフの期間",
+    "keys": "{title}。矢印キーで各月の数値を確認できます。",
+    "month": "{month}：{value}",
+    "monthSplit": "{month}：{value}、サブスクリプション{subscription}、買い切り{oneTime}",
+    "legend": "凡例",
+    "subscriptions": "サブスクリプション",
+    "oneTime": "買い切り"
+  },
+  "growth": {
+    "short": "30日",
+    "long": "直近30日間",
+    "spoken": "{period}：{direction, select, up {{amount}増加} down {{amount}減少} other {変化なし}}",
+    "points": "{count}ポイント",
+    "pointsSpoken": "{count}パーセントポイント"
+  }
+}

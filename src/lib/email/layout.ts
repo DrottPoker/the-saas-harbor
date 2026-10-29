@@ -9,6 +9,7 @@ const scriptFonts: Record<Locale, string> = {
   en: "",
   es: "",
   ru: "",
+  ja: "'Hiragino Sans', 'Yu Gothic', Meiryo, 'Noto Sans CJK JP', 'Noto Sans JP', ",
   zh: "'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'Noto Sans SC', 'Noto Sans CJK SC', ",
   hi: "'Kohinoor Devanagari', 'Nirmala UI', Mangal, 'Noto Sans Devanagari', ",
   ar: "'Geeza Pro', 'Noto Sans Arabic', Tahoma, ",

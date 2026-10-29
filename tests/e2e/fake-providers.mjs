@@ -359,7 +359,7 @@ createServer(async (request, response) => {
   if (handleSite(url, request, response)) return;
   if (url.pathname === "/v2/rates") {
     const quotes = (url.searchParams.get("quotes") ?? "").split(",").filter(Boolean);
-    const rates = { eur: 0.8, brl: 5, clp: 1000 };
+    const rates = { eur: 0.8, brl: 5, clp: 1000, jpy: 150 };
     return send(
       response,
       200,

@@ -1,0 +1,24 @@
+{
+  "product": {
+    "heading": "<hidden>プロダクト非表示：</hidden>管理者が<date></date>にこのプロダクトを非表示にしました。",
+    "effect": "The SaaS Harbor上では表示されません。編集や削除は引き続き可能です。"
+  },
+  "account": {
+    "heading": "<hidden>アカウント停止：</hidden>管理者が<date></date>にアカウントを停止しました。",
+    "effect": "プロフィールとプロダクトは非表示となり、メッセージや報告を送信できません。ログイン、プロダクトの編集、アカウントの削除は引き続き可能です。"
+  },
+  "reason": "理由",
+  "explanation": "説明",
+  "notGiven": "記載なし",
+  "decisions": {
+    "spam": "スパム・広告",
+    "misleading": "誤解を招く情報・虚偽の情報",
+    "impersonation": "なりすまし",
+    "harassment": "嫌がらせ・ヘイト",
+    "illegal": "違法なコンテンツ",
+    "other": "その他の利用規約違反"
+  },
+  "byPerson": "この判断は自動システムではなく、人が行いました。",
+  "appeal": "判断に誤りがあると思われる場合は、<contact></contact>までご連絡ください。",
+  "terms": "禁止事項は<link>利用規約</link>をご確認ください。"
+}

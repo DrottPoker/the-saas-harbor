@@ -18,23 +18,26 @@ Each intent has an existing page in every language. Do not create thin pages for
 
 These are phrases to validate with impressions, queries and clicks after crawling, not measured demand estimates. Keep SaaS and MRR where developers use them; explain the financial term in local-language page copy.
 
-| Language           | Discovery                       | Free submission                      | Revenue comparison               | Launch research        |
-| ------------------ | ------------------------------- | ------------------------------------ | -------------------------------- | ---------------------- |
-| English            | SaaS directory; SaaS products   | submit SaaS for free; list your SaaS | verified MRR leaderboard         | where to launch a SaaS |
-| Simplified Chinese | SaaS 产品目录; SaaS 工具导航    | 免费提交 SaaS 产品; 免费收录 SaaS    | SaaS 收入排行榜; 已验证 MRR      | SaaS 产品发布平台      |
-| Hindi              | SaaS डायरेक्टरी; SaaS प्रोडक्ट  | अपना SaaS मुफ़्त में लिस्ट करें      | सत्यापित MRR रैंकिंग             | SaaS कहाँ लॉन्च करें   |
-| Arabic             | دليل منتجات SaaS; أدوات SaaS    | أضف منتج SaaS مجانًا                 | ترتيب الإيرادات الشهرية الموثّقة | أين أطلق منتج SaaS     |
-| Spanish            | directorio SaaS; productos SaaS | publicar SaaS gratis                 | ranking de MRR verificado        | dónde lanzar un SaaS   |
-| Russian            | каталог SaaS; SaaS-сервисы      | добавить SaaS бесплатно              | рейтинг SaaS по MRR              | где запустить SaaS     |
+| Language           | Discovery                        | Free submission                      | Revenue comparison               | Launch research        |
+| ------------------ | -------------------------------- | ------------------------------------ | -------------------------------- | ---------------------- |
+| English            | SaaS directory; SaaS products    | submit SaaS for free; list your SaaS | verified MRR leaderboard         | where to launch a SaaS |
+| Simplified Chinese | SaaS 产品目录; SaaS 工具导航     | 免费提交 SaaS 产品; 免费收录 SaaS    | SaaS 收入排行榜; 已验证 MRR      | SaaS 产品发布平台      |
+| Hindi              | SaaS डायरेक्टरी; SaaS प्रोडक्ट   | अपना SaaS मुफ़्त में लिस्ट करें      | सत्यापित MRR रैंकिंग             | SaaS कहाँ लॉन्च करें   |
+| Arabic             | دليل منتجات SaaS; أدوات SaaS     | أضف منتج SaaS مجانًا                 | ترتيب الإيرادات الشهرية الموثّقة | أين أطلق منتج SaaS     |
+| Spanish            | directorio SaaS; productos SaaS  | publicar SaaS gratis                 | ranking de MRR verificado        | dónde lanzar un SaaS   |
+| Russian            | каталог SaaS; SaaS-сервисы       | добавить SaaS бесплатно              | рейтинг SaaS по MRR              | где запустить SaaS     |
+| Japanese           | SaaSディレクトリ; SaaSプロダクト | SaaS無料掲載; SaaS登録               | MRRランキング; 検証済みMRR       | SaaSの公開先           |
 
 The home-page titles and descriptions cover discovery and free submission naturally, rather than naming only a revenue leaderboard. Submission and launch pages retain their distinct intent. Category and technology pages use their translated names; internal searches remain `noindex` and filtered lists point to the appropriate canonical list.
+
+Japanese phrases describe the existing page intent in natural Japanese; no Japanese search-volume study is claimed. The `/ja` pages have their own titles, descriptions, canonical URLs, hreflang and structured data, just like the other languages.
 
 Public search checks found directory/product-discovery language on [Shovel.tools in Chinese](https://shovel.tools/zh/), [Buildear in Spanish](https://buildear.com/) and [SaaS Nation's Russian catalog](https://catalog.saas-nation.com/). Hindi results for SaaS directory terms were mixed with English and unrelated directories; Arabic `دليل` also finds tutorials and business-software guides. These observations support keeping precise product qualifiers and the familiar SaaS term. They do not establish traffic or search volume, and no competitor copy is reproduced.
 
 ## Technical implementation
 
 - English retains its addresses. Other versions use `/zh`, `/hi`, `/ar`, `/es` and `/ru`, with reciprocal hreflang and self-canonical addresses.
-- All six sitemaps are public and listed in robots.txt. Submit all six in Search Console for the verified domain property.
+- All seven sitemaps are public and listed in robots.txt. Submit all seven in Search Console for the verified domain property.
 - Visible text, titles and descriptions are translated. User-written product descriptions and profile text keep their original language; a translated interface does not create translated product copy.
 - JSON-LD uses each page's canonical address, language and translated labels, including breadcrumbs and ranked product links. Schema.org identifiers, brand names, external destinations and user-written content retain their original meaning.
 - The organization and website have stable root-domain identities. `WebSite.inLanguage` lists the supported languages; each localized home page has its own `WebPage` with the actual page language. The root website URL remains suitable for Google's site-name markup.

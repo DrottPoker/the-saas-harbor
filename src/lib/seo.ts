@@ -98,7 +98,7 @@ export async function listMetadata(
   };
 }
 
-const FULL_STOP: Partial<Record<Locale, string>> = { zh: "。", hi: "।" };
+const FULL_STOP: Partial<Record<Locale, string>> = { zh: "。", hi: "।", ja: "。" };
 
 /** Text as a sentence: the language's full stop is added unless it already ends in one. */
 function sentence(text: string, locale: Locale) {

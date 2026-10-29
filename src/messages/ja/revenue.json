@@ -1,0 +1,61 @@
+{
+  "section": {
+    "title": "検証済み売上",
+    "description": "決済サービスを読み取り専用キーで接続し、MRRと有料契約者数を検証します。検証済みMRRはランキングに掲載され、自分のウェブサイトへのリンクは検索エンジンに追跡されます。一覧にない場合は「その他」を選んでください。"
+  },
+  "choice": {
+    "label": "決済サービス",
+    "placeholder": "決済サービスを選択",
+    "other": "その他",
+    "keepCurrent": "現在の接続を維持",
+    "reconnect": "再接続または決済サービスを変更",
+    "replace": "キーを更新または決済サービスを変更"
+  },
+  "fields": {
+    "keyNote": "キーは暗号化し、{reads}の読み取りにのみ使用します。{provider}でいつでも取り消せます。<link>決済サービスのデータの取り扱い</link>",
+    "accessNote": "{provider}から付与されたアクセス権は暗号化し、{reads}の読み取りにのみ使用します。{provider}でいつでも取り消せます。<link>決済サービスのデータの取り扱い</link>"
+  },
+  "other": {
+    "title": "決済サービスを接続したプロダクトは、より多くの訪問者に見つけてもらえます",
+    "intro": "一覧の決済サービスを接続すると、次のメリットがあります。",
+    "gainLeaderboard": "トップページのランキングに掲載。",
+    "gainCategories": "カテゴリーと技術のページで、ランキング対象外のプロダクトより上に表示。",
+    "gainLink": "数値を非公開にしていても、検索エンジンが追跡する自分のサイトへのリンク。",
+    "unverified": "ほかの決済サービスの売上はまだ検証できないため、「その他」のプロダクトはランキング対象外となり、ウェブサイトへのリンクにはnofollowが付きます。接続で付与されるのは読み取り権限のみです。",
+    "label": "利用中の決済サービス",
+    "hint": "まだ決済を受け付けていない場合は「なし」と入力してください。",
+    "note": "一覧の決済サービスはいつでも接続できます。入力した名前はサイト上に表示せず、今後対応するサービスの検討に使用します。"
+  },
+  "connected": {
+    "title": "{provider}に接続済み",
+    "failed": "前回の検証に失敗しました",
+    "testMode": "テストモード",
+    "key": "キー {hint}",
+    "access": "読み取り権限 {hint}",
+    "lastVerified": "最終検証：<date></date>",
+    "subscribers": "有料契約者数",
+    "refresh": "今すぐ更新",
+    "refreshing": "更新中...",
+    "keepConnected": "接続を維持",
+    "disconnect": "接続を解除",
+    "confirmDisconnect": "接続解除を確定",
+    "disconnecting": "解除中..."
+  },
+  "figures": {
+    "title": "買い切りを含む売上",
+    "last30Days": "直近30日間",
+    "last12Months": "直近12か月間",
+    "allTime": "累計",
+    "notRead": "未取得",
+    "firstRead": "決済データは接続後まもなく取得し、その後は毎日取得します。",
+    "readingBack": "過去の決済データを取得中です。現在は{date}まで遡っています。"
+  },
+  "result": {
+    "connected": "{provider}を接続しました。{summary}",
+    "verified": "有料契約者{count}人による検証済みMRR：{mrr}。",
+    "disconnected": "{access, select, oauth {接続を解除し、保存されたアクセス権を削除しました。} other {接続を解除し、保存されたキーを削除しました。}}",
+    "expired": "{provider}への接続の有効期限が切れました。再度お試しください。",
+    "denied": "{provider}へのアクセスが承認されなかったため、接続していません。",
+    "incomplete": "{provider}との接続が完了しませんでした。再度お試しください。"
+  }
+}

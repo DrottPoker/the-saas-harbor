@@ -1,0 +1,47 @@
+{
+  "browse": {
+    "title": "SaaSプロダクトを探す",
+    "description": "{site}に掲載されている独立したSaaSを名前順に表示します。売上を非公開にしているプロダクトも含みます。"
+  },
+  "newest": {
+    "title": "新着SaaSプロダクト",
+    "description": "{site}に新しく掲載された独立したSaaSプロダクトを新着順に表示します。"
+  },
+  "breadcrumb": "パンくずリスト",
+  "listYourSaas": "SaaSを掲載",
+  "rankedTitle": "検証済みMRR順",
+  "unrankedNote": "MRRランキングに含まれないプロダクトを名前順に表示しています。",
+  "categories": {
+    "title": "カテゴリー",
+    "description": "独立したSaaSをカテゴリー別に紹介。各決済サービスで検証した月次経常収益に基づくランキングです。",
+    "none": "プロダクトはまだありません",
+    "count": "{count}件のプロダクト",
+    "countRanked": "{count}件のプロダクト、{ranked}件がランキングに掲載"
+  },
+  "category": {
+    "metaTitle": "{category} SaaSの検証済みMRRランキング",
+    "title": "{category}のSaaS",
+    "intro": "各決済サービスで検証した月次経常収益に基づく、独立した{category}プロダクトのランキングです。",
+    "emptyTitle": "{category}のプロダクトはまだありません",
+    "emptyBody": "創業者がこのカテゴリーにプロダクトを掲載すると、ここに表示されます。",
+    "allRanked": "ランキングに掲載された{category}プロダクト全{count}件",
+    "more": "その他の{category}プロダクト",
+    "products": "{category}のプロダクト",
+    "browseAll": "{category}のプロダクトをすべて見る"
+  },
+  "techs": {
+    "title": "技術スタック",
+    "description": "創業者が登録した使用技術別に、独立したSaaSプロダクトを紹介。各決済サービスで検証した月次経常収益順に並べています。",
+    "count": "{count}件のプロダクト"
+  },
+  "tech": {
+    "title": "{tech}で開発されたSaaS",
+    "intro": "創業者の登録情報に基づく、{tech}で開発された独立したSaaSです。各決済サービスで検証した月次経常収益順に並べています。",
+    "emptyTitle": "{tech}で開発されたプロダクトはまだありません",
+    "emptyBody": "創業者が技術スタックに{tech}を追加すると、ここに表示されます。",
+    "allRanked": "{tech}を使用したランキング掲載プロダクト全{count}件",
+    "more": "{tech}を使用したその他のプロダクト",
+    "products": "{tech}を使用したプロダクト",
+    "browseAll": "{tech}を使用したプロダクトをすべて見る"
+  }
+}

@@ -110,6 +110,17 @@ describe("the email frame", () => {
 });
 
 describe("emails in the recipient's language", () => {
+  it("uses Japanese wording, fonts and links for Japanese accounts", async () => {
+    const email = (await renderEmail(
+      row("message", { ...message, unread: 2 }, "花子", "ja"),
+      settings,
+    ))!;
+    expect(email.subject).toBe("Tomás Riveraからの新着メッセージ");
+    expect(email.text).toContain("2件のメッセージ");
+    expect(email.text).toContain("https://harbor.example/ja/messages/");
+    expect(email.html).toContain('<html lang="ja">');
+    expect(email.html).toContain("Yu Gothic");
+  });
   it("are English for a language the site does not have, or none", async () => {
     for (const locale of ["fr", "", null]) {
       const email = (await renderEmail(row("message", message, "Lena", locale), settings))!;

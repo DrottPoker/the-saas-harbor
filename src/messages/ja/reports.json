@@ -1,0 +1,95 @@
+{
+  "meta": {
+    "title": "報告"
+  },
+  "page": {
+    "description": "問題の内容をお知らせください。すべての報告を管理者が確認します。",
+    "title": "{name}を報告",
+    "messageTitle": "メッセージを報告",
+    "ownProduct": "自分のプロダクトは報告できません。",
+    "ownProfile": "自分のプロフィールは報告できません。",
+    "ownMessage": "自分のメッセージは報告できません。",
+    "productFallback": "プロダクト",
+    "messages": "メッセージ",
+    "from": "送信者：<sender>{name}</sender>、<time></time>"
+  },
+  "reasons": {
+    "spam": {
+      "label": "スパム・広告",
+      "hint": "望まない宣伝、繰り返しのメッセージ、実在するプロダクトではない掲載など。"
+    },
+    "misleading": {
+      "label": "誤解を招く情報・虚偽の情報",
+      "hint": "プロダクトや人物についての虚偽の主張。"
+    },
+    "impersonation": {
+      "label": "なりすまし",
+      "hint": "他人の名前、ブランド、著作物などを無断で使用している。"
+    },
+    "harassment": {
+      "label": "嫌がらせ・ヘイト",
+      "hint": "個人や集団に対する脅迫、侮辱、差別的な内容。"
+    },
+    "illegal": {
+      "label": "違法なコンテンツ",
+      "hint": "詐欺や権利侵害など、法令に違反する内容。"
+    },
+    "other": {
+      "label": "その他",
+      "hint": "その他の利用規約に違反する内容。"
+    }
+  },
+  "form": {
+    "legend": "どのような問題ですか？",
+    "details": "詳細",
+    "detailsHint": "問題の内容と該当箇所を説明してください。「違法なコンテンツ」と「その他」では必須です。",
+    "anonymous": "報告者の情報は相手に伝わりません。禁止事項は<link>利用規約</link>をご確認ください。",
+    "submit": "報告を送信",
+    "sending": "送信中..."
+  },
+  "errors": {
+    "cannotReport": "この対象は報告できませんでした。",
+    "sendFailed": "報告を送信できませんでした。再度お試しください。",
+    "chooseReason": "理由を選んでください。",
+    "detailsTooLong": "詳細は{max}文字以下で入力してください。",
+    "detailsRequired": "内容を審査できるよう、問題を説明してください。",
+    "suspended": "アカウントが停止されているため、報告を送信できません。",
+    "tooMany": "報告の送信回数が多すぎます。後ほど再度お試しください。",
+    "productNotFound": "このプロダクトが見つかりません。",
+    "ownProduct": "自分のプロダクトは報告できません。",
+    "userNotFound": "このユーザーが見つかりません。",
+    "ownProfile": "自分自身を報告することはできません。",
+    "messageNotFound": "このメッセージが見つかりません。",
+    "ownMessage": "自分のメッセージは報告できません。",
+    "chooseTarget": "報告する対象を選んでください。",
+    "alreadyReported": "この対象はすでに報告済みで、審査を待っています。"
+  },
+  "list": {
+    "title": "送信した報告",
+    "description": "プロダクト、プロフィール、メッセージについて送信した報告と、その対応状況です。",
+    "sent": "報告を送信しました。ご協力ありがとうございます。管理者が確認します。",
+    "emptyTitle": "報告はまだありません",
+    "emptyBody": "プロダクト、プロフィール、受信したメッセージの横にある「報告」から送信できます。",
+    "label": "送信した報告",
+    "about": "{target}：",
+    "targets": {
+      "saas": "プロダクト",
+      "profile": "プロフィール",
+      "message": "メッセージ",
+      "unknown": "報告"
+    },
+    "quote": "「{text}」",
+    "aMessage": "メッセージ",
+    "unnamed": "名称なし",
+    "sentOn": "送信日：<date></date>",
+    "decidedOn": "判断日：<date></date>",
+    "statuses": {
+      "open": "審査待ち",
+      "actioned": "対応済み",
+      "dismissed": "対応なし"
+    },
+    "reviewed": "すべての報告を管理者が確認します。報告者の情報は相手に伝わりません。",
+    "disagree": "判断に異議がある場合は、<contact></contact>までご連絡ください。",
+    "terms": "報告への対応については<link>利用規約</link>をご確認ください。"
+  }
+}

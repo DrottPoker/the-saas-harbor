@@ -1,0 +1,121 @@
+{
+  "greeting": "{name}さん、こんにちは。",
+  "greetingNoName": "こんにちは。",
+  "settings": "受信するメールを設定",
+  "terms": "利用規約",
+  "message": {
+    "subject": "{sender}からの新着メッセージ",
+    "body": "{sender}からThe SaaS Harborで{count}件のメッセージが届いています。",
+    "action": "メッセージを読んで返信",
+    "footer": "会話を読むまで、会話ごとに1通のメールが届きます。メッセージ本文は含まれません。"
+  },
+  "reports": {
+    "subject": "The SaaS Harborの未対応の報告{count}件",
+    "body": "{count}件の報告が審査を待っています。",
+    "action": "報告一覧を開く",
+    "footer": "管理者向けのメールです。送信は1時間に最大1通です。"
+  },
+  "decision": {
+    "reason": "理由：{reason}",
+    "explanation": "説明：",
+    "person": "この判断は自動システムではなく、人が行いました。",
+    "personContact": "この判断は自動システムではなく、人が行いました。誤りがあると思われる場合は、理由を添えて{contact}までご連絡ください。",
+    "dashboard": "ダッシュボードを開く",
+    "footer": "アカウントに関するメールのため、ほかのメールを無効にしていても送信されます。",
+    "reasons": {
+      "spam": "スパム・広告",
+      "misleading": "誤解を招く情報・虚偽の情報",
+      "impersonation": "なりすまし",
+      "harassment": "嫌がらせ・ヘイト",
+      "illegal": "違法なコンテンツ",
+      "other": "その他の利用規約違反"
+    },
+    "hideSaas": {
+      "subject": "プロダクト「{name}」が非表示になりました",
+      "body": "管理者がThe SaaS Harborの{name}を非表示にしました。サイト上では表示されませんが、編集や削除は引き続き可能です。"
+    },
+    "restoreSaas": {
+      "subject": "プロダクト「{name}」を再表示しました",
+      "body": "管理者が{name}を再審査し、The SaaS Harborで再表示しました。"
+    },
+    "suspendAccount": {
+      "subject": "The SaaS Harborのアカウントが停止されました",
+      "body": "管理者がアカウントを停止しました。プロフィールとプロダクトは非表示となり、メッセージや報告を送信できません。ログイン、プロダクトの編集、アカウントの削除は引き続き可能です。"
+    },
+    "restoreAccount": {
+      "subject": "The SaaS Harborのアカウント停止が解除されました",
+      "body": "管理者がアカウントの停止を解除しました。プロフィールとプロダクトが再表示され、メッセージを送信できるようになりました。"
+    }
+  },
+  "milestone": {
+    "subject": {
+      "mrr": "{name}のMRRが{amount}に達しました",
+      "top": "{name}がトップ{place}に入りました",
+      "first": "{name}が第1位になりました"
+    },
+    "sentence": {
+      "mrr": "{name}の月次経常収益が{amount}に達しました。",
+      "top": "{name}がThe SaaS Harborの検証済み売上ランキングでトップ{place}に入りました。",
+      "first": "{name}がThe SaaS Harborの検証済み売上ランキングで第1位になりました。"
+    },
+    "also": {
+      "mrr": "MRR {amount}も達成しました。",
+      "top": "トップ{place}入りも達成しました。",
+      "first": "第1位も獲得しました。"
+    },
+    "provider": "売上は{provider}を通じて検証しています。",
+    "card": "記念カードを作成しました。リンクを共有すると、投稿にカードが表示されます。",
+    "alt": {
+      "mrr": "{name}：The SaaS HarborでMRR {amount}",
+      "top": "{name}：The SaaS Harborでトップ{place}",
+      "first": "{name}：The SaaS Harborで第1位"
+    },
+    "share": {
+      "mrr": "{name}のMRRが{amount}に到達。The SaaS Harborで検証済みです。",
+      "top": "{name}がThe SaaS Harborの検証済み売上ランキングでトップ{place}に入りました。",
+      "first": "{name}がThe SaaS Harborの検証済み売上ランキングで第1位になりました。"
+    },
+    "shareX": "Xで共有",
+    "shareLinkedIn": "LinkedInで共有",
+    "page": "マイルストーンのページを開く",
+    "footer": "MRRを公開中のプロダクトが各マイルストーンを達成したときに、1回ずつ送信されます。"
+  },
+  "outcome": {
+    "subject": "報告の審査が完了しました",
+    "about": {
+      "message": "受信したメッセージに関する報告を管理者が確認しました。",
+      "saas": "プロダクト「{name}」に関する報告を管理者が確認しました。",
+      "profile": "{name}のプロフィールに関する報告を管理者が確認しました。"
+    },
+    "actioned": "プロダクトの非表示やアカウント停止などの対応を行いました。",
+    "dismissed": "利用規約や法令への違反はないと判断したため、対応は行いませんでした。",
+    "action": "送信した報告を見る",
+    "footer": "報告者の情報は相手に伝わりません。このメールは報告ごとに送信されます。"
+  },
+  "auth": {
+    "confirmation": {
+      "subject": "The SaaS Harborのメールアドレスを確認",
+      "heading": "メールアドレスを確認",
+      "preview": "メールアドレスを確認してアカウント作成を完了してください。",
+      "body": "The SaaS Harborへのご登録ありがとうございます。メールアドレスを確認してアカウント作成を完了してください。",
+      "action": "メールアドレスを確認",
+      "footer": "リンクは1回のみ利用でき、有効期限は1時間です。どの端末からでも開けます。登録した覚えがない場合は、このメールを無視してください。アカウントの作成は完了しません。"
+    },
+    "recovery": {
+      "subject": "The SaaS Harborのパスワードをリセット",
+      "heading": "パスワードをリセット",
+      "preview": "The SaaS Harborの新しいパスワードを設定してください。",
+      "body": "The SaaS Harborのアカウントでパスワードのリセットが申請されました。下のボタンから新しいパスワードを設定してください。",
+      "action": "新しいパスワードを設定",
+      "footer": "リンクは1回のみ利用でき、有効期限は1時間です。どの端末からでも開けます。申請した覚えがない場合は、このメールを無視してください。パスワードは変更されません。"
+    },
+    "emailChange": {
+      "subject": "The SaaS Harborの新しいメールアドレスを確認",
+      "heading": "新しいメールアドレスを確認",
+      "preview": "The SaaS Harborのメールアドレス変更を確認してください。",
+      "body": "The SaaS Harborのアカウントで、メールアドレスを{email}から{newEmail}へ変更する申請がありました。両方のアドレスで確認すると変更されます。",
+      "action": "変更を確認",
+      "footer": "リンクは1回のみ利用でき、有効期限は1時間です。どの端末からでも開けます。申請した覚えがない場合は、このメールを無視してください。メールアドレスは変更されません。"
+    }
+  }
+}

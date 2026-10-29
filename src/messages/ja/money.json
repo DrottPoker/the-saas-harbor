@@ -1,0 +1,5 @@
+{
+  "converted": "金額は{date}の参照為替レートで米ドルから{currency}に換算しています。",
+  "rankedInUsd": "ランキングは米ドルを基準とします。",
+  "inUsd": "米ドルでは{amount}"
+}

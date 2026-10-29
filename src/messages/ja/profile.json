@@ -1,0 +1,15 @@
+{
+  "editProfile": "プロフィールを編集",
+  "products": "プロダクト",
+  "subscribers": "有料契約者数",
+  "across": "{count}件のプロダクトの合計",
+  "figuresNote": "数値は各プロダクトの決済サービスで検証しており、数値を公開しているプロダクトのみを含みます。",
+  "addHeadline": "ひとこと紹介を追加して、自分のことを知ってもらいましょう。",
+  "noProductsTitle": "掲載プロダクトはありません",
+  "noProductsBody": "<name></name>はまだプロダクトを掲載していません。",
+  "report": "このプロフィールを報告",
+  "details": {
+    "website": "ウェブサイト",
+    "link": "リンク"
+  }
+}

@@ -254,6 +254,13 @@
     "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans CJK SC", "Source Han Sans SC";
   --heading-tracking: 0em;
 }
+:root:lang(ja) {
+  --font-script:
+    "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Yu Gothic", Meiryo, "Noto Sans CJK JP",
+    "Noto Sans JP";
+  --tracking-tight: 0em;
+  --heading-tracking: 0em;
+}
 
 @layer base {
   * {
