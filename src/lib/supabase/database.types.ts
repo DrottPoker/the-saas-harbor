@@ -1181,6 +1181,14 @@ export type Database = {
           source_name: string
         }[]
       }
+      admin_account_preferences: {
+        Args: { p_ids: string[] }
+        Returns: {
+          currency: string
+          id: string
+          locale: string
+        }[]
+      }
       admin_accounts: {
         Args: { p_filter: string; p_search: string }
         Returns: {

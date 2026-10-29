@@ -12,7 +12,7 @@
   },
   "data": {
     "title": "Qué guardamos",
-    "account": "<b>Cuenta.</b> Tu correo electrónico, tu contraseña como hash con sal, qué versión de los Términos del Servicio aceptaste y cuándo, eventos de la cuenta, como los inicios de sesión con su hora y dirección IP, el país de tu último inicio de sesión y tu idioma (consulta “Tu idioma y tu moneda”).",
+    "account": "<b>Cuenta.</b> Tu correo electrónico, tu contraseña como hash con sal, qué versión de los Términos del Servicio aceptaste y cuándo, eventos de la cuenta, como los inicios de sesión con su hora y dirección IP, el país de tu último inicio de sesión y tu idioma y moneda de visualización (consulta “Tu idioma y tu moneda”).",
     "google": "<b>Inicio de sesión con Google o GitHub.</b> Si inicias sesión con Google o GitHub, ese servicio nos envía tu ID de cuenta en él, tu correo electrónico, tu nombre y la dirección de tu foto de perfil y, en el caso de GitHub, tu nombre de usuario. Se guardan con tu cuenta y se usan para iniciar tu sesión.",
     "profile": "<b>Perfil.</b> Tu nombre de usuario, que también es la dirección de tu página, los datos que agregas, como tu nombre, titular, ubicación, enlaces y foto, y cuándo cambiaste tu nombre de usuario por última vez.",
     "products": "<b>Productos.</b> Los datos que agregas, como nombre, eslogan, descripción, categoría, sitio web, logotipo, stack tecnológico y fecha de lanzamiento, el nombre de tu proveedor de pagos cuando no es uno con el que nos conectamos y, para el dominio de un producto, el dominio, su registro DNS y cuándo se comprobó.",
@@ -43,7 +43,7 @@
   "language": {
     "title": "Tu idioma y tu moneda",
     "choice": "Las páginas se muestran en el idioma que eliges, y los montos, en la moneda que eliges. Cada elección se guarda en una cookie en tu navegador durante un año y no se envía a otros sitios. Hasta que eliges, el idioma sigue la configuración de idioma de tu navegador, y la moneda es la del país que nuestro proveedor de alojamiento obtiene a partir de tu dirección IP. Para esto no se guarda ni la dirección IP ni el país.",
-    "account": "Si iniciaste sesión, tu idioma también se guarda con tu cuenta, para que los correos te lleguen en ese idioma. Se establece cuando creas tu cuenta, inicias sesión o cambias de idioma, y se elimina junto con tu cuenta.",
+    "account": "Si iniciaste sesión, el último idioma y la última moneda de visualización que usaste también se guardan con tu cuenta al registrarte, iniciar sesión o cambiar cualquiera de las dos opciones. Tu idioma se usa para los correos. Los administradores pueden ver ambas opciones para ayudar a los usuarios y entender cómo se usa el servicio. Se eliminan junto con tu cuenta; las preferencias pueden variar entre dispositivos.",
     "rates": "Los montos en otras monedas se convierten desde dólares estadounidenses con tipos de cambio de referencia diarios de Frankfurter. Nuestro servidor obtiene los tipos de cambio sin enviar nada sobre ti."
   },
   "purposes": {

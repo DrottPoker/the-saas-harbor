@@ -2,6 +2,7 @@ import "server-only";
 import { cache } from "react";
 import { notFound } from "next/navigation";
 import type { RevenueColumn } from "./revenue-figures";
+import type { AccountPreferences } from "./account-preference-labels";
 import { currentUser, serverClient } from "./supabase/server";
 import type { Database } from "./supabase/database.types";
 
@@ -45,6 +46,16 @@ export async function requireAdmin() {
   const session = await adminSession();
   if (!session) notFound();
   return session;
+}
+
+/** Preferences are private account data, read through an admin-checked function. */
+export async function adminAccountPreferences(client: AdminClient, ids: string[]) {
+  const preferences = new Map<string, AccountPreferences>();
+  if (!ids.length) return preferences;
+  const { data, error } = await client.rpc("admin_account_preferences", { p_ids: ids });
+  if (error) throw new Error("Account preferences could not be loaded.");
+  for (const entry of data) preferences.set(entry.id, entry);
+  return preferences;
 }
 
 /** Maker names by account id. Accounts without a maker profile are missing from the map. */

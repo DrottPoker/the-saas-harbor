@@ -290,6 +290,7 @@ test("Spanish sign-up, emails, provider errors and Arabic account pages work tog
     const user = users.data.users.find((entry) => entry.email === email)!;
     userId = user.id;
     expect(user.user_metadata.locale).toBe("es");
+    expect(user.user_metadata.currency).toBe("USD");
 
     await signedIn.getByLabel("Nombre del producto", { exact: true }).fill(`Language test ${run}`);
     await signedIn
@@ -392,7 +393,44 @@ test("Spanish sign-up, emails, provider errors and Arabic account pages work tog
         await signedIn.keyboard.press("Escape");
       }
     }
-    // Signing in with an existing account keeps the current page's language for future emails.
+    // Currency changes keep the email language, and admins read both saved choices.
+    await choose(signedIn, "currency", "EUR");
+    await expect
+      .poll(
+        async () => (await admin.auth.admin.getUserById(userId!)).data.user?.user_metadata.currency,
+      )
+      .toBe("EUR");
+    expect((await admin.auth.admin.getUserById(userId)).data.user?.user_metadata.locale).toBe("ar");
+    expect((await admin.rpc("set_admin", { p_email: email, p_admin: true })).error).toBeNull();
+    for (const theme of ["light", "dark"] as const) {
+      await signedIn.emulateMedia({ colorScheme: theme });
+      for (const width of [390, 1440]) {
+        await signedIn.setViewportSize({ width, height: 900 });
+        await signedIn.goto(`/admin/accounts?q=${encodeURIComponent(email)}`);
+        await expect(
+          signedIn
+            .getByRole("list", { name: "Accounts", exact: true })
+            .getByText("Language: Arabic · Currency: EUR", { exact: true }),
+        ).toBeVisible();
+        await expectNoHorizontalScroll(signedIn);
+        await expectAccessible(signedIn);
+        await signedIn.screenshot({
+          path: `test-results/account-preferences-list-${theme}-${width}.png`,
+          fullPage: true,
+        });
+        await signedIn.goto(`/admin/accounts/${userId}`);
+        const facts = signedIn.getByRole("region", { name: "Account", exact: true });
+        await expect(facts.getByText("Arabic", { exact: true })).toBeVisible();
+        await expect(facts.getByText("EUR", { exact: true })).toBeVisible();
+        await expectNoHorizontalScroll(signedIn);
+        await expectAccessible(signedIn);
+        await signedIn.screenshot({
+          path: `test-results/account-preferences-detail-${theme}-${width}.png`,
+          fullPage: true,
+        });
+      }
+    }
+    // Signing in elsewhere records that browser's detected currency and page language.
     const login = await page.context().newPage();
     await login.goto("/ru/auth");
     await login.locator("#email").fill(email);
@@ -400,6 +438,9 @@ test("Spanish sign-up, emails, provider errors and Arabic account pages work tog
     await login.locator('button[type="submit"]').click();
     await expect(login).toHaveURL(/\/ru\/dashboard$/);
     expect((await admin.auth.admin.getUserById(userId)).data.user?.user_metadata.locale).toBe("ru");
+    expect((await admin.auth.admin.getUserById(userId)).data.user?.user_metadata.currency).toBe(
+      "USD",
+    );
   } finally {
     await context.close().catch(() => undefined);
     // A failure before confirmation still leaves an Auth account that must be removed.

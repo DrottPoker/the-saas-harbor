@@ -10,7 +10,8 @@ import {
   usernameLockDays,
 } from "@/lib/account";
 import { recordAccountSource } from "@/lib/account-source";
-import { rememberAccountLanguage } from "@/lib/account-language";
+import { rememberAccountPreferences } from "@/lib/account-preferences";
+import { wantedCurrency } from "@/lib/display-currency";
 import { confirmationMethod, PROVIDER_NAMES, signedInWithin } from "@/lib/auth";
 import {
   emailLink,
@@ -140,10 +141,15 @@ export async function authenticate(
       password,
       // Triggers create the profile with the username (as name and address) and copy the
       // accepted version of the terms into private.terms_acceptances.
-      // The language is kept with the account for the emails it gets (src/lib/email).
+      // Preferences stay with the account; the language also controls emails.
       options: {
         emailRedirectTo: confirm,
-        data: { terms_version: termsUpdated, username, locale: await getLocale() },
+        data: {
+          terms_version: termsUpdated,
+          username,
+          locale: await getLocale(),
+          currency: await wantedCurrency(),
+        },
       },
     });
     if (error)
@@ -171,7 +177,10 @@ export async function authenticate(
   } else {
     const { data, error } = await client.auth.signInWithPassword({ email, password });
     if (error) return { error: t("signInFailed") };
-    await rememberAccountLanguage(client, data.user, await getLocale());
+    await rememberAccountPreferences(client, data.user, {
+      locale: await getLocale(),
+      currency: await wantedCurrency(),
+    });
   }
   // A sign-up without email confirmation has signed in too.
   if (mode === "login" || mode === "signup") await recordSignInCountry(client);
@@ -241,6 +250,11 @@ export async function confirmEmailLinkAction(
             : "linkExpiredSignup",
       ),
     };
+  if (data.user && data.session)
+    await rememberAccountPreferences(client, data.user, {
+      locale: await getLocale(),
+      currency: await wantedCurrency(),
+    });
   if (link.type === "email_change") {
     // The first of the two addresses to confirm gets no session: the other one still has to.
     if (!data.session) return { success: t("emailChangeHalfway") };
@@ -274,7 +288,10 @@ export async function finishSignupAction(
     return {
       error: t(error.message === "username taken" ? "username.taken" : "actions.setupFailed"),
     };
-  await rememberAccountLanguage(client, user, await getLocale());
+  await rememberAccountPreferences(client, user, {
+    locale: await getLocale(),
+    currency: await wantedCurrency(),
+  });
   sendQueuedTelegramAlerts();
   revalidatePath("/", "layout");
   return localeRedirect(next || (await startPage(client, user.id)));

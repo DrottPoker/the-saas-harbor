@@ -11,12 +11,14 @@ import { BackLink } from "@/components/back-link";
 import { LocalTime } from "@/components/local-time";
 import { Notice } from "@/components/shell";
 import {
+  adminAccountPreferences,
   adminOtherProviders,
   adminRevenue,
   openReportCounts,
   profileNames,
   requireAdmin,
 } from "@/lib/admin";
+import { accountLanguageLabel, accountCurrencyLabel } from "@/lib/account-preference-labels";
 import { countryName } from "@/lib/analytics-reports";
 import { decisionLabels, isReason } from "@/lib/moderation";
 import { firstValues, type SearchParams } from "@/lib/params";
@@ -36,7 +38,7 @@ export default async function AdminAccount({ params, searchParams }: Props) {
   const { user, client } = await requireAdmin();
   const { id } = await params;
   if (!z.uuid().safeParse(id).success) notFound();
-  const [account, profile, products, reports, sent, log] = await Promise.all([
+  const [account, profile, products, reports, sent, log, preferences] = await Promise.all([
     client.rpc("admin_account", { p_id: id }).maybeSingle(),
     client.from("profiles").select("*").eq("id", id).maybeSingle(),
     client
@@ -57,6 +59,7 @@ export default async function AdminAccount({ params, searchParams }: Props) {
       .eq("subject_id", id)
       .order("created_at", { ascending: false })
       .limit(50),
+    adminAccountPreferences(client, [id]),
   ]);
   for (const result of [account, profile, products, reports, sent, log])
     if (result.error) throw new Error("This account could not be loaded.");
@@ -100,10 +103,16 @@ export default async function AdminAccount({ params, searchParams }: Props) {
       <div className="grid grid-cols-[minmax(0,1fr)] gap-8 pt-8 lg:grid-cols-[minmax(0,1fr)_22rem] lg:gap-10">
         <div className="grid grid-cols-[minmax(0,1fr)] content-start gap-6">
           <DoneNotice done={firstValues(await searchParams).done} />
-          <Panel id="details" title="Account">
+          <Panel
+            id="details"
+            title="Account"
+            description="Language and currency are the latest choices saved at sign-in or in the header menu."
+          >
             <Facts
               rows={[
                 ["Email", account.data.email],
+                ["Language", accountLanguageLabel(preferences.get(id)?.locale)],
+                ["Currency", accountCurrencyLabel(preferences.get(id)?.currency)],
                 ["Joined", date(account.data.created_at)],
                 ["Last sign-in", date(account.data.last_sign_in_at)],
                 [

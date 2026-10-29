@@ -1,5 +1,10 @@
 import Link from "next/link";
 import type { AdminRevenue, LogEntry, Report } from "@/lib/admin";
+import {
+  accountLanguageLabel,
+  accountCurrencyLabel,
+  type AccountPreferences,
+} from "@/lib/account-preference-labels";
 import { formatUsd } from "@/lib/domain";
 import {
   actionLabels,
@@ -177,7 +182,13 @@ export type AdminAccount = {
   open_reports: number;
 };
 
-export function AccountList({ accounts }: { accounts: AdminAccount[] }) {
+export function AccountList({
+  accounts,
+  preferences,
+}: {
+  accounts: AdminAccount[];
+  preferences: Map<string, AccountPreferences>;
+}) {
   return (
     <ul aria-label="Accounts" className="divide-y rounded-xl border bg-surface shadow-card">
       {accounts.map((account) => (
@@ -189,6 +200,10 @@ export function AccountList({ accounts }: { accounts: AdminAccount[] }) {
                 <p className="truncate font-medium">{account.name ?? "No profile"}</p>
                 <p className="truncate text-sm text-muted-foreground">
                   {account.email} · Joined <LocalTime format="date" value={account.created_at} />
+                </p>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Language: {accountLanguageLabel(preferences.get(account.id)?.locale)} · Currency:{" "}
+                  {accountCurrencyLabel(preferences.get(account.id)?.currency)}
                 </p>
               </div>
             </div>

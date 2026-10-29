@@ -8,6 +8,14 @@ The first release includes accounts, email confirmation and recovery, public mak
 
 Makers can message each other privately (see Messages below), and report products, profiles and messages to the admins, who decide in an admin panel (see Reports and moderation below). They get emails about unread messages and about decisions (see Email notifications below). Other forms of connection, such as following or contact lists, are not implemented.
 
+## Account language and currency for admins 2026-10-29
+
+The owner requested each account's language and currency in Admin Accounts. The main list, funnel account lists and detail pages now show the latest saved choices, with English language names and ISO currency codes. Missing or unsupported values show Not recorded instead of guessed defaults. The account's existing Auth metadata stores language and now display currency at registration, sign-in (password, confirmation and OAuth) and menu changes. Cookies still control each browser; the account values represent the latest saved choices, and unavailable FX rates can temporarily show USD.
+
+Migration `20261029124821_admin_account_preferences.sql` adds an admin-checked batch read of only these two fields; public profiles never expose them. No existing moderation function or account-list signature changes. The six privacy policies describe storage, admin visibility, different device preferences and deletion with the Auth account. The existing privacy version date already is 2026-10-29.
+
+Verified: `npm run check` (60 files, 922 unit tests), `npm run build`, `npm run test:db` (33 files, 738 tests) and the complete `npm run test:e2e` (43 Chromium tests). Supabase's local security advisor reports no issues, and the local schema diff is empty. Tests cover saving detected choices, changing currency without changing the email language, admin-only reads, missing values and deletion through `delete_account()`. Browser tests read the saved Arabic/EUR choices in both account views, with Axe and overflow checks at 390 and 1440 px in both themes; screenshots were reviewed. The migration was applied to production on 2026-10-29 before the code was published.
+
 ## Multilingual SEO 2026-10-29
 
 The owner asked to finish local-language discoverability after a review found English-only structured data. JSON-LD now reads the request language and reuses the existing message catalogs: canonical page URLs, breadcrumbs, category names, collection titles, ranked product links, FAQ and launch-guide data follow the locale. The multilingual website and organization retain stable root-domain identities, while each home page has a separate `WebPage` with its actual language. The website lists every supported language. External destinations, schema.org identifiers and user-written product/profile content are preserved.

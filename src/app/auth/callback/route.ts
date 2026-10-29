@@ -2,7 +2,8 @@ import { cookies } from "next/headers";
 import { NextResponse, type NextRequest } from "next/server";
 import { localizedPath } from "@/i18n/config";
 import { recordAccountSource } from "@/lib/account-source";
-import { rememberAccountLanguage } from "@/lib/account-language";
+import { rememberAccountPreferences } from "@/lib/account-preferences";
+import { wantedCurrency } from "@/lib/display-currency";
 import { decodeOAuthFlow, OAUTH_FLOW_COOKIE, oauthFailure } from "@/lib/auth";
 import {
   hasFinishedSignup,
@@ -44,7 +45,10 @@ export async function GET(request: NextRequest) {
     await client.auth.signOut({ scope: "local" });
     return to(`/auth?error=account${provider}`);
   }
-  if (flow.locale) await rememberAccountLanguage(client, data.user, flow.locale);
+  await rememberAccountPreferences(client, data.user, {
+    locale: flow.locale ?? undefined,
+    currency: await wantedCurrency(),
+  });
   await recordSignInCountry(client);
   // An account made by this sign-in keeps the source of the visit that led to it.
   if (Date.parse(data.user.created_at) > Date.now() - 60 * 60 * 1000)

@@ -12,7 +12,7 @@
   },
   "data": {
     "title": "What we store",
-    "account": "<b>Account.</b> Your email address, your password as a salted hash, which version of the Terms of Service you accepted and when, account events such as sign-ins with their time and IP address, the country of your latest sign-in, and your language (see Your language and currency).",
+    "account": "<b>Account.</b> Your email address, your password as a salted hash, which version of the Terms of Service you accepted and when, account events such as sign-ins with their time and IP address, the country of your latest sign-in, and your language and display currency (see Your language and currency).",
     "google": "<b>Sign-in with Google or GitHub.</b> If you sign in with Google or GitHub, that service sends us your account ID there, email address, name and the address of your profile picture, and for GitHub your username. They are stored with your account and used to sign you in.",
     "profile": "<b>Profile.</b> Your username, which is also your page address, the details you add, such as your name, headline, location, links and photo, and when you last changed your username.",
     "products": "<b>Products.</b> The details you add, such as name, tagline, description, category, website, logo, tech stack and launch date, the name of your payment provider when it is not one we connect, and for a product's domain, the domain, its DNS record and when it was checked.",
@@ -43,7 +43,7 @@
   "language": {
     "title": "Your language and currency",
     "choice": "Pages are shown in the language you choose, and amounts in the currency you choose. Each choice is kept in a cookie in your browser for a year and is not sent to other sites. Until you choose, the language follows your browser's language settings, and the currency is that of the country our host looks up from your IP address. Neither the IP address nor the country is stored for this.",
-    "account": "If you are signed in, your language is also kept with your account, so that emails reach you in that language. It is set when you sign up, sign in or change the language, and it is deleted with your account.",
+    "account": "If you are signed in, your latest language and display currency are also kept with your account when you sign up, sign in or change either choice. Your language is used for emails. Admins can see both choices to support users and understand how the service is used. They are deleted with your account; preferences on different devices may differ.",
     "rates": "Amounts in other currencies are converted from US dollars with daily reference rates from Frankfurter. Our server fetches the rates without sending anything about you."
   },
   "purposes": {

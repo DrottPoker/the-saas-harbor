@@ -4,7 +4,7 @@ import { AccountList } from "@/components/admin/rows";
 import { BackLink } from "@/components/back-link";
 import { ResultsFooter } from "@/components/listings";
 import { EmptyState, PageHeader } from "@/components/shell";
-import { ADMIN_PAGE_SIZE, requireAdmin } from "@/lib/admin";
+import { ADMIN_PAGE_SIZE, adminAccountPreferences, requireAdmin } from "@/lib/admin";
 import {
   FUNNEL_STEPS,
   RANGE_VALUES,
@@ -83,6 +83,10 @@ export default async function AdminAccounts({
   if (addresses?.error) throw new Error("Accounts could not be loaded.");
   const accounts = listed.data ?? [];
   const count = listed.count ?? 0;
+  const preferences = await adminAccountPreferences(
+    client,
+    accounts.map((account) => account.id),
+  );
 
   if (stopped) {
     const step = FUNNEL_STEPS[stopped.step];
@@ -109,7 +113,7 @@ export default async function AdminAccounts({
           </EmptyState>
         ) : (
           <>
-            <AccountList accounts={accounts} />
+            <AccountList accounts={accounts} preferences={preferences} />
             <ResultsFooter
               page={page}
               count={count}
@@ -127,7 +131,7 @@ export default async function AdminAccounts({
     <>
       <PageHeader
         title="Accounts"
-        description="Every account, newest first, including those without a profile."
+        description="Every account, newest first, including those without a profile. Language and currency show the latest saved choices."
         actions={
           <SearchForm
             action="/admin/accounts"
@@ -149,7 +153,7 @@ export default async function AdminAccounts({
         <EmptyState title="No matching accounts">Try another filter or search term.</EmptyState>
       ) : (
         <>
-          <AccountList accounts={accounts} />
+          <AccountList accounts={accounts} preferences={preferences} />
           <ResultsFooter
             page={page}
             count={count}

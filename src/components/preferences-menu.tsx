@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import { Popover } from "radix-ui";
 import { Globe } from "lucide-react";
-import { saveAccountLanguageAction } from "@/app/preference-actions";
+import { saveAccountCurrencyAction, saveAccountLanguageAction } from "@/app/preference-actions";
 import { isLocale, LOCALE_COOKIE, LOCALE_INFO, LOCALES, localizedPath } from "@/i18n/config";
 import { usePagePath } from "@/i18n/client";
 import {
@@ -71,10 +71,13 @@ export function PreferencesMenu({
     );
   }
 
-  function chooseCurrency(value: string) {
+  async function chooseCurrency(value: string) {
     if (!isCurrency(value) || value === currency) return;
+    setBusy(true);
     saveChoice(CURRENCY_COOKIE, value);
+    if (signedIn) await saveAccountCurrencyAction(value).catch(() => undefined);
     router.refresh();
+    setBusy(false);
   }
 
   return (
