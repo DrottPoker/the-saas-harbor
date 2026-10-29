@@ -1,8 +1,11 @@
+import { useTranslations } from "next-intl";
+
 /** The conversation list while it loads. */
 export function ConversationListSkeleton() {
+  const t = useTranslations("messages");
   return (
     <div role="status" className="animate-pulse">
-      <span className="sr-only">Loading</span>
+      <span className="sr-only">{t("loading")}</span>
       <div className="flex min-h-14 items-center border-b px-4">
         <div className="h-5 w-28 rounded-md bg-muted" />
       </div>
@@ -21,9 +24,10 @@ export function ConversationListSkeleton() {
 
 /** The open conversation while it loads. */
 export function ConversationSkeleton() {
+  const t = useTranslations("messages");
   return (
     <div role="status" className="flex flex-1 animate-pulse flex-col">
-      <span className="sr-only">Loading</span>
+      <span className="sr-only">{t("loading")}</span>
       <div className="flex min-h-14 items-center gap-3 border-b px-4">
         <div className="size-8 rounded-full bg-muted" />
         <div className="h-5 w-40 rounded-md bg-muted" />

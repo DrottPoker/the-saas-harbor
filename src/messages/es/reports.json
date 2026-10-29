@@ -1,1 +1,95 @@
-{}
+{
+  "meta": {
+    "title": "Denunciar"
+  },
+  "page": {
+    "description": "Cuéntanos qué está mal. Un administrador revisa cada denuncia.",
+    "title": "Denunciar {name}",
+    "messageTitle": "Denunciar un mensaje",
+    "ownProduct": "Este es tu producto, así que no puedes denunciarlo.",
+    "ownProfile": "Este es tu perfil, así que no puedes denunciarlo.",
+    "ownMessage": "Este es tu propio mensaje, así que no puedes denunciarlo.",
+    "productFallback": "Producto",
+    "messages": "Mensajes",
+    "from": "De <sender>{name}</sender>, <time></time>"
+  },
+  "reasons": {
+    "spam": {
+      "label": "Spam o publicidad",
+      "hint": "Promoción no deseada, mensajes repetidos o una publicación que no es un producto real."
+    },
+    "misleading": {
+      "label": "Información engañosa o falsa",
+      "hint": "Afirmaciones falsas sobre un producto o una persona."
+    },
+    "impersonation": {
+      "label": "Se hace pasar por otra persona",
+      "hint": "Usa el nombre, la marca o el trabajo de otra persona sin permiso."
+    },
+    "harassment": {
+      "label": "Acoso u odio",
+      "hint": "Amenazas, insultos o contenido de odio dirigido a una persona o a un grupo."
+    },
+    "illegal": {
+      "label": "Contenido ilegal",
+      "hint": "Infringe la ley, por ejemplo un fraude o contenido que vulnera los derechos de alguien."
+    },
+    "other": {
+      "label": "Otra cosa",
+      "hint": "Cualquier otra cosa que incumpla los términos."
+    }
+  },
+  "form": {
+    "legend": "¿Cuál es el problema?",
+    "details": "Detalles",
+    "detailsHint": "¿Qué está mal y dónde? Obligatorio para Contenido ilegal y para Otra cosa.",
+    "anonymous": "Al usuario denunciado no se le dice quién lo denunció. Los <link>términos</link> indican lo que no está permitido.",
+    "submit": "Enviar denuncia",
+    "sending": "Enviando..."
+  },
+  "errors": {
+    "cannotReport": "No se pudo denunciar esto.",
+    "sendFailed": "No se pudo enviar tu denuncia. Inténtalo de nuevo.",
+    "chooseReason": "Elige un motivo.",
+    "detailsTooLong": "Los detalles deben tener menos de {max} caracteres.",
+    "detailsRequired": "Describe el problema para que se pueda revisar.",
+    "suspended": "Tu cuenta está suspendida, así que no puedes enviar denuncias.",
+    "tooMany": "Enviaste muchas denuncias. Inténtalo más tarde.",
+    "productNotFound": "No se encontró este producto.",
+    "ownProduct": "No puedes denunciar tu propio producto.",
+    "userNotFound": "No se encontró este usuario.",
+    "ownProfile": "No puedes denunciarte a ti mismo.",
+    "messageNotFound": "No se encontró este mensaje.",
+    "ownMessage": "No puedes denunciar tu propio mensaje.",
+    "chooseTarget": "Elige qué quieres denunciar.",
+    "alreadyReported": "Ya denunciaste esto y está pendiente de revisión."
+  },
+  "list": {
+    "title": "Tus denuncias",
+    "description": "Las denuncias que enviaste sobre productos, perfiles y mensajes, y qué pasó con ellas.",
+    "sent": "Gracias. Tu denuncia se envió y un administrador la revisará.",
+    "emptyTitle": "Todavía no hay denuncias",
+    "emptyBody": "Para denunciar un producto, un perfil o un mensaje que recibiste, elige Denunciar junto a él.",
+    "label": "Denuncias que enviaste",
+    "about": "{target}:",
+    "targets": {
+      "saas": "Producto",
+      "profile": "Perfil",
+      "message": "Mensaje",
+      "unknown": "Denuncia"
+    },
+    "quote": "“{text}”",
+    "aMessage": "Un mensaje",
+    "unnamed": "Sin nombre",
+    "sentOn": "Enviada el <date></date>",
+    "decidedOn": "Resuelta el <date></date>",
+    "statuses": {
+      "open": "Pendiente de revisión",
+      "actioned": "Se tomaron medidas",
+      "dismissed": "No se tomaron medidas"
+    },
+    "reviewed": "Un administrador revisa cada denuncia. Al usuario denunciado no se le dice quién lo denunció.",
+    "disagree": "Si no estás de acuerdo con una decisión, escribe a <contact></contact>.",
+    "terms": "Los <link>términos</link> explican cómo se gestionan las denuncias."
+  }
+}

@@ -1,1 +1,121 @@
-{}
+{
+  "greeting": "{name}，你好：",
+  "greetingNoName": "你好：",
+  "settings": "选择你要接收的邮件",
+  "terms": "服务条款",
+  "message": {
+    "subject": "来自 {sender} 的新消息",
+    "body": "{count, plural, =1 {{sender} 在 The SaaS Harbor 上给你发了一条消息。} other {{sender} 在 The SaaS Harbor 上给你发了 # 条消息。}}",
+    "action": "阅读并回复",
+    "footer": "在你阅读之前，每个对话只会发送一封邮件，邮件中不会包含消息内容。"
+  },
+  "reports": {
+    "subject": "The SaaS Harbor 上有 {count} 条待处理的举报",
+    "body": "{count, plural, =1 {有一条举报等待审核。} other {有 # 条举报等待审核。}}",
+    "action": "打开举报队列",
+    "footer": "因为你是管理员，这类邮件每小时最多发送一封。"
+  },
+  "decision": {
+    "reason": "原因：{reason}",
+    "explanation": "说明：",
+    "person": "这个决定由人工做出，而不是自动系统。",
+    "personContact": "这个决定由人工做出，而不是自动系统。如果你认为这个决定有误，请发邮件到 {contact} 并说明理由。",
+    "dashboard": "打开你的控制台",
+    "footer": "这封邮件与你的账号有关，所以即使你关闭了其他邮件，它也会发送。",
+    "reasons": {
+      "spam": "垃圾信息或广告",
+      "misleading": "误导性或虚假信息",
+      "impersonation": "冒充他人",
+      "harassment": "骚扰或仇恨言论",
+      "illegal": "违法内容",
+      "other": "其他违反条款的行为"
+    },
+    "hideSaas": {
+      "subject": "管理员隐藏了你的产品 {name}",
+      "body": "管理员在 The SaaS Harbor 上隐藏了 {name}。它不会在网站的任何地方显示，你仍然可以编辑或删除它。"
+    },
+    "restoreSaas": {
+      "subject": "你的产品 {name} 已重新显示",
+      "body": "管理员重新审核了 {name}，它已在 The SaaS Harbor 上重新显示。"
+    },
+    "suspendAccount": {
+      "subject": "你在 The SaaS Harbor 上的账号已被暂停",
+      "body": "管理员暂停了你的账号。你的个人主页和产品已被隐藏，你无法发送消息或举报。你仍然可以登录、编辑你的产品以及删除你的账号。"
+    },
+    "restoreAccount": {
+      "subject": "你在 The SaaS Harbor 上的账号已恢复",
+      "body": "管理员解除了你账号的暂停。你的个人主页和产品已重新显示，你也可以发送消息了。"
+    }
+  },
+  "milestone": {
+    "subject": {
+      "mrr": "{name} 的 MRR 达到了 {amount}",
+      "top": "{name} 进入了前 {place} 名",
+      "first": "{name} 登上了第一名"
+    },
+    "sentence": {
+      "mrr": "{name} 的月经常性收入达到了 {amount}。",
+      "top": "{name} 进入了 The SaaS Harbor 已验证收入排行榜的前 {place} 名。",
+      "first": "{name} 登上了 The SaaS Harbor 已验证收入排行榜的第一名。"
+    },
+    "also": {
+      "mrr": "它的 MRR 也达到了 {amount}。",
+      "top": "它还进入了前 {place} 名。",
+      "first": "它还登上了第一名。"
+    },
+    "provider": "收入已通过 {provider} 验证。",
+    "card": "我们为此制作了一张卡片。分享链接时，卡片会随你的帖子一起显示。",
+    "alt": {
+      "mrr": "{name} 在 The SaaS Harbor 上的 MRR 达到 {amount}",
+      "top": "{name} 进入 The SaaS Harbor 前 {place} 名",
+      "first": "{name} 登上 The SaaS Harbor 第一名"
+    },
+    "share": {
+      "mrr": "{name} 的 MRR 刚刚达到 {amount}，已在 The SaaS Harbor 上验证。",
+      "top": "{name} 现已进入 The SaaS Harbor 已验证收入排行榜前 {place} 名。",
+      "first": "{name} 现已位列 The SaaS Harbor 已验证收入排行榜第一名。"
+    },
+    "shareX": "分享到 X",
+    "shareLinkedIn": "分享到 LinkedIn",
+    "page": "打开里程碑页面",
+    "footer": "在你的产品公开 MRR 期间，每达到一个里程碑，你都会收到一次这封邮件。"
+  },
+  "outcome": {
+    "subject": "你的举报已审核",
+    "about": {
+      "message": "管理员审核了你对一条收到的消息的举报。",
+      "saas": "管理员审核了你对产品 {name} 的举报。",
+      "profile": "管理员审核了你对 {name} 的个人主页的举报。"
+    },
+    "actioned": "管理员已采取措施，例如隐藏产品或暂停账号。",
+    "dismissed": "管理员认为它没有违反条款或法律，因此没有采取措施。",
+    "action": "查看你的举报",
+    "footer": "被举报的用户不会知道是谁举报的。你的每一次举报都会收到这封邮件。"
+  },
+  "auth": {
+    "confirmation": {
+      "subject": "确认你在 The SaaS Harbor 的邮箱",
+      "heading": "确认你的邮箱",
+      "preview": "确认你的邮箱地址，完成账号创建。",
+      "body": "感谢你注册 The SaaS Harbor。确认你的邮箱地址，完成账号创建。",
+      "action": "确认你的邮箱",
+      "footer": "链接只能使用一次，一小时后失效，你可以在任何设备上打开它。如果你没有注册，请忽略这封邮件，不会创建任何账号。"
+    },
+    "recovery": {
+      "subject": "重置你在 The SaaS Harbor 的密码",
+      "heading": "重置你的密码",
+      "preview": "为你在 The SaaS Harbor 的账号设置新密码。",
+      "body": "有人请求重置你在 The SaaS Harbor 的账号密码。点击下方按钮设置新密码。",
+      "action": "设置新密码",
+      "footer": "链接只能使用一次，一小时后失效，你可以在任何设备上打开它。如果这不是你的请求，请忽略这封邮件，你的密码不会改变。"
+    },
+    "emailChange": {
+      "subject": "确认你在 The SaaS Harbor 的新邮箱地址",
+      "heading": "确认你的新邮箱地址",
+      "preview": "确认更改你在 The SaaS Harbor 的邮箱地址。",
+      "body": "有人请求将你在 The SaaS Harbor 的账号邮箱地址从 {email} 更改为 {newEmail}。两个地址都确认后才会更改。",
+      "action": "确认更改",
+      "footer": "链接只能使用一次，一小时后失效，你可以在任何设备上打开它。如果这不是你的请求，请忽略这封邮件，你的邮箱地址不会改变。"
+    }
+  }
+}

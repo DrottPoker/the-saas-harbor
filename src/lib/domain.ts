@@ -2,6 +2,7 @@ import { z } from "zod";
 import { DETAILS_MAX_LENGTH, DETAILS_REQUIRED, NOTE_MAX_LENGTH, REASONS } from "./moderation";
 import { TECH_STACK_MAX, techFromSlug } from "./tech";
 import { formatDay } from "./time";
+import { invalid } from "./validation";
 
 export const categories = [
   "AI & Machine Learning",
@@ -84,25 +85,28 @@ const optionalUrl = address.refine(
           return false;
         }
       })()),
-  "Enter a web address, such as example.com, without spaces.",
+  invalid("address.web"),
 );
 // A link to a profile on one site, such as LinkedIn: https, the right host and a path.
 function profileLink(host: RegExp, site: string, example: string) {
-  return address.refine((value) => {
-    if (!value) return true;
-    try {
-      const url = new URL(value);
-      return (
-        url.protocol === "https:" &&
-        host.test(url.hostname) &&
-        url.pathname.length > 1 &&
-        !url.username &&
-        !url.password
-      );
-    } catch {
-      return false;
-    }
-  }, `Use your ${site} address, such as ${example}.`);
+  return address.refine(
+    (value) => {
+      if (!value) return true;
+      try {
+        const url = new URL(value);
+        return (
+          url.protocol === "https:" &&
+          host.test(url.hostname) &&
+          url.pathname.length > 1 &&
+          !url.username &&
+          !url.password
+        );
+      } catch {
+        return false;
+      }
+    },
+    invalid("address.profile", { site, example }),
+  );
 }
 /**
  * The latest date anywhere, in the time zone furthest ahead (UTC+14): what "today" is for a founder
@@ -112,13 +116,9 @@ export function latestDate(now = new Date()) {
   return new Date(now.getTime() + 14 * 3_600_000).toISOString().slice(0, 10);
 }
 export const profileSchema = z.object({
-  name: z
-    .string()
-    .trim()
-    .min(2, "Use a name of 2 to 60 characters.")
-    .max(60, "Use a name of 2 to 60 characters."),
-  headline: z.string().trim().max(120, "Keep the headline under 120 characters."),
-  location: z.string().trim().max(80, "Keep the location under 80 characters."),
+  name: z.string().trim().min(2, invalid("profile.name")).max(60, invalid("profile.name")),
+  headline: z.string().trim().max(120, invalid("profile.headline")),
+  location: z.string().trim().max(80, invalid("profile.location")),
   website: optionalUrl,
   linkedin_url: profileLink(
     /^([a-z0-9-]+\.)*linkedin\.com$/i,
@@ -131,36 +131,41 @@ export const profileSchema = z.object({
 });
 export const saasSchema = z.object({
   id: z.uuid(),
-  name: z.string().trim().min(2).max(80),
-  tagline: z.string().trim().min(5).max(140),
-  description: z.string().trim().min(20).max(5000),
-  category: z.enum(categories, { message: "Choose a category." }),
-  website: optionalUrl.refine(Boolean, "A website is required."),
+  name: z.string().trim().min(2, invalid("product.name")).max(80, invalid("product.name")),
+  tagline: z
+    .string()
+    .trim()
+    .min(5, invalid("product.tagline"))
+    .max(140, invalid("product.tagline")),
+  description: z
+    .string()
+    .trim()
+    .min(20, invalid("product.description"))
+    .max(5000, invalid("product.description")),
+  category: z.enum(categories, { message: invalid("product.category") }),
+  website: optionalUrl.refine(Boolean, invalid("product.website")),
   /** Required since 2026-10-22; products saved before may have none until they are saved again. */
   launched_on: z
     .string()
-    .min(1, { message: "Enter the launch date.", abort: true })
+    .min(1, { message: invalid("product.launchDate"), abort: true })
     .refine(
       (v) =>
         /^\d{4}-\d{2}-\d{2}$/.test(v) &&
         !Number.isNaN(Date.parse(v)) &&
         new Date(v).toISOString().slice(0, 10) === v,
-      { message: "Enter a valid date.", abort: true },
+      { message: invalid("product.validDate"), abort: true },
     )
-    .refine(
-      (v) => v >= "1970-01-01" && v <= latestDate(),
-      "Enter a launch date between 1970 and today.",
-    ),
+    .refine((v) => v >= "1970-01-01" && v <= latestDate(), invalid("product.launchRange")),
   /** MRR and revenue from payments are shared or hidden together. */
   share_revenue: z.boolean(),
   share_customers: z.boolean(),
   share_launch: z.boolean(),
   tech_stack: z
     .array(z.string())
-    .max(TECH_STACK_MAX, `Choose up to ${TECH_STACK_MAX} technologies.`)
+    .max(TECH_STACK_MAX, invalid("product.techMax", { max: TECH_STACK_MAX }))
     .refine(
       (stack) => stack.every((slug) => techFromSlug(slug)) && new Set(stack).size === stack.length,
-      "Choose technologies from the list.",
+      invalid("product.techList"),
     ),
 });
 /** The payment provider a founder names under Other, when theirs is not supported. */
@@ -172,10 +177,10 @@ export const otherProviderSchema = z
   .pipe(
     z
       .string()
-      .min(1, "Write the name of your payment provider.")
+      .min(1, invalid("otherProvider.required"))
       .max(
         OTHER_PROVIDER_MAX_LENGTH,
-        `Keep the payment provider under ${OTHER_PROVIDER_MAX_LENGTH} characters.`,
+        invalid("otherProvider.max", { max: OTHER_PROVIDER_MAX_LENGTH }),
       ),
   );
 export type ActionState = { error?: string; success?: string };
@@ -186,7 +191,7 @@ export type ActionState = { error?: string; success?: string };
  */
 export const USERNAME_MIN_LENGTH = 3;
 export const USERNAME_MAX_LENGTH = 30;
-export const USERNAME_RULES = "Use 3 to 30 letters, numbers and single hyphens, like jane-doe.";
+export const USERNAME_RULES = invalid("username.rules");
 export const usernameSchema = z
   .string()
   .trim()
@@ -200,9 +205,9 @@ export const usernameSchema = z
   );
 export const USERNAME_PROBLEMS = {
   format: USERNAME_RULES,
-  reserved: "That username is reserved. Choose another one.",
-  taken: "That username is taken. Choose another one.",
-} as const;
+  reserved: invalid("username.reserved"),
+  taken: invalid("username.taken"),
+};
 export type UsernameProblem = keyof typeof USERNAME_PROBLEMS;
 
 /** Days between username changes, as in public.set_username. The first change is free. */
@@ -221,7 +226,7 @@ export function usernameAsTyped(input: string) {
 /** When the username can be changed again, in days from now, such as "in 12 days". */
 export function usernameLockedMessage(availableAt: string, now = Date.now()) {
   const days = Math.max(1, Math.ceil((new Date(availableAt).getTime() - now) / 86_400_000));
-  return `You can change your username again in ${days} ${days === 1 ? "day" : "days"}.`;
+  return invalid("username.locked", { days });
 }
 
 /** Password length for new passwords, also set in Supabase Auth (supabase/config.toml). */
@@ -230,14 +235,14 @@ export const PASSWORD_MAX_LENGTH = 128;
 
 export const MESSAGE_MAX_LENGTH = 4000;
 
-const reason = z.enum(REASONS, { message: "Choose a reason." });
+const reason = z.enum(REASONS, { message: invalid("report.reason") });
 export const reportSchema = z
   .object({
     reason,
-    details: z.string().trim().max(DETAILS_MAX_LENGTH, "Keep the details under 1,000 characters."),
+    details: z.string().trim().max(DETAILS_MAX_LENGTH, invalid("report.details")),
   })
   .refine((report) => !DETAILS_REQUIRED.includes(report.reason) || report.details.length > 0, {
-    message: "Describe the problem so it can be reviewed.",
+    message: invalid("report.describe"),
     path: ["details"],
   });
 // An admin's decision. The explanation is shown to the maker.

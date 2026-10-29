@@ -1,8 +1,9 @@
 // Milestones a product reaches: an MRR threshold or a place on the leaderboard. The database
 // records them (migration 20260927140000_milestones.sql, which lists the same keys); this module
-// names them and builds the links to share them.
-import { compactUsd } from "./charts";
-import { formatUsd } from "./domain";
+// names them and builds the links to share them. Thresholds are US dollars in every language.
+import { createTranslator } from "next-intl";
+import english from "@/messages/en/milestones.json";
+import { formatCount, formatMoney, usdMoney } from "./display-money";
 import { SITE_NAME } from "./seo";
 
 /** MRR thresholds in whole USD. */
@@ -33,25 +34,53 @@ export function parseMilestone(key: string): Milestone | null {
     : null;
 }
 
-/** Short, for a card or a subject: "$10K MRR", "Top 10", "#1". */
-export function milestoneHeadline(milestone: Milestone) {
-  if (milestone.kind === "mrr") return `${compactUsd(milestone.usd * 100)} MRR`;
-  return milestone.place === 1 ? "#1" : `Top ${milestone.place}`;
+/**
+ * The arguments of the milestones messages for a milestone, written for an `Intl` locale: `kind`
+ * picks the wording (mrr, first or top), `amount` is the threshold in short US dollars ($10K),
+ * `exact` in full ($10,000), and `place` the place in the top.
+ */
+export function milestoneValues(milestone: Milestone, locale: string) {
+  const usd = usdMoney(locale);
+  return milestone.kind === "mrr"
+    ? {
+        kind: "mrr",
+        amount: formatMoney(milestone.usd * 100, usd, "compact"),
+        exact: formatMoney(milestone.usd * 100, usd),
+        place: "",
+        site: SITE_NAME,
+      }
+    : {
+        kind: milestone.place === 1 ? "first" : "top",
+        amount: "",
+        exact: "",
+        place: formatCount(milestone.place, locale),
+        site: SITE_NAME,
+      };
 }
 
-/** What was reached, after "reached": "$10K MRR", "the top 10", "first place". */
+// English, for what reads the same for everyone: sharing images and emails.
+const en = createTranslator({
+  locale: "en",
+  messages: { milestones: english },
+  namespace: "milestones",
+  timeZone: "UTC",
+});
+
+/** Short, for a card or a subject: "$10K MRR", "Top 10", "#1". */
+export function milestoneHeadline(milestone: Milestone) {
+  return en("headline", milestoneValues(milestone, "en-US"));
+}
+
+/** What was reached, after "reached": "$10K MRR", "the top 10", "first place". English only. */
 export function milestoneObject(milestone: Milestone) {
-  if (milestone.kind === "mrr") return `${compactUsd(milestone.usd * 100)} MRR`;
+  if (milestone.kind === "mrr")
+    return `${formatMoney(milestone.usd * 100, usdMoney(), "compact")} MRR`;
   return milestone.place === 1 ? "first place" : `the top ${milestone.place}`;
 }
 
 /** A full sentence about the product and the milestone. */
 export function milestoneSentence(milestone: Milestone, name: string) {
-  if (milestone.kind === "mrr")
-    return `${name} reached ${formatUsd(milestone.usd * 100)} in monthly recurring revenue.`;
-  return milestone.place === 1
-    ? `${name} reached first place on the leaderboard of verified revenue on ${SITE_NAME}.`
-    : `${name} reached the top ${milestone.place} on the leaderboard of verified revenue on ${SITE_NAME}.`;
+  return en("sentence", { ...milestoneValues(milestone, "en-US"), name });
 }
 
 /**
@@ -70,9 +99,7 @@ export function notableMilestones(keys: string[]): Milestone[] {
 
 /** The text of a post about the milestone, written for the founder to share. */
 export function shareText(milestone: Milestone, name: string) {
-  if (milestone.kind === "mrr")
-    return `${name} just reached ${milestoneObject(milestone)}, verified on ${SITE_NAME}.`;
-  return `${name} is now ${milestone.place === 1 ? "#1" : `in the top ${milestone.place}`} on ${SITE_NAME}'s leaderboard of verified revenue.`;
+  return en("post", { ...milestoneValues(milestone, "en-US"), name });
 }
 
 /** A milestone's page, relative to the site. */

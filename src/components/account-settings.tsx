@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useTranslations } from "next-intl";
 import { changeEmailAction, changePasswordAction, sendPasswordLinkAction } from "@/app/actions";
 import { PROVIDER_NAMES, type OAuthProvider } from "@/lib/auth";
 import { PASSWORD_MAX_LENGTH, PASSWORD_MIN_LENGTH, type ActionState } from "@/lib/domain";
@@ -11,18 +12,20 @@ import { useEditorAction } from "./use-editor-action";
 
 /** A new email address, confirmed from the current address and the new one. */
 export function ChangeEmailForm({ email }: { email: string }) {
+  const t = useTranslations("account.email");
   const [state, action] = useEditorAction(changeEmailAction);
   return (
     <form action={action} className="grid gap-5">
       <p className="text-sm text-muted-foreground">
-        Your email address is{" "}
-        <strong className="font-medium text-foreground [overflow-wrap:anywhere]">{email}</strong>.
+        {t.rich("current", {
+          email: () => (
+            <strong className="font-medium text-foreground [overflow-wrap:anywhere]">
+              {email}
+            </strong>
+          ),
+        })}
       </p>
-      <Field
-        name="new_email"
-        label="New email address"
-        hint="We send a link to both addresses. The change is made once both are confirmed."
-      >
+      <Field name="new_email" label={t("newLabel")} hint={t("newHint")}>
         <Input
           id="new_email"
           name="email"
@@ -35,7 +38,7 @@ export function ChangeEmailForm({ email }: { email: string }) {
       </Field>
       <Feedback state={state} />
       <div>
-        <Submit pendingLabel="Sending links...">Change email address</Submit>
+        <Submit pendingLabel={t("sending")}>{t("submit")}</Submit>
       </div>
     </form>
   );
@@ -43,6 +46,7 @@ export function ChangeEmailForm({ email }: { email: string }) {
 
 /** Sends a link to choose a password by email. */
 function PasswordLink({ label }: { label: string }) {
+  const t = useTranslations("account.password");
   const [result, setResult] = useState<ActionState>({});
   const [sending, startSending] = useTransition();
   return (
@@ -55,7 +59,7 @@ function PasswordLink({ label }: { label: string }) {
           disabled={sending}
           onClick={() => startSending(async () => setResult(await sendPasswordLinkAction()))}
         >
-          {sending ? "Sending..." : label}
+          {sending ? t("sending") : label}
         </Button>
       </div>
     </div>
@@ -67,21 +71,21 @@ function PasswordLink({ label }: { label: string }) {
  * that signs in with Google or GitHub can choose a password by email instead.
  */
 export function PasswordSettings({ method }: { method: "password" | OAuthProvider }) {
+  const t = useTranslations("account.password");
   const [state, action] = useEditorAction(changePasswordAction);
   if (method !== "password")
     return (
       <div className="grid gap-4">
         <p className="text-sm text-muted-foreground">
-          Your account signs in with {PROVIDER_NAMES[method]}. You can also choose a password, to
-          sign in with your email address.
+          {t("withProvider", { provider: PROVIDER_NAMES[method] })}
         </p>
-        <PasswordLink label="Send a link to choose a password" />
+        <PasswordLink label={t("sendLink")} />
       </div>
     );
   return (
     <div className="grid gap-6">
       <form action={action} className="grid gap-5">
-        <Field name="current_password" label="Current password">
+        <Field name="current_password" label={t("current")}>
           <Input
             id="current_password"
             name="current_password"
@@ -93,8 +97,8 @@ export function PasswordSettings({ method }: { method: "password" | OAuthProvide
         </Field>
         <Field
           name="new_password"
-          label="New password"
-          hint={`At least ${PASSWORD_MIN_LENGTH} characters. Your other devices are signed out.`}
+          label={t("new")}
+          hint={t("newHint", { min: PASSWORD_MIN_LENGTH })}
         >
           <Input
             id="new_password"
@@ -108,12 +112,12 @@ export function PasswordSettings({ method }: { method: "password" | OAuthProvide
         </Field>
         <Feedback state={state} />
         <div>
-          <Submit pendingLabel="Changing...">Change password</Submit>
+          <Submit pendingLabel={t("changing")}>{t("submit")}</Submit>
         </div>
       </form>
       <div className="grid gap-3 border-t pt-5">
-        <p className="text-sm text-muted-foreground">Do not remember your current password?</p>
-        <PasswordLink label="Send a link to choose a new one" />
+        <p className="text-sm text-muted-foreground">{t("forgot")}</p>
+        <PasswordLink label={t("sendNewLink")} />
       </div>
     </div>
   );

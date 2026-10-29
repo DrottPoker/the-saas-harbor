@@ -1,1 +1,32 @@
-{}
+{
+  "title": "域名",
+  "description": "证明网站归你所有：在其域名中添加一条 DNS 记录，产品页面就会显示域名已验证。",
+  "noDomain": "你的网站地址不在自己的域名上（例如 IP 地址），因此无处添加记录。请使用你自己域名下的地址来验证。",
+  "verified": "{domain} 已验证。",
+  "lastChecked": "上次检查：<date></date>。",
+  "notVerified": "{domain} 尚未验证。",
+  "missing": "<date></date> 未找到该记录。此后域名会保持已验证状态三天，请在此之前重新添加记录。",
+  "instructions": "在管理 {domain} DNS 的地方添加这条 TXT 记录，然后进行检查。请保留该记录：系统每天都会重新检查，记录缺失三天后将移除验证标记。托管服务域名下的地址（例如 your-app.vercel.app）无法添加自己的记录。",
+  "type": "类型",
+  "name": "名称",
+  "copyName": "复制名称",
+  "nameHint": "名称填写 {label}：你的 DNS 服务商会自动添加 .{domain}。如果要求填写完整名称，请输入 {name}。",
+  "value": "值",
+  "copyValue": "复制值",
+  "check": "检查 DNS",
+  "checking": "正在检查...",
+  "result": {
+    "notOwner": "你只能验证自己 SaaS 的域名。",
+    "loadFailed": "无法加载该 SaaS。请重试。",
+    "noDomain": "你的网站地址不在自己的域名上，因此无处添加记录。",
+    "failed": "无法检查该域名。请重试。",
+    "tooSoon": "该域名刚刚检查过。请几秒后再试。",
+    "tooOften": "过去一小时内域名检查次数过多。请稍后再试。",
+    "verified": "{domain} 已验证。我们每天都会重新检查该记录。",
+    "missing": "在 {record} 未找到该记录。请检查名称和值；新记录可能需要几分钟才会生效。",
+    "grace": "在 {record} 未找到该记录。记录缺失后，{domain} 会保持已验证状态三天，请在此之前重新添加。",
+    "removed": "该记录已缺失三天，{domain} 不再处于已验证状态。重新添加记录即可再次验证域名。",
+    "dnsTimeout": "DNS 未及时响应。请稍后再试。",
+    "changed": "检查期间你的网站发生了变化。请重试。"
+  }
+}

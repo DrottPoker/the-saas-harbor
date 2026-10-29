@@ -31,5 +31,10 @@ export const getMoney = cache(async (): Promise<Money> => {
   const rates = await displayRates(CURRENCIES);
   const rate = rates?.rates.get(currency.toLowerCase());
   if (!rates || !rate) return usdMoney(intl);
-  return { currency, rate, date: rates.date, locale: intl };
+  return {
+    currency,
+    rate,
+    date: rates.dates.get(currency.toLowerCase()) ?? rates.date,
+    locale: intl,
+  };
 });

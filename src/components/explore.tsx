@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { Search } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 import { categoryKey } from "@/i18n/names";
+import { localePath } from "@/i18n/navigation";
 import { demoRows, listings, rankSort, type Sort } from "@/lib/data";
 import { categories } from "@/lib/domain";
 import { safePage } from "@/lib/params";
@@ -68,6 +69,7 @@ export async function Explore({
   const page = safePage(params.page);
   const search = (params.q ?? "").slice(0, 80);
   const { path } = intro[mode];
+  const searchPath = await localePath(path);
   const title = t(intro[mode].title);
   const sort = ranked ? rankSort(ranking) : intro[mode].sort;
   // What the leaderboard says it ranks by.
@@ -120,7 +122,7 @@ export async function Explore({
   }
 
   const searchForm = (
-    <form action={path} role="search" className="relative w-full sm:w-64">
+    <form action={searchPath} role="search" className="relative w-full sm:w-64">
       <Search
         aria-hidden="true"
         className="pointer-events-none absolute top-1/2 start-3 size-4 -translate-y-1/2 text-faint-foreground"

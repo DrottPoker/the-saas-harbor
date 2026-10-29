@@ -1,1 +1,102 @@
-{}
+{
+  "meta": {
+    "title": "Política de privacidad",
+    "description": "Qué guarda The SaaS Harbor sobre ti, por qué, quién puede verlo y cómo eliminarlo."
+  },
+  "updated": "Última actualización: {date}.",
+  "translationNotice": "Esta traducción se ofrece por comodidad. La <link>versión en inglés</link> es la vinculante.",
+  "responsible": {
+    "title": "Quién es el responsable",
+    "body": "The SaaS Harbor es operado por {operator}, que es el responsable del tratamiento de los datos personales descritos aquí.",
+    "contact": "Para preguntas y solicitudes sobre privacidad, escribe a <contact></contact>."
+  },
+  "data": {
+    "title": "Qué guardamos",
+    "account": "<b>Cuenta.</b> Tu correo electrónico, tu contraseña como hash con sal, qué versión de los Términos del Servicio aceptaste y cuándo, eventos de la cuenta, como los inicios de sesión con su hora y dirección IP, el país de tu último inicio de sesión y tu idioma (consulta “Tu idioma y tu moneda”).",
+    "google": "<b>Inicio de sesión con Google o GitHub.</b> Si inicias sesión con Google o GitHub, ese servicio nos envía tu ID de cuenta en él, tu correo electrónico, tu nombre y la dirección de tu foto de perfil y, en el caso de GitHub, tu nombre de usuario. Se guardan con tu cuenta y se usan para iniciar tu sesión.",
+    "profile": "<b>Perfil.</b> Tu nombre de usuario, que también es la dirección de tu página, los datos que agregas, como tu nombre, titular, ubicación, enlaces y foto, y cuándo cambiaste tu nombre de usuario por última vez.",
+    "products": "<b>Productos.</b> Los datos que agregas, como nombre, eslogan, descripción, categoría, sitio web, logotipo, stack tecnológico y fecha de lanzamiento, el nombre de tu proveedor de pagos cuando no es uno con el que nos conectamos y, para el dominio de un producto, el dominio, su registro DNS y cuándo se comprobó.",
+    "revenue": "<b>Verificación de ingresos.</b> Qué proveedor de pagos conectas ({providers}), la clave que proporcionas o el acceso que concedes, y los datos de la cuenta que se necesitan, guardados cifrados, y los resultados de la verificación, como los ingresos recurrentes mensuales, los clientes de pago, los totales por moneda, el historial de ingresos y los ingresos a lo largo del tiempo. De cada pago guardamos lo que generó, su moneda, el día en que se pagó y si correspondía a una suscripción, sin quién lo pagó. Los hashes unidireccionales de los ID de suscripciones, pagos, proyectos o aplicaciones impiden que una misma cuenta verifique dos productos.",
+    "milestones": "<b>Hitos.</b> Los montos de MRR y los puestos en la clasificación que alcanzan tus productos, y cuándo.",
+    "messages": "<b>Mensajes.</b> Los mensajes que envías y recibes, hasta dónde has leído cada conversación y los usuarios que bloqueas.",
+    "reports": "<b>Denuncias y moderación.</b> Las denuncias que envías, con una copia de lo que denunciaste, y las decisiones sobre tus productos o tu cuenta, con sus motivos.",
+    "feedback": "<b>Comentarios.</b> Lo que envías como comentario, la página desde la que lo enviaste y si ya se atendió. Sin cuenta, también puedes dejar un correo electrónico para recibir respuesta, y guardamos el hash del día de tu dirección IP y tu navegador, como en las estadísticas del sitio, para limitar cuántos comentarios envía un mismo visitante.",
+    "emails": "<b>Correos.</b> Qué correos quieres recibir y un registro de los correos que se te envían.",
+    "visits": "<b>Visitas.</b> Estadísticas sobre las visitas al sitio (consulta “Estadísticas del sitio”).",
+    "source": "<b>Cómo encontraste el sitio.</b> Cuando creas una cuenta, de dónde vino la visita que llevó a crearla, como el sitio o la aplicación que enlazó al sitio, sus etiquetas de campaña y su primera página.",
+    "usage": "<b>Cómo usas el servicio.</b> Lo que se desprende de los datos anteriores, como cuándo confirmaste tu correo electrónico, publicaste un producto o verificaste ingresos.",
+    "preferences": "<b>Preferencias.</b> Si elegiste el tema claro u oscuro, y el idioma y la moneda que elegiste, en cookies en tu dispositivo."
+  },
+  "revenue": {
+    "title": "Qué leemos de tu proveedor de pagos",
+    "read": "Con la clave que proporcionas o el acceso que concedes, nuestro servidor lee de la cuenta que conectas lo que necesita para verificar los ingresos, como suscripciones, facturas, pagos, transacciones, ventas, reembolsos, disputas, productos, precios, descuentos y planes, según el proveedor. Estos registros pueden incluir datos de tus clientes, como nombres, correos electrónicos y países. Usamos los registros para calcular las cifras descritas arriba y no guardamos los datos de tus clientes.",
+    "disconnect": "Al desconectar se elimina la clave o el acceso guardado. Los resultados de verificaciones anteriores permanecen en tu historial privado hasta que eliminas el producto o tu cuenta. También puedes revocar la clave o el acceso en tu proveedor de pagos."
+  },
+  "website": {
+    "title": "Qué consultamos sobre tu sitio web",
+    "body": "Cuando verificas el dominio de tu producto, nuestro servidor consulta el registro DNS que agregas para él y lo vuelve a comprobar mientras el dominio esté verificado."
+  },
+  "timeZone": {
+    "title": "Tu zona horaria",
+    "body": "Las fechas y horas se muestran en la zona horaria configurada en tu dispositivo. Hasta que tu navegador la proporciona, una página usa la zona horaria que nuestro proveedor de alojamiento obtiene a partir de tu dirección IP. Ninguna de las dos se guarda."
+  },
+  "language": {
+    "title": "Tu idioma y tu moneda",
+    "choice": "Las páginas se muestran en el idioma que eliges, y los montos, en la moneda que eliges. Cada elección se guarda en una cookie en tu navegador durante un año y no se envía a otros sitios. Hasta que eliges, el idioma sigue la configuración de idioma de tu navegador, y la moneda es la del país que nuestro proveedor de alojamiento obtiene a partir de tu dirección IP. Para esto no se guarda ni la dirección IP ni el país.",
+    "account": "Si iniciaste sesión, tu idioma también se guarda con tu cuenta, para que los correos te lleguen en ese idioma. Se establece cuando creas tu cuenta, inicias sesión o cambias de idioma, y se elimina junto con tu cuenta.",
+    "rates": "Los montos en otras monedas se convierten desde dólares estadounidenses con tipos de cambio de referencia diarios de Frankfurter. Nuestro servidor obtiene los tipos de cambio sin enviar nada sobre ti."
+  },
+  "purposes": {
+    "title": "Para qué los usamos",
+    "service": "Para prestar el servicio: tu cuenta, perfil y productos, la verificación de ingresos y las comprobaciones de dominio, los mensajes y los correos sobre tu cuenta y lo que ocurre en ella, como mensajes sin leer e hitos (ejecución de un contrato, artículo 6.1.b) del RGPD).",
+    "security": "Para mantener el servicio seguro y justo, por ejemplo mediante registros de inicio de sesión, límites a lo que puede hacer una cuenta y comprobaciones que impiden que una misma cuenta verifique dos productos (nuestros intereses legítimos, artículo 6.1.f)).",
+    "moderation": "Para gestionar denuncias y moderar el sitio, incluido lo que exige el Reglamento de Servicios Digitales de la UE (una obligación legal, artículo 6.1.c), y nuestros intereses legítimos, artículo 6.1.f)).",
+    "improvement": "Para entender cómo las personas encuentran y usan el servicio, y para mejorarlo y desarrollarlo, a partir de las estadísticas del sitio, cómo llegaron las cuentas al sitio, hasta dónde avanzan, los proveedores de pagos que indican los fundadores y los comentarios que envían, en totales y por cuenta individual (nuestros intereses legítimos, artículo 6.1.f)).",
+    "contact": "Para escribirte sobre tu cuenta, tus productos y el servicio, por ejemplo para ayudarte a terminar una publicación o pedirte tu opinión (nuestros intereses legítimos, artículo 6.1.f)).",
+    "choices": "Puedes desactivar algunos correos en tu configuración y oponerte al uso basado en nuestros intereses legítimos (consulta “Tus derechos”)."
+  },
+  "statistics": {
+    "title": "Estadísticas del sitio",
+    "collected": "Guardamos estadísticas sobre cómo se usa el sitio: las páginas visitadas y cuánto tiempo estuvieron visibles, los clics en enlaces a otros sitios, de dónde vinieron las visitas (el sitio o la aplicación que enlazó y las etiquetas de campaña), el país y la ciudad obtenidos a partir de la dirección IP, el idioma del navegador y el tipo y la versión del dispositivo, el navegador y el sistema operativo. Para distinguir a los visitantes, nuestro servidor combina la dirección IP y el agente de usuario del navegador con un valor que cambia cada día, y guarda el resultado en lugar de la dirección IP. Cuando creas una cuenta, esto se usa para saber de dónde vino la visita que llevó a crearla, dato que luego se guarda con tu cuenta.",
+    "access": "Los administradores ven las estadísticas en totales, y cómo llegó al sitio una cuenta concreta. El fundador de un producto ve cuántas veces se vio su página.",
+    "vercel": "También usamos Vercel Web Analytics y Vercel Speed Insights, que registran información similar sobre las visitas y la velocidad de carga de las páginas."
+  },
+  "visibility": {
+    "title": "Quién puede verlos",
+    "everyone": "<b>Todos:</b> tu perfil, tus productos y las cifras que no ocultas, como el MRR verificado y su historial, con el proveedor de pagos que las verificó y los hitos alcanzados. También es público si el dominio de un producto está verificado. Una insignia que insertes en tu propio sitio muestra allí las cifras compartidas.",
+    "you": "<b>Tú:</b> tu cuenta y tu configuración, las cifras que mantienes privadas, tu historial de verificaciones y cuántas veces se vieron las páginas de tus productos.",
+    "correspondents": "<b>Los usuarios a quienes escribes:</b> las conversaciones que tienes con ellos y hasta dónde las has leído. Los mensajes no tienen cifrado de extremo a extremo.",
+    "admins": "<b>Administradores:</b> las personas que el operador designa para gestionar y moderar el sitio. Ven datos de la cuenta, como tu correo electrónico, cuándo te registraste e iniciaste sesión y desde qué país, cómo encontraste el sitio y cuánto has avanzado en el servicio, el último MRR verificado y los ingresos de tus productos, incluidas las cifras que mantienes privadas, las denuncias, las decisiones, los comentarios y los mensajes denunciados. También se envían alertas al chat de los administradores en Telegram: sobre cuentas nuevas, con el nombre y el nombre de usuario, cómo se creó la cuenta y si su correo electrónico está confirmado; sobre productos nuevos, con su nombre, eslogan, categoría, proveedor de pagos y fundador, y el nombre escrito para un proveedor no compatible; sobre denuncias, con quién las envió, sobre qué o quién tratan, el motivo y la explicación; y sobre comentarios, con quién los envió, desde qué página y su texto, y, en el caso de un visitante, si dejó un correo electrónico, nunca la dirección en sí. También se envía allí un aviso con tu nombre y tu nombre de usuario cuando escribes a la cuenta propia del sitio, pero nunca el mensaje.",
+    "providers": "<b>Proveedores de servicios:</b> nuestros proveedores de alojamiento, base de datos y correo electrónico tratan datos por cuenta nuestra para operar el sitio. El sitio funciona en Vercel, con sus servidores en Fráncfort (Alemania). La base de datos, el inicio de sesión y el almacenamiento de imágenes funcionan en Supabase, en su región de Fráncfort (Alemania). Los correos se envían a través de Resend. Vercel también registra las estadísticas descritas arriba. Si inicias sesión con Google o GitHub, ese servicio sabe que iniciaste sesión aquí, conforme a su propia política de privacidad. Vercel y Resend tienen su sede en Estados Unidos. Cuando tratan datos fuera de la UE o del EEE, nos basamos en las garantías que prevé el RGPD, como las cláusulas contractuales tipo de la UE. Telegram, que entrega las alertas a los administradores conforme a sus propias condiciones, tiene su sede fuera de la UE.",
+    "outboundLinks": "Cuando sigues un enlace al sitio web de un producto, ese sitio puede ver que llegaste desde The SaaS Harbor.",
+    "disclosure": "Podemos revelar datos personales cuando la ley lo exige, para proteger los derechos y la seguridad del sitio, de sus usuarios o de nosotros, o a un comprador o sucesor si el servicio se vende o se fusiona (una obligación legal, artículo 6.1.c), o nuestros intereses legítimos, artículo 6.1.f))."
+  },
+  "cookies": {
+    "title": "Cookies",
+    "body": "El sitio usa cookies para mantener tu sesión iniciada, para recordar si elegiste el tema claro u oscuro y para recordar el idioma y la moneda que elegiste (consulta “Tu idioma y tu moneda”). Además, cookies de corta duración acompañan un inicio de sesión con Google o GitHub, o una conexión que apruebas en el propio sitio de un proveedor de pagos, desde su inicio hasta su fin, y, durante unos minutos después de que agregas un producto o conectas un proveedor de pagos, guardan qué producto era y cómo resultó la conexión."
+  },
+  "retention": {
+    "title": "Cuánto tiempo los conservamos",
+    "periods": "Conservamos tus datos mientras tengas una cuenta. Una cuenta cuyo registro no se completó, como una cuyo correo electrónico no está confirmado, se elimina después de una semana aproximadamente. Cuando eliminas un producto o tu cuenta, se eliminan los datos que le pertenecen, salvo lo que se necesita por más tiempo, como denuncias y decisiones que siguen siendo pertinentes, y las copias en respaldos hasta que esos respaldos caducan. Las estadísticas del sitio se conservan separadas de las cuentas durante un máximo de 25 meses. Los comentarios de visitantes sin cuenta, junto con cualquier correo electrónico dejado para recibir respuesta, se eliminan después de 12 meses. Los registros de correos enviados y otros registros técnicos se conservan por poco tiempo. Las alertas enviadas a los administradores en Telegram permanecen en su chat hasta que se eliminan allí. La información que fue pública puede haber sido copiada ya por terceros, como los motores de búsqueda.",
+    "security": "Usamos medidas técnicas y organizativas para proteger tus datos, como el cifrado de las claves de los proveedores y reglas de acceso en la base de datos."
+  },
+  "rights": {
+    "title": "Tus derechos",
+    "self": "Puedes cambiar tú mismo tu perfil y tus productos, elegir qué correos recibes y eliminar un producto o toda tu cuenta.",
+    "gdpr": "En virtud del RGPD, también tienes derecho a acceder a tus datos, a que se rectifiquen, se supriman o se transfieran a otro servicio, a limitar su tratamiento y a oponerte al uso basado en nuestros intereses legítimos.",
+    "contact": "Para ejercer estos derechos, escribe a <contact></contact>.",
+    "complaint": "También puedes presentar una reclamación ante una autoridad de protección de datos, por ejemplo la del país donde vives o trabajas."
+  },
+  "changes": {
+    "title": "Cambios en esta política",
+    "body": "Esta política cambia a medida que cambia el servicio. La fecha de arriba indica cuándo cambió por última vez."
+  },
+  "accountDeleted": {
+    "metaTitle": "Cuenta eliminada",
+    "title": "Tu cuenta fue eliminada",
+    "description": "Tu perfil, tus productos, tus imágenes, las conexiones con proveedores de pagos, tu historial de verificaciones y tus conversaciones ya no existen, y tus productos salieron de la clasificación.",
+    "keys": "Si conectaste un proveedor de pagos, también puedes eliminar las claves que creaste allí o revocar el acceso que concediste. Ya no tenemos ninguna copia de ellos.",
+    "search": "Las páginas que eran públicas pueden seguir apareciendo en los motores de búsqueda durante un tiempo, hasta que se actualicen.",
+    "back": "Volver a la clasificación"
+  }
+}

@@ -1,13 +1,9 @@
 import type { Metadata } from "next";
 import Link from "@/components/link";
 import { notFound } from "next/navigation";
-import {
-  milestoneHeadline,
-  milestoneObject,
-  milestonePath,
-  milestoneSentence,
-  shareText,
-} from "@/lib/milestones";
+import { getLocale, getTranslations } from "next-intl/server";
+import { LOCALE_INFO } from "@/i18n/config";
+import { milestonePath, milestoneValues } from "@/lib/milestones";
 import { shareLinks } from "@/lib/share";
 import { providerName } from "@/lib/revenue/catalog";
 import { pageMetadata, SITE_NAME, siteUrl } from "@/lib/seo";
@@ -17,21 +13,29 @@ import { LocalTime } from "@/components/local-time";
 import { Shell } from "@/components/shell";
 import { Button } from "@/components/ui/button";
 import { loadMilestone, type Params } from "./load";
-import { localePermanentRedirect, localeRedirect } from "@/i18n/navigation";
+import { localePath, localePermanentRedirect, localeRedirect } from "@/i18n/navigation";
 
 type Props = { params: Params };
+
+/** The milestones messages and their arguments for this page's language. */
+async function words() {
+  const [t, locale] = await Promise.all([getTranslations("milestones"), getLocale()]);
+  return { t, intl: LOCALE_INFO[locale].intl };
+}
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const found = await loadMilestone(params);
   if (!found || "redirect" in found) return {};
   const { item, milestone } = found;
+  const { t, intl } = await words();
   const name = item.name ?? "Product";
+  const values = { ...milestoneValues(milestone, intl), name };
   return {
-    ...pageMetadata({
-      title: `${name} reached ${milestoneObject(milestone)}`,
-      description: `${milestoneSentence(milestone, name)} Verified revenue on ${SITE_NAME}.`,
+    ...(await pageMetadata({
+      title: t("meta.title", values),
+      description: t("meta.description", { sentence: t("sentence", values), site: SITE_NAME }),
       path: milestonePath(item.slug ?? "", milestone),
-    }),
+    })),
     // The page exists to be shared; the product page is the one for search results.
     robots: { index: false, follow: true },
   };
@@ -46,21 +50,25 @@ export default async function MilestonePage({ params }: Props) {
     return localeRedirect(found.redirect);
   }
   const { item, milestone, key, reachedAt } = found;
+  const { t, intl } = await words();
   const name = item.name ?? "Product";
+  const values = { ...milestoneValues(milestone, intl), name };
   const path = milestonePath(item.slug ?? "", milestone);
-  const url = `${siteUrl()}${path}`;
-  const share = shareLinks(url, shareText(milestone, name));
+  // The address in the page's language, so the people a post reaches read it in that language.
+  const url = `${siteUrl()}${await localePath(path)}`;
+  const share = shareLinks(url, t("post", values));
   return (
     <Shell size="narrow" className="pt-6 sm:pt-8">
-      <nav aria-label="Breadcrumb" className="mb-4 text-sm text-muted-foreground">
+      <nav aria-label={t("breadcrumb")} className="mb-4 text-sm text-muted-foreground">
         <Link href="/browse" className="hover:text-foreground">
-          Browse
+          {t("browse")}
         </Link>
         <span aria-hidden="true" className="mx-2">
           /
         </span>
         <Link
           href={`/saas/${item.slug}`}
+          dir="auto"
           className="hover:text-foreground [overflow-wrap:anywhere]"
         >
           {name}
@@ -68,34 +76,39 @@ export default async function MilestonePage({ params }: Props) {
         <span aria-hidden="true" className="mx-2">
           /
         </span>
-        <span className="text-foreground">Milestone</span>
+        <span className="text-foreground">{t("milestone")}</span>
       </nav>
 
       <article className="overflow-hidden rounded-xl border bg-surface shadow-card">
         <div className="p-6 sm:p-8">
           <p className="text-sm text-muted-foreground">
-            Milestone reached on <LocalTime format="date" value={reachedAt} />
+            {t.rich("reachedOn", { date: () => <LocalTime format="date" value={reachedAt} /> })}
           </p>
           <h1 className="mt-2 text-4xl font-semibold tracking-tight tabular-nums sm:text-5xl">
-            {milestoneHeadline(milestone)}
+            {t("headline", values)}
           </h1>
           <p className="mt-3 text-lg text-muted-foreground [overflow-wrap:anywhere]">
-            {milestoneSentence(milestone, name)} The revenue is verified through{" "}
-            {providerName(item.provider)}.
+            {t("sentence", values)}{" "}
+            {t("verifiedThrough", { provider: providerName(item.provider) })}
           </p>
         </div>
         <div className="flex flex-col gap-4 border-t bg-subtle p-5 sm:flex-row sm:items-center sm:p-6">
           <div className="flex min-w-0 flex-1 items-center gap-3">
             <ProductLogo path={item.logo_path} name={name} />
             <div className="min-w-0">
-              <p className="font-medium [overflow-wrap:anywhere]">{name}</p>
-              <p className="line-clamp-2 text-sm text-muted-foreground [overflow-wrap:anywhere]">
+              <p dir="auto" className="font-medium [overflow-wrap:anywhere]">
+                {name}
+              </p>
+              <p
+                dir="auto"
+                className="line-clamp-2 text-sm text-muted-foreground [overflow-wrap:anywhere]"
+              >
                 {item.tagline}
               </p>
             </div>
           </div>
           <Button asChild variant="outline">
-            <Link href={`/saas/${item.slug}`}>View product</Link>
+            <Link href={`/saas/${item.slug}`}>{t("viewProduct")}</Link>
           </Button>
         </div>
       </article>
@@ -103,30 +116,33 @@ export default async function MilestonePage({ params }: Props) {
       <section aria-labelledby="share" className="mt-10 grid gap-4">
         <div>
           <h2 id="share" className="text-lg font-semibold">
-            Share this milestone
+            {t("share.title")}
           </h2>
-          <p className="mt-1 text-sm text-muted-foreground">
-            A post with this link shows a card with the milestone.
-          </p>
+          <p className="mt-1 text-sm text-muted-foreground">{t("share.body")}</p>
         </div>
         <div className="flex flex-wrap gap-2">
           <Button asChild>
             <a href={share.x} target="_blank" rel="noopener noreferrer">
-              Share on X
+              {t("share.x")}
             </a>
           </Button>
           <Button asChild variant="outline">
             <a href={share.linkedin} target="_blank" rel="noopener noreferrer">
-              Share on LinkedIn
+              {t("share.linkedin")}
             </a>
           </Button>
           <Button asChild variant="outline">
             <a href={`${path}/opengraph-image`} download={`${item.slug}-${key}.png`}>
-              Download image
+              {t("share.download")}
             </a>
           </Button>
         </div>
-        <CopyField id="milestone_link" label="Link" value={url} copyLabel="Copy link" />
+        <CopyField
+          id="milestone_link"
+          label={t("share.link")}
+          value={url}
+          copyLabel={t("share.copyLink")}
+        />
       </section>
     </Shell>
   );

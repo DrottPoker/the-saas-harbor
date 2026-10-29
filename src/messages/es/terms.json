@@ -1,1 +1,89 @@
-{}
+{
+  "meta": {
+    "title": "Términos del Servicio",
+    "description": "Las reglas para usar The SaaS Harbor, cómo funciona la moderación y los límites de nuestra responsabilidad."
+  },
+  "updated": "Última actualización: {date}.",
+  "translationNotice": "Esta traducción se ofrece por comodidad. La <link>versión en inglés</link> es la vinculante.",
+  "about": {
+    "title": "Acerca de estos términos",
+    "body": "Estos términos se aplican cuando usas The SaaS Harbor, que es operado por {operator}. Los aceptas al crear una cuenta, marcando la casilla del formulario de registro, y al usar el sitio. Si no estás de acuerdo, no uses el sitio. La <link>política de privacidad</link> explica qué guardamos sobre ti y por qué."
+  },
+  "account": {
+    "title": "Tu cuenta",
+    "name": "Usa tu propio nombre, o el nombre por el que se te conoce, y mantén actualizado tu correo electrónico.",
+    "password": "No compartas tu contraseña con nadie. Eres responsable de todo lo que se haga con tu cuenta.",
+    "delete": "Puedes eliminar tu cuenta tú mismo en cualquier momento."
+  },
+  "content": {
+    "title": "Lo que publicas",
+    "ownership": "Tus productos, tu perfil y tus mensajes siguen siendo tuyos, y eres el único responsable de ellos. Debes tener derecho a publicarlos, incluidos logotipos y fotos, y deben ser exactos y lícitos. Al publicar un producto o un perfil, nos permites mostrarlo en el sitio mientras esté publicado.",
+    "checks": "No revisamos ni verificamos lo que publican los usuarios, salvo la lectura de las cifras de ingresos descrita más abajo. Publica solo productos que gestionas o que tienes permiso para representar. Una cuenta puede publicar hasta {productLimit, plural, one {# producto} other {# productos}} y agregar hasta {dailyLimit} al día."
+  },
+  "rules": {
+    "title": "Lo que no está permitido",
+    "illegal": "Contenido ilegal, como fraudes o material que infrinja los derechos de alguien.",
+    "spam": "Spam y publicidad no solicitada, tanto en las publicaciones como en los mensajes.",
+    "misleading": "Información engañosa o falsa sobre un producto o una persona.",
+    "impersonation": "Hacerse pasar por otra persona, o usar su nombre, su marca o su trabajo sin permiso.",
+    "harassment": "Acoso, amenazas o contenido de odio dirigido a una persona o a un grupo.",
+    "manipulation": "Manipular la verificación de ingresos o la clasificación, por ejemplo con suscripciones falsas o con una cuenta de proveedor de pagos que pertenece a otro negocio.",
+    "intrusion": "Intentar acceder a las cuentas o los datos de otros usuarios, recopilarlos para enviar spam o perturbar el funcionamiento del sitio.",
+    "scraping": "Copiar o extraer de forma masiva las publicaciones, los perfiles o las cifras del sitio, o volver a publicarlos en otro lugar."
+  },
+  "revenue": {
+    "title": "Cifras de ingresos",
+    "source": "Las cifras de ingresos se leen de tu proveedor de pagos mediante una clave de solo lectura que proporcionas o un acceso de solo lectura que concedes, y se calculan como se describe en <link>Cómo funciona</link>. No las modificamos, pero no garantizamos que sean exactas, completas o actuales, y podemos ocultar cifras que tengamos motivos para creer que fueron manipuladas.",
+    "noAdvice": "Las cifras y todo lo demás en el sitio son solo información. No constituyen asesoramiento financiero, de inversión, legal ni fiscal, ni una oferta o recomendación para comprar, vender o invertir en nada. Eres responsable de tus propias decisiones y debes comprobar cualquier información por tu cuenta antes de confiar en ella.",
+    "keys": "Eres responsable de las claves que proporcionas y del acceso que concedes: de que tienes permiso para compartirlos y de que solo tienen los permisos de lectura descritos en el sitio. Las propias condiciones de tu proveedor de pagos se aplican a tu cuenta allí, y no somos responsables del proveedor ni de sus servicios."
+  },
+  "messages": {
+    "title": "Mensajes y tratos entre usuarios",
+    "private": "Los mensajes son privados entre dos usuarios. Puedes bloquear a un usuario, y hay límites que impiden que una cuenta envíe demasiados mensajes. No uses los mensajes para publicidad que nadie pidió.",
+    "dealings": "No somos parte de nada de lo que los usuarios conversen, acuerden o hagan entre sí, como asociaciones, ventas, inversiones u otros negocios. Todos esos tratos, y cualquier disputa que surja de ellos, son exclusivamente entre los usuarios involucrados y bajo su propio riesgo. No verificamos a los usuarios ni lo que dicen, y no mediamos en disputas."
+  },
+  "moderation": {
+    "title": "Denuncias y moderación",
+    "reporting": "Los usuarios con sesión iniciada pueden denunciar un producto, un perfil o un mensaje que recibieron.",
+    "others": "Cualquier otra persona puede escribir a <contact></contact>.",
+    "review": "Los administradores designados por el operador revisan cada denuncia personalmente. Nada se decide de forma automática. Cuando algo infringe estos términos o la ley, un administrador puede:",
+    "hide": "<b>Ocultar un producto.</b> Deja de mostrarse en todo el sitio.",
+    "suspend": "<b>Suspender una cuenta.</b> El perfil y los productos se ocultan, y la cuenta no puede enviar mensajes ni denuncias. El usuario aún puede iniciar sesión, editar sus productos y eliminar la cuenta.",
+    "decision": "Al usuario afectado se le comunica la decisión, el motivo y una explicación, pero no quién hizo la denuncia. A quienes denuncian se les comunica el resultado de sus denuncias. Los administradores también pueden actuar ante problemas que encuentren sin que medie una denuncia, y podemos eliminar contenido o suspender cuentas a nuestra discreción para proteger el sitio, a sus usuarios o a nosotros.",
+    "appeal": "Si no estás de acuerdo con una decisión, escribe a <contact></contact> y explica por qué. Volveremos a revisar la decisión y te responderemos."
+  },
+  "changes": {
+    "title": "Cambios y disponibilidad",
+    "body": "Podemos cambiar, suspender o cerrar el sitio o cualquier parte de él en cualquier momento, con o sin aviso. Podemos cambiar estos términos en cualquier momento. En ese caso actualizamos la fecha de arriba e informamos a los usuarios registrados sobre los cambios importantes. Si sigues usando el sitio después de un cambio, aceptas los nuevos términos."
+  },
+  "warranties": {
+    "title": "Sin garantías",
+    "body": "El uso de The SaaS Harbor es gratuito y el sitio se ofrece “tal cual” y “según disponibilidad”, sin garantías de ningún tipo. No prometemos que el sitio esté disponible, sea seguro o esté libre de errores, ni que la información que contiene, incluidas las cifras de ingresos, los perfiles y las publicaciones, sea exacta, completa o actual. Usas el sitio y confías en su información bajo tu propio riesgo."
+  },
+  "liability": {
+    "title": "Limitación de responsabilidad",
+    "intro": "En la máxima medida permitida por la ley, {operator} y cualquier persona que trabaje con nosotros no son responsables de ninguna pérdida o daño directo, indirecto, incidental, especial o consecuente que se derive de tu uso del sitio, incluidos:",
+    "profits": "Pérdida de ganancias, ingresos, negocios, oportunidades, reputación comercial o datos.",
+    "reliance": "Pérdidas por confiar en la información del sitio, incluidas las cifras de ingresos y lo que publican otros usuarios.",
+    "conduct": "Pérdidas derivadas de la conducta de otros usuarios, incluidos mensajes, declaraciones falsas y fraudes, y de negocios o disputas entre usuarios.",
+    "errors": "Pérdidas derivadas de errores, interrupciones, contenido perdido o accesos no autorizados al sitio o a tu cuenta.",
+    "thirdParty": "Pérdidas relacionadas con tu proveedor de pagos u otros servicios de terceros.",
+    "exceptions": "Estos límites no se aplican cuando la ley no los permite, por ejemplo, en caso de daños causados intencionalmente o por negligencia grave."
+  },
+  "indemnification": {
+    "title": "Indemnización",
+    "body": "Aceptas indemnizar y mantener indemnes a {operator} y a cualquier persona que trabaje con nosotros frente a cualquier reclamación, pérdida, daño, costo y gasto, incluidos honorarios legales razonables, que se deriven de tu uso del sitio, de lo que publicas o envías, de tu incumplimiento de estos términos o de la ley, o de cualquier disputa entre tú y otro usuario."
+  },
+  "law": {
+    "title": "Ley aplicable",
+    "body": "Estos términos se rigen por la ley sueca, y las disputas las resuelven los tribunales ordinarios de Suecia, salvo que una norma imperativa te otorgue el derecho de acudir a los tribunales en otro lugar."
+  },
+  "language": {
+    "title": "Idioma",
+    "body": "Estos términos están redactados en inglés. Las traducciones se ofrecen por comodidad y, si una traducción difiere de la versión en inglés, prevalece la versión en inglés."
+  },
+  "contact": {
+    "title": "Contacto",
+    "body": "Las preguntas sobre estos términos, las denuncias y las apelaciones se envían a <contact></contact>."
+  }
+}

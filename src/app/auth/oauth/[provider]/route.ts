@@ -1,5 +1,6 @@
 import { cookies } from "next/headers";
 import { NextResponse, type NextRequest } from "next/server";
+import { isLocale, localizedPath } from "@/i18n/config";
 import {
   encodeOAuthFlow,
   isOAuthProvider,
@@ -15,16 +16,23 @@ import { currentUser, serverClient } from "@/lib/supabase/server";
 // Starts a sign-in with Google or GitHub. Buttons link here rather than submit a form, so the
 // redirects to Supabase and the provider are plain navigations, which the form-action policy does
 // not cover. With ?confirm=delete, the signed-in user signs in again before deleting their account.
+// This address is the same in every language, so the page's language comes as ?locale= and is kept
+// for the way back (oauthStartPath in src/lib/auth.ts).
 export async function GET(
   request: NextRequest,
   { params }: RouteContext<"/auth/oauth/[provider]">,
 ) {
-  const to = (path: string) => NextResponse.redirect(new URL(path, request.url));
+  const search = request.nextUrl.searchParams;
+  const requested = search.get("locale");
+  const locale = isLocale(requested) ? requested : null;
+  // Without a language, the proxy sends the visitor to theirs.
+  const to = (path: string) =>
+    NextResponse.redirect(new URL(locale ? localizedPath(locale, path) : path, request.url));
   const { provider } = await params;
   if (!isOAuthProvider(provider)) return to("/auth");
   if (!(await enabledProviders()).includes(provider))
     return to(`/auth?error=unavailable&provider=${provider}`);
-  const confirming = request.nextUrl.searchParams.get("confirm") === "delete";
+  const confirming = search.get("confirm") === "delete";
   const user = confirming ? await currentUser() : null;
   if (confirming && !user) return to("/auth");
   const client = await serverClient();
@@ -51,8 +59,9 @@ export async function GET(
     OAUTH_FLOW_COOKIE,
     encodeOAuthFlow({
       provider,
-      next: confirming ? null : safeNext(request.nextUrl.searchParams.get("next")),
+      next: confirming ? null : safeNext(search.get("next")),
       confirm: user?.id ?? null,
+      locale,
     }),
     {
       httpOnly: true,

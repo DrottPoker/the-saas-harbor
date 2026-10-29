@@ -3,8 +3,11 @@ import {
   apiBase,
   errorBody,
   MAX_PAGES,
+  missingPermission,
   providerGet,
   ProviderRequestError,
+  rateLimited,
+  returnedError,
   tooMuchData,
 } from "../http";
 import type { WhopMembership, WhopPayment, WhopPlan, WhopPromo } from "./mrr";
@@ -36,22 +39,10 @@ async function whopGet<T>(key: string, livemode: boolean, path: string, params: 
   const found = [error?.message, body?.message].find((value) => typeof value === "string");
   const detail = (found as string | undefined)?.slice(0, 300);
   if (response.status === 401)
-    throw new ProviderRequestError(
-      "Whop rejected the key. It may have been deleted, or belong to the other environment.",
-      401,
-    );
-  if (response.status === 403)
-    throw new ProviderRequestError(
-      `The key is missing a read permission.${detail ? ` Whop says: ${detail}` : ""}`,
-      403,
-      path,
-    );
-  if (response.status === 429)
-    throw new ProviderRequestError("Whop is rate limiting requests. Try again later.", 429);
-  throw new ProviderRequestError(
-    `Whop returned an error${detail ? `: ${detail}` : "."}`,
-    response.status,
-  );
+    throw new ProviderRequestError("whop.keyRejected", {}, { status: 401 });
+  if (response.status === 403) throw missingPermission("Whop", detail, { status: 403, path });
+  if (response.status === 429) throw rateLimited("Whop");
+  throw returnedError("Whop", detail, { status: response.status });
 }
 
 type Page<T> = { data: T[]; page_info: { end_cursor: string | null; has_next_page: boolean } };
@@ -101,7 +92,7 @@ export async function fetchAccount(key: string, livemode: boolean) {
     new URLSearchParams({ first: "1", direction: "asc" }),
   );
   const account = result.data[0];
-  if (!account) throw new ProviderRequestError("Whop found no account for this key.");
+  if (!account) throw new ProviderRequestError("whop.noAccount");
   return account.id;
 }
 

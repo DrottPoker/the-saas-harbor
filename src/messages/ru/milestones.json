@@ -1,1 +1,24 @@
-{}
+{
+  "headline": "{kind, select, mrr {{amount} MRR} first {№ 1} other {Топ-{place}}}",
+  "sentence": "{kind, select, mrr {Ежемесячная регулярная выручка {name} достигла {exact}.} first {{name} на первом месте в рейтинге подтверждённой выручки на {site}.} other {{name} в топ-{place} рейтинга подтверждённой выручки на {site}.}}",
+  "post": "{kind, select, mrr {MRR {name} только что достиг {amount}, это подтверждено на {site}.} first {{name} теперь № 1 в рейтинге подтверждённой выручки на {site}.} other {{name} теперь в топ-{place} рейтинга подтверждённой выручки на {site}.}}",
+  "meta": {
+    "title": "{kind, select, mrr {MRR {name} достиг {amount}} first {{name} на первом месте} other {{name} в топ-{place}}}",
+    "description": "{sentence} Подтверждённая выручка на {site}."
+  },
+  "breadcrumb": "Навигационная цепочка",
+  "browse": "Каталог",
+  "milestone": "Веха",
+  "reachedOn": "Веха достигнута <date></date>",
+  "verifiedThrough": "Выручка подтверждена через {provider}.",
+  "viewProduct": "Открыть продукт",
+  "share": {
+    "title": "Поделиться этой вехой",
+    "body": "Публикация с этой ссылкой показывает карточку с вехой.",
+    "x": "Поделиться в X",
+    "linkedin": "Поделиться в LinkedIn",
+    "download": "Скачать изображение",
+    "link": "Ссылка",
+    "copyLink": "Скопировать ссылку"
+  }
+}

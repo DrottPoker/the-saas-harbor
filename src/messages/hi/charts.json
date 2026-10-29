@@ -1,1 +1,56 @@
-{}
+{
+  "axisWithYear": "{month} ’{year}",
+  "summary": {
+    "mrr": "महीने के अंत का MRR {firstMonth} में {first} से बदलकर {endMonth} में {end} हो गया।",
+    "mrrOne": "{month} के अंत में MRR {value} था।",
+    "revenue": "{firstMonth} से {endMonth} तक हर महीने का राजस्व, कुल {total}।",
+    "revenueOne": "{month} में राजस्व {value} था।"
+  },
+  "periods": {
+    "months": "{months} माह",
+    "year": "1 वर्ष",
+    "all": "सभी",
+    "name": "{label}, {long}",
+    "last": "{months, plural, one {पिछला # महीना} other {पिछले # महीने}}",
+    "whole": "{months, plural, one {पूरा # महीना} other {सभी # महीने}}",
+    "in": "{months, plural, one {# महीने में} other {# महीनों में}}",
+    "over": "{months, plural, one {पिछले महीने में} other {पिछले # महीनों में}}",
+    "inMonth": "{month} में",
+    "inLast": "{months, plural, one {पिछले महीने में} other {पिछले # महीनों में}}"
+  },
+  "mrr": {
+    "tab": "MRR",
+    "title": "महीने के अंत का MRR",
+    "note": "{months, plural, one {पिछले महीने} other {पिछले # महीनों}} का महीने के अंत का MRR, भुगतान हो चुके शुल्कों से दोबारा तैयार किया गया और आज की दरों पर USD में बदला गया।",
+    "month": "महीना",
+    "value": "MRR"
+  },
+  "revenue": {
+    "tab": "राजस्व",
+    "title": "हर महीने का राजस्व",
+    "note": "ग्राहकों ने हर महीने जो भुगतान किया, छूट और रिफ़ंड के बाद और टैक्स से पहले, आज की दरों पर USD में बदला गया।",
+    "noteSplit": "ग्राहकों ने हर महीने सब्सक्रिप्शन और एकमुश्त खरीदारी के लिए जो भुगतान किया, छूट और रिफ़ंड के बाद और टैक्स से पहले, आज की दरों पर USD में बदला गया।",
+    "month": "महीना",
+    "subscriptions": "सब्सक्रिप्शन",
+    "oneTime": "एकमुश्त",
+    "value": "राजस्व"
+  },
+  "table": "तालिका के रूप में दिखाएँ",
+  "history": {
+    "tabs": "चार्ट",
+    "periods": "चार्ट की अवधि",
+    "keys": "{title}. हर महीना पढ़ने के लिए तीर वाली कुंजियों का उपयोग करें।",
+    "month": "{month}: {value}",
+    "monthSplit": "{month}: {value}, सब्सक्रिप्शन {subscription}, एकमुश्त खरीदारी {oneTime}",
+    "legend": "संकेत",
+    "subscriptions": "सब्सक्रिप्शन",
+    "oneTime": "एकमुश्त खरीदारी"
+  },
+  "growth": {
+    "short": "30 दिन",
+    "long": "पिछले 30 दिनों में",
+    "spoken": "{period} {direction, select, up {{amount} की बढ़त} down {{amount} की गिरावट} other {कोई बदलाव नहीं}}",
+    "points": "{count} अंक",
+    "pointsSpoken": "{count} प्रतिशत अंक"
+  }
+}

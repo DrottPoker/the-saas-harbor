@@ -1,5 +1,12 @@
 import "server-only";
-import { apiBase, errorBody, providerGet, ProviderRequestError } from "../http";
+import {
+  apiBase,
+  errorBody,
+  providerGet,
+  ProviderRequestError,
+  rateLimited,
+  returnedError,
+} from "../http";
 import type { AbacateMrr, AbacateMrrByDay } from "./mrr";
 import type { AbacateRevenue } from "./payments";
 
@@ -28,27 +35,15 @@ async function abacateGet<T>(token: string, path: string, params = new URLSearch
     const body = (await response.json()) as Envelope<T>;
     if (body.success !== false && body.data) return body.data;
     const detail = typeof body.error === "string" ? body.error.slice(0, 300) : null;
-    throw new ProviderRequestError(`AbacatePay returned an error${detail ? `: ${detail}` : "."}`);
+    throw returnedError("AbacatePay", detail);
   }
   const detail = message(await errorBody(response));
   if (response.status === 401)
-    throw new ProviderRequestError(
-      "AbacatePay rejected the token. It may have been revoked, or the Trust MRR app turned off.",
-      401,
-    );
+    throw new ProviderRequestError("abacatepay.tokenRejected", {}, { status: 401 });
   if (response.status === 403)
-    throw new ProviderRequestError(
-      "AbacatePay refused the token access to the store's revenue. Check that the Trust MRR app is turned on.",
-      403,
-      path,
-    );
-  if (response.status === 429)
-    throw new ProviderRequestError("AbacatePay is rate limiting requests. Try again later.", 429);
-  throw new ProviderRequestError(
-    `AbacatePay returned an error${detail ? `: ${detail}` : "."}`,
-    response.status,
-    path,
-  );
+    throw new ProviderRequestError("abacatepay.tokenRefused", {}, { status: 403, path });
+  if (response.status === 429) throw rateLimited("AbacatePay");
+  throw returnedError("AbacatePay", detail, { status: response.status, path });
 }
 
 export type AbacateMerchant = { id: string; name?: string; createdAt?: string | null };
@@ -57,7 +52,7 @@ export type AbacateMerchant = { id: string; name?: string; createdAt?: string | 
 export async function fetchMerchant(token: string) {
   const merchant = await abacateGet<AbacateMerchant>(token, "/v2/public-mrr/merchant-info");
   if (typeof merchant.id !== "string" || !merchant.id)
-    throw new ProviderRequestError("AbacatePay did not say which store the token belongs to.");
+    throw new ProviderRequestError("abacatepay.noStore");
   return merchant;
 }
 

@@ -1,7 +1,16 @@
 import "server-only";
 import { createHash } from "node:crypto";
 import { VerificationError } from "../errors";
-import { apiBase, errorBody, providerGet, ProviderRequestError, tooMuchData } from "../http";
+import {
+  apiBase,
+  errorBody,
+  providerGet,
+  ProviderRequestError,
+  rateLimited,
+  returnedError,
+  tooMuchData,
+  unreachable,
+} from "../http";
 import type { OAuthClient } from "../oauth";
 import { DATA_CENTRES, readZohoKey, type DataCentre } from "./key";
 import type { ZohoSubscription } from "./mrr";
@@ -54,10 +63,7 @@ export function readOnlyScopes(scopes: string[]) {
 }
 
 export function requireReadOnly(scopes: string[]) {
-  if (!readOnlyScopes(scopes))
-    throw new VerificationError(
-      "Zoho granted other access than reading subscriptions and payments, so it is not used. Connect Zoho Billing again.",
-    );
+  if (!readOnlyScopes(scopes)) throw new VerificationError("zoho.beyondRead");
 }
 
 export type ZohoTokenResponse = {
@@ -86,12 +92,12 @@ export async function requestToken(dc: DataCentre, params: Record<string, string
       signal: AbortSignal.timeout(20_000),
     });
   } catch {
-    throw new ProviderRequestError("Zoho could not be reached. Try again shortly.");
+    throw unreachable("Zoho");
   }
   const body = (await response.json().catch(() => null)) as ZohoTokenResponse | null;
   // Zoho issues ten access tokens per refresh token in ten minutes, then blocks it for the rest.
   if (response.status === 429 || /too many|access denied/i.test(body?.error ?? ""))
-    throw new ProviderRequestError("Zoho is rate limiting requests. Try again later.", 429);
+    throw rateLimited("Zoho");
   return { ok: response.ok && typeof body?.access_token === "string", body: body ?? {} };
 }
 
@@ -117,7 +123,7 @@ export async function accessToken(stored: string) {
   const cached = tokens.get(tokenKey(stored));
   if (cached && cached.until > Date.now()) return cached.token;
   const app = zohoClient();
-  if (!app) throw new VerificationError("Zoho Billing is not set up on this server yet.");
+  if (!app) throw new VerificationError("common.notSetUp", { provider: "Zoho Billing" });
   const { dc, refreshToken } = readZohoKey(stored);
   const { ok, body } = await requestToken(dc, {
     grant_type: "refresh_token",
@@ -127,13 +133,8 @@ export async function accessToken(stored: string) {
   });
   if (!ok) {
     if (body.error === "invalid_code")
-      throw new ProviderRequestError(
-        "Zoho no longer accepts the connection. It may have been revoked; connect Zoho Billing again.",
-        401,
-      );
-    throw new ProviderRequestError(
-      "Zoho did not issue access for the connection. Try again shortly.",
-    );
+      throw new ProviderRequestError("zoho.connectionRevoked", {}, { status: 401 });
+    throw new ProviderRequestError("zoho.noAccess");
   }
   if (body.scope !== undefined) requireReadOnly(scopeList(body.scope));
   rememberToken(stored, body.access_token!, body.expires_in);
@@ -166,30 +167,20 @@ export async function zohoGet<T>(
   ) as (Envelope & T) | null;
   const message = typeof body?.message === "string" ? body.message.slice(0, 300) : null;
   if (response.status === 401)
-    throw new ProviderRequestError(
-      "Zoho Billing refused the connection's access. It may have been revoked; connect Zoho Billing again.",
-      401,
-    );
+    throw new ProviderRequestError("zoho.accessRefused", {}, { status: 401 });
   if (response.status === 403)
     throw new ProviderRequestError(
-      "The Zoho Billing connection cannot read what this verification needs. Connect Zoho Billing again.",
-      403,
-      path,
+      "common.connectionCannotRead",
+      { provider: "Zoho Billing" },
+      { status: 403, path },
     );
   if (response.status === 429)
-    throw new ProviderRequestError(
-      // Code 45: the organization's API calls for the day are used up.
-      body?.code === 45
-        ? "The Zoho Billing organization has used all of its API calls for today. Try again tomorrow."
-        : "Zoho Billing is rate limiting requests. Try again later.",
-      429,
-    );
+    // Code 45: the organization's API calls for the day are used up.
+    throw body?.code === 45
+      ? new ProviderRequestError("zoho.dailyLimit", {}, { status: 429 })
+      : rateLimited("Zoho Billing");
   if (!response.ok || !body || body.code !== 0)
-    throw new ProviderRequestError(
-      `Zoho Billing returned an error${message ? `: ${message}` : "."}`,
-      response.status,
-      path,
-    );
+    throw returnedError("Zoho Billing", message, { status: response.status, path });
   return body;
 }
 

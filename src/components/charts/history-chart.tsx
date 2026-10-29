@@ -8,6 +8,7 @@ import {
   type PointerEvent,
   type ReactNode,
 } from "react";
+import { useTranslations } from "next-intl";
 import type { ChartPoint, MrrChartModel, RevenueBar, RevenueChartModel } from "@/lib/charts";
 import { cn } from "@/lib/utils";
 
@@ -143,12 +144,13 @@ function Columns({ model, active }: { model: RevenueChartModel; active: number |
 
 /** The parts of a split revenue chart, with the period's amounts or the chosen month's. */
 function Legend({ parts }: { parts: { subscription: string; oneTime: string } }) {
+  const t = useTranslations("charts.history");
   const items = [
-    { label: "Subscriptions", value: parts.subscription, color: "bg-chart-1" },
-    { label: "One-time purchases", value: parts.oneTime, color: "bg-chart-2" },
+    { label: t("subscriptions"), value: parts.subscription, color: "bg-chart-1" },
+    { label: t("oneTime"), value: parts.oneTime, color: "bg-chart-2" },
   ];
   return (
-    <ul aria-label="Legend" className="mt-4 flex flex-wrap gap-x-6 gap-y-1 text-sm">
+    <ul aria-label={t("legend")} className="mt-4 flex flex-wrap gap-x-6 gap-y-1 text-sm">
       {items.map((item) => (
         <li key={item.label} className="flex items-center gap-2">
           <span aria-hidden="true" className={cn("size-2.5 rounded-xs", item.color)} />
@@ -165,6 +167,7 @@ function Legend({ parts }: { parts: { subscription: string; oneTime: string } })
  * caption, where pointing at or stepping through a month shows that month instead, and the plot.
  */
 function Chart({ title, period }: { title: string; period: ChartPeriod }) {
+  const t = useTranslations("charts.history");
   const { model, caption } = period;
   const marks: (ChartPoint | RevenueBar)[] = model.kind === "line" ? model.points : model.bars;
   const last = marks.length - 1;
@@ -179,6 +182,12 @@ function Chart({ title, period }: { title: string; period: ChartPeriod }) {
         : model.totalParts
       : null;
   const figure = shown?.value ?? (model.kind === "line" ? model.points[last]!.value : model.total);
+  // The axis is as wide as its longest label, in px of the 12 px monospaced type: at least the
+  // 48 px of $10K, more for converted and translated amounts such as 10 тыс. ₽.
+  const longest = Math.max(
+    ...model.ticks.map((tick) => [...tick.label.replace(/[؜‎‏]/g, "")].length),
+  );
+  const axis = Math.max(48, Math.ceil(longest * 7.5));
 
   function pick(event: PointerEvent) {
     const box = plot.current?.getBoundingClientRect();
@@ -214,31 +223,36 @@ function Chart({ title, period }: { title: string; period: ChartPeriod }) {
         </span>
       </p>
 
+      {/* Time runs left to right in every language, so the plot keeps that direction. */}
       <div
+        dir="ltr"
         tabIndex={0}
         role="group"
-        aria-label={`${title}. Use the arrow keys to read each month.`}
+        aria-label={t("keys", { title })}
         aria-describedby={summaryId}
         onKeyDown={step}
         onFocus={() => setActive((current) => current ?? last)}
         onBlur={() => setActive(null)}
         className="relative mt-6 h-60 touch-pan-y rounded-md select-none sm:h-72"
       >
-        <p id={summaryId} className="sr-only">
+        <p id={summaryId} dir="auto" className="sr-only">
           {model.summary}
         </p>
-        <p aria-live="polite" className="sr-only">
+        <p aria-live="polite" dir="auto" className="sr-only">
           {shown
-            ? `${shown.label}: ${shown.value}${
-                parts
-                  ? `, subscriptions ${parts.subscription}, one-time purchases ${parts.oneTime}`
-                  : ""
-              }`
+            ? parts
+              ? t("monthSplit", {
+                  month: shown.label,
+                  value: shown.value,
+                  subscription: parts.subscription,
+                  oneTime: parts.oneTime,
+                })
+              : t("month", { month: shown.label, value: shown.value })
             : ""}
         </p>
 
         {/* Y axis labels, aligned to the gridlines. */}
-        <div aria-hidden="true" className="absolute top-2 bottom-8 left-0 w-12">
+        <div aria-hidden="true" className="absolute top-2 bottom-8 left-0" style={{ width: axis }}>
           {model.ticks.map((tick) => (
             <span
               key={tick.y}
@@ -255,7 +269,8 @@ function Chart({ title, period }: { title: string; period: ChartPeriod }) {
           onPointerMove={pick}
           onPointerDown={pick}
           onPointerLeave={() => setActive(null)}
-          className="absolute top-2 right-3 bottom-8 left-16"
+          className="absolute top-2 right-3 bottom-8"
+          style={{ left: axis + 16 }}
         >
           {model.ticks.map((tick) => (
             <div
@@ -277,7 +292,11 @@ function Chart({ title, period }: { title: string; period: ChartPeriod }) {
         </div>
 
         {/* X axis labels; narrow screens show every other month, always keeping the latest. */}
-        <div aria-hidden="true" className="absolute right-3 bottom-0 left-16 h-5">
+        <div
+          aria-hidden="true"
+          className="absolute right-3 bottom-0 h-5"
+          style={{ left: axis + 16 }}
+        >
           {marks.map((mark) => (
             <span
               key={mark.month}
@@ -301,6 +320,7 @@ function Chart({ title, period }: { title: string; period: ChartPeriod }) {
  * The heading is the shown chart's title, under `titleId`.
  */
 export function HistoryCharts({ views, titleId }: { views: ChartView[]; titleId: string }) {
+  const t = useTranslations("charts.history");
   const [tab, setTab] = useState(0);
   // The whole history (the last period) until the reader chooses another.
   const [chosen, setChosen] = useState<string | null>(null);
@@ -317,11 +337,12 @@ export function HistoryCharts({ views, titleId }: { views: ChartView[]; titleId:
     </h2>
   );
 
-  // Tabs follow the arrow keys, as a tab list does.
-  function switchTab(event: KeyboardEvent) {
+  // Tabs follow the arrow keys, as a tab list does, in the page's direction.
+  function switchTab(event: KeyboardEvent<HTMLElement>) {
+    const forward = getComputedStyle(event.currentTarget).direction === "rtl" ? -1 : 1;
     const next = {
-      ArrowLeft: (tab - 1 + views.length) % views.length,
-      ArrowRight: (tab + 1) % views.length,
+      ArrowLeft: (tab - forward + views.length) % views.length,
+      ArrowRight: (tab + forward + views.length) % views.length,
       Home: 0,
       End: views.length - 1,
     }[event.key];
@@ -337,7 +358,7 @@ export function HistoryCharts({ views, titleId }: { views: ChartView[]; titleId:
         {tabs ? (
           <div
             role="tablist"
-            aria-label="Chart"
+            aria-label={t("tabs")}
             onKeyDown={switchTab}
             className="flex rounded-lg border bg-subtle p-0.5"
           >
@@ -363,7 +384,7 @@ export function HistoryCharts({ views, titleId }: { views: ChartView[]; titleId:
         {view.periods.length > 1 && (
           <div
             role="group"
-            aria-label="Chart period"
+            aria-label={t("periods")}
             className="flex rounded-lg border bg-subtle p-0.5"
           >
             {view.periods.map((option, index) => (

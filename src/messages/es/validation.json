@@ -1,1 +1,54 @@
-{}
+{
+  "form": {
+    "checkFields": "Revisa los campos del formulario.",
+    "failed": "Algo salió mal. Inténtalo de nuevo."
+  },
+  "image": {
+    "size": "Elige una imagen de menos de 2 MB.",
+    "format": "Elige una imagen PNG, JPEG o WebP válida.",
+    "dimensions": "Elige una imagen de hasta {max} píxeles de ancho y de alto.",
+    "failed": "No se pudo subir la imagen. Inténtalo de nuevo."
+  },
+  "address": {
+    "web": "Escribe una dirección web, como example.com, sin espacios.",
+    "profile": "Usa tu dirección de {site}, como {example}."
+  },
+  "profile": {
+    "name": "Usa un nombre de 2 a 60 caracteres.",
+    "headline": "El titular debe tener menos de 120 caracteres.",
+    "location": "La ubicación debe tener menos de 80 caracteres."
+  },
+  "product": {
+    "name": "Usa un nombre de producto de 2 a 80 caracteres.",
+    "tagline": "Usa un eslogan de 5 a 140 caracteres.",
+    "description": "Usa una descripción de 20 a 5000 caracteres.",
+    "category": "Elige una categoría.",
+    "website": "El sitio web es obligatorio.",
+    "launchDate": "Indica la fecha de lanzamiento.",
+    "validDate": "Indica una fecha válida.",
+    "launchRange": "Indica una fecha de lanzamiento entre 1970 y hoy.",
+    "techMax": "Elige hasta {max} tecnologías.",
+    "techList": "Elige tecnologías de la lista."
+  },
+  "otherProvider": {
+    "required": "Escribe el nombre de tu proveedor de pagos.",
+    "max": "El nombre del proveedor de pagos debe tener menos de {max} caracteres."
+  },
+  "username": {
+    "rules": "Usa de 3 a 30 letras, números y guiones simples, como jane-doe.",
+    "reserved": "Ese nombre de usuario está reservado. Elige otro.",
+    "taken": "Ese nombre de usuario ya está en uso. Elige otro.",
+    "locked": "Podrás volver a cambiar tu nombre de usuario en {days, plural, one {# día} other {# días}}."
+  },
+  "report": {
+    "reason": "Elige un motivo.",
+    "details": "Los detalles deben tener menos de 1000 caracteres.",
+    "describe": "Describe el problema para que pueda revisarse."
+  },
+  "feedback": {
+    "kind": "Elige qué tipo de comentario es.",
+    "min": "Escribe al menos {min} caracteres.",
+    "max": "Debe tener menos de 2000 caracteres.",
+    "email": "Escribe un correo electrónico válido o déjalo vacío."
+  }
+}

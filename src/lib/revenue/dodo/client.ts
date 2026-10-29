@@ -5,6 +5,8 @@ import {
   MAX_PAGES,
   providerGet,
   ProviderRequestError,
+  rateLimited,
+  returnedError,
   tooMuchData,
 } from "../http";
 import type { DodoListedPayment, DodoPayment, DodoPaymentDetail, DodoSubscription } from "./mrr";
@@ -28,27 +30,14 @@ async function dodoGet<T>(key: string, livemode: boolean, path: string, params: 
   if (response.ok) return (await response.json()) as T;
   const body = await errorBody(response);
   if (response.status === 401)
-    throw new ProviderRequestError(
-      "Dodo Payments rejected the key. It may have been revoked, or belong to the other environment.",
-      401,
-    );
+    throw new ProviderRequestError("dodo.keyRejected", {}, { status: 401 });
   if (response.status === 403)
-    throw new ProviderRequestError(
-      "The key is not allowed to read what this verification needs.",
-      403,
-      path,
-    );
-  if (response.status === 429)
-    throw new ProviderRequestError(
-      "Dodo Payments is rate limiting requests. Try again later.",
-      429,
-    );
+    throw new ProviderRequestError("dodo.notAllowed", {}, { status: 403, path });
+  if (response.status === 429) throw rateLimited("Dodo Payments");
   // Dodo documents { code, message } and has been seen to answer { error }.
   const detail = [body?.message, body?.error].find((value) => typeof value === "string") as
     string | undefined;
-  throw new ProviderRequestError(
-    `Dodo Payments returned an error${detail ? `: ${detail.slice(0, 300)}` : "."}`,
-  );
+  throw returnedError("Dodo Payments", detail?.slice(0, 300));
 }
 
 // Lists are numbered pages from 0; a short page is the last one. Every page is asked for by

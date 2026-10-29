@@ -1,1 +1,60 @@
-{}
+{
+  "meta": {
+    "title": "Dashboard"
+  },
+  "title": "Dashboard",
+  "description": "Manage your products.",
+  "addSaas": "Add SaaS",
+  "notices": {
+    "saved": "Saved. The public product page is up to date.",
+    "added": "Product added. Its page is public. You can connect your payment provider from Edit at any time.",
+    "deleted": "Product deleted. It has left the directory and the leaderboard."
+  },
+  "nextSteps": {
+    "title": "Next steps",
+    "progress": "{done} of {total} done",
+    "description": "Each step makes your listing more complete. All but the first are optional.",
+    "done": "(done)",
+    "list": {
+      "label": "List your first product",
+      "action": "Add"
+    },
+    "logo": {
+      "label": "Add a logo to every product",
+      "action": "Add a logo"
+    },
+    "profile": {
+      "label": "Add a photo and a headline to your profile",
+      "action": "Edit profile"
+    },
+    "connect": {
+      "label": "Connect your payment provider to verify revenue and join the leaderboard",
+      "action": "Connect"
+    },
+    "domain": {
+      "label": "Verify your domain, so your page shows that the website is yours",
+      "action": "Verify"
+    }
+  },
+  "products": {
+    "title": "Your products",
+    "total": "{count} total",
+    "emptyTitle": "No products yet",
+    "emptyBody": "Add a product to list it in the directory. Verified revenue is public unless you hide it.",
+    "hidden": "Hidden",
+    "verified": "Verified",
+    "syncFailed": "Sync failed",
+    "notVerified": "Not verified",
+    "view": "View",
+    "edit": "Edit"
+  },
+  "share": {
+    "post": "I just listed {name} on {site}.",
+    "title": "{name} is listed",
+    "description": "Share it on X so more people find it. The post shows the product's card and links to its page, which links to your site.",
+    "x": "Share on X",
+    "linkedin": "Share on LinkedIn",
+    "notNow": "Not now",
+    "seeFirst": "Want to see it first? <link>View your page</link>"
+  }
+}

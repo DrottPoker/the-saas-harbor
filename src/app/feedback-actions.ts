@@ -2,9 +2,20 @@
 
 import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
+import { getLocale, getTranslations } from "next-intl/server";
+import { LOCALE_INFO } from "@/i18n/config";
 import { clientAddress } from "@/lib/analytics";
+import { formatCount } from "@/lib/display-money";
 import type { ActionState } from "@/lib/domain";
-import { FEEDBACK_TRAP, feedbackPage, feedbackSchema } from "@/lib/feedback";
+import {
+  FEEDBACK_ERRORS,
+  FEEDBACK_MAX_LENGTH,
+  FEEDBACK_MIN_LENGTH,
+  FEEDBACK_TRAP,
+  feedbackPage,
+  feedbackSchema,
+} from "@/lib/feedback";
+import { localizeValidation } from "@/lib/localize-validation";
 import { adminSession } from "@/lib/admin";
 import { adminClient } from "@/lib/supabase/admin";
 import { currentUser, requireUser } from "@/lib/supabase/server";
@@ -25,7 +36,7 @@ export async function submitFeedbackAction(
     message: String(form.get("message") ?? ""),
     email: String(form.get("email") ?? ""),
   });
-  if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Check the form." };
+  if (!parsed.success) return { error: await localizeValidation(parsed.error) };
   // A field people never see: a bot that fills it in is thanked, and nothing is stored.
   if (String(form.get(FEEDBACK_TRAP) ?? "")) return { success: "sent" };
   const user = await currentUser();
@@ -50,14 +61,20 @@ export async function submitFeedbackAction(
       p_reply_email: email || null,
     }));
   }
-  if (error)
+  if (error) {
+    // P0001 errors are written for users by submit_feedback() and submit_visitor_feedback(); one
+    // this server does not know yet keeps its English text.
+    const [t, locale] = await Promise.all([getTranslations("feedback.errors"), getLocale()]);
+    const known = error.code === "P0001" ? FEEDBACK_ERRORS.get(error.message) : undefined;
+    const count = (value: number) => formatCount(value, LOCALE_INFO[locale].intl);
     return {
-      // P0001 errors are written for users by submit_feedback().
-      error:
-        error.code === "P0001"
+      error: known
+        ? t(known, { min: count(FEEDBACK_MIN_LENGTH), max: count(FEEDBACK_MAX_LENGTH) })
+        : error.code === "P0001"
           ? `${error.message}.`
-          : "Your feedback could not be sent. Please try again.",
+          : t("sendFailed"),
     };
+  }
   sendQueuedTelegramAlerts();
   revalidatePath("/admin", "layout");
   return { success: "sent" };

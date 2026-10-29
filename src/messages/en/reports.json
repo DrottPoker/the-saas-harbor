@@ -1,1 +1,95 @@
-{}
+{
+  "meta": {
+    "title": "Report"
+  },
+  "page": {
+    "description": "Tell us what is wrong. An admin reviews every report.",
+    "title": "Report {name}",
+    "messageTitle": "Report a message",
+    "ownProduct": "This is your product, so you cannot report it.",
+    "ownProfile": "This is your profile, so you cannot report it.",
+    "ownMessage": "This is your own message, so you cannot report it.",
+    "productFallback": "Product",
+    "messages": "Messages",
+    "from": "From <sender>{name}</sender>, <time></time>"
+  },
+  "reasons": {
+    "spam": {
+      "label": "Spam or advertising",
+      "hint": "Unwanted promotion, repeated messages, or a listing that is not a real product."
+    },
+    "misleading": {
+      "label": "Misleading or false information",
+      "hint": "False claims about a product or a person."
+    },
+    "impersonation": {
+      "label": "Pretends to be someone else",
+      "hint": "Uses someone else's name, brand or work without permission."
+    },
+    "harassment": {
+      "label": "Harassment or hate",
+      "hint": "Threats, insults or hateful content aimed at a person or a group."
+    },
+    "illegal": {
+      "label": "Illegal content",
+      "hint": "Breaks the law, for example fraud or content that infringes someone's rights."
+    },
+    "other": {
+      "label": "Something else",
+      "hint": "Anything else that breaks the terms."
+    }
+  },
+  "form": {
+    "legend": "What is the problem?",
+    "details": "Details",
+    "detailsHint": "What is wrong, and where? Required for illegal content and for something else.",
+    "anonymous": "The reported user is not told who reported. The <link>terms</link> list what is not allowed.",
+    "submit": "Send report",
+    "sending": "Sending..."
+  },
+  "errors": {
+    "cannotReport": "This could not be reported.",
+    "sendFailed": "Your report could not be sent. Please try again.",
+    "chooseReason": "Choose a reason.",
+    "detailsTooLong": "Keep the details under {max} characters.",
+    "detailsRequired": "Describe the problem so it can be reviewed.",
+    "suspended": "Your account is suspended, so you cannot send reports.",
+    "tooMany": "You have sent many reports. Try again later.",
+    "productNotFound": "This product could not be found.",
+    "ownProduct": "You cannot report your own product.",
+    "userNotFound": "This user could not be found.",
+    "ownProfile": "You cannot report yourself.",
+    "messageNotFound": "This message could not be found.",
+    "ownMessage": "You cannot report your own message.",
+    "chooseTarget": "Choose what to report.",
+    "alreadyReported": "You already reported this, and it is waiting for review."
+  },
+  "list": {
+    "title": "Your reports",
+    "description": "Reports you sent about products, profiles and messages, and what happened to them.",
+    "sent": "Thanks. Your report was sent, and an admin will review it.",
+    "emptyTitle": "No reports yet",
+    "emptyBody": "To report a product, a profile or a message you received, choose Report next to it.",
+    "label": "Reports you sent",
+    "about": "{target}:",
+    "targets": {
+      "saas": "Product",
+      "profile": "Profile",
+      "message": "Message",
+      "unknown": "Report"
+    },
+    "quote": "“{text}”",
+    "aMessage": "A message",
+    "unnamed": "Unnamed",
+    "sentOn": "Sent <date></date>",
+    "decidedOn": "Decided <date></date>",
+    "statuses": {
+      "open": "Waiting for review",
+      "actioned": "Action taken",
+      "dismissed": "No action taken"
+    },
+    "reviewed": "An admin reviews every report. The reported user is not told who reported.",
+    "disagree": "If you disagree with a decision, write to <contact></contact>.",
+    "terms": "The <link>terms</link> explain how reports are handled."
+  }
+}

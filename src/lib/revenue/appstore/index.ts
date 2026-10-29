@@ -21,18 +21,16 @@ import {
 } from "./mrr";
 import { reportDays, salesPayments } from "./payments";
 
-const BEYOND_REPORTS =
-  "The key can do more than download reports, such as managing apps, certificates or reviews. Create a Team key with the Sales role and access to reports, or with the Finance role.";
-
 /**
  * Refuses a key whose role reaches beyond reports, every time it is used. Apple does not say what
  * a key may do, so this tries what the Sales and Finance roles may not: certificates, and the
  * reviews of an app of the team.
  */
 async function requireReportsOnly(credentials: AppStoreCredentials) {
-  if (await canReadCertificates(credentials)) throw new VerificationError(BEYOND_REPORTS);
+  if (await canReadCertificates(credentials)) throw new VerificationError("appstore.beyondReports");
   const app = await fetchFirstApp(credentials);
-  if (app && (await canReadReviews(credentials, app))) throw new VerificationError(BEYOND_REPORTS);
+  if (app && (await canReadReviews(credentials, app)))
+    throw new VerificationError("appstore.beyondReports");
 }
 
 /**
@@ -66,10 +64,7 @@ async function latestReport(
   for (const [back, date] of recentDays(now).entries()) {
     const rows = await report(date);
     if (!rows) continue;
-    if (back >= FRESH_DAYS)
-      throw new ProviderRequestError(
-        "Apple has not published the subscription reports of the last few days. Try again later.",
-      );
+    if (back >= FRESH_DAYS) throw new ProviderRequestError("appstore.notPublished");
     return { date, rows };
   }
   return null;

@@ -16,24 +16,15 @@ export const PAYSTACK_SCOPES = [
 
 export function parsePaystackKey(input: string, { allowTest }: { allowTest: boolean }): ParsedKey {
   const key = input.trim();
-  if (/^sk_(live|test)_/.test(key))
-    throw new VerificationError(
-      "This is your Paystack secret key, which can do everything in your account. Create a restricted key with read scopes only, and paste that instead.",
-    );
-  if (/^pk_(live|test)_/.test(key))
-    throw new VerificationError(
-      "This is your Paystack public key. Create a restricted key with read scopes, and paste that instead.",
-    );
+  if (/^sk_(live|test)_/.test(key)) throw new VerificationError("paystack.secretKey");
+  if (/^pk_(live|test)_/.test(key)) throw new VerificationError("paystack.publicKey");
   if (/^pdl_|^polar_|^creem_|^apik_/.test(key))
-    throw new VerificationError(
-      "This key belongs to another payment provider. Paste a Paystack restricted key.",
-    );
-  if (!/^rk_[A-Za-z0-9_-]{16,200}$/.test(key))
-    throw new VerificationError("Paste a Paystack restricted key. It starts with rk_live_.");
+    throw new VerificationError("paystack.otherProvider");
+  if (!/^rk_[A-Za-z0-9_-]{16,200}$/.test(key)) throw new VerificationError("paystack.keyFormat");
   // Paystack documents rk_test_ for test mode only, so any other restricted key counts as live.
   const livemode = !key.startsWith("rk_test_");
   if (!livemode && !allowTest)
-    throw new VerificationError("Use a live Paystack key. Test keys are not accepted.");
+    throw new VerificationError("common.liveKeyOnly", { provider: "Paystack" });
   const prefix = /^rk_(live|test)_/.exec(key)?.[0] ?? "rk_";
   return { key, livemode, hint: `${prefix}…${key.slice(-4)}` };
 }

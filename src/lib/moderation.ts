@@ -1,5 +1,9 @@
 // Reports and admin decisions: reasons, statuses and labels. Pure, shared by server and client.
-// The reasons match the public.moderation_reason domain in the database.
+// The reasons match the public.moderation_reason domain in the database. The labels here are
+// English, for the admin panel, emails and Telegram alerts; pages for users take theirs from the
+// messages (reports.reasons, reports.list and moderation.decisions).
+import type en from "@/messages/en";
+
 export const REASONS = [
   "spam",
   "misleading",
@@ -17,16 +21,6 @@ export const reasonLabels: Record<Reason, string> = {
   harassment: "Harassment or hate",
   illegal: "Illegal content",
   other: "Something else",
-};
-
-// Shown under each choice in the report form.
-export const reasonHints: Record<Reason, string> = {
-  spam: "Unwanted promotion, repeated messages, or a listing that is not a real product.",
-  misleading: "False claims about a product or a person.",
-  impersonation: "Uses someone else's name, brand or work without permission.",
-  harassment: "Threats, insults or hateful content aimed at a person or a group.",
-  illegal: "Breaks the law, for example fraud or content that infringes someone's rights.",
-  other: "Anything else that breaks the terms.",
 };
 
 // The ground of a decision, as the maker reads it.
@@ -53,12 +47,6 @@ export const targetLabels: Record<ReportTarget, string> = {
 };
 
 export type ReportStatus = "open" | "actioned" | "dismissed";
-// As the reporter reads it.
-export const statusLabels: Record<ReportStatus, string> = {
-  open: "Waiting for review",
-  actioned: "Action taken",
-  dismissed: "No action taken",
-};
 export const adminStatusLabels: Record<ReportStatus, string> = {
   open: "Open",
   actioned: "Action taken",
@@ -95,10 +83,40 @@ export function excerpt(text: string, max = 80) {
   return `${(space > max / 2 ? cut.slice(0, space) : cut).trimEnd()}…`;
 }
 
-/** A short title for a report, from the copy stored with it. */
-export function reportTitle(report: { target: string; content: unknown }) {
+/**
+ * What a report is about, from the copy stored with it: the start of a reported message, or the
+ * name of a product or profile. Null when the copy has neither.
+ */
+export function reportSubject(report: { target: string; content: unknown }) {
   const content = (report.content ?? {}) as Record<string, unknown>;
   if (report.target === "message")
-    return typeof content.body === "string" ? `“${excerpt(content.body, 60)}”` : "A message";
-  return typeof content.name === "string" && content.name ? content.name : "Unnamed";
+    return typeof content.body === "string" ? excerpt(content.body, 60) : null;
+  return typeof content.name === "string" && content.name ? content.name : null;
 }
+
+/** A short title for a report in English, for the admin panel. */
+export function reportTitle(report: { target: string; content: unknown }) {
+  const subject = reportSubject(report);
+  if (report.target === "message") return subject === null ? "A message" : `“${subject}”`;
+  return subject ?? "Unnamed";
+}
+
+/**
+ * The errors submit_report() raises for users (P0001), as keys in reports.errors, so they read in
+ * the page's language. `detailsTooLong` takes the limit as `max`.
+ */
+export const REPORT_ERRORS = new Map<string, keyof (typeof en)["reports"]["errors"]>([
+  ["Choose a reason", "chooseReason"],
+  ["Keep the details under 1,000 characters", "detailsTooLong"],
+  ["Describe the problem so it can be reviewed", "detailsRequired"],
+  ["Your account is suspended, so you cannot send reports", "suspended"],
+  ["You have sent many reports. Try again later", "tooMany"],
+  ["This product could not be found", "productNotFound"],
+  ["You cannot report your own product", "ownProduct"],
+  ["This user could not be found", "userNotFound"],
+  ["You cannot report yourself", "ownProfile"],
+  ["This message could not be found", "messageNotFound"],
+  ["You cannot report your own message", "ownMessage"],
+  ["Choose what to report", "chooseTarget"],
+  ["You already reported this, and it is waiting for review", "alreadyReported"],
+]);

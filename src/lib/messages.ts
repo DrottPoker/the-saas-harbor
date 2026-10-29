@@ -1,4 +1,5 @@
 // Shared by the conversation view on the server and in the browser. Pure functions only.
+import type en from "@/messages/en";
 import type { ActionState } from "./domain";
 import type { Database } from "./supabase/database.types";
 
@@ -8,6 +9,22 @@ export type ChatMessage = Pick<
 >;
 
 export type SendState = ActionState & { message?: ChatMessage };
+
+/**
+ * The errors send_message() raises for users (P0001), as keys in messages.errors, so they read in
+ * the page's language. `tooLong` takes the limit as `max`.
+ */
+export const SEND_ERRORS = new Map<string, keyof (typeof en)["messages"]["errors"]>([
+  ["Choose another user to message", "chooseOther"],
+  ["Write a message first", "empty"],
+  ["Messages can be up to 4,000 characters", "tooLong"],
+  ["Set up your profile before sending messages", "noProfile"],
+  ["Your account is suspended, so you cannot send messages", "suspended"],
+  ["This user cannot receive messages", "cannotReceive"],
+  ["Messages between you and this user are blocked", "blocked"],
+  ["You are sending messages too quickly. Try again later", "tooFast"],
+  ["You have started many conversations today. Try again tomorrow", "tooManyConversations"],
+]);
 
 export const MESSAGE_COLUMNS = "id, conversation_id, sender_id, body, created_at";
 export const MESSAGE_PAGE_SIZE = 50;

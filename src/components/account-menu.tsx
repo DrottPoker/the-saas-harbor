@@ -37,7 +37,9 @@ export function AccountMenu({ account }: { account: AccountMenuData }) {
       {/* The name is the button's label; below xl only screen readers get it, so the header fits. */}
       <DropdownMenu.Trigger className="flex min-w-0 items-center gap-2 rounded-full text-sm text-muted-foreground transition-colors hover:text-foreground xl:py-0.5 xl:pe-2 xl:ps-0.5 xl:hover:bg-muted xl:data-[state=open]:bg-muted xl:data-[state=open]:text-foreground">
         <PersonAvatar path={avatarPath} name={name} size="sm" />
-        <span className="max-w-36 truncate max-xl:sr-only">{name}</span>
+        <span dir="auto" className="max-w-36 truncate max-xl:sr-only">
+          {name}
+        </span>
         <ChevronDown aria-hidden="true" className="size-4 shrink-0 max-xl:hidden" />
       </DropdownMenu.Trigger>
       <DropdownMenu.Portal>
@@ -49,7 +51,9 @@ export function AccountMenu({ account }: { account: AccountMenuData }) {
           <DropdownMenu.Label className="flex items-center gap-3 px-2 py-2">
             <PersonAvatar path={avatarPath} name={name} />
             <span className="min-w-0">
-              <span className="block truncate text-sm font-medium">{name}</span>
+              <span dir="auto" className="block truncate text-sm font-medium">
+                {name}
+              </span>
               {slug && (
                 <span className="block truncate text-xs text-muted-foreground">@{slug}</span>
               )}

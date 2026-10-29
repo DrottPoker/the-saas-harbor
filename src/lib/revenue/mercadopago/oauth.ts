@@ -1,6 +1,6 @@
 import "server-only";
 import { createHash } from "node:crypto";
-import { VerificationError } from "../errors";
+import { VerificationError, type RevenueErrorKey, type RevenueErrorValues } from "../errors";
 import { apiBase } from "../http";
 import { oauthCallbackUrl, type OAuthProvider } from "../oauth";
 import type { ParsedKey } from "../types";
@@ -71,10 +71,11 @@ export function readOnlyScopes(scopes: string[]) {
 /** A token request that failed; `refused` when Mercado Pago turned the code or refresh token down. */
 export class MercadoPagoTokenError extends VerificationError {
   constructor(
-    message: string,
+    key: RevenueErrorKey,
+    values: RevenueErrorValues,
     readonly refused: boolean,
   ) {
-    super(message);
+    super(key, values);
   }
 }
 
@@ -98,26 +99,21 @@ async function requestToken(body: Record<string, string>) {
       signal: AbortSignal.timeout(20_000),
     });
   } catch {
-    throw new MercadoPagoTokenError("Mercado Pago could not be reached. Try again shortly.", false);
+    throw new MercadoPagoTokenError("common.unreachable", { provider: "Mercado Pago" }, false);
   }
   const result = (await response.json().catch(() => null)) as
     (TokenResponse & { error?: unknown }) | null;
   if (response.ok && typeof result?.access_token === "string") return result;
   const code = typeof result?.error === "string" ? result.error : "";
   if (response.status === 429)
-    throw new MercadoPagoTokenError(
-      "Mercado Pago is rate limiting requests. Try again later.",
-      false,
-    );
+    throw new MercadoPagoTokenError("common.rateLimited", { provider: "Mercado Pago" }, false);
   if (code === "invalid_client") {
     console.error("Mercado Pago refused this site's OAuth application credentials.");
-    throw new MercadoPagoTokenError(
-      "Mercado Pago verification is not configured correctly on this server.",
-      false,
-    );
+    throw new MercadoPagoTokenError("common.notConfigured", { provider: "Mercado Pago" }, false);
   }
   throw new MercadoPagoTokenError(
-    "Mercado Pago did not issue access. Connect Mercado Pago again.",
+    "mercadopago.noAccess",
+    {},
     code === "invalid_grant" || code === "unauthorized_client",
   );
 }
@@ -128,13 +124,10 @@ function issuedKey(result: TokenResponse, now: Date, userId: string | null): Mer
   if (!readOnlyScopes(scopes)) {
     // Scope names only, never the tokens.
     console.warn("Mercado Pago issued access with these scopes:", scopes.join(" ") || "none");
-    throw new VerificationError(
-      "Mercado Pago granted this site other access than reading, so the access was not used.",
-    );
+    throw new VerificationError("mercadopago.otherAccess");
   }
   const named = result.user_id == null ? null : String(result.user_id);
-  if (userId && named && named !== userId)
-    throw new VerificationError("Mercado Pago issued access for another account. Try again.");
+  if (userId && named && named !== userId) throw new VerificationError("mercadopago.otherAccount");
   const lifetime = Number(result.expires_in);
   return {
     accessToken: result.access_token ?? "",
@@ -168,18 +161,14 @@ export async function exchangeMercadoPagoCode(
     });
   } catch (error) {
     if (error instanceof MercadoPagoTokenError && !error.refused) throw error;
-    throw new VerificationError("Mercado Pago did not complete the connection. Try again.");
+    throw new VerificationError("common.connectionNotCompleted", { provider: "Mercado Pago" });
   }
   const issued = issuedKey(result, now, null);
   const user = await fetchUser(issued.accessToken);
   const key = { ...issued, userId: issued.userId || String(user.id) };
-  if (String(user.id) !== key.userId)
-    throw new VerificationError("Mercado Pago issued access for another account. Try again.");
+  if (String(user.id) !== key.userId) throw new VerificationError("mercadopago.otherAccount");
   const test = result.live_mode === false || !!user.tags?.includes("test_user");
-  if (test && !allowTest)
-    throw new VerificationError(
-      "This is a Mercado Pago test account. Connect the account that receives your payments.",
-    );
+  if (test && !allowTest) throw new VerificationError("mercadopago.testAccount");
   return { key: encodeMercadoPagoKey(key), hint: mercadoPagoHint(key.userId), livemode: !test };
 }
 
@@ -200,7 +189,7 @@ export async function refreshMercadoPagoKey(
   });
   // Without a new refresh token the renewal cannot be stored, so it counts as one that failed.
   if (typeof result.refresh_token !== "string")
-    throw new MercadoPagoTokenError("Mercado Pago did not renew access. Try again later.", false);
+    throw new MercadoPagoTokenError("mercadopago.notRenewed", {}, false);
   return issuedKey(result, now, key.userId);
 }
 

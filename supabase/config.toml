@@ -164,8 +164,18 @@ site_url = "http://127.0.0.1:3002"
 # on 3002 and the dev server on 3001.
 additional_redirect_urls = [
   "http://127.0.0.1:3002/auth/confirm",
+  "http://127.0.0.1:3002/zh/auth/confirm",
+  "http://127.0.0.1:3002/hi/auth/confirm",
+  "http://127.0.0.1:3002/ar/auth/confirm",
+  "http://127.0.0.1:3002/es/auth/confirm",
+  "http://127.0.0.1:3002/ru/auth/confirm",
   "http://127.0.0.1:3002/auth/callback",
   "http://localhost:3001/auth/confirm",
+  "http://localhost:3001/zh/auth/confirm",
+  "http://localhost:3001/hi/auth/confirm",
+  "http://localhost:3001/ar/auth/confirm",
+  "http://localhost:3001/es/auth/confirm",
+  "http://localhost:3001/ru/auth/confirm",
   "http://localhost:3001/auth/callback",
 ]
 # How long tokens are valid for, in seconds. Defaults to 3600 (1 hour), maximum 604,800 (1 week).
@@ -255,15 +265,15 @@ sender_name = "env(HARBOR_SMTP_SENDER_NAME)"
 # Email links carry a token hash that the app verifies on its confirm page, so they work in any
 # browser. Production Auth needs the same templates, subjects and redirect URLs.
 [auth.email.template.confirmation]
-subject = "Confirm your email for The SaaS Harbor"
+subject = '{{ if eq (printf "%v" .Data.locale) "zh" }}确认你在 The SaaS Harbor 的邮箱{{ else if eq (printf "%v" .Data.locale) "hi" }}The SaaS Harbor के लिए अपने ईमेल की पुष्टि करें{{ else if eq (printf "%v" .Data.locale) "ar" }}أكّد بريدك الإلكتروني على The SaaS Harbor{{ else if eq (printf "%v" .Data.locale) "es" }}Confirma tu correo para The SaaS Harbor{{ else if eq (printf "%v" .Data.locale) "ru" }}Подтвердите адрес почты для The SaaS Harbor{{ else }}Confirm your email for The SaaS Harbor{{ end }}'
 content_path = "./supabase/templates/confirmation.html"
 
 [auth.email.template.recovery]
-subject = "Reset your password for The SaaS Harbor"
+subject = '{{ if eq (printf "%v" .Data.locale) "zh" }}重置你在 The SaaS Harbor 的密码{{ else if eq (printf "%v" .Data.locale) "hi" }}The SaaS Harbor के लिए अपना पासवर्ड रीसेट करें{{ else if eq (printf "%v" .Data.locale) "ar" }}أعد تعيين كلمة المرور على The SaaS Harbor{{ else if eq (printf "%v" .Data.locale) "es" }}Restablece tu contraseña de The SaaS Harbor{{ else if eq (printf "%v" .Data.locale) "ru" }}Сброс пароля на The SaaS Harbor{{ else }}Reset your password for The SaaS Harbor{{ end }}'
 content_path = "./supabase/templates/recovery.html"
 
 [auth.email.template.email_change]
-subject = "Confirm your new email address for The SaaS Harbor"
+subject = '{{ if eq (printf "%v" .Data.locale) "zh" }}确认你在 The SaaS Harbor 的新邮箱地址{{ else if eq (printf "%v" .Data.locale) "hi" }}The SaaS Harbor के लिए अपने नए ईमेल पते की पुष्टि करें{{ else if eq (printf "%v" .Data.locale) "ar" }}أكّد بريدك الإلكتروني الجديد على The SaaS Harbor{{ else if eq (printf "%v" .Data.locale) "es" }}Confirma tu nuevo correo para The SaaS Harbor{{ else if eq (printf "%v" .Data.locale) "ru" }}Подтвердите новый адрес почты для The SaaS Harbor{{ else }}Confirm your new email address for The SaaS Harbor{{ end }}'
 content_path = "./supabase/templates/email_change.html"
 
 # Uncomment to customize notification email template
@@ -469,6 +479,11 @@ project_id = "vgwgeennghaqpvfsqewq"
 site_url = "https://thesaasharbor.com"
 additional_redirect_urls = [
   "https://thesaasharbor.com/auth/confirm",
+  "https://thesaasharbor.com/zh/auth/confirm",
+  "https://thesaasharbor.com/hi/auth/confirm",
+  "https://thesaasharbor.com/ar/auth/confirm",
+  "https://thesaasharbor.com/es/auth/confirm",
+  "https://thesaasharbor.com/ru/auth/confirm",
   "https://thesaasharbor.com/auth/callback",
 ]
 

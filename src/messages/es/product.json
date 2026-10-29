@@ -1,1 +1,136 @@
-{}
+{
+  "breadcrumb": "Ruta de navegación",
+  "browse": "Explorar",
+  "verifiedRevenue": "Ingresos verificados",
+  "domainVerified": "Dominio verificado",
+  "byFounder": "de <founder>{name}</founder>",
+  "founderFallback": "Fundador",
+  "visitWebsite": "Visitar sitio web",
+  "editProduct": "Editar producto",
+  "report": "Denunciar este producto",
+  "about": "Acerca de {name}",
+  "figures": {
+    "mrr": "Ingresos recurrentes mensuales",
+    "subscribers": "Suscriptores",
+    "launched": "Lanzamiento",
+    "inUsd": "{amount} en dólares estadounidenses"
+  },
+  "verification": {
+    "verifiedWith": "Verificado con {provider} mediante {access, select, oauth {acceso de solo lectura} other {una clave de solo lectura}}.",
+    "someProvider": "un proveedor de pagos",
+    "lastVerified": "Última verificación: <date></date>.",
+    "testMode": "Datos del modo de prueba."
+  },
+  "founderNote": {
+    "onlyYou": "Solo tú ves esto.",
+    "unverified": "El MRR, los ingresos y los suscriptores aparecen como No compartido hasta que conectes tu proveedor de pagos.",
+    "connect": "Conectarlo",
+    "private": "Ocultas tus ingresos, así que aparecen como No compartido.",
+    "change": "Cambiar esto",
+    "stale": "Tus cifras no se han verificado en siete días, así que aparecen como No compartido.",
+    "check": "Revisar la conexión",
+    "launch": "Lanzamiento aparece como No compartido si no hay fecha de lanzamiento o mientras la ocultes.",
+    "editLaunch": "Editar la fecha de lanzamiento"
+  },
+  "views": {
+    "title": "Visitas a la página",
+    "last7": "Últimos 7 días",
+    "last30": "Últimos 30 días",
+    "allTime": "Desde el inicio",
+    "note": "Solo tú puedes ver esto. Tus propias visitas no se cuentan."
+  },
+  "details": {
+    "founder": "Fundador",
+    "category": "Categoría",
+    "website": "Sitio web",
+    "domain": "Dominio",
+    "verified": "Verificado",
+    "notVerified": "Sin verificar",
+    "listed": "Publicado"
+  },
+  "techStack": {
+    "title": "Stack tecnológico",
+    "separator": ", "
+  },
+  "demo": {
+    "metaTitle": "{name} (demostración)",
+    "figures": "Cifras de demostración, inventadas para este ejemplo y sin verificar.",
+    "mrrHistory": "Cifras inventadas de los últimos 12 meses.",
+    "revenueHistory": "Cifras inventadas de los últimos 12 meses, después de reembolsos y antes de impuestos.",
+    "products": {
+      "metricfold": {
+        "tagline": "MRR, cancelaciones y cohortes desde tu cuenta de Stripe, sin hojas de cálculo.",
+        "description": "Metricfold se conecta a Stripe con una clave de solo lectura y convierte tus suscripciones en las cifras que revisas cada lunes: MRR, retención neta de ingresos, cancelaciones y conversión de pruebas. Los gráficos de cohortes muestran cuánto tiempo se quedan los clientes de cada mes de registro.\n\nEstá pensado para fundadores y pequeños equipos de finanzas que quieren la respuesta en una sola pantalla en lugar de un proyecto de reportes. Todos los planes incluyen resúmenes semanales por correo, exportaciones a CSV y notas para lanzamientos y cambios de precio."
+      },
+      "inboxwren": {
+        "tagline": "Ordena tu bandeja de soporte por urgencia y redacta respuestas que puedes editar.",
+        "description": "Inboxwren lee los nuevos correos y mensajes de chat de soporte, los etiqueta por tema y urgencia, y redacta una respuesta a partir de tu centro de ayuda y de respuestas anteriores. No se envía nada hasta que una persona lo aprueba.\n\nLa mayoría de los clientes son tiendas en línea con dos a diez personas en soporte. Lo usan para responder más rápido las preguntas sobre pedidos durante las temporadas de ofertas y para detectar las solicitudes de reembolso antes de que se conviertan en contracargos."
+      },
+      "cronhawk": {
+        "tagline": "Entérate cuando una tarea programada no se ejecutó, se ejecutó tarde o falló.",
+        "description": "Agrega una línea al final de un cron job, un worker de cola o una función programada, y Cronhawk esperará que se reporte a tiempo. Cuando se retrasa, falla o tarda demasiado, la persona indicada recibe un correo, un mensaje de texto o una alerta en el chat.\n\nEmpezó como un script para un equipo que perdió una semana de respaldos sin darse cuenta. Hoy vigila respaldos nocturnos, procesos de facturación e importaciones de datos de casi 900 equipos, desde desarrolladores independientes hasta agencias con cientos de servidores."
+      },
+      "clientloft": {
+        "tagline": "Un portal de clientes para freelancers: archivos, aprobaciones y facturas en un solo enlace.",
+        "description": "Clientloft le da a cada cliente una página privada con los archivos del proyecto, las rondas de comentarios, los contratos y las facturas. Los clientes aprueban el trabajo con un clic y nunca tienen que buscar la última versión en su correo.\n\nDiseñadores, desarrolladores y pequeños estudios lo usan para dejar de perseguir aprobaciones. Las páginas llevan tu propio logo y dominio, y un proyecto terminado se puede archivar y entregar con todo su contenido."
+      },
+      "retrywell": {
+        "tagline": "Recupera pagos de suscripción fallidos con reintentos en el momento justo y recordatorios amables.",
+        "description": "Cuando falla un pago con tarjeta, Retrywell lo vuelve a intentar en el momento en que es más probable que se apruebe, y envía recordatorios breves y amables con un enlace para actualizar la tarjeta. La mayoría de los pagos recuperados no requieren nada de tu parte.\n\nSe conecta a Stripe en pocos minutos e informa cuánto recuperó cada mes. Sus clientes son negocios de suscripción de todos los tamaños, desde proyectos personales hasta empresas con un equipo de finanzas."
+      },
+      "quietstats": {
+        "tagline": "Analítica web sencilla sin cookies ni datos personales.",
+        "description": "Quietstats muestra visitantes, páginas, referentes y campañas en una sola página. No usa cookies ni guarda datos personales, así que nadie sigue a los visitantes de un sitio a otro.\n\nEl script pesa menos de 2 KB y el panel carga al instante. Blogueros, sitios de documentación y pequeñas empresas lo usan para ver qué funciona sin entregar los datos de sus visitantes a una red publicitaria."
+      },
+      "episodemint": {
+        "tagline": "Transcripciones, notas y clips de cada episodio de pódcast en minutos.",
+        "description": "Sube un episodio y Episodemint escribe una transcripción con los nombres de quienes hablan, marcas de capítulos, notas del episodio y una lista breve de momentos citables. Puedes editarlo todo antes de publicarlo.\n\nLo creó un productor de pódcast que dedicaba horas cada semana a las notas de los episodios. Programas independientes y pequeñas productoras lo usan para publicar el mismo día en que graban y para convertir episodios antiguos en páginas que se pueden buscar."
+      },
+      "mockframe": {
+        "tagline": "Capturas para las tiendas de apps a partir de tus capturas simples, en todos los tamaños que piden.",
+        "description": "Arrastra capturas de pantalla simples, elige un diseño, y Mockframe las coloca en marcos de dispositivo con textos y fondos, en los tamaños que necesita cada ficha de tienda. Al cambiar un texto se actualizan todos los tamaños de dispositivo a la vez.\n\nDesarrolladores móviles y pequeños estudios de apps lo usan antes de cada lanzamiento. Los textos en hasta 40 idiomas salen de una sola hoja de cálculo, así que un idioma nuevo no significa un día entero de trabajo de diseño."
+      },
+      "rankmoss": {
+        "tagline": "Posiciones diarias de palabras clave para sitios pequeños, con sugerencias en palabras sencillas.",
+        "description": "Rankmoss revisa cada día en qué posición aparecen tus páginas para las búsquedas que te importan, en computadora y en móvil, y te dice con palabras sencillas qué cambió y qué probar después.\n\nEstá hecho para pequeños negocios y freelancers que se encargan de su propio sitio web. Los reportes se pueden compartir con un cliente o un colega mediante un enlace, y los precios se mantienen bajos porque sigue cientos de palabras clave, no millones."
+      },
+      "switchmoor": {
+        "tagline": "Feature flags y lanzamientos graduales para equipos de ingeniería pequeños.",
+        "description": "Switchmoor activa una función para unos pocos usuarios, una parte del tráfico o un solo cliente, y la vuelve a desactivar sin hacer un deploy. Cada cambio queda registrado con quién lo hizo y por qué.\n\nHay bibliotecas para los stacks web y móviles más comunes, los flags se evalúan dentro de tu app para no agregar latencia de red, y el precio es por equipo y no por solicitud."
+      },
+      "praisenest": {
+        "tagline": "Reúne testimonios de clientes satisfechos y muéstralos en tu sitio.",
+        "description": "Praisenest envía a los clientes un enlace corto donde pueden dejar un testimonio escrito o en video. Tú apruebas los que te gustan y los muestras en tu sitio web con un pequeño widget integrado que combina con tu diseño.\n\nCreadores de cursos, agencias y empresas de software lo usan para reunir prueba social sin perseguir a los clientes por correo. Se pueden importar reseñas de otros sitios, así que todo queda en un solo lugar."
+      },
+      "quarterpot": {
+        "tagline": "Aparta el monto correcto para impuestos cada vez que un freelancer recibe un pago.",
+        "description": "Quarterpot sigue los pagos que recibes y te dice cuánto de cada uno apartar para el impuesto sobre la renta y el IVA, según dónde vives y cuánto has ganado en lo que va del año. Recibes recordatorios antes de cada vencimiento.\n\nSe creó para freelancers a quienes sorprendió su primera factura de impuestos. No presenta tus declaraciones; se asegura de que el dinero esté disponible cuando tú o tu contador las presenten."
+      },
+      "belaybook": {
+        "tagline": "Reservas, membresías y controles de aseguramiento para gimnasios de escalada pequeños.",
+        "description": "Belaybook gestiona pases de un día, membresías, reservas de clases y los controles de aseguramiento que todo gimnasio debe tener registrados. Los miembros reservan desde el teléfono y registran su llegada con un código QR en la recepción.\n\nLo creó una escaladora que ayudó a administrar un pequeño gimnasio de boulder y a quien los sistemas para gimnasios grandes le parecieron demasiado caros y complicados. Hoy lo usan unos cuarenta gimnasios independientes."
+      },
+      "swatchline": {
+        "tagline": "Mantiene sincronizados los design tokens de tus archivos de diseño y de tu código.",
+        "description": "Swatchline lee colores, tipografía y espaciados de tus archivos de diseño y abre un pull request con tokens actualizados para web, iOS y Android cada vez que alguien del equipo de diseño publica un cambio.\n\nLos equipos de sistemas de diseño lo usan para dejar de copiar valores a mano. Cada cambio se revisa como código, y un registro de cambios muestra quién cambió cada token y cuándo."
+      },
+      "hourbridge": {
+        "tagline": "Encuentra horarios de reunión justos para todos entre zonas horarias.",
+        "description": "Hourbridge revisa los horarios de trabajo y los calendarios de todos y sugiere horarios de reunión que reparten de forma justa las franjas tempranas y tardías entre el equipo, en lugar de pedirles siempre a las mismas personas que se desvelen.\n\nEstá pensado para equipos remotos repartidos en varios continentes. Las reuniones recurrentes rotan solas, y cada persona puede marcar horas que nunca se deben reservar."
+      }
+    },
+    "founders": {
+      "sara": "Ex responsable de finanzas que crea herramientas para negocios de suscripción",
+      "nadia": "Crea herramientas de soporte y marketing para pequeñas tiendas en línea",
+      "elin": "Ingeniera de plataforma a la que no le gustan las fallas silenciosas",
+      "diego": "Diseñador freelance que crea herramientas para freelancers",
+      "tom": "Desarrollador web al que le importa la privacidad",
+      "kofi": "Productor de pódcast convertido en desarrollador",
+      "anika": "Desarrolladora móvil que facilita el lanzamiento de apps",
+      "marcus": "Consultor SEO para pequeños negocios",
+      "maya": "Escaladora y desarrolladora de software",
+      "lucas": "Ingeniero de sistemas de diseño",
+      "hana": "Líder de un equipo remoto que crea calendarios más tranquilos"
+    }
+  }
+}

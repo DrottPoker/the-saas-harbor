@@ -1,23 +1,10 @@
 import Link from "@/components/link";
+import { useTranslations } from "next-intl";
 import { operator } from "@/lib/legal";
-import { decisionLabels, isReason } from "@/lib/moderation";
+import { isReason } from "@/lib/moderation";
 import { cn } from "@/lib/utils";
 import { Contact } from "./legal";
 import { LocalTime } from "./local-time";
-
-const copy = {
-  product: {
-    title: "Product hidden",
-    heading: (date: React.ReactNode) => <>An admin hid this product on {date}.</>,
-    effect: "It is not shown anywhere on The SaaS Harbor. You can still edit or delete it.",
-  },
-  account: {
-    title: "Account suspended",
-    heading: (date: React.ReactNode) => <>An admin suspended your account on {date}.</>,
-    effect:
-      "Your profile and products are hidden, and you cannot send messages or reports. You can still sign in, edit your products and delete your account.",
-  },
-};
 
 /** Tells a maker that an admin hid their product or suspended their account, and why. */
 export function ModerationNotice({
@@ -27,13 +14,13 @@ export function ModerationNotice({
   note,
   className,
 }: {
-  kind: keyof typeof copy;
+  kind: "product" | "account";
   at: string;
   reason: string | null;
   note: string;
   className?: string;
 }) {
-  const text = copy[kind];
+  const t = useTranslations("moderation");
   const id = `moderation-${kind}`;
   return (
     <section
@@ -44,32 +31,36 @@ export function ModerationNotice({
       )}
     >
       <h2 id={id} className="font-semibold">
-        <span className="sr-only">{text.title}: </span>
-        {text.heading(<LocalTime format="date" value={at} />)}
+        {t.rich(`${kind}.heading`, {
+          hidden: (chunks) => <span className="sr-only">{chunks}</span>,
+          date: () => <LocalTime format="date" value={at} />,
+        })}
       </h2>
-      <p className="mt-1">{text.effect}</p>
+      <p className="mt-1">{t(`${kind}.effect`)}</p>
       <dl className="mt-3 grid gap-x-4 gap-y-1 sm:grid-cols-[7rem_minmax(0,1fr)]">
-        <dt className="font-medium">Reason</dt>
-        <dd>{isReason(reason) ? decisionLabels[reason] : "Not given"}</dd>
+        <dt className="font-medium">{t("reason")}</dt>
+        <dd>{isReason(reason) ? t(`decisions.${reason}`) : t("notGiven")}</dd>
         {note && (
           <>
-            <dt className="font-medium">Explanation</dt>
-            <dd className="whitespace-pre-wrap [overflow-wrap:anywhere]">{note}</dd>
+            <dt className="font-medium">{t("explanation")}</dt>
+            <dd dir="auto" className="whitespace-pre-wrap [overflow-wrap:anywhere]">
+              {note}
+            </dd>
           </>
         )}
       </dl>
       <p className="mt-3">
-        A person made this decision, not an automated system.{" "}
+        {t("byPerson")}{" "}
         {operator.email && (
-          <>
-            If you think it is wrong, write to <Contact className="font-medium underline" />.{" "}
-          </>
+          <>{t.rich("appeal", { contact: () => <Contact className="font-medium underline" /> })} </>
         )}
-        The{" "}
-        <Link href="/terms#moderation" className="font-medium underline">
-          terms
-        </Link>{" "}
-        explain what is not allowed.
+        {t.rich("terms", {
+          link: (chunks) => (
+            <Link href="/terms#moderation" className="font-medium underline">
+              {chunks}
+            </Link>
+          ),
+        })}
       </p>
     </section>
   );

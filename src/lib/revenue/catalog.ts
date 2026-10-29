@@ -1,161 +1,104 @@
 // The payment providers that can verify revenue, with what makers see of them. Safe for the
-// browser: it holds names and labels only. `account` is a second field some providers need
-// besides the key, such as the site or project the key belongs to, and `extra` any further
-// fields after it. A provider with `oauth` is connected by approving access with the provider
-// rather than by pasting a key.
+// browser: it holds names and the form's fields only; their words are messages in the `providers`
+// namespace, per provider (`providers.<id>`: key labels, the steps, notes), with the fields'
+// labels under `providers.fields`. `account` is a second field some providers need besides the
+// key, such as the site or project the key belongs to, and `extra` any further fields after it. A
+// placeholder is a sample of the value, the same in every language, or `placeholderText`, words
+// under `providers.placeholders`. A provider with `oauth` is connected by approving access with
+// the provider rather than by pasting a key.
 export const PROVIDERS = {
-  stripe: {
-    name: "Stripe",
-    keyLabel: "Restricted key",
-    newKeyLabel: "New restricted key",
-    placeholder: "rk_live_...",
-  },
-  paddle: {
-    name: "Paddle",
-    keyLabel: "API key",
-    newKeyLabel: "New API key",
-    placeholder: "pdl_live_apikey_...",
-  },
-  polar: {
-    name: "Polar",
-    keyLabel: "Organization access token",
-    newKeyLabel: "New organization access token",
-    placeholder: "polar_oat_...",
-  },
-  dodo: {
-    name: "Dodo Payments",
-    keyLabel: "API key",
-    newKeyLabel: "New API key",
-    placeholder: "Read-only API key",
-  },
-  creem: {
-    name: "Creem",
-    keyLabel: "API key",
-    newKeyLabel: "New API key",
-    placeholder: "creem_...",
-  },
+  stripe: { name: "Stripe", placeholder: "rk_live_..." },
+  paddle: { name: "Paddle", placeholder: "pdl_live_apikey_..." },
+  polar: { name: "Polar", placeholder: "polar_oat_..." },
+  dodo: { name: "Dodo Payments", placeholderText: "dodoKey" },
+  creem: { name: "Creem", placeholder: "creem_..." },
   chargebee: {
     name: "Chargebee",
-    keyLabel: "Read-only API key",
-    newKeyLabel: "New read-only API key",
     placeholder: "live_...",
-    account: { label: "Site", placeholder: "yoursite.chargebee.com" },
+    account: { label: "site", placeholder: "yoursite.chargebee.com" },
   },
-  whop: {
-    name: "Whop",
-    keyLabel: "API key",
-    newKeyLabel: "New API key",
-    placeholder: "apik_...",
-  },
+  whop: { name: "Whop", placeholder: "apik_..." },
   revenuecat: {
     name: "RevenueCat",
-    keyLabel: "Secret API key",
-    newKeyLabel: "New secret API key",
     placeholder: "sk_...",
-    account: { label: "Project ID", placeholder: "proj1a2b3c4d" },
+    account: { label: "projectId", placeholder: "proj1a2b3c4d" },
   },
-  gumroad: {
-    name: "Gumroad",
-    keyLabel: "Gumroad account",
-    newKeyLabel: "Another Gumroad account",
-    placeholder: "",
-    oauth: true,
-  },
+  gumroad: { name: "Gumroad", oauth: true },
   // The key is the secret of an app of the founder's, and the account its Client ID.
   paypal: {
     name: "PayPal",
-    keyLabel: "Secret",
-    newKeyLabel: "New secret",
+    // PayPal's own name for the secret, which its dashboard shows in English.
     placeholder: "Secret key 1",
-    account: { label: "Client ID", placeholder: "Client ID of the app" },
+    account: { label: "clientId", placeholderText: "paypalAccount" },
   },
   // The key is an advanced access token, and the account the website profile it reads.
   mollie: {
     name: "Mollie",
-    keyLabel: "Advanced access token",
-    newKeyLabel: "New advanced access token",
     placeholder: "access_...",
-    account: { label: "Profile ID", placeholder: "pfl_..." },
+    account: { label: "profileId", placeholder: "pfl_..." },
   },
-  paystack: {
-    name: "Paystack",
-    keyLabel: "Restricted key",
-    newKeyLabel: "New restricted key",
-    placeholder: "rk_live_...",
-  },
+  paystack: { name: "Paystack", placeholder: "rk_live_..." },
   // The key is the token of the Trust MRR app, which reaches only the public MRR figures.
-  abacatepay: {
-    name: "AbacatePay",
-    keyLabel: "Trust MRR token",
-    newKeyLabel: "New Trust MRR token",
-    placeholder: "mrr_...",
-  },
-  asaas: {
-    name: "Asaas",
-    keyLabel: "API key",
-    newKeyLabel: "New API key",
-    placeholder: "$aact_prod_...",
-  },
+  abacatepay: { name: "AbacatePay", placeholder: "mrr_..." },
+  asaas: { name: "Asaas", placeholder: "$aact_prod_..." },
   // The key is a scoped API key, and the account the Client ID shown with it.
   airwallex: {
     name: "Airwallex",
-    keyLabel: "Scoped API key",
-    newKeyLabel: "New scoped API key",
-    placeholder: "Scoped API key",
-    account: { label: "Client ID", placeholder: "Client ID shown with your API keys" },
+    placeholderText: "airwallexKey",
+    account: { label: "clientId", placeholderText: "airwallexAccount" },
   },
   // The key is an organization API key, and the account the application it reads charts of.
   superwall: {
     name: "Superwall",
-    keyLabel: "Organization API key",
-    newKeyLabel: "New organization API key",
     placeholder: "sk_...",
-    account: { label: "Application ID", placeholder: "App dashboard address or ID" },
+    account: { label: "applicationId", placeholderText: "superwallAccount" },
   },
   // The key is the private key of a Team key, with its issuer, Key ID and the team's vendor number.
   appstore: {
     name: "App Store",
-    keyLabel: "Private key",
-    newKeyLabel: "New private key",
-    placeholder: "Contents of the .p8 file",
-    account: { label: "Issuer ID", placeholder: "57246542-96fe-1a63-e053-0824d011072a" },
+    placeholderText: "appstoreKey",
+    account: { label: "issuerId", placeholder: "57246542-96fe-1a63-e053-0824d011072a" },
     extra: [
-      { label: "Key ID", placeholder: "2X9R4HXF34" },
-      { label: "Vendor number", placeholder: "85012345" },
+      { label: "keyId", placeholder: "2X9R4HXF34" },
+      { label: "vendorNumber", placeholder: "85012345" },
     ],
   },
   // The key is a service account's JSON key, the account the reports bucket, and the further
   // field the app's package names.
   googleplay: {
     name: "Google Play",
-    keyLabel: "Service account JSON key",
-    newKeyLabel: "New service account JSON key",
     placeholder: '{"type": "service_account", ...}',
-    account: { label: "Cloud Storage URI", placeholder: "gs://pubsite_prod_rev_..." },
-    extra: [{ label: "Package name", placeholder: "com.example.app" }],
+    account: { label: "cloudStorageUri", placeholder: "gs://pubsite_prod_rev_..." },
+    extra: [{ label: "packageName", placeholder: "com.example.app" }],
   },
-  zoho: {
-    name: "Zoho Billing",
-    keyLabel: "Zoho Billing account",
-    newKeyLabel: "Another Zoho Billing organization",
-    placeholder: "",
-    oauth: true,
-  },
-  mercadopago: {
-    name: "Mercado Pago",
-    keyLabel: "Mercado Pago account",
-    newKeyLabel: "Another Mercado Pago account",
-    placeholder: "",
-    oauth: true,
-  },
+  zoho: { name: "Zoho Billing", oauth: true },
+  mercadopago: { name: "Mercado Pago", oauth: true },
 } as const satisfies Record<string, ProviderEntry>;
 
-type ProviderField = { label: string; placeholder: string };
-type ProviderEntry = {
+/** A field's label, under `providers.fields`. */
+type FieldLabel =
+  | "site"
+  | "projectId"
+  | "clientId"
+  | "profileId"
+  | "applicationId"
+  | "issuerId"
+  | "keyId"
+  | "vendorNumber"
+  | "cloudStorageUri"
+  | "packageName";
+/** A placeholder in words, under `providers.placeholders`. */
+type PlaceholderText =
+  | "dodoKey"
+  | "paypalAccount"
+  | "airwallexKey"
+  | "airwallexAccount"
+  | "superwallAccount"
+  | "appstoreKey";
+type Placeholder = { placeholder?: string; placeholderText?: PlaceholderText };
+export type ProviderField = Placeholder & { label: FieldLabel };
+type ProviderEntry = Placeholder & {
   name: string;
-  keyLabel: string;
-  newKeyLabel: string;
-  placeholder: string;
   account?: ProviderField;
   extra?: readonly ProviderField[];
   oauth?: true;
@@ -163,6 +106,12 @@ type ProviderEntry = {
 
 export type ProviderId = keyof typeof PROVIDERS;
 export const PROVIDER_IDS = Object.keys(PROVIDERS) as ProviderId[];
+
+/** The providers connected through OAuth, and those connected with a pasted key. */
+export type OAuthProviderId = {
+  [K in ProviderId]: (typeof PROVIDERS)[K] extends { oauth: true } ? K : never;
+}[ProviderId];
+export type KeyProviderId = Exclude<ProviderId, OAuthProviderId>;
 
 export function isProviderId(value: unknown): value is ProviderId {
   return typeof value === "string" && Object.hasOwn(PROVIDERS, value);
@@ -178,19 +127,25 @@ export function isProviderOption(value: unknown): value is ProviderOption {
   return value === "other" || isProviderId(value);
 }
 
-/** Why a product form without a payment provider was not saved. */
+/**
+ * Why a product form without a payment provider was not saved, in English, as the server refuses
+ * a choice that is not in the list. Pages show `providers.choose`, the same words translated.
+ */
 export const CHOOSE_PROVIDER =
   "Choose your payment provider. If it is not in the list, choose Other.";
 
-/** A provider's name for people; unknown or missing values read as a payment provider. */
-export function providerName(id: string | null | undefined) {
-  return isProviderId(id) ? PROVIDERS[id].name : "a payment provider";
+/**
+ * A provider's name for people; unknown or missing values read as the fallback: "a payment
+ * provider" in English, for stored and English-only texts, or `providers.fallback` translated.
+ */
+export function providerName(id: string | null | undefined, fallback = "a payment provider") {
+  return isProviderId(id) ? PROVIDERS[id].name : fallback;
 }
 
 /** The second field a provider needs besides the key, or null. */
-export function providerAccount(id: ProviderId): { label: string; placeholder: string } | null {
-  const provider = PROVIDERS[id];
-  return "account" in provider ? provider.account : null;
+export function providerAccount(id: ProviderId): ProviderField | null {
+  const provider: ProviderEntry = PROVIDERS[id];
+  return provider.account ?? null;
 }
 
 /** The fields a provider asks for after the account, in order; empty for most. */
@@ -199,14 +154,28 @@ export function providerExtra(id: ProviderId): readonly ProviderField[] {
   return provider.extra ?? [];
 }
 
+/** The placeholder of a provider's key field: a sample, or words under `providers.placeholders`. */
+export function providerKeyPlaceholder(id: KeyProviderId): Placeholder {
+  const provider: ProviderEntry = PROVIDERS[id];
+  return { placeholder: provider.placeholder, placeholderText: provider.placeholderText };
+}
+
 /** Whether a provider is connected through OAuth rather than with a pasted key. */
-export function connectsWithOAuth(id: ProviderId) {
+export function connectsWithOAuth(id: ProviderId): id is OAuthProviderId {
   return "oauth" in PROVIDERS[id];
 }
 
-/** How the figures are read, for "Verified with Gumroad through read-only access". */
+/**
+ * How the figures are read: approved access for a provider connected through OAuth, else a key.
+ * Pages say it with `providers.verifiedWith`.
+ */
+export function providerAccessKind(id: string | null | undefined): "oauth" | "key" {
+  return isProviderId(id) && connectsWithOAuth(id) ? "oauth" : "key";
+}
+
+/** How the figures are read, in English, for "Verified with Gumroad through read-only access". */
 export function providerAccess(id: string | null | undefined) {
-  return isProviderId(id) && connectsWithOAuth(id) ? "read-only access" : "a read-only key";
+  return providerAccessKind(id) === "oauth" ? "read-only access" : "a read-only key";
 }
 
 /**

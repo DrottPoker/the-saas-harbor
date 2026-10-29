@@ -1,1 +1,24 @@
-{}
+{
+  "headline": "{kind, select, mrr {{amount} MRR} first {第 1 名} other {前 {place} 名}}",
+  "sentence": "{kind, select, mrr {{name} 的月经常性收入达到 {exact}。} first {{name} 在 {site} 的已验证收入排行榜上位居第一。} other {{name} 进入了 {site} 已验证收入排行榜的前 {place} 名。}}",
+  "post": "{kind, select, mrr {{name} 刚刚达到 {amount} MRR，已在 {site} 验证。} first {{name} 现已位居 {site} 已验证收入排行榜第 1 名。} other {{name} 现已进入 {site} 已验证收入排行榜前 {place} 名。}}",
+  "meta": {
+    "title": "{kind, select, mrr {{name} 达到 {amount} MRR} first {{name} 位居第一} other {{name} 进入前 {place} 名}}",
+    "description": "{sentence}收入已在 {site} 验证。"
+  },
+  "breadcrumb": "导航路径",
+  "browse": "浏览",
+  "milestone": "里程碑",
+  "reachedOn": "里程碑达成日期：<date></date>",
+  "verifiedThrough": "收入已通过 {provider} 验证。",
+  "viewProduct": "查看产品",
+  "share": {
+    "title": "分享这个里程碑",
+    "body": "带有此链接的帖子会显示一张里程碑卡片。",
+    "x": "分享到 X",
+    "linkedin": "分享到 LinkedIn",
+    "download": "下载图片",
+    "link": "链接",
+    "copyLink": "复制链接"
+  }
+}

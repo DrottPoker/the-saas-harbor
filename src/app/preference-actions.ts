@@ -1,6 +1,7 @@
 "use server";
 
 import { isLocale } from "@/i18n/config";
+import { rememberAccountLanguage } from "@/lib/account-language";
 import { requireUser } from "@/lib/supabase/server";
 
 /**
@@ -10,7 +11,5 @@ import { requireUser } from "@/lib/supabase/server";
 export async function saveAccountLanguageAction(locale: string) {
   if (!isLocale(locale)) return;
   const { user, client } = await requireUser({ unfinished: true });
-  if (user.user_metadata?.locale === locale) return;
-  const { error } = await client.auth.updateUser({ data: { locale } });
-  if (error) console.error("Saving the account language failed:", error.code ?? error.message);
+  await rememberAccountLanguage(client, user, locale);
 }

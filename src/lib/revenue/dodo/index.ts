@@ -1,4 +1,5 @@
 import "server-only";
+import { revenueText } from "../errors";
 import { ProviderRequestError } from "../http";
 import { dayOf, dayStart } from "../payments";
 import type { ListedPayment, PaymentOptions, ProviderAdapter } from "../types";
@@ -109,10 +110,9 @@ export const dodo: ProviderAdapter = {
     const inclusive = taxIncludedSubscriptions(subscriptions, nowSeconds);
     if (inclusive.length > MAX_TAX_LOOKUPS)
       throw new ProviderRequestError(
-        "The Dodo Payments account has more tax-inclusive subscriptions than one verification reads.",
-        undefined,
-        "/payments",
-        true,
+        "dodo.tooManyTaxInclusive",
+        {},
+        { path: "/payments", tooMuchData: true },
       );
     const untaxed = new Map<string, number>();
     for (const id of inclusive) {
@@ -123,9 +123,7 @@ export const dodo: ProviderAdapter = {
       livemode: live,
       ...dodoMrr(subscriptions, untaxed, nowSeconds),
       lines: null,
-      historyNote: history
-        ? "Dodo Payments does not say which period a payment covers, so there is no revenue history."
-        : null,
+      historyNote: history ? revenueText("dodo.noHistory") : null,
     };
   },
   payments: readPayments,

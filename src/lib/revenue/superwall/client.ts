@@ -1,5 +1,13 @@
 import "server-only";
-import { apiBase, errorBody, providerGet, ProviderRequestError } from "../http";
+import {
+  apiBase,
+  errorBody,
+  providerGet,
+  ProviderRequestError,
+  rateLimited,
+  returnedError,
+  unreachable,
+} from "../http";
 import type { ChartData, ChartDefinitions } from "./mrr";
 
 // Superwall's API v2, with organization API keys as bearer tokens. It has no environments: the
@@ -16,25 +24,13 @@ async function failure(response: Response, path: string): Promise<never> {
   const body = await errorBody(response);
   const detail = typeof body?.message === "string" ? body.message.slice(0, 300) : null;
   if (response.status === 401)
-    throw new ProviderRequestError(
-      "Superwall rejected the key. It may have been revoked, or be the app's public SDK key rather than an organization API key.",
-      401,
-    );
+    throw new ProviderRequestError("superwall.keyRejected", {}, { status: 401 });
   if (response.status === 403)
-    throw new ProviderRequestError(
-      "The key cannot read this app's charts. Check the application ID, give the key the charts:read scope, and give it access to the app's project.",
-      403,
-      path,
-    );
+    throw new ProviderRequestError("superwall.cannotReadCharts", {}, { status: 403, path });
   if (response.status === 404)
-    throw new ProviderRequestError("Superwall found no app with this application ID.", 404, path);
-  if (response.status === 429)
-    throw new ProviderRequestError("Superwall is rate limiting requests. Try again later.", 429);
-  throw new ProviderRequestError(
-    `Superwall returned an error${detail ? `: ${detail}` : "."}`,
-    response.status,
-    path,
-  );
+    throw new ProviderRequestError("superwall.noApp", {}, { status: 404, path });
+  if (response.status === 429) throw rateLimited("Superwall");
+  throw returnedError("Superwall", detail, { status: response.status, path });
 }
 
 async function send(key: string, path: string, query: string) {
@@ -96,7 +92,7 @@ export async function fetchChart(key: string, query: Record<string, unknown>) {
       signal: AbortSignal.timeout(30_000),
     });
   } catch {
-    throw new ProviderRequestError("Superwall could not be reached. Try again shortly.");
+    throw unreachable("Superwall");
   }
   if (response.ok) return (await response.json()) as ChartData;
   return failure(response, path);

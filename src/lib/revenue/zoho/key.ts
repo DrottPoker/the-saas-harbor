@@ -51,17 +51,13 @@ export function callbackDataCentre(params: URLSearchParams): DataCentre {
     const found = (Object.keys(DATA_CENTRES) as DataCentre[]).find(
       (dc) => DATA_CENTRES[dc].accounts === server.replace(/\/$/, ""),
     );
-    if (!found)
-      throw new VerificationError(
-        "Zoho returned an unknown data centre, so nothing was connected.",
-      );
+    if (!found) throw new VerificationError("zoho.unknownDataCentre");
     return found;
   }
   const location = params.get("location");
   if (!location) return "com";
   const dc = LOCATIONS[location.toLowerCase()];
-  if (!dc)
-    throw new VerificationError("Zoho returned an unknown data centre, so nothing was connected.");
+  if (!dc) throw new VerificationError("zoho.unknownDataCentre");
   return dc;
 }
 
@@ -72,7 +68,7 @@ const REFRESH_TOKEN = /^[A-Za-z0-9._-]{10,512}$/;
 
 export function zohoStoredKey({ dc, organizationId, refreshToken }: ZohoKey) {
   if (!isDataCentre(dc) || !ORGANIZATION.test(organizationId) || !REFRESH_TOKEN.test(refreshToken))
-    throw new VerificationError("Zoho returned access in a form that could not be stored.");
+    throw new VerificationError("zoho.notStorable");
   return `${dc}:${organizationId}:${refreshToken}`;
 }
 
@@ -84,7 +80,7 @@ export function readZohoKey(stored: string): ZohoKey {
     !ORGANIZATION.test(organizationId ?? "") ||
     !REFRESH_TOKEN.test(refreshToken ?? "")
   )
-    throw new VerificationError("The stored Zoho Billing connection is not valid. Connect again.");
+    throw new VerificationError("zoho.storedInvalid");
   return { dc, organizationId, refreshToken };
 }
 
@@ -95,7 +91,5 @@ export function zohoHint(organizationName: string, refreshToken: string) {
 }
 
 export function parseZohoKey(): ParsedKey {
-  throw new VerificationError(
-    "Connect Zoho Billing by approving read access with Zoho. Pasted Zoho tokens are not accepted here.",
-  );
+  throw new VerificationError("zoho.pasteRefused");
 }

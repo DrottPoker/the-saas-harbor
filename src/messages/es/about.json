@@ -1,1 +1,65 @@
-{}
+{
+  "meta": {
+    "title": "Cómo funciona",
+    "description": "Cómo The SaaS Harbor verifica el MRR con claves de solo lectura de proveedores de pagos como Stripe, Paddle, Polar y RevenueCat, cómo se ordena la clasificación y qué información es pública."
+  },
+  "title": "Cómo funciona The SaaS Harbor",
+  "description": "Un directorio público de SaaS independientes, con una clasificación de ingresos verificados a través del proveedor de pagos de cada producto.",
+  "start": {
+    "title": "Empieza en tres pasos",
+    "account": "Crea una cuenta gratuita con tu correo electrónico y un nombre de usuario.",
+    "provider": "Elige tu proveedor de pagos. Al conectar {providers} con una clave de solo lectura, se verifica tu MRR: tu producto entra en la clasificación y el enlace a tu sitio web pasa a ser uno que los buscadores siguen. Si usas otro proveedor, o todavía ninguno, elige Otro y escribe su nombre.",
+    "product": "Añade tu producto: nombre, eslogan, descripción, categoría, sitio web y fecha de lanzamiento. Su página es pública en cuanto la guardas.",
+    "free": "Publicar es gratis y no hay planes de pago. El resto de esta página explica cómo se verifican las cifras y qué es público."
+  },
+  "verified": {
+    "title": "Ingresos verificados",
+    "keys": "Los fundadores nunca escriben sus ingresos a mano. Cada producto conecta su proveedor de pagos ({providers}) con una clave que solo puede leer: las suscripciones y lo que se cobró por ellas, en el caso de RevenueCat sus gráficos y en el de PayPal sus transacciones. Cuando las claves propias de un proveedor podrían modificar la cuenta, como ocurre con las de Gumroad, el fundador lo conecta aprobando el acceso de lectura en el propio proveedor. La clave o el acceso se guardan cifrados, solo nuestro servidor los usa para leer datos y se pueden revocar en el proveedor en cualquier momento.",
+    "mrr": "El MRR es lo que las suscripciones activas generan cada mes, después de los descuentos recurrentes y sin impuestos. Se vuelve a verificar cada hora, y una cifra que lleva siete días sin verificarse se oculta y sale de la clasificación. Los ingresos son todos los pagos de los últimos 30 días, de los últimos 12 meses e históricos, incluidas las compras únicas.",
+    "detailsSummary": "Cómo se calcula cada cifra",
+    "details": {
+      "mrr": "Los ingresos recurrentes mensuales (MRR) se calculan igual para todos los proveedores que muestran sus suscripciones: suscripciones activas y con pago vencido, normalizadas a un mes, después de los descuentos recurrentes y sin impuestos. No se cuentan las pruebas gratuitas, las suscripciones en pausa, los descuentos de una sola vez ni los cargos por uso. Con Stripe, cada suscripción se valora por sus precios y descuentos, y con Creem, por el precio y el descuento de su producto. Paddle cobra con precios y monedas locales, y los precios de Chargebee pueden incluir impuestos, así que sus suscripciones se valoran por su último cobro de un periodo completo; una membresía de Whop se valora por su última renovación o, en su primer periodo, por el precio de su plan. Polar y Dodo Payments indican el monto recurrente de cada suscripción. Cuando un monto incluye impuestos, estos se descuentan según la proporción que muestra el último pago. Una membresía de Gumroad se valora por su último cobro de un periodo completo. Las transacciones de PayPal no indican cada cuánto se renueva una suscripción, así que una suscripción de PayPal se valora por su último pago dividido entre el tiempo transcurrido entre sus dos últimos pagos del mismo monto, y cuenta como anual, lo que nunca la sobrestima, hasta que tenga dos. Las suscripciones de Mollie, los pagos de Paystack y los cobros de Asaas no muestran sus impuestos, así que cuentan por el monto cobrado. Una suscripción de Asaas cuenta mientras la cubra un cobro pagado. El informe diario de suscripciones de la App Store da los precios para el cliente, con el IVA incluido cuando corresponde, y deja fuera las suscripciones con una oferta de pago. Los informes de ventas de Google Play no indican cada cuánto se renueva una suscripción, así que una suscripción de Google Play se valora por su último cobro dividido entre el intervalo que muestran sus renovaciones, y cuenta como anual hasta que lo muestren. AbacatePay da su propio MRR, que cuenta las pruebas gratuitas entre las suscripciones activas, y Superwall su propio gráfico de MRR, cuyos ingresos son después de las comisiones de la tienda. RevenueCat, para suscripciones de tiendas de apps, da solo su propio MRR, leído sin impuestos: cuenta los precios introductorios tal como se cobran, deja fuera las suscripciones cuyo pago se está reintentando y cuenta suscripciones en lugar de clientes. Las demás monedas se convierten a dólares estadounidenses con los tipos de cambio de referencia diarios de los bancos centrales. Los suscriptores son los clientes con una suscripción de valor mayor que cero; las compras únicas cuentan como ingresos, no como suscriptores.",
+      "schedule": "La verificación se repite cada hora, y la del historial y el crecimiento de 30 días, una vez al día. Una cifra que lleva siete días sin verificarse se oculta y se quita de la clasificación, para que una clave revocada no pueda mantener a la vista un número antiguo. El historial y el crecimiento de 30 días salen de los cobros pagados y, con RevenueCat, de su gráfico diario de MRR; Dodo Payments no indica qué periodo cubre un pago, y las facturas de Zoho Billing tampoco, así que sus productos no tienen historial. Una cuenta de un proveedor de pagos solo puede verificar un producto.",
+      "revenue": "Además del MRR, se muestran los ingresos de los últimos 30 días, de los últimos 12 meses e históricos. Cuentan cada pago que recibió el producto, tanto de suscripciones como de compras únicas, después de descuentos, menos reembolsos y contracargos perdidos, sin impuestos y antes de descontar las comisiones del proveedor, en el día en que se pagó. Los pagos se leen aproximadamente una vez al día, y un reembolso se descuenta mientras su pago tenga menos de seis meses. La primera lectura después de conectar se remonta al primer pago de la cuenta, lo que en una cuenta grande puede tardar algunas horas. Con Stripe, la clave también necesita acceso de lectura a cargos (Charges), sesiones de Checkout y disputas; con RevenueCat, los ingresos salen de su gráfico diario de ingresos, sin impuestos. PayPal solo muestra las transacciones de los últimos tres años, así que los ingresos históricos de PayPal empiezan tres años antes de que se conectara el producto.",
+      "byMonth": "Las páginas de producto también muestran un gráfico de ingresos por mes durante los mismos doce meses que el MRR, separados en suscripciones y compras únicas. Un pago de una suscripción cuenta entero como pago de suscripción, incluidos los artículos únicos cobrados junto con ella. RevenueCat y Gumroad dan los ingresos por día sin distinguir entre ambos tipos, así que sus productos muestran el total de cada mes."
+    }
+  },
+  "leaderboard": {
+    "title": "La clasificación",
+    "ranking": "Los productos se ordenan por el MRR verificado que comparten sus fundadores. Los montos iguales se ordenan por ingresos históricos y luego por la fecha en que se publicó el producto. Los filtros por categoría conservan el puesto general, y un MRR verificado de cero también entra en la clasificación.",
+    "revenue": "La clasificación también puede ordenar los productos por ingresos de los últimos 30 días, de los últimos 12 meses o históricos, que también cuentan las compras únicas. Un producto participa en cada clasificación para la que tiene cifra, mientras su fundador comparta sus ingresos.",
+    "unranked": "Los productos sin un proveedor de pagos conectado, o que mantienen privados sus ingresos, siguen apareciendo en Explorar y Novedades.",
+    "stats": "La página de estadísticas suma las mismas cifras: el MRR combinado y su mediana, cómo se distribuye el MRR, el cambio en 30 días y las cifras por categoría y por tiempo desde el lanzamiento. Las muestra cuando cinco productos comparten su MRR verificado."
+  },
+  "links": {
+    "title": "Enlaces a tu sitio web",
+    "followed": "Cada página de producto enlaza al sitio web del producto. Mientras los ingresos del producto estén verificados, ya sea que sus cifras se compartan o sean privadas, el enlace no lleva la marca nofollow, así que los buscadores pueden seguirlo y tenerlo en cuenta para tu sitio. Sin ingresos verificados, el enlace se marca como nofollow. El enlace seguido es gratis.",
+    "analytics": "Los visitantes que siguen el enlace aparecen en tus propias analíticas como provenientes de The SaaS Harbor."
+  },
+  "tech": {
+    "title": "Stacks tecnológicos",
+    "body": "Los fundadores indican las tecnologías con las que está hecho un producto, y cada tecnología tiene una página con los productos creados con ella."
+  },
+  "domains": {
+    "title": "Dominios verificados",
+    "body": "Un fundador puede demostrar que el sitio web del producto es suyo: agrega al dominio del sitio un registro DNS con un código para el producto, y la página del producto pasa a mostrar el dominio como verificado. La verificación es opcional; los demás productos muestran Sin verificar. El registro se vuelve a consultar cada día. Si falta durante tres días, o el sitio web se muda a otro dominio, el producto deja de aparecer como verificado."
+  },
+  "demo": {
+    "title": "Productos de demostración",
+    "body": "Mientras el directorio es nuevo, la clasificación, Explorar y Novedades muestran productos de demostración después de los reales, bajo el título Productos de demostración, para que veas cómo se ve una ficha. Sus cifras aparecen como MRR de demostración o Ingresos de demostración, sus páginas llevan la marca Demo, y los productos, sus fundadores y sus cifras son inventados. Nunca se clasifican ni se verifican, no se puede contactar con ellos y desaparecen a medida que se suman productos reales."
+  },
+  "public": {
+    "title": "Qué es público",
+    "defaults": "Los datos de los productos, los perfiles de usuario, los logotipos y las fotos son públicos. Los ingresos verificados, el número de suscriptores y la fecha de lanzamiento son públicos de forma predeterminada, y los fundadores pueden ocultar cada uno. Los ingresos se comparten u ocultan en bloque: el MRR con su historial de fin de mes y su crecimiento de 30 días, y los ingresos de 30 días, de 12 meses, históricos y por mes. El historial completo de verificaciones solo lo ve el fundador. La información que antes fue pública puede haber sido copiada ya por otras personas.",
+    "deletion": "Los usuarios pueden eliminar sus productos, o toda su cuenta con todo su contenido, en cualquier momento. La <privacy>política de privacidad</privacy> describe qué se guarda y por qué."
+  },
+  "moderation": {
+    "title": "Denuncias y moderación",
+    "body": "Los usuarios pueden denunciar un producto, un perfil o un mensaje que recibieron. Los administradores revisan personalmente cada denuncia y pueden ocultar un producto o suspender una cuenta. El usuario afectado ve entonces el motivo en su panel, pero nunca quién hizo la denuncia. Los <terms>términos</terms> indican lo que no está permitido."
+  },
+  "notThis": {
+    "title": "Lo que no es",
+    "body": "The SaaS Harbor es un directorio y una clasificación donde los usuarios también pueden escribirse en privado. Aquí no hay ventas, salas de negociación ni pagos."
+  },
+  "cta": "Publica tu SaaS"
+}

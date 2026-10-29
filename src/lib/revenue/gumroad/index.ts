@@ -1,5 +1,5 @@
 import "server-only";
-import { VerificationError } from "../errors";
+import { revenueText, VerificationError } from "../errors";
 import { historyWindowStart } from "../history";
 import { MAX_PAGES, ProviderRequestError } from "../http";
 import { addDays, dayOf, dayStart } from "../payments";
@@ -31,10 +31,7 @@ const FIRST_SALE_DAY = "2011-01-01";
 
 /** Refuses a token that can do more than read sales, every time it is used. */
 async function requireReadOnly(token: string) {
-  if (!readOnlyScopes(await fetchTokenScopes(token)))
-    throw new VerificationError(
-      "The Gumroad connection can do more than read sales, or cannot read them. Connect Gumroad again.",
-    );
+  if (!readOnlyScopes(await fetchTokenScopes(token))) throw new VerificationError("gumroad.scopes");
 }
 
 /** The active, counted subscribers of the account's memberships, product by product. */
@@ -92,9 +89,7 @@ async function membershipSales(token: string, productIds: string[], now: Date) {
 export const gumroad: ProviderAdapter = {
   id: "gumroad",
   parseKey: () => {
-    throw new VerificationError(
-      "Connect Gumroad with the Connect with Gumroad button. Gumroad's access tokens can change your account, so they are not accepted here.",
-    );
+    throw new VerificationError("gumroad.pasteRefused");
   },
   async read(token, _livemode, { now, history }) {
     await requireReadOnly(token);
@@ -107,8 +102,7 @@ export const gumroad: ProviderAdapter = {
         sales = await membershipSales(token, [...byProduct.keys()], now);
       } catch (error) {
         if (!(error instanceof ProviderRequestError && error.tooMuchData)) throw error;
-        historyNote =
-          "The Gumroad account has more sales than one verification reads, so there is no revenue history.";
+        historyNote = revenueText("gumroad.historyTooLarge");
       }
     const latest = latestCharges(sales ?? (await latestSales(token, byProduct, now)));
     return {

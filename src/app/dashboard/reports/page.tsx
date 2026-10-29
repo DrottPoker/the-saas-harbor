@@ -1,4 +1,6 @@
+import type { Metadata } from "next";
 import Link from "@/components/link";
+import { getTranslations } from "next-intl/server";
 import { Badge } from "@/components/badge";
 import { Contact } from "@/components/legal";
 import { LocalTime } from "@/components/local-time";
@@ -7,17 +9,17 @@ import { operator } from "@/lib/legal";
 import {
   isReason,
   isReportStatus,
-  reasonLabels,
-  reportTitle,
-  statusLabels,
+  isReportTarget,
+  reportSubject,
   statusTones,
-  targetLabels,
-  type ReportTarget,
 } from "@/lib/moderation";
 import { requireUser } from "@/lib/supabase/server";
 import { firstValues, type SearchParams } from "@/lib/params";
 
-export const metadata = { title: "Your reports" };
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("reports.list");
+  return { title: t("title") };
+}
 
 export default async function YourReports({
   searchParams,
@@ -25,34 +27,38 @@ export default async function YourReports({
   searchParams: Promise<SearchParams>;
 }) {
   const { user, client } = await requireUser();
-  const { data: reports, error } = await client
-    .from("reports")
-    .select("id, target, reason, content, status, created_at, resolved_at")
-    .eq("reporter_id", user.id)
-    .order("created_at", { ascending: false })
-    .limit(200);
+  const [{ data: reports, error }, t, reasons] = await Promise.all([
+    client
+      .from("reports")
+      .select("id, target, reason, content, status, created_at, resolved_at")
+      .eq("reporter_id", user.id)
+      .order("created_at", { ascending: false })
+      .limit(200),
+    getTranslations("reports.list"),
+    getTranslations("reports.reasons"),
+  ]);
   if (error) throw new Error("Your reports could not be loaded.");
+
+  // A short title from the copy stored with the report.
+  const title = (report: { target: string; content: unknown }) => {
+    const subject = reportSubject(report);
+    if (report.target === "message")
+      return subject === null ? t("aMessage") : t("quote", { text: subject });
+    return subject ?? t("unnamed");
+  };
 
   return (
     <Shell size="medium">
-      <PageHeader
-        title="Your reports"
-        description="Reports you sent about products, profiles and messages, and what happened to them."
-      />
+      <PageHeader title={t("title")} description={t("description")} />
       {firstValues(await searchParams).sent && (
         <Notice tone="success" className="mb-6">
-          Thanks. Your report was sent, and an admin will review it.
+          {t("sent")}
         </Notice>
       )}
       {!reports.length ? (
-        <EmptyState title="No reports yet">
-          To report a product, a profile or a message you received, choose Report next to it.
-        </EmptyState>
+        <EmptyState title={t("emptyTitle")}>{t("emptyBody")}</EmptyState>
       ) : (
-        <ul
-          aria-label="Reports you sent"
-          className="divide-y rounded-xl border bg-surface shadow-card"
-        >
+        <ul aria-label={t("label")} className="divide-y rounded-xl border bg-surface shadow-card">
           {reports.map((report) => {
             const status = isReportStatus(report.status) ? report.status : "open";
             return (
@@ -63,23 +69,32 @@ export default async function YourReports({
                 <div className="min-w-0 flex-1">
                   <p className="truncate font-medium">
                     <span className="text-muted-foreground">
-                      {targetLabels[report.target as ReportTarget] ?? "Report"}:
+                      {t("about", {
+                        target: t(
+                          `targets.${isReportTarget(report.target) ? report.target : "unknown"}`,
+                        ),
+                      })}
                     </span>{" "}
-                    {reportTitle(report)}
+                    <span dir="auto">{title(report)}</span>
                   </p>
                   <p className="text-sm text-muted-foreground">
-                    {isReason(report.reason) ? reasonLabels[report.reason] : report.reason} · Sent{" "}
-                    <LocalTime format="date" value={report.created_at} />
+                    {isReason(report.reason) ? reasons(`${report.reason}.label`) : report.reason}
+                    {" · "}
+                    {t.rich("sentOn", {
+                      date: () => <LocalTime format="date" value={report.created_at} />,
+                    })}
                     {report.resolved_at && (
                       <>
-                        {" "}
-                        · Decided <LocalTime format="date" value={report.resolved_at} />
+                        {" · "}
+                        {t.rich("decidedOn", {
+                          date: () => <LocalTime format="date" value={report.resolved_at!} />,
+                        })}
                       </>
                     )}
                   </p>
                 </div>
                 <Badge tone={statusTones[status]} className="self-start sm:self-auto">
-                  {statusLabels[status]}
+                  {t(`statuses.${status}`)}
                 </Badge>
               </li>
             );
@@ -87,18 +102,21 @@ export default async function YourReports({
         </ul>
       )}
       <p className="mt-6 max-w-2xl text-[13px] text-muted-foreground">
-        An admin reviews every report. The reported user is not told who reported.{" "}
+        {t("reviewed")}{" "}
         {operator.email && (
           <>
-            If you disagree with a decision, write to{" "}
-            <Contact className="font-medium text-foreground underline" />.{" "}
+            {t.rich("disagree", {
+              contact: () => <Contact className="font-medium text-foreground underline" />,
+            })}{" "}
           </>
         )}
-        The{" "}
-        <Link href="/terms#moderation" className="font-medium text-foreground underline">
-          terms
-        </Link>{" "}
-        explain how reports are handled.
+        {t.rich("terms", {
+          link: (chunks) => (
+            <Link href="/terms#moderation" className="font-medium text-foreground underline">
+              {chunks}
+            </Link>
+          ),
+        })}
       </p>
     </Shell>
   );

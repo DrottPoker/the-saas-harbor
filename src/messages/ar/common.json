@@ -1,4 +1,9 @@
 {
+  "forms": {
+    "saving": "جارٍ الحفظ...",
+    "imageHint": "PNG أو JPEG أو WebP، حتى 2 ميغابايت. الصور علنية.",
+    "removeImage": "إزالة الصورة الحالية"
+  },
   "notShared": "غير معلن",
   "demo": "تجريبي",
   "mrr": "MRR",

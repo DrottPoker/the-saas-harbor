@@ -6,6 +6,7 @@
 // the next charge, without tax where the price includes it. Usage-based items (metered prices and
 // rate cards) are skipped, and so are subscriptions whose invoices are marked paid outside
 // Airwallex, since the founder records those payments. Amounts are in major units.
+import { revenueText } from "../errors";
 import { unixSeconds, type ServiceLine } from "../history";
 import { addTo, intervalMonths, periodMonths, toMinorUnits, type Interval } from "../money";
 
@@ -254,9 +255,6 @@ export function itemMonthly(
   return value / months;
 }
 
-const NO_SUBSCRIPTIONS =
-  "The Airwallex account has no active subscriptions in Airwallex Billing, so MRR is zero. Revenue still counts its payments.";
-
 /**
  * MRR per currency in minor units from the listed active and unpaid subscriptions and the items
  * of those that count. A subscription discount comes off after the item discounts, a flat one once
@@ -304,7 +302,7 @@ export function airwallexMrr(
     customers: customers.size,
     subscriptionIds,
     skippedItems,
-    mrrNote: subscriptions.length ? null : NO_SUBSCRIPTIONS,
+    mrrNote: subscriptions.length ? null : revenueText("airwallex.noSubscriptions"),
   };
 }
 

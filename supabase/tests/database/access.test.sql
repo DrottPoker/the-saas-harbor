@@ -1,7 +1,7 @@
 -- Grants, RLS, storage ownership, verified revenue and ranking. Runs in a rolled-back transaction.
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(114);
+select plan(115);
 
 insert into auth.users(id) values
   ('b0000000-0000-4000-8000-000000000001'),
@@ -610,6 +610,12 @@ select lives_ok(
 -- Account deletion: only the signed-in maker, only after a recent password sign-in, and it
 -- removes everything they own while other makers keep theirs.
 reset role;
+update auth.users set raw_user_meta_data = coalesce(raw_user_meta_data, '{}'::jsonb) || '{"locale":"es"}'::jsonb
+  where id = 'b0000000-0000-4000-8000-000000000001';
+select is(
+  (select raw_user_meta_data ->> 'locale' from auth.users where id = 'b0000000-0000-4000-8000-000000000001'),
+  'es', 'the account stores its email language before deletion'
+);
 insert into auth.audit_log_entries(id, payload) values
   (gen_random_uuid(), json_build_object('action', 'login', 'actor_id', 'b0000000-0000-4000-8000-000000000001')),
   (gen_random_uuid(), json_build_object('action', 'user_signedup',
@@ -663,7 +669,7 @@ select set_config('request.jwt.claims', '', true);
 reset role;
 select is_empty(
   $$ select 1 from auth.users where id = 'b0000000-0000-4000-8000-000000000001' $$,
-  'the auth user is deleted'
+  'the auth user and its stored email language are deleted'
 );
 select is(
   (select count(*)::int from (

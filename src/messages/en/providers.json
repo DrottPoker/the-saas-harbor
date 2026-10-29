@@ -1,1 +1,240 @@
-{}
+{
+  "choose": "Choose your payment provider. If it is not in the list, choose Other.",
+  "fallback": "a payment provider",
+  "notSetUp": "{provider} is not set up on this server yet.",
+  "verifiedWith": "Verified with {provider} through {access, select, oauth {read-only access} other {a read-only key}}.",
+  "fields": {
+    "site": "Site",
+    "projectId": "Project ID",
+    "clientId": "Client ID",
+    "profileId": "Profile ID",
+    "applicationId": "Application ID",
+    "issuerId": "Issuer ID",
+    "keyId": "Key ID",
+    "vendorNumber": "Vendor number",
+    "cloudStorageUri": "Cloud Storage URI",
+    "packageName": "Package name"
+  },
+  "placeholders": {
+    "dodoKey": "Read-only API key",
+    "paypalAccount": "Client ID of the app",
+    "airwallexKey": "Scoped API key",
+    "airwallexAccount": "Client ID shown with your API keys",
+    "superwallAccount": "App dashboard address or ID",
+    "appstoreKey": "Contents of the .p8 file"
+  },
+  "stripe": {
+    "keyLabel": "Restricted key",
+    "newKeyLabel": "New restricted key",
+    "dashboard": "Create a read-only key in Stripe",
+    "reads": "subscriptions, invoices, charges, Checkout Sessions and disputes",
+    "step1": "Stripe opens a new restricted key with its name and permissions filled in.",
+    "step2": "Check that <b>Read</b> is set for {permissions} and None for everything else, then choose <b>Create key</b>.",
+    "step3": "Copy the key, which starts with rk_live_, and paste it below.",
+    "noHistory": "No revenue history yet. Replace the key with one that also has Invoices: Read to show the last 12 months as a chart.",
+    "skipped": "{count, plural, one {# usage-based item was not counted.} other {# usage-based items were not counted.}}"
+  },
+  "paddle": {
+    "keyLabel": "API key",
+    "newKeyLabel": "New API key",
+    "dashboard": "Open Paddle's API keys",
+    "reads": "subscriptions and transactions",
+    "step1": "Under Developer tools → Authentication, choose <b>New API key</b>.",
+    "step2": "Give it <b>Read</b> for Subscriptions and Transactions and no other permissions. Leave the expiry date empty, or the key stops working when it expires.",
+    "step3": "Copy the key, which starts with pdl_live_apikey_, and paste it below.",
+    "noHistory": "No revenue history: the Paddle account has more transactions than one verification reads.",
+    "skipped": "{count, plural, one {# subscription without a paid charge was not counted.} other {# subscriptions without a paid charge were not counted.}}"
+  },
+  "polar": {
+    "keyLabel": "Organization access token",
+    "newKeyLabel": "New organization access token",
+    "dashboard": "Open the Polar dashboard",
+    "reads": "your organization, subscriptions and orders",
+    "step1": "In your organization's Settings → Developers, choose <b>New Token</b>.",
+    "step2": "Select the scopes organizations:read, subscriptions:read and orders:read and nothing else, and choose <b>No expiration</b>.",
+    "step3": "Copy the token, which starts with polar_oat_, and paste it below.",
+    "noHistory": "No revenue history: the Polar account has more orders than one verification reads.",
+    "skipped": "{count, plural, one {# subscription was not counted.} other {# subscriptions were not counted.}}"
+  },
+  "dodo": {
+    "keyLabel": "API key",
+    "newKeyLabel": "New API key",
+    "dashboard": "Open the Dodo Payments dashboard",
+    "reads": "subscriptions and payments",
+    "step1": "Under Developer → API Keys, choose <b>Add API Key</b>.",
+    "step2": "Turn off <b>Enable write access</b>, so the key can only read.",
+    "step3": "Copy the key, which Dodo Payments shows only once, and paste it below.",
+    "noHistory": "No revenue history: Dodo Payments does not say which period a payment covers.",
+    "skipped": "{count, plural, one {# tax-inclusive subscription without a payment was not counted.} other {# tax-inclusive subscriptions without a payment were not counted.}}"
+  },
+  "creem": {
+    "keyLabel": "API key",
+    "newKeyLabel": "New API key",
+    "dashboard": "Open Creem's developer settings",
+    "reads": "products, subscriptions and transactions",
+    "step1": "Under Developers → API keys, create a new key.",
+    "step2": "In the scope picker, give it <b>read</b> access to products, subscriptions and transactions and nothing else.",
+    "step3": "Copy the key, which starts with creem_, and paste it below.",
+    "noHistory": "No revenue history: the Creem account has more transactions than one verification reads.",
+    "skipped": "{count, plural, one {# subscription without a readable price or payment was not counted.} other {# subscriptions without a readable price or payment were not counted.}}"
+  },
+  "chargebee": {
+    "keyLabel": "Read-only API key",
+    "newKeyLabel": "New read-only API key",
+    "dashboard": "Sign in to Chargebee",
+    "reads": "subscriptions, invoices and refunds",
+    "step1": "Open Settings → Configure Chargebee → API keys and events, and choose <b>Add API key</b>.",
+    "step2": "Choose a <b>Read-only key</b> with access to all data, or restricted to transactional data.",
+    "step3": "Copy the key, and enter your site: the name before .chargebee.com in your dashboard's address.",
+    "noHistory": "No revenue history: the Chargebee site has more invoices than one verification reads.",
+    "skipped": "{count, plural, one {# subscription without a paid invoice was not counted.} other {# subscriptions without a paid invoice were not counted.}}"
+  },
+  "whop": {
+    "keyLabel": "API key",
+    "newKeyLabel": "New API key",
+    "dashboard": "Open the Whop dashboard",
+    "reads": "memberships, plans, promo codes and payments",
+    "step1": "Choose your business, open Developer → Account API keys and create a key with custom permissions.",
+    "step2": "Give it only member:basic:read, plan:basic:read, payment:basic:read and promo_code:basic:read. A key with any permission beyond reading is refused.",
+    "step3": "Copy the key and paste it below.",
+    "noHistory": "No revenue history: the Whop account has more payments or plans than one verification reads.",
+    "skipped": "{count, plural, one {# tax-inclusive membership without a payment was not counted.} other {# tax-inclusive memberships without a payment were not counted.}}"
+  },
+  "revenuecat": {
+    "keyLabel": "Secret API key",
+    "newKeyLabel": "New secret API key",
+    "dashboard": "Open the RevenueCat dashboard",
+    "reads": "your project's MRR, active subscriptions and revenue charts",
+    "step1": "In your project, open Project settings → API keys and choose <b>New secret API key</b> with version V2.",
+    "step2": "Set Charts & metrics to <b>Read only</b> and everything else to No access. A key with more access is refused.",
+    "step3": "Copy the key, which starts with sk_, and the project ID, which follows /projects/ in the address of any page in your project.",
+    "noHistory": "No revenue history yet. Refresh to read RevenueCat's MRR chart.",
+    "skipped": "{count, plural, one {# subscription was not counted.} other {# subscriptions were not counted.}}"
+  },
+  "gumroad": {
+    "dashboard": "See the apps connected to your Gumroad account",
+    "reads": "your products, memberships and sales",
+    "step1": "Save with the button at the end of the form. Gumroad opens, and asks you to sign in if you are not.",
+    "step2": "Approve <b>View your sales</b>. That is the only access asked for: it cannot change products, refund sales or email your customers.",
+    "step3": "Gumroad sends you back here, and the revenue is verified.",
+    "noHistory": "No revenue history: the Gumroad account has more sales than one verification reads.",
+    "skipped": "{count, plural, one {# subscriber without a recent charge was not counted.} other {# subscribers without a recent charge were not counted.}}"
+  },
+  "paypal": {
+    "keyLabel": "Secret",
+    "newKeyLabel": "New secret",
+    "dashboard": "Open PayPal's apps and credentials",
+    "reads": "your transactions",
+    "step1": "Sign in with your PayPal business account, check that <b>Live</b> is selected, and choose <b>Create App</b>.",
+    "step2": "In the new app's features, turn on <b>Transaction search</b> and turn off everything else. An app that can do more than search transactions is refused.",
+    "step3": "Copy the Client ID and Secret key 1, and paste them below. MRR counts PayPal subscriptions; other payments count as revenue.",
+    "noHistory": "No revenue history: the PayPal account has more subscription payments than one verification reads.",
+    "skipped": "{count, plural, one {# subscription was not counted.} other {# subscriptions were not counted.}}"
+  },
+  "mollie": {
+    "keyLabel": "Advanced access token",
+    "newKeyLabel": "New advanced access token",
+    "dashboard": "Open Mollie's API access tokens",
+    "reads": "your subscriptions and payments",
+    "step1": "Choose <b>Build your own</b> advanced access token, and give it Read for Payments and Subscriptions only. A token that can do more than read is refused.",
+    "step2": "Copy the token, which starts with access_. API keys (live_ or test_) can create payments and are not accepted.",
+    "step3": "Copy the ID of this product's website profile, which starts with pfl_, from Developers → API keys. MRR counts Mollie subscriptions; other payments count as revenue.",
+    "noHistory": "No revenue history: the Mollie profile has more payments than one verification reads.",
+    "skipped": "{count, plural, one {# subscription with an unreadable billing interval was not counted.} other {# subscriptions with an unreadable billing interval were not counted.}}"
+  },
+  "paystack": {
+    "keyLabel": "Restricted key",
+    "newKeyLabel": "New restricted key",
+    "dashboard": "Open the Paystack dashboard",
+    "reads": "subscriptions, plans, transactions and refunds",
+    "step1": "Switch the dashboard to Live, open Developers and create a restricted key.",
+    "step2": "Give it only plans:read, transactions:read and disputes_refunds:read. Never paste your secret key (sk_), which can do everything.",
+    "step3": "Confirm with your dashboard password, then copy the key, which starts with rk_ and is shown once, and paste it below.",
+    "noHistory": "No revenue history: the key cannot read transactions, or the Paystack account has more of them than one verification reads.",
+    "skipped": "{count, plural, one {# subscription without a readable plan was not counted.} other {# subscriptions without a readable plan were not counted.}}"
+  },
+  "abacatepay": {
+    "keyLabel": "Trust MRR token",
+    "newKeyLabel": "New Trust MRR token",
+    "dashboard": "Open the AbacatePay dashboard",
+    "reads": "your store's MRR, active subscriptions and revenue by day",
+    "step1": "Leave test mode (Modo teste), open Apps and find Trust MRR.",
+    "step2": "Turn the app on and choose <b>Salvar configurações</b>. API keys, which start with abc_, are refused.",
+    "step3": "Copy the token, which starts with mrr_, and paste it below.",
+    "noHistory": "No revenue history yet. Refresh to read AbacatePay's daily MRR.",
+    "skipped": "{count, plural, one {# subscription was not counted.} other {# subscriptions were not counted.}}"
+  },
+  "asaas": {
+    "keyLabel": "API key",
+    "newKeyLabel": "New API key",
+    "dashboard": "Open Asaas's API keys",
+    "reads": "subscriptions and charges",
+    "step1": "As an administrator, open Integrações → Chaves de API and create a key.",
+    "step2": "Give it <b>Read</b> for Assinaturas (Subscriptions) and Cobranças (Charges) only, with no IP allowlist. A key created without permissions has full access and is refused.",
+    "step3": "Copy the key, which starts with $aact_prod_ and is shown once, and paste it below.",
+    "noHistory": "No revenue history: the Asaas account has more subscriptions or charges than one verification reads.",
+    "skipped": "{count, plural, one {# active subscription without a recent payment was not counted.} other {# active subscriptions without a recent payment were not counted.}}"
+  },
+  "airwallex": {
+    "keyLabel": "Scoped API key",
+    "newKeyLabel": "New scoped API key",
+    "dashboard": "Open Airwallex's API keys",
+    "reads": "subscriptions, invoices and payments",
+    "step1": "Under Settings → Developer → API keys, choose <b>New scoped API key</b>.",
+    "step2": "Give it Read for Subscriptions and Invoices (Billing) and for Payment Acceptance, and nothing else. A key that can read more is refused.",
+    "step3": "Copy the key and the Client ID shown with it, and paste them below. MRR counts Airwallex Billing subscriptions; other payments count as revenue.",
+    "noHistory": "No revenue history: the Airwallex account has more subscription invoices than one verification reads.",
+    "skipped": "{count, plural, one {# usage-based item or subscription paid outside Airwallex was not counted.} other {# usage-based items or subscriptions paid outside Airwallex were not counted.}}"
+  },
+  "superwall": {
+    "keyLabel": "Organization API key",
+    "newKeyLabel": "New organization API key",
+    "dashboard": "Open the Superwall dashboard",
+    "reads": "your app's MRR, active subscriptions and proceeds charts",
+    "step1": "Under Settings → API Keys, create a key.",
+    "step2": "Give it only the <b>charts:read</b> scope, limited to the app's project if you like. A key with more access is refused.",
+    "step3": "Copy the key, which starts with sk_, and paste it below with the address of your app's dashboard.",
+    "noHistory": "No revenue history yet. Refresh to read Superwall's MRR chart.",
+    "skipped": "{count, plural, one {# subscription was not counted.} other {# subscriptions were not counted.}}"
+  },
+  "appstore": {
+    "keyLabel": "Private key",
+    "newKeyLabel": "New private key",
+    "dashboard": "Open App Store Connect's API keys",
+    "reads": "your sales and subscription reports",
+    "step1": "In Users and Access → Integrations → App Store Connect API, open Team Keys and choose <b>Generate API Key</b>.",
+    "step2": "Under Access, choose <b>Sales</b> with access to reports, or <b>Finance</b>. A key that can do more, such as Admin or App Manager, is refused.",
+    "step3": "Download the .p8 file and paste its contents below, with the Issuer ID, the Key ID and your vendor number from Payments and Financial Reports.",
+    "noHistory": "No revenue history yet. Refresh to read Apple's subscription reports of the last 12 months.",
+    "skipped": "{count, plural, one {# subscription on a paid offer was not counted.} other {# subscriptions on a paid offer were not counted.}}"
+  },
+  "googleplay": {
+    "keyLabel": "Service account JSON key",
+    "newKeyLabel": "New service account JSON key",
+    "dashboard": "Open Google Cloud's service accounts",
+    "reads": "your apps' estimated sales reports",
+    "step1": "Create a service account without roles, and under Keys add a <b>JSON</b> key.",
+    "step2": "In Play Console, open Users and permissions, invite the service account's email, and give it only <b>View financial data</b>.",
+    "step3": "On Download reports, copy the Cloud Storage URI of the financial reports, and paste it below with your app's package name and the JSON key. A new permission can take some hours to apply.",
+    "noHistory": "No revenue history: the Google Play sales reports are larger than one verification reads.",
+    "skipped": "{count, plural, one {# subscription charge that could not be read was not counted.} other {# subscription charges that could not be read were not counted.}}"
+  },
+  "zoho": {
+    "dashboard": "See the apps connected to your Zoho account",
+    "reads": "your organizations, subscriptions and payments",
+    "step1": "Save with the button at the end of the form. Zoho opens, and asks you to sign in if you are not.",
+    "step2": "Approve <b>read access</b> to settings, subscriptions and payments. That is the only access asked for: it cannot change anything.",
+    "step3": "Zoho sends you back here, and your default Zoho Billing organization is verified. To verify another, make it the default first.",
+    "noHistory": "No revenue history: Zoho Billing does not say which period an invoice covers.",
+    "skipped": "{count, plural, one {# subscription without a readable price or billing period was not counted.} other {# subscriptions without a readable price or billing period were not counted.}}"
+  },
+  "mercadopago": {
+    "dashboard": "Open Mercado Pago",
+    "reads": "your subscriptions and payments",
+    "step1": "Save with the button at the end of the form. Mercado Pago opens, and asks you to sign in if you are not.",
+    "step2": "Allow access. That is the only access asked for: it can <b>only read</b>, and cannot charge, refund or change anything.",
+    "step3": "Mercado Pago sends you back here, and the revenue is verified.",
+    "noHistory": "No revenue history: the Mercado Pago account has more payments than one verification reads, or its payments do not name their subscriptions.",
+    "skipped": "{count, plural, one {# subscription without a readable amount or frequency was not counted.} other {# subscriptions without a readable amount or frequency were not counted.}}"
+  }
+}

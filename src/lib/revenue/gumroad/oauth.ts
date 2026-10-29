@@ -74,19 +74,16 @@ export async function exchangeGumroadCode(client: OAuthClient, code: string, ver
       signal: AbortSignal.timeout(20_000),
     });
   } catch {
-    throw new VerificationError("Gumroad could not be reached. Try again shortly.");
+    throw new VerificationError("common.unreachable", { provider: "Gumroad" });
   }
   const body = (await response.json().catch(() => null)) as {
     access_token?: string;
     scope?: string;
   } | null;
   if (!response.ok || !body?.access_token)
-    throw new VerificationError("Gumroad did not complete the connection. Try again.");
+    throw new VerificationError("common.connectionNotCompleted", { provider: "Gumroad" });
   const scopes = (body.scope ?? "").split(/\s+/).filter(Boolean);
-  if (!readOnlyScopes(scopes))
-    throw new VerificationError(
-      "Gumroad granted other access than reading sales, so the connection was not saved. Try again.",
-    );
+  if (!readOnlyScopes(scopes)) throw new VerificationError("gumroad.otherAccess");
   return { token: body.access_token, hint: `…${body.access_token.slice(-4)}` };
 }
 

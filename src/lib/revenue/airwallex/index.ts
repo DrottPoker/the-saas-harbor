@@ -1,6 +1,6 @@
 import "server-only";
 import { splitAccountKey } from "../account-key";
-import { VerificationError } from "../errors";
+import { revenueText, VerificationError } from "../errors";
 import { historyWindowStart } from "../history";
 import { ProviderRequestError } from "../http";
 import { dayStart } from "../payments";
@@ -37,9 +37,6 @@ const FIRST_PAYMENT_DAY = "2016-01-01";
 /** Invoices are read this far before the payments, so a late payment still finds its invoice. */
 const INVOICE_LEAD = 400 * 86_400;
 
-const HISTORY_NOTE =
-  "The Airwallex account has more subscription invoices than one verification reads, so there is no revenue history.";
-
 function credentials(stored: string): AirwallexCredentials {
   const { account, key } = splitAccountKey(stored);
   return { clientId: account, apiKey: key };
@@ -54,9 +51,7 @@ function credentials(stored: string): AirwallexCredentials {
 async function requireNoOtherAccess(token: string, livemode: boolean) {
   for (const endpoint of OTHER_ACCESS)
     if (await canRead(token, livemode, endpoint))
-      throw new VerificationError(
-        "The key can read more than subscriptions, invoices and payments, such as your balances or products. Create a scoped API key with Read access to Subscriptions, Invoices and Payment Acceptance only.",
-      );
+      throw new VerificationError("airwallex.beyondAccess");
 }
 
 /**
@@ -79,13 +74,8 @@ async function authorize(stored: string, livemode: boolean | null, allowTest: bo
   return { token, live };
 }
 
-function tooMany(what: string) {
-  return new ProviderRequestError(
-    `The Airwallex account has more ${what} than one verification reads.`,
-    undefined,
-    undefined,
-    true,
-  );
+function tooMany(key: "airwallex.tooManySubscriptions" | "airwallex.tooManyInvoices") {
+  return new ProviderRequestError(key, {}, { tooMuchData: true });
 }
 
 /** Service lines from the paid subscription invoices since the history's window. */
@@ -93,7 +83,7 @@ async function readHistory(token: string, live: boolean, now: Date) {
   const invoices = subscriptionInvoices(
     await fetchPaidInvoices(token, live, historyWindowStart(now)),
   );
-  if (invoices.length > MAX_INVOICES) throw tooMany("subscription invoices");
+  if (invoices.length > MAX_INVOICES) throw tooMany("airwallex.tooManyInvoices");
   const lines = [];
   for (const invoice of invoices) lines.push(...(await fetchInvoiceLines(token, live, invoice.id)));
   return airwallexServiceLines(lines);
@@ -118,7 +108,7 @@ export const airwallex: ProviderAdapter = {
     const valued = subscriptions.filter(
       (subscription) => countsNow(subscription, nowSeconds) && !paidOutsideAirwallex(subscription),
     );
-    if (valued.length > MAX_SUBSCRIPTIONS) throw tooMany("subscriptions");
+    if (valued.length > MAX_SUBSCRIPTIONS) throw tooMany("airwallex.tooManySubscriptions");
     const items = new Map<string, AirwallexSubscriptionItem[]>();
     for (const subscription of valued)
       items.set(subscription.id, await fetchSubscriptionItems(token, live, subscription.id));
@@ -129,7 +119,7 @@ export const airwallex: ProviderAdapter = {
         lines = await readHistory(token, live, now);
       } catch (error) {
         if (!(error instanceof ProviderRequestError && error.tooMuchData)) throw error;
-        historyNote = HISTORY_NOTE;
+        historyNote = revenueText("airwallex.historyTooLarge");
       }
     return {
       livemode: live,

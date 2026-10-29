@@ -1,1 +1,71 @@
-{}
+{
+  "meta": {
+    "title": "Messages",
+    "with": "Messages with {name}"
+  },
+  "inbox": {
+    "title": "Select a conversation",
+    "body": "Choose one of your conversations, or open a user's profile and choose Send message to start a new one."
+  },
+  "list": {
+    "heading": "Messages",
+    "label": "Conversations",
+    "userFallback": "User",
+    "blocked": "Blocked",
+    "fromYou": "You: <body></body>",
+    "unread": "{count}<hidden> unread</hidden>",
+    "emptyBeside": "Your conversations show here once a message is sent.",
+    "emptyTitle": "No messages yet",
+    "emptyBody": "Open a product or a user's profile and choose Send message to start a conversation.",
+    "browse": "Browse products"
+  },
+  "header": {
+    "back": "Back to messages",
+    "viewProfile": "View profile"
+  },
+  "closed": {
+    "noProfile": "Set up your <link>profile</link> before sending messages. Other users see your name and photo.",
+    "suspended": "Your account is suspended, so you cannot send messages. Your <link>dashboard</link> explains why.",
+    "blocked": "You blocked {name}. Neither of you can send messages until you unblock them."
+  },
+  "conversation": {
+    "log": "Messages with {name}",
+    "privacy": "Only you and {name} can read this conversation.",
+    "loadingEarlier": "Loading...",
+    "showEarlier": "Show earlier messages",
+    "empty": "No messages yet. Say hello to {name}.",
+    "fromYou": "You:",
+    "from": "{name}:",
+    "delivered": "Delivered",
+    "seen": "Seen<hidden> by {name}</hidden>",
+    "report": "Report<hidden> this message from {name}</hidden>",
+    "field": "Message to {name}",
+    "placeholder": "Write to {name}",
+    "send": "Send",
+    "sending": "Sending...",
+    "keys": "Enter sends. Shift+Enter starts a new line."
+  },
+  "block": {
+    "block": "Block<hidden> {name}</hidden>",
+    "unblock": "Unblock<hidden> {name}</hidden>",
+    "blocking": "Blocking...",
+    "unblocking": "Unblocking..."
+  },
+  "sendButton": "Send message",
+  "loading": "Loading",
+  "errors": {
+    "userNotFound": "This user could not be found.",
+    "empty": "Write a message first.",
+    "tooLong": "Messages can be up to {max} characters.",
+    "sendFailed": "Your message could not be sent. Please try again.",
+    "chooseOther": "Choose another user to message.",
+    "noProfile": "Set up your profile before sending messages.",
+    "suspended": "Your account is suspended, so you cannot send messages.",
+    "cannotReceive": "This user cannot receive messages.",
+    "blocked": "Messages between you and this user are blocked.",
+    "tooFast": "You are sending messages too quickly. Try again later.",
+    "tooManyConversations": "You have started many conversations today. Try again tomorrow.",
+    "blockFailed": "The user could not be blocked. Please try again.",
+    "unblockFailed": "The user could not be unblocked. Please try again."
+  }
+}

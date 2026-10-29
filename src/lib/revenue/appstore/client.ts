@@ -1,6 +1,14 @@
 import "server-only";
 import { gunzipSync } from "node:zlib";
-import { apiBase, errorBody, providerGet, ProviderRequestError, tooMuchData } from "../http";
+import {
+  apiBase,
+  errorBody,
+  providerGet,
+  ProviderRequestError,
+  rateLimited,
+  returnedError,
+  tooMuchData,
+} from "../http";
 import { appStoreToken, type AppStoreCredentials } from "./key";
 import { parseReport, type ReportRow } from "./mrr";
 
@@ -69,35 +77,22 @@ const parameterOf = (errors: AppleError[]) =>
 /** Apple does not take the vendor number for the key's team. */
 export class UnknownVendorError extends ProviderRequestError {
   constructor(path: string) {
-    super(
-      "Apple does not recognize the vendor number for this key's team. Copy it from Payments and Financial Reports in App Store Connect.",
-      400,
-      path,
-    );
+    super("appstore.unknownVendor", {}, { status: 400, path });
   }
 }
 
 function failure(status: number, errors: AppleError[], path: string): never {
   const found = errors.map((error) => error.detail).find((value) => typeof value === "string");
   const detail = (found as string | undefined)?.slice(0, 300);
-  if (status === 401)
-    throw new ProviderRequestError(
-      "Apple refused the key. Check that the Issuer ID, the Key ID and the private key belong to one active Team key. Individual keys cannot download sales reports.",
-      401,
-    );
+  if (status === 401) throw new ProviderRequestError("appstore.keyRefused", {}, { status: 401 });
   if (status === 403)
-    throw new ProviderRequestError(
-      path === REPORTS
-        ? "The key cannot download sales reports. Create a Team key with the Sales role and access to reports, or with the Finance role."
-        : `Apple did not let the key read ${path}.`,
-      403,
-      path,
-    );
-  if (status === 429)
-    throw new ProviderRequestError("Apple is rate limiting requests. Try again later.", 429);
+    throw path === REPORTS
+      ? new ProviderRequestError("appstore.cannotDownload", {}, { status: 403, path })
+      : new ProviderRequestError("appstore.cannotRead", { path }, { status: 403, path });
+  if (status === 429) throw rateLimited("Apple");
   if (status === 400 && parameterOf(errors) === "filter[vendorNumber]")
     throw new UnknownVendorError(path);
-  throw new ProviderRequestError(`Apple returned an error${detail ? `: ${detail}` : "."}`, status);
+  throw returnedError("Apple", detail, { status });
 }
 
 /** Reports are small; this bounds what one unpacks to. */
@@ -111,7 +106,7 @@ export function reportText(bytes: Buffer) {
   } catch (error) {
     if ((error as { code?: unknown }).code === "ERR_BUFFER_TOO_LARGE")
       throw tooMuchData("App Store", REPORTS);
-    throw new ProviderRequestError("Apple sent a report that could not be read.");
+    throw new ProviderRequestError("appstore.reportUnreadable");
   }
 }
 

@@ -3,8 +3,14 @@
 import { RedirectType, unstable_rethrow } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
-import { changePassword, deleteAccount, deleteSignedInAccount } from "@/lib/account";
+import {
+  changePassword,
+  deleteAccount,
+  deleteSignedInAccount,
+  usernameLockDays,
+} from "@/lib/account";
 import { recordAccountSource } from "@/lib/account-source";
+import { rememberAccountLanguage } from "@/lib/account-language";
 import { confirmationMethod, PROVIDER_NAMES, signedInWithin } from "@/lib/auth";
 import {
   emailLink,
@@ -14,8 +20,8 @@ import {
   safeNext,
   saasSchema,
   normalizeUsername,
-  USERNAME_PROBLEMS,
-  usernameLockedMessage,
+  USERNAME_MAX_LENGTH,
+  USERNAME_MIN_LENGTH,
   usernameSchema,
   type ActionState,
 } from "@/lib/domain";
@@ -23,17 +29,19 @@ import { addressAcceptsMail } from "@/lib/email-domain";
 import { sendQueuedEmails } from "@/lib/email/outbox";
 import { announceProduct, announceRemovedProduct } from "@/lib/indexnow";
 import { termsUpdated } from "@/lib/legal";
+import { failureMessage, localizeValidation } from "@/lib/localize-validation";
+import { PRODUCT_LIMIT, DAILY_PRODUCT_LIMIT } from "@/lib/moderation";
 import { keepNewProduct } from "@/lib/new-product";
-import { CHOOSE_PROVIDER, PROVIDERS } from "@/lib/revenue/catalog";
+import { PROVIDERS } from "@/lib/revenue/catalog";
 import {
   beginRevenueCheck,
   chosenProvider,
   keepConnectionResult,
   type ChosenProvider,
 } from "@/lib/revenue/connect";
-import { connectionResultPath } from "@/lib/revenue/connection-result";
-import { makerMessage } from "@/lib/revenue/errors";
-import { summary } from "@/lib/revenue/summary";
+import { connectionResultPath, oauthConnectPath } from "@/lib/revenue/connection-result";
+import { localizeRevenueText, makerMessage } from "@/lib/revenue/errors";
+import { connectedSummary } from "@/lib/revenue/summary";
 import { connectProvider } from "@/lib/revenue/sync";
 import { siteUrl } from "@/lib/seo";
 import { sendQueuedTelegramAlerts } from "@/lib/telegram/outbox";
@@ -45,14 +53,13 @@ import {
   startPage,
 } from "@/lib/supabase/server";
 import { uploadImage } from "@/lib/upload";
-import { getLocale } from "next-intl/server";
-import { localeRedirect } from "@/i18n/navigation";
+import { issuedMessage } from "@/lib/validation";
+import { getLocale, getTranslations } from "next-intl/server";
+import { localePath, localeRedirect } from "@/i18n/navigation";
 
 const value = (form: FormData, key: string) => String(form.get(key) ?? "");
-function message(error: unknown) {
-  if (error instanceof z.ZodError) return error.issues[0]?.message ?? "Check the form fields.";
-  return error instanceof Error ? error.message : "Something went wrong. Please try again.";
-}
+// A failure an action caught, in words for the form and in the request's language.
+const message = failureMessage;
 
 // Whether the current session signed in with this method in the last `seconds`.
 async function signedInRecently(
@@ -66,13 +73,12 @@ async function signedInRecently(
 
 // What is wrong with the email address and password.
 async function detailsProblem(mode: string, email: string, password: string) {
-  if (mode !== "update" && !z.email().safeParse(email).success)
-    return "Enter a valid email address.";
+  const t = await getTranslations("auth.actions");
+  if (mode !== "update" && !z.email().safeParse(email).success) return t("invalidEmail");
   const minimum = mode === "login" ? 1 : PASSWORD_MIN_LENGTH;
   if (mode !== "reset" && (password.length < minimum || password.length > PASSWORD_MAX_LENGTH))
-    return `Use a password between ${PASSWORD_MIN_LENGTH} and ${PASSWORD_MAX_LENGTH} characters.`;
-  if (mode === "signup" && !(await addressAcceptsMail(email)))
-    return "This email address cannot receive email. Check it for typos.";
+    return t("passwordLength", { min: PASSWORD_MIN_LENGTH, max: PASSWORD_MAX_LENGTH });
+  if (mode === "signup" && !(await addressAcceptsMail(email))) return t("undeliverable");
   return null;
 }
 
@@ -82,10 +88,20 @@ async function usernameProblem(
   input: string,
 ): Promise<{ username: string; problem: string | null }> {
   const parsed = usernameSchema.safeParse(input);
-  if (!parsed.success) return { username: input, problem: message(parsed.error) };
-  const { data, error } = await client.rpc("check_username", { p_username: parsed.data });
-  if (error) return { username: parsed.data, problem: "The username could not be checked." };
-  return { username: parsed.data, problem: data && USERNAME_PROBLEMS[data] };
+  if (!parsed.success) return { username: input, problem: await message(parsed.error) };
+  const [{ data, error }, t] = await Promise.all([
+    client.rpc("check_username", { p_username: parsed.data }),
+    getTranslations("auth.username"),
+  ]);
+  if (error) return { username: parsed.data, problem: t("checkFailed") };
+  if (!data) return { username: parsed.data, problem: null };
+  return {
+    username: parsed.data,
+    problem:
+      data === "format"
+        ? t("format", { min: USERNAME_MIN_LENGTH, max: USERNAME_MAX_LENGTH })
+        : t(data),
+  };
 }
 
 /** The first sign-up step: the details are checked before the username is asked for. */
@@ -110,12 +126,12 @@ export async function authenticate(
   const password = value(form, "password");
   const problem = await detailsProblem(mode, email, password);
   if (problem) return { error: problem };
+  const t = await getTranslations("auth.actions");
   // Asked for with the username, in the second step of sign-up.
-  if (mode === "signup" && form.get("terms") !== "on")
-    return { error: "Tick the box to accept the Terms of Service." };
+  if (mode === "signup" && form.get("terms") !== "on") return { error: t("acceptTerms") };
   const client = await serverClient();
   // Both emails link to the confirm page, which verifies the token in whichever browser opens it.
-  const confirm = `${siteUrl()}/auth/confirm`;
+  const confirm = `${siteUrl()}${await localePath("/auth/confirm")}`;
   if (mode === "signup") {
     const { username, problem: taken } = await usernameProblem(client, value(form, "username"));
     if (taken) return { error: taken };
@@ -132,39 +148,30 @@ export async function authenticate(
     });
     if (error)
       return {
-        error:
-          error.code === "over_email_send_rate_limit"
-            ? "Email limit reached. Please wait before trying again."
-            : "Registration could not be completed. Try again or sign in if you already have an account.",
+        error: t(error.code === "over_email_send_rate_limit" ? "signupLimit" : "signupFailed"),
       };
     // An address that already has an account gets a made-up user, which the database ignores.
     if (data.user) {
       await recordAccountSource(data.user.id);
       sendQueuedTelegramAlerts();
     }
-    if (!data.session)
-      return {
-        success: "Check your email and open the link to confirm your account.",
-      };
+    if (!data.session) return { success: t("checkEmail") };
   } else if (mode === "reset") {
     const { error } = await client.auth.resetPasswordForEmail(email, { redirectTo: confirm });
-    if (error) return { error: "The reset email could not be sent. Try again later." };
-    return { success: "If an account exists, you will receive a password reset link." };
+    if (error) return { error: t("resetFailed") };
+    return { success: t("resetSent") };
   } else if (mode === "update") {
     await requireUser();
     // Only a session opened from an email link in the last 15 minutes may set a new password, so
     // a stolen session cannot take over the account. Every other session ends afterwards.
-    if (!(await signedInRecently(client, "otp", 15 * 60)))
-      return { error: "This reset link has expired. Request a new one to choose a password." };
+    if (!(await signedInRecently(client, "otp", 15 * 60))) return { error: t("resetExpired") };
     const { error } = await client.auth.updateUser({ password });
-    if (error) return { error: "Password could not be updated. Request a new reset link." };
+    if (error) return { error: t("updateFailed") };
     await client.auth.signOut({ scope: "others" });
   } else {
-    const { error } = await client.auth.signInWithPassword({ email, password });
-    if (error)
-      return {
-        error: "Unable to sign in. Check your email and password, and confirm your email first.",
-      };
+    const { data, error } = await client.auth.signInWithPassword({ email, password });
+    if (error) return { error: t("signInFailed") };
+    await rememberAccountLanguage(client, data.user, await getLocale());
   }
   // A sign-up without email confirmation has signed in too.
   if (mode === "login" || mode === "signup") await recordSignInCountry(client);
@@ -179,21 +186,19 @@ export async function authenticate(
 // Sends the sign-up confirmation again. Auth answers the same whether or not the address has an
 // account waiting for confirmation, and limits how often it sends.
 export async function resendConfirmationAction(email: string): Promise<ActionState> {
-  if (!z.email().safeParse(email).success) return { error: "Enter a valid email address." };
+  const t = await getTranslations("auth.actions");
+  if (!z.email().safeParse(email).success) return { error: t("invalidEmail") };
   const client = await serverClient();
   const { error } = await client.auth.resend({
     type: "signup",
     email,
-    options: { emailRedirectTo: `${siteUrl()}/auth/confirm` },
+    options: { emailRedirectTo: `${siteUrl()}${await localePath("/auth/confirm")}` },
   });
   if (error)
     return {
-      error:
-        error.code === "over_email_send_rate_limit"
-          ? "Email limit reached. Please wait a minute before trying again."
-          : "The email could not be sent again. Try again in a minute.",
+      error: t(error.code === "over_email_send_rate_limit" ? "resendLimit" : "resendFailed"),
     };
-  return { success: "Sent again. It can take a minute to arrive." };
+  return { success: t("resent") };
 }
 
 export async function saveEmailSettingsAction(
@@ -207,8 +212,9 @@ export async function saveEmailSettingsAction(
     p_reports: form.has("reports_shown") ? form.has("reports") : true,
     p_milestones: form.has("milestones"),
   });
-  if (error) return { error: "Your settings could not be saved. Please try again." };
-  return { success: "Settings saved." };
+  const t = await getTranslations("account.actions");
+  if (error) return { error: t("settingsFailed") };
+  return { success: t("settingsSaved") };
 }
 
 // The confirm page submits the token from an email link. Verifying it here, on a button press
@@ -217,8 +223,9 @@ export async function confirmEmailLinkAction(
   _state: ActionState,
   form: FormData,
 ): Promise<ActionState> {
+  const t = await getTranslations("auth.actions");
   const link = emailLink(value(form, "token_hash"), value(form, "type"));
-  if (!link) return { error: "This link is incomplete. Open it again from the email." };
+  if (!link) return { error: t("linkIncomplete") };
   const client = await serverClient();
   const { data, error } = await client.auth.verifyOtp({
     token_hash: link.tokenHash,
@@ -226,17 +233,17 @@ export async function confirmEmailLinkAction(
   });
   if (error)
     return {
-      error:
+      error: t(
         link.type === "recovery"
-          ? "This link has expired or has already been used. Request a new reset link."
+          ? "linkExpiredRecovery"
           : link.type === "email_change"
-            ? "This link has expired or has already been used. Ask for the change again in Settings."
-            : "This link has expired or has already been used. Sign in if you confirmed your email before, or sign up again to get a new link.",
+            ? "linkExpiredEmailChange"
+            : "linkExpiredSignup",
+      ),
     };
   if (link.type === "email_change") {
     // The first of the two addresses to confirm gets no session: the other one still has to.
-    if (!data.session)
-      return { success: "Confirmed. Now open the link we sent to your other email address." };
+    if (!data.session) return { success: t("emailChangeHalfway") };
     revalidatePath("/", "layout");
     return localeRedirect("/dashboard/settings?email=changed");
   }
@@ -255,7 +262,8 @@ export async function finishSignupAction(
   const { user, client } = await requireUser({ unfinished: true });
   const next = safeNext(value(form, "next"));
   if (await signupFinished()) return localeRedirect(next || "/dashboard");
-  if (form.get("terms") !== "on") return { error: "Tick the box to accept the Terms of Service." };
+  const t = await getTranslations("auth");
+  if (form.get("terms") !== "on") return { error: t("actions.acceptTerms") };
   const { username, problem } = await usernameProblem(client, value(form, "username"));
   if (problem) return { error: problem };
   const { error } = await client.rpc("complete_signup", {
@@ -264,11 +272,9 @@ export async function finishSignupAction(
   });
   if (error)
     return {
-      error:
-        error.message === "username taken"
-          ? USERNAME_PROBLEMS.taken
-          : "Your account could not be set up. Please try again.",
+      error: t(error.message === "username taken" ? "username.taken" : "actions.setupFailed"),
     };
+  await rememberAccountLanguage(client, user, await getLocale());
   sendQueuedTelegramAlerts();
   revalidatePath("/", "layout");
   return localeRedirect(next || (await startPage(client, user.id)));
@@ -277,7 +283,7 @@ export async function finishSignupAction(
 export async function signOut() {
   const client = await serverClient();
   const { error } = await client.auth.signOut({ scope: "local" });
-  if (error) throw new Error("Unable to sign out. Please try again.");
+  if (error) throw new Error((await getTranslations("auth.actions"))("signOutFailed"));
   revalidatePath("/", "layout");
   return localeRedirect("/");
 }
@@ -286,29 +292,27 @@ export async function signOut() {
 // changes it once both are confirmed, so a stolen session alone cannot move the account.
 export async function changeEmailAction(_state: ActionState, form: FormData): Promise<ActionState> {
   const { user, client } = await requireUser();
+  const t = await getTranslations("account.actions");
   const email = value(form, "email").trim();
   if (!z.email().safeParse(email).success || email.length > 254)
-    return { error: "Enter a valid email address." };
-  if (email.toLowerCase() === user.email?.toLowerCase())
-    return { error: "That is already your email address." };
-  if (!(await addressAcceptsMail(email)))
-    return { error: "This email address cannot receive email. Check it for typos." };
+    return { error: t("invalidEmail") };
+  if (email.toLowerCase() === user.email?.toLowerCase()) return { error: t("sameEmail") };
+  if (!(await addressAcceptsMail(email))) return { error: t("undeliverable") };
   const { error } = await client.auth.updateUser(
     { email },
-    { emailRedirectTo: `${siteUrl()}/auth/confirm` },
+    { emailRedirectTo: `${siteUrl()}${await localePath("/auth/confirm")}` },
   );
   if (error)
     return {
-      error:
+      error: t(
         error.code === "email_exists"
-          ? "That email address already has an account."
+          ? "emailTaken"
           : error.code === "over_email_send_rate_limit"
-            ? "Email limit reached. Please wait a minute before trying again."
-            : "The change could not be started. Please try again.",
+            ? "emailLimit"
+            : "changeFailed",
+      ),
     };
-  return {
-    success: `We sent a link to ${user.email} and one to ${email}. Your address changes once both are confirmed.`,
-  };
+  return { success: t("changeSent", { current: user.email ?? "", email }) };
 }
 
 // A new password, once the current one is checked. Auth ends every other session when it changes,
@@ -319,15 +323,14 @@ export async function changePasswordAction(
   form: FormData,
 ): Promise<ActionState> {
   const { user, client } = await requireUser();
-  if (confirmationMethod(user) !== "password" || !user.email)
-    return { error: "Your account has no password yet. Send yourself a link to choose one." };
+  const t = await getTranslations("account.actions");
+  if (confirmationMethod(user) !== "password" || !user.email) return { error: t("noPassword") };
   const current = value(form, "current_password");
   const password = value(form, "password");
-  if (!current || current.length > PASSWORD_MAX_LENGTH)
-    return { error: "Enter your current password." };
+  if (!current || current.length > PASSWORD_MAX_LENGTH) return { error: t("enterCurrent") };
   if (password.length < PASSWORD_MIN_LENGTH || password.length > PASSWORD_MAX_LENGTH)
     return {
-      error: `Use a new password between ${PASSWORD_MIN_LENGTH} and ${PASSWORD_MAX_LENGTH} characters.`,
+      error: t("newPasswordLength", { min: PASSWORD_MIN_LENGTH, max: PASSWORD_MAX_LENGTH }),
     };
   try {
     const session = await changePassword(user.id, user.email, current, password);
@@ -335,29 +338,27 @@ export async function changePasswordAction(
       access_token: session.access_token,
       refresh_token: session.refresh_token,
     });
-    if (error) throw new Error("Your password was changed. Sign in again with it.");
+    if (error) throw new Error(t("signInAgain"));
   } catch (error) {
-    return { error: message(error) };
+    return { error: await message(error) };
   }
-  return { success: "Password changed. Your other devices are signed out." };
+  return { success: t("passwordChanged") };
 }
 
 // A link to choose a password by email, for an account that signs in with Google or GitHub, or
 // for a user who does not remember theirs.
 export async function sendPasswordLinkAction(): Promise<ActionState> {
   const { user, client } = await requireUser();
-  if (!user.email) return { error: "Your account has no email address to send the link to." };
+  const t = await getTranslations("account.actions");
+  if (!user.email) return { error: t("noEmail") };
   const { error } = await client.auth.resetPasswordForEmail(user.email, {
-    redirectTo: `${siteUrl()}/auth/confirm`,
+    redirectTo: `${siteUrl()}${await localePath("/auth/confirm")}`,
   });
   if (error)
     return {
-      error:
-        error.code === "over_email_send_rate_limit"
-          ? "Email limit reached. Please wait a minute before trying again."
-          : "The link could not be sent. Please try again.",
+      error: t(error.code === "over_email_send_rate_limit" ? "emailLimit" : "linkFailed"),
     };
-  return { success: `We sent a link to ${user.email}. Open it to choose a password.` };
+  return { success: t("linkSent", { email: user.email }) };
 }
 
 export async function deleteAccountAction(
@@ -366,22 +367,21 @@ export async function deleteAccountAction(
 ): Promise<ActionState> {
   const { user, client } = await requireUser({ unfinished: true });
   const method = confirmationMethod(user);
+  const t = await getTranslations("account");
   try {
     if (method !== "password") {
       // The database checks the same five minutes.
       if (!(await signedInRecently(client, "oauth", 5 * 60)))
-        return {
-          error: `Confirm with ${PROVIDER_NAMES[method]} again, then delete your account within five minutes.`,
-        };
+        return { error: t("actions.confirmAgain", { provider: PROVIDER_NAMES[method] }) };
       await deleteSignedInAccount(client, user.id);
     } else {
       const password = value(form, "password");
-      if (!password || password.length > 128) return { error: "Enter your password to confirm." };
-      if (!user.email) return { error: "Your account could not be deleted. Try again." };
+      if (!password || password.length > 128) return { error: t("actions.enterPassword") };
+      if (!user.email) return { error: t("errors.deleteFailed") };
       await deleteAccount(user.id, user.email, password);
     }
   } catch (error) {
-    return { error: message(error) };
+    return { error: await message(error) };
   }
   // The account no longer exists, so this only clears the session cookies in this browser.
   await client.auth.signOut({ scope: "local" });
@@ -405,7 +405,7 @@ async function logoIsUnused(client: Client, owner: string, path: string, saasId:
       .neq("id", saasId),
   ]);
   if (profile.error || products.error)
-    throw new Error("The SaaS could not be deleted. Please try again.");
+    throw new Error((await getTranslations("saasForm.delete"))("failed"));
   return profile.data?.avatar_path !== path && !products.count;
 }
 
@@ -414,28 +414,27 @@ export async function deleteSaasAction(
   _state: ActionState,
   form: FormData,
 ): Promise<ActionState> {
-  const { user, client } = await requireUser();
-  if (!z.uuid().safeParse(saasId).success) return { error: "You can only delete your own SaaS." };
+  const [{ user, client }, t] = await Promise.all([
+    requireUser(),
+    getTranslations("saasForm.delete"),
+  ]);
+  if (!z.uuid().safeParse(saasId).success) return { error: t("notOwner") };
   const { data: saas, error } = await client
     .from("saas")
     .select("name, logo_path, slug")
     .eq("id", saasId)
     .eq("owner_id", user.id)
     .maybeSingle();
-  if (error) return { error: "The SaaS profile could not be loaded." };
-  if (!saas) return { error: "You can only delete your own SaaS." };
-  if (value(form, "confirm_name").trim() !== saas.name.trim())
-    return { error: "Type the product name exactly as shown to confirm." };
+  if (error) return { error: t("loadFailed") };
+  if (!saas) return { error: t("notOwner") };
+  if (value(form, "confirm_name").trim() !== saas.name.trim()) return { error: t("confirmName") };
   try {
     // The logo goes first, so a failure leaves the product in place to delete again.
     if (saas.logo_path && (await logoIsUnused(client, user.id, saas.logo_path, saasId))) {
       const { error: removeError } = await client.storage
         .from("profile-images")
         .remove([saas.logo_path]);
-      if (removeError)
-        throw new Error(
-          "The logo could not be deleted, so the product was kept. Please try again.",
-        );
+      if (removeError) throw new Error(t("logoFailed"));
     }
     // Foreign keys remove the settings, figures, provider connection and verification history.
     const { data: deleted, error: deleteError } = await client
@@ -444,10 +443,9 @@ export async function deleteSaasAction(
       .eq("id", saasId)
       .eq("owner_id", user.id)
       .select("id");
-    if (deleteError || !deleted.length)
-      throw new Error("The SaaS could not be deleted. Please try again.");
+    if (deleteError || !deleted.length) throw new Error(t("failed"));
   } catch (error) {
-    return { error: message(error) };
+    return { error: await message(error) };
   }
   announceRemovedProduct(saas.slug);
   revalidatePath("/", "layout");
@@ -456,6 +454,7 @@ export async function deleteSaasAction(
 
 export async function saveProfile(_state: ActionState, form: FormData): Promise<ActionState> {
   const { user, client } = await requireUser();
+  const t = await getTranslations("account.actions");
   const uploaded: string[] = [];
   let unsaved: string | null = null;
   try {
@@ -478,15 +477,16 @@ export async function saveProfile(_state: ActionState, form: FormData): Promise<
       .select("avatar_path, slug")
       .eq("id", user.id)
       .maybeSingle();
-    if (readError) return { error: "Your profile could not be loaded. Please try again." };
+    if (readError) return { error: t("profileLoadFailed") };
     // Only a changed username is checked, so an older, longer address can stay as it is.
     let username = normalizeUsername(value(form, "username"));
     if (username !== existing?.slug) {
       const { data: availableAt, error: lockError } = await client.rpc(
         "username_change_available_at",
       );
-      if (lockError) return { error: "Your profile could not be loaded. Please try again." };
-      if (availableAt) return { error: usernameLockedMessage(availableAt) };
+      if (lockError) return { error: t("profileLoadFailed") };
+      if (availableAt)
+        return { error: t("usernameLocked", { days: usernameLockDays(availableAt) }) };
       const checked = await usernameProblem(client, username);
       if (checked.problem) return { error: checked.problem };
       username = checked.username;
@@ -504,23 +504,25 @@ export async function saveProfile(_state: ActionState, form: FormData): Promise<
       p_social_url: fields.social_url,
       p_avatar_path: avatar || (form.has("remove_image") ? null : (existing?.avatar_path ?? null)),
     });
-    if (error) throw new Error("Your profile could not be saved. Please try again.");
+    if (error) throw new Error(t("profileSaveFailed"));
     // Checked above, so this fails only when someone took the username in the meantime.
     if (username !== existing?.slug) {
       const { error: usernameError } = await client.rpc("set_username", { p_username: username });
       if (usernameError)
-        unsaved = usernameError.message.includes("taken")
-          ? "Your profile was saved, but that username was just taken. Choose another one."
-          : usernameError.message.includes("locked")
-            ? "Your profile was saved, but your username was changed a moment ago."
-            : "Your profile was saved, but the username could not be changed. Please try again.";
+        unsaved = t(
+          usernameError.message.includes("taken")
+            ? "usernameJustTaken"
+            : usernameError.message.includes("locked")
+              ? "usernameJustChanged"
+              : "usernameFailed",
+        );
     }
   } catch (error) {
     if (uploaded.length) await client.storage.from("profile-images").remove(uploaded);
-    return { error: message(error) };
+    return { error: await message(error) };
   }
   revalidatePath("/", "layout");
-  return unsaved ? { error: unsaved } : { success: "Profile saved." };
+  return unsaved ? { error: unsaved } : { success: t("profileSaved") };
 }
 
 export type SaveSaasState = ActionState & {
@@ -530,6 +532,13 @@ export type SaveSaasState = ActionState & {
   connectionError?: string;
 };
 
+// What save_saas and the product limits say, by their English words, as saasForm.save messages.
+const SAVE_PROBLEMS: Partial<Record<string, "usernameFirst" | "productLimit" | "dailyLimit">> = {
+  "Choose a username first": "usernameFirst",
+  "An account can list up to 20 products": "productLimit",
+  "You can add up to 5 products a day. Try again tomorrow": "dailyLimit",
+};
+
 // Saves a product, and connects the payment provider chosen in the same form. Every product names
 // its provider: a supported one to connect, or another one under Other, kept with the settings;
 // only a product that is connected already may leave the choice empty. A key is verified with the
@@ -537,12 +546,18 @@ export type SaveSaasState = ActionState & {
 // The editor shows how connecting went: a new product's editor through a cookie, and an existing
 // product's editor on the spot when it failed, with the form as it was.
 export async function saveSaas(_state: SaveSaasState, form: FormData): Promise<SaveSaasState> {
-  const { user, client } = await requireUser();
+  const [{ user, client }, t] = await Promise.all([requireUser(), getTranslations("saasForm")]);
   let choice: ChosenProvider | null;
   try {
     choice = chosenProvider(form);
   } catch (error) {
-    return { connectionError: makerMessage(error) };
+    // The name written under Other is checked like a field; anything else is the provider's.
+    const text = makerMessage(error);
+    return {
+      connectionError: issuedMessage(text)
+        ? await localizeValidation(text)
+        : await localizeRevenueText(text),
+    };
   }
   const chosen = choice?.provider === "other" ? null : choice;
   let uploaded: string | null = null;
@@ -568,9 +583,8 @@ export async function saveSaas(_state: SaveSaasState, form: FormData): Promise<S
       .select("owner_id, logo_path, slug")
       .eq("id", fields.id)
       .maybeSingle();
-    if (readError) return { error: "The SaaS profile could not be loaded." };
-    if (existing && existing.owner_id !== user.id)
-      return { error: "You can only edit your own SaaS." };
+    if (readError) return { error: t("save.loadFailed") };
+    if (existing && existing.owner_id !== user.id) return { error: t("save.notOwner") };
     existed = !!existing;
     previousSlug = existing?.slug ?? null;
     if (!choice) {
@@ -578,8 +592,8 @@ export async function saveSaas(_state: SaveSaasState, form: FormData): Promise<S
         .from("revenue_connections")
         .select("saas_id", { count: "exact", head: true })
         .eq("saas_id", fields.id);
-      if (connectionError) return { error: "The SaaS profile could not be loaded." };
-      if (!count) return { connectionError: CHOOSE_PROVIDER };
+      if (connectionError) return { error: t("save.loadFailed") };
+      if (!count) return { connectionError: t("chooseProvider") };
     }
     uploaded = await uploadImage(client, user.id, form.get("image"));
     const { data, error } = await client.rpc("save_saas", {
@@ -600,17 +614,23 @@ export async function saveSaas(_state: SaveSaasState, form: FormData): Promise<S
       // For a new product's Telegram alert.
       p_provider: choice?.provider ?? null,
     });
-    if (error)
+    if (error) {
+      // P0001 errors, such as the product limits, are written for makers by the database.
+      const problem = error.code === "P0001" ? SAVE_PROBLEMS[error.message] : undefined;
       throw new Error(
-        // P0001 errors, such as the product limits, are written for makers by the database.
-        error.code === "P0001"
-          ? `${error.message}.`
-          : "The SaaS profile could not be saved. Please check your fields and try again.",
+        problem
+          ? t(`save.${problem}`, {
+              limit: problem === "dailyLimit" ? DAILY_PRODUCT_LIMIT : PRODUCT_LIMIT,
+            })
+          : error.code === "P0001"
+            ? `${error.message}.`
+            : t("save.failed"),
       );
+    }
     savedId = data;
   } catch (error) {
     if (uploaded) await client.storage.from("profile-images").remove([uploaded]);
-    return { error: message(error) };
+    return { error: await message(error) };
   }
   // Search engines that take IndexNow notices hear about the page at once.
   announceProduct(client, savedId, previousSlug);
@@ -629,11 +649,14 @@ export async function saveSaas(_state: SaveSaasState, form: FormData): Promise<S
         saasId: savedId,
         provider: chosen.provider,
         tone: "success",
-        text: `${name} connected. ${summary(result)}`,
+        text: await connectedSummary(result),
       });
     } catch (error) {
       unstable_rethrow(error);
-      connectionError = `${existed ? "Your changes were saved" : "The product was added"}, but ${name} was not connected. ${makerMessage(error)}`;
+      connectionError = t(existed ? "save.savedNotConnected" : "save.addedNotConnected", {
+        provider: name,
+        reason: await localizeRevenueText(makerMessage(error)),
+      });
       if (!existed)
         await keepConnectionResult({
           saasId: savedId,
@@ -648,7 +671,8 @@ export async function saveSaas(_state: SaveSaasState, form: FormData): Promise<S
   sendQueuedEmails();
   revalidatePath("/", "layout");
   // Approving access through OAuth starts with a plain navigation, which the browser makes.
-  if (chosen && !chosen.key) return { location: `/api/${chosen.provider}/connect?saas=${savedId}` };
+  if (chosen && !chosen.key)
+    return { location: oauthConnectPath(chosen.provider, savedId, await getLocale()) };
   // An existing product's editor keeps the form, so the key or the site can be corrected there.
   if (existed && connectionError) return { connectionError };
   // A connection shows its result in the editor; anything else returns to the dashboard.

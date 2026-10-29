@@ -27,9 +27,7 @@ export function encryptProviderKey(plaintext: string, saasId: string, secret?: s
 export function decryptProviderKey(stored: string, saasId: string, secret?: string) {
   const [version, iv, encrypted, tag] = stored.split(":");
   if (version !== VERSION || !iv || !encrypted || !tag)
-    throw new VerificationError(
-      "The stored key is not readable. Connect the payment provider again.",
-    );
+    throw new VerificationError("common.keyUnreadable");
   const decipher = createDecipheriv(
     "aes-256-gcm",
     encryptionKey(secret),
@@ -43,8 +41,6 @@ export function decryptProviderKey(stored: string, saasId: string, secret?: stri
       decipher.final(),
     ]).toString("utf8");
   } catch {
-    throw new VerificationError(
-      "The stored key is not readable. Connect the payment provider again.",
-    );
+    throw new VerificationError("common.keyUnreadable");
   }
 }

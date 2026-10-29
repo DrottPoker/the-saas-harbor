@@ -1,6 +1,8 @@
 import { headers } from "next/headers";
+import { ClientMessages } from "@/components/client-messages";
 import { FeedbackDialog } from "@/components/feedback-form";
 import { FullPageLoad } from "@/components/route-dialog";
+import { localePath } from "@/i18n/navigation";
 import { feedbackHref, feedbackOpening, feedbackPage } from "@/lib/feedback";
 import { firstValues, type SearchParams } from "@/lib/params";
 import { currentUser } from "@/lib/supabase/server";
@@ -14,6 +16,11 @@ export default async function FeedbackModal({
   const from = feedbackPage(firstValues(await searchParams).from);
   const opening = feedbackOpening((await headers()).get("next-url"));
   if (opening === "none") return null;
-  if (opening === "page") return <FullPageLoad href={feedbackHref(from)} />;
-  return <FeedbackDialog from={from} visitor={!(await currentUser())} />;
+  // The full page loads in the page's language.
+  if (opening === "page") return <FullPageLoad href={await localePath(feedbackHref(from))} />;
+  return (
+    <ClientMessages namespaces={["feedback"]}>
+      <FeedbackDialog from={from} visitor={!(await currentUser())} />
+    </ClientMessages>
+  );
 }

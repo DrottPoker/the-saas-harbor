@@ -1,1 +1,54 @@
-{}
+{
+  "form": {
+    "checkFields": "Check the form fields.",
+    "failed": "Something went wrong. Please try again."
+  },
+  "image": {
+    "size": "Choose an image smaller than 2 MB.",
+    "format": "Choose a valid PNG, JPEG, or WebP image.",
+    "dimensions": "Choose an image up to {max} pixels wide and tall.",
+    "failed": "The image could not be uploaded. Please try again."
+  },
+  "address": {
+    "web": "Enter a web address, such as example.com, without spaces.",
+    "profile": "Use your {site} address, such as {example}."
+  },
+  "profile": {
+    "name": "Use a name of 2 to 60 characters.",
+    "headline": "Keep the headline under 120 characters.",
+    "location": "Keep the location under 80 characters."
+  },
+  "product": {
+    "name": "Use a product name of 2 to 80 characters.",
+    "tagline": "Use a tagline of 5 to 140 characters.",
+    "description": "Use a description of 20 to 5,000 characters.",
+    "category": "Choose a category.",
+    "website": "A website is required.",
+    "launchDate": "Enter the launch date.",
+    "validDate": "Enter a valid date.",
+    "launchRange": "Enter a launch date between 1970 and today.",
+    "techMax": "Choose up to {max} technologies.",
+    "techList": "Choose technologies from the list."
+  },
+  "otherProvider": {
+    "required": "Write the name of your payment provider.",
+    "max": "Keep the payment provider under {max} characters."
+  },
+  "username": {
+    "rules": "Use 3 to 30 letters, numbers and single hyphens, like jane-doe.",
+    "reserved": "That username is reserved. Choose another one.",
+    "taken": "That username is taken. Choose another one.",
+    "locked": "You can change your username again in {days, plural, one {# day} other {# days}}."
+  },
+  "report": {
+    "reason": "Choose a reason.",
+    "details": "Keep the details under 1,000 characters.",
+    "describe": "Describe the problem so it can be reviewed."
+  },
+  "feedback": {
+    "kind": "Choose what kind of feedback it is.",
+    "min": "Write at least {min} characters.",
+    "max": "Keep it under 2,000 characters.",
+    "email": "Enter a valid email address, or leave it empty."
+  }
+}

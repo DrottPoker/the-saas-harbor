@@ -1,1 +1,82 @@
-{}
+{
+  "meta": {
+    "add": "添加 SaaS",
+    "edit": "编辑 SaaS"
+  },
+  "editor": {
+    "back": "控制台",
+    "addTitle": "添加 SaaS",
+    "addDescription": "先选择支付服务商：用只读密钥连接后即可验证你的 MRR。如果列表中没有你的服务商，请选择“其他”。产品信息是公开的。",
+    "limit": "你已提交 {limit} 个产品，已达到每个账户的上限。删除一个产品后才能再添加。",
+    "editTitle": "编辑 {name}",
+    "editDescription": "产品信息和已验证数据是公开的。你可以隐藏这些数据。",
+    "viewPage": "查看页面"
+  },
+  "chooseProvider": "请选择你的支付服务商。如果列表中没有，请选择“其他”。",
+  "figures": {
+    "title": "公开数据",
+    "description": "已验证数据默认公开，你可以隐藏。公开的收入会在排行榜上按 MRR 以及近 30 天、近 12 个月和累计收入排名。",
+    "hideRevenue": "隐藏已验证收入（包括 MRR）",
+    "hideCustomers": "隐藏订阅用户数"
+  },
+  "details": {
+    "title": "产品",
+    "description": "显示在公开的产品页面和列表中。带 * 的字段为必填项。",
+    "name": "产品名称",
+    "category": "类别",
+    "chooseCategory": "选择类别",
+    "tagline": "一句话介绍",
+    "taglineHint": "一句话，最多 140 个字符。",
+    "taglinePlaceholder": "它能帮助人们做什么？",
+    "productDescription": "简介",
+    "descriptionPlaceholder": "面向谁、做什么、有什么不同。",
+    "website": "网站",
+    "launchDate": "发布日期",
+    "hideLaunch": "隐藏发布日期"
+  },
+  "logo": {
+    "title": "Logo",
+    "description": "方形 Logo 效果最佳。",
+    "upload": "上传 Logo"
+  },
+  "tech": {
+    "title": "技术栈",
+    "description": "产品使用的技术，最多 {max} 项。显示在产品页面上，并链接到使用相同技术的其他产品。"
+  },
+  "actions": {
+    "cancel": "取消",
+    "add": "添加 SaaS",
+    "save": "保存更改",
+    "addAndConnect": "添加 SaaS 并连接 {provider}",
+    "saveAndConnect": "保存并连接 {provider}",
+    "addAndVerify": "添加 SaaS 并验证收入",
+    "saveAndVerify": "保存并验证收入",
+    "verifying": "正在验证收入...",
+    "saving": "正在保存..."
+  },
+  "badge": {
+    "title": "网站徽章",
+    "description": "在你自己的网站上显示已验证 MRR，并链接到你的产品页面。只有在你公开该数据时才会显示数字，否则显示“Listed on {site}”。",
+    "theme": "徽章主题",
+    "light": "浅色",
+    "dark": "深色",
+    "preview": "徽章预览：{site} 上的 {name}"
+  },
+  "save": {
+    "loadFailed": "无法加载该 SaaS 的资料。",
+    "notOwner": "你只能编辑自己的 SaaS。",
+    "failed": "无法保存该 SaaS 的资料。请检查各字段后重试。",
+    "usernameFirst": "请先选择用户名。",
+    "productLimit": "每个账户最多可以提交 {limit} 个产品。",
+    "dailyLimit": "你每天最多可以添加 {limit} 个产品。请明天再试。",
+    "savedNotConnected": "你的更改已保存，但未能连接 {provider}。{reason}",
+    "addedNotConnected": "产品已添加，但未能连接 {provider}。{reason}"
+  },
+  "delete": {
+    "notOwner": "你只能删除自己的 SaaS。",
+    "loadFailed": "无法加载该 SaaS 的资料。",
+    "confirmName": "请输入与显示完全一致的产品名称以确认。",
+    "logoFailed": "无法删除 Logo，因此产品已保留。请重试。",
+    "failed": "无法删除该 SaaS。请重试。"
+  }
+}

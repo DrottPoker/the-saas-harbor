@@ -1,4 +1,5 @@
 import "server-only";
+import { revenueText } from "../errors";
 import { historyWindowStart } from "../history";
 import { ProviderRequestError } from "../http";
 import type { ProviderAdapter } from "../types";
@@ -72,8 +73,7 @@ export const paddle: ProviderAdapter = {
       } catch (error) {
         if (!(error instanceof ProviderRequestError && error.tooMuchData)) throw error;
         transactions = await recent();
-        historyNote =
-          "The Paddle account has more transactions than one verification reads, so there is no revenue history.";
+        historyNote = revenueText("paddle.historyTooLarge");
       }
     const mrr = paddleMrr(subscriptions, transactions, Math.floor(now.getTime() / 1000));
     return {

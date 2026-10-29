@@ -11,15 +11,11 @@ const CREDENTIAL = /^[A-Za-z0-9_-]{16,256}$/;
 export function parseAirwallexKey({ key: input, account }: KeyInput): ParsedKey {
   const clientId = account.trim();
   const key = input.trim();
-  if (!CREDENTIAL.test(clientId))
-    throw new VerificationError("Enter the Client ID shown with your Airwallex API keys.");
+  if (!CREDENTIAL.test(clientId)) throw new VerificationError("airwallex.clientIdFormat");
   if (/^(rk|sk|pk)_|^pdl_|^polar_|^creem_|^apik_/.test(key))
-    throw new VerificationError(
-      "This key belongs to another payment provider. Paste your Airwallex scoped API key.",
-    );
-  if (!CREDENTIAL.test(key)) throw new VerificationError("Paste your Airwallex scoped API key.");
-  if (key === clientId)
-    throw new VerificationError("The key is the Client ID again. Paste the scoped API key.");
+    throw new VerificationError("airwallex.otherProvider");
+  if (!CREDENTIAL.test(key)) throw new VerificationError("airwallex.keyFormat");
+  if (key === clientId) throw new VerificationError("airwallex.keyIsClientId");
   return {
     key: joinAccountKey(clientId, key),
     livemode: null,

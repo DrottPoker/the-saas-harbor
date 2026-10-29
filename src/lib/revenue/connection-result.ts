@@ -1,10 +1,11 @@
+import type { Locale } from "@/i18n/config";
 import { isProviderId, type ProviderId } from "./catalog";
 
 /**
  * The cookie that carries how connecting a payment provider went back to the product's editor for
  * a minute: after saving the product form with a key, and on the way back from an OAuth approval.
- * It holds a message written for the founder, never text from the address, which anyone could
- * craft.
+ * It holds a message written for the founder in their language, never text from the address,
+ * which anyone could craft.
  */
 export const CONNECTION_RESULT_COOKIE = "harbor_connection_result";
 export const CONNECTION_RESULT_SECONDS = 60;
@@ -41,4 +42,13 @@ export function decodeConnectionResult(value: string | undefined): ConnectionRes
 /** The product's editor, which shows the result at its revenue section. */
 export function connectionResultPath(saasId: string) {
   return `/dashboard/saas/${saasId}?connection=1#revenue`;
+}
+
+/**
+ * Where the product form sends the founder to approve access with a provider connected through
+ * OAuth. The route is outside the language addresses, so it is told the founder's language, which
+ * its answer is written in.
+ */
+export function oauthConnectPath(provider: ProviderId, saasId: string, locale: Locale) {
+  return `/api/${provider}/connect?${new URLSearchParams({ saas: saasId, locale })}`;
 }

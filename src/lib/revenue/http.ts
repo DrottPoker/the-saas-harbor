@@ -1,20 +1,69 @@
 import "server-only";
 import { isSecureOrLocalUrl } from "../loopback";
 import type { ProviderId } from "./catalog";
-import { VerificationError } from "./errors";
+import { VerificationError, type RevenueErrorKey, type RevenueErrorValues } from "./errors";
+
+/** What is known of a failed request besides its message. */
+export type RequestFailure = {
+  status?: number;
+  /** The endpoint that failed, such as /v1/prices/price_123. */
+  path?: string;
+  /** A list had more pages than one run reads. */
+  tooMuchData?: boolean;
+};
 
 /** A failed request to a provider, in words for the maker. */
 export class ProviderRequestError extends VerificationError {
+  readonly status?: number;
+  readonly path?: string;
+  readonly tooMuchData: boolean;
+
   constructor(
-    message: string,
-    readonly status?: number,
-    /** The endpoint that failed, such as /v1/prices/price_123. */
-    readonly path?: string,
-    /** A list had more pages than one run reads. */
-    readonly tooMuchData = false,
+    key: RevenueErrorKey,
+    values: RevenueErrorValues = {},
+    { status, path, tooMuchData = false }: RequestFailure = {},
   ) {
-    super(message);
+    super(key, values);
+    this.status = status;
+    this.path = path;
+    this.tooMuchData = tooMuchData;
   }
+}
+
+/** A provider that did not answer. */
+export function unreachable(name: string) {
+  return new ProviderRequestError("common.unreachable", { provider: name });
+}
+
+/** A provider that answered 429. */
+export function rateLimited(name: string) {
+  return new ProviderRequestError("common.rateLimited", { provider: name }, { status: 429 });
+}
+
+/** Any other failure, with the provider's own words where it gave some. */
+export function returnedError(
+  name: string,
+  detail: string | null | undefined,
+  failure: RequestFailure = {},
+) {
+  return detail
+    ? new ProviderRequestError("common.returnedErrorDetail", { provider: name, detail }, failure)
+    : new ProviderRequestError("common.returnedError", { provider: name }, failure);
+}
+
+/** A key without a permission a request needs, with the provider's own words where it gave some. */
+export function missingPermission(
+  name: string,
+  detail: string | null | undefined,
+  failure: RequestFailure = {},
+) {
+  return detail
+    ? new ProviderRequestError(
+        "common.missingPermissionDetail",
+        { provider: name, detail },
+        failure,
+      )
+    : new ProviderRequestError("common.missingPermission", {}, failure);
 }
 
 /**
@@ -24,7 +73,7 @@ export class ProviderRequestError extends VerificationError {
 export function apiBase(override: string | undefined, origin: string, name: string) {
   if (!override) return origin;
   if (!isSecureOrLocalUrl(override))
-    throw new VerificationError(`${name} verification is not configured correctly on this server.`);
+    throw new VerificationError("common.notConfigured", { provider: name });
   return override.replace(/\/$/, "");
 }
 
@@ -95,7 +144,7 @@ export async function providerGet(
       signal: AbortSignal.timeout(20_000),
     });
   } catch {
-    throw new ProviderRequestError(`${name} could not be reached. Try again shortly.`);
+    throw unreachable(name);
   }
 }
 
@@ -109,9 +158,8 @@ export const MAX_PAGES = 200;
 
 export function tooMuchData(name: string, path: string) {
   return new ProviderRequestError(
-    `The ${name} account has too much data to verify in one run.`,
-    undefined,
-    path,
-    true,
+    "common.tooMuchData",
+    { provider: name },
+    { path, tooMuchData: true },
   );
 }

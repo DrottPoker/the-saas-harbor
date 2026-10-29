@@ -1,4 +1,5 @@
 import "server-only";
+import { revenueText } from "../errors";
 import { historyWindowStart } from "../history";
 import { MAX_PAGES, ProviderRequestError } from "../http";
 import type { ProviderAdapter } from "../types";
@@ -56,16 +57,10 @@ async function transactionHistory(
       maxPages: MAX_PAGES,
     });
     if (complete) return { lines: paystackServiceLines(items, plans), note: null };
-    return {
-      lines: null,
-      note: "The Paystack account has more transactions than one verification reads, so there is no revenue history.",
-    };
+    return { lines: null, note: revenueText("paystack.historyTooLarge") };
   } catch (error) {
     if (error instanceof ProviderRequestError && error.status === 403)
-      return {
-        lines: null,
-        note: "Revenue history needs the transactions:read scope on the restricted key.",
-      };
+      return { lines: null, note: revenueText("paystack.historyScope") };
     throw error;
   }
 }

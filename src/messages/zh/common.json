@@ -1,4 +1,9 @@
 {
+  "forms": {
+    "saving": "正在保存...",
+    "imageHint": "PNG、JPEG 或 WebP 格式，最大 2 MB。图片是公开的。",
+    "removeImage": "删除当前图片"
+  },
   "notShared": "未公开",
   "demo": "演示",
   "mrr": "MRR",

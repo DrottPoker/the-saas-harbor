@@ -9,16 +9,11 @@ export function parseAsaasKey(input: string, { allowTest }: { allowTest: boolean
   const pasted = input.trim();
   const key = pasted.startsWith("aact_") ? `$${pasted}` : pasted;
   if (/^(rk|sk|pk)_(live|test)_|^pdl_|^polar_|^creem_|^apik_|^abc_(dev|prod)_|^mrr_/.test(key))
-    throw new VerificationError(
-      "This key belongs to another payment provider. Paste your Asaas API key.",
-    );
+    throw new VerificationError("common.otherProviderKey", { provider: "Asaas" });
   // The rest of a key is Base64.
   const match = /^\$aact_(prod_|hmlg_)?[A-Za-z0-9+/=_-]{20,400}$/.exec(key);
-  if (!match) throw new VerificationError("Paste an Asaas API key. It starts with $aact_.");
+  if (!match) throw new VerificationError("asaas.keyFormat");
   const livemode = match[1] === "hmlg_" ? false : match[1] === "prod_" ? true : null;
-  if (livemode === false && !allowTest)
-    throw new VerificationError(
-      "This is a Sandbox key. Create the key in your Asaas production account.",
-    );
+  if (livemode === false && !allowTest) throw new VerificationError("asaas.sandboxKey");
   return { key, livemode, hint: `${key.slice(0, match[1] ? 11 : 6)}…${key.slice(-4)}` };
 }

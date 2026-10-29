@@ -4,15 +4,13 @@ import { useEffect, useRef, useState } from "react";
 import Link from "@/components/link";
 import { Dialog } from "radix-ui";
 import { MessageSquareHeart } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { submitFeedbackAction } from "@/app/feedback-actions";
 import {
   FEEDBACK_KINDS,
   FEEDBACK_MAX_LENGTH,
   FEEDBACK_MIN_LENGTH,
   FEEDBACK_TRAP,
-  feedbackHeading,
-  feedbackHints,
-  feedbackLabels,
 } from "@/lib/feedback";
 import { Feedback, Field, Submit } from "./forms";
 import { RouteDialog } from "./route-dialog";
@@ -20,12 +18,6 @@ import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Textarea } from "./ui/textarea";
 import { useEditorAction } from "./use-editor-action";
-
-const thanks = {
-  title: "Thank you for your feedback",
-  description:
-    "It went straight to the team behind The SaaS Harbor, who read everything that comes in.",
-};
 
 /**
  * What the user or visitor wants to tell the admins. A visitor may leave an email address for a
@@ -41,6 +33,7 @@ export function FeedbackForm({
   visitor: boolean;
   onSent?: () => void;
 }) {
+  const t = useTranslations("feedback");
   const [state, action] = useEditorAction(async (previous, form) => {
     const result = await submitFeedbackAction(from, previous, form);
     if (result.success) onSent?.();
@@ -65,12 +58,13 @@ export function FeedbackForm({
           tabIndex={-1}
           className="text-xl font-semibold tracking-tight focus:outline-none"
         >
-          {thanks.title}
+          {t("thanks.title")}
         </h2>
-        <p className="leading-7 text-muted-foreground">{thanks.description}</p>
+        <p className="leading-7 text-muted-foreground">{t("thanks.description")}</p>
         <div className="flex flex-col gap-2 sm:flex-row">
           <Button asChild variant="outline" className="h-10">
-            <Link href={from ?? "/"}>{from ? "Back to where you were" : "Back to the start"}</Link>
+            {/* A path without language prefix, which Link puts in the page's language. */}
+            <Link href={from ?? "/"}>{from ? t("thanks.back") : t("thanks.start")}</Link>
           </Button>
         </div>
       </section>
@@ -79,7 +73,7 @@ export function FeedbackForm({
   return (
     <form action={action} className="grid gap-6">
       <fieldset className="grid gap-2.5">
-        <legend className="mb-3 text-sm font-medium">What is it about?</legend>
+        <legend className="mb-3 text-sm font-medium">{t("form.legend")}</legend>
         {FEEDBACK_KINDS.map((kind) => (
           <label
             key={kind}
@@ -94,18 +88,15 @@ export function FeedbackForm({
               className="mt-1 size-4 shrink-0 accent-brand"
             />
             <span>
-              <span className="block text-sm font-medium">{feedbackLabels[kind]}</span>
-              <span className="block text-[13px] text-muted-foreground">{feedbackHints[kind]}</span>
+              <span className="block text-sm font-medium">{t(`kinds.${kind}.label`)}</span>
+              <span className="block text-[13px] text-muted-foreground">
+                {t(`kinds.${kind}.hint`)}
+              </span>
             </span>
           </label>
         ))}
       </fieldset>
-      <Field
-        name="message"
-        label="Your feedback"
-        hint="For a bug: what you did, what happened, and what you expected."
-        required
-      >
+      <Field name="message" label={t("form.message")} hint={t("form.messageHint")} required>
         <Textarea
           id="message"
           name="message"
@@ -117,11 +108,7 @@ export function FeedbackForm({
         />
       </Field>
       {visitor && (
-        <Field
-          name="feedback_email"
-          label="Email address (optional)"
-          hint="Only if you want a reply. You do not need an account to send feedback."
-        >
+        <Field name="feedback_email" label={t("form.email")} hint={t("form.emailHint")}>
           <Input
             id="feedback_email"
             name="email"
@@ -132,22 +119,21 @@ export function FeedbackForm({
           />
         </Field>
       )}
-      {/* Out of sight and out of the tab order; only bots fill it in. */}
-      <div aria-hidden="true" className="absolute -left-[9999px] size-px overflow-hidden">
+      {/* Out of sight and out of the tab order; only bots fill it in. Off the start side, so it
+          never widens the page in either direction. */}
+      <div aria-hidden="true" className="absolute -start-[9999px] size-px overflow-hidden">
         <label>
-          Leave this empty
+          {t("form.trap")}
           <input type="text" name={FEEDBACK_TRAP} tabIndex={-1} autoComplete="off" />
         </label>
       </div>
       <Feedback state={state} />
       <div className="flex flex-col-reverse gap-4 sm:flex-row sm:items-center sm:justify-between">
         <p className="text-[13px] text-muted-foreground">
-          {visitor
-            ? "Only admins read feedback, together with the page you came from and your email address, if you give one."
-            : "Only admins read feedback, together with your name and the page you came from."}
+          {visitor ? t("form.privacyVisitor") : t("form.privacyUser")}
         </p>
-        <Submit pendingLabel="Sending..." className="shrink-0">
-          Send feedback
+        <Submit pendingLabel={t("form.sending")} className="shrink-0">
+          {t("form.submit")}
         </Submit>
       </div>
     </form>
@@ -159,6 +145,7 @@ export function FeedbackForm({
  * the dialog thanks the user, and closing it returns to that page.
  */
 export function FeedbackDialog({ from, visitor }: { from: string | null; visitor: boolean }) {
+  const t = useTranslations("feedback");
   const [sent, setSent] = useState(false);
   const title = useRef<HTMLHeadingElement>(null);
   useEffect(() => {
@@ -166,7 +153,8 @@ export function FeedbackDialog({ from, visitor }: { from: string | null; visitor
   }, [sent]);
   return (
     <RouteDialog
-      {...(sent ? thanks : feedbackHeading)}
+      title={sent ? t("thanks.title") : t("heading.title")}
+      description={sent ? t("thanks.description") : t("heading.description")}
       icon={sent ? <MessageSquareHeart aria-hidden="true" className="size-8 text-brand" /> : null}
       width="medium"
       titleRef={title}
@@ -175,7 +163,7 @@ export function FeedbackDialog({ from, visitor }: { from: string | null; visitor
         <div className="flex justify-end">
           <Dialog.Close asChild>
             <Button variant="outline" className="h-10">
-              Done
+              {t("thanks.done")}
             </Button>
           </Dialog.Close>
         </div>

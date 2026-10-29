@@ -1,16 +1,22 @@
 import Link from "@/components/link";
 import { ArrowUpRight, BadgeCheck } from "lucide-react";
+import { getLocale, getTranslations } from "next-intl/server";
+import { LOCALE_INFO } from "@/i18n/config";
+import { categoryKey } from "@/i18n/names";
 import { historySince, parseHistory, parseRevenueHistory } from "@/lib/charts";
 import type { Listing, PageViewCounts } from "@/lib/data";
-import { categorySlug, formatDate, formatUsd } from "@/lib/domain";
+import { getMoney } from "@/lib/display-currency";
+import { formatCount, formatMoney, formatUsdIn, isConverted } from "@/lib/display-money";
+import { categorySlug, formatDate } from "@/lib/domain";
 import { REVENUE_WINDOWS, sharesRevenue } from "@/lib/revenue-figures";
-import { providerAccess, providerName } from "@/lib/revenue/catalog";
+import { connectsWithOAuth, isProviderId, providerName } from "@/lib/revenue/catalog";
 import { websiteRel } from "@/lib/seo";
 import { currentVerifiedDomain } from "@/lib/website-domain";
 import { PersonAvatar, ProductLogo } from "./avatars";
 import { Badge } from "./badge";
 import { Growth } from "./charts/growth";
 import { RevenueHistory } from "./charts/revenue-history";
+import { ConversionNote } from "./conversion-note";
 import { DemoLogo } from "./demo-logo";
 import { LocalTime } from "./local-time";
 import { SendMessageButton } from "./messages/send-message-button";
@@ -29,28 +35,29 @@ function hostname(url: string | null) {
 }
 
 /** How often the page was viewed, shown to the founder only. */
-function ViewCounts({ views }: { views: PageViewCounts }) {
+async function ViewCounts({ views }: { views: PageViewCounts }) {
+  const [t, locale] = await Promise.all([getTranslations("product.views"), getLocale()]);
   const periods = [
-    ["Last 7 days", views.last_7_days],
-    ["Last 30 days", views.last_30_days],
-    ["All time", views.all_time],
+    [t("last7"), views.last_7_days],
+    [t("last30"), views.last_30_days],
+    [t("allTime"), views.all_time],
   ] as const;
   return (
     <section aria-labelledby="page-views" className="rounded-xl border bg-surface p-5 shadow-card">
       <h2 id="page-views" className="text-sm text-muted-foreground">
-        Page views
+        {t("title")}
       </h2>
       <dl className="mt-3 grid gap-3 text-sm">
         {periods.map(([label, count]) => (
           <div key={label} className="flex justify-between gap-4">
             <dt className="text-muted-foreground">{label}</dt>
-            <dd className="font-medium tabular-nums">{count.toLocaleString("en-US")}</dd>
+            <dd className="font-medium tabular-nums">
+              {formatCount(count, LOCALE_INFO[locale].intl)}
+            </dd>
           </div>
         ))}
       </dl>
-      <p className="mt-4 text-[13px] text-muted-foreground">
-        Only you can see this. Your own visits are not counted.
-      </p>
+      <p className="mt-4 text-[13px] text-muted-foreground">{t("note")}</p>
     </section>
   );
 }
@@ -59,25 +66,20 @@ function ViewCounts({ views }: { views: PageViewCounts }) {
  * Why the founder's own page reads Not shared, for the founder alone: visitors are never told
  * whether revenue is unverified or private. Nothing when every figure shows.
  */
-function FounderNote({ item }: { item: Listing }) {
+async function FounderNote({ item }: { item: Listing }) {
+  const t = await getTranslations("product.founderNote");
   const editor = `/dashboard/saas/${item.id}`;
   const revenue = {
-    unverified: {
-      text: "MRR, revenue and subscribers read Not shared until you connect your payment provider.",
-      action: "Connect it",
-    },
-    private: { text: "You hide your revenue, so it reads Not shared.", action: "Change this" },
-    stale: {
-      text: "Your figures have not been verified for seven days, so they read Not shared.",
-      action: "Check the connection",
-    },
+    unverified: { text: t("unverified"), action: t("connect") },
+    private: { text: t("private"), action: t("change") },
+    stale: { text: t("stale"), action: t("check") },
     verified: null,
   }[item.revenue_status ?? "unverified"];
   const launch = !item.launched_on;
   if (!revenue && !launch) return null;
   return (
     <Notice className="mt-3">
-      <span className="font-medium">Only you see this.</span>{" "}
+      <span className="font-medium">{t("onlyYou")}</span>{" "}
       {revenue && (
         <>
           {revenue.text}{" "}
@@ -89,9 +91,9 @@ function FounderNote({ item }: { item: Listing }) {
       )}
       {launch && (
         <>
-          Launched reads Not shared without a launch date, or while you hide it.{" "}
+          {t("launch")}{" "}
           <Link href={editor} className="font-medium underline underline-offset-2">
-            Edit the launch date
+            {t("editLaunch")}
           </Link>
         </>
       )}
@@ -101,9 +103,10 @@ function FounderNote({ item }: { item: Listing }) {
 
 /**
  * A product's public page. A demo product (`item.demo`) says that it is made up, and has no maker
- * profile, website, messages or reports. `views` is set for the product's founder only.
+ * profile, website, messages or reports. `views` is set for the product's founder only. Amounts
+ * are in the visitor's currency, with the verified MRR also in US dollars when it is converted.
  */
-export function ProductProfile({
+export async function ProductProfile({
   item,
   headline,
   viewerId,
@@ -115,6 +118,14 @@ export function ProductProfile({
   viewerId: string | null;
   views?: PageViewCounts | null;
 }) {
+  const [t, common, categories, money, locale] = await Promise.all([
+    getTranslations("product"),
+    getTranslations("common"),
+    getTranslations("categories"),
+    getMoney(),
+    getLocale(),
+  ]);
+  const intl = LOCALE_INFO[locale].intl;
   const demo = item.demo;
   const own = !demo && !!viewerId && viewerId === item.owner_id;
   const name = item.name ?? "SaaS";
@@ -130,28 +141,43 @@ export function ProductProfile({
   // All time sits with MRR; the shorter windows follow in their own row.
   const allTime = REVENUE_WINDOWS.find((window) => window.ranking === "all")!;
   const windows = REVENUE_WINDOWS.filter((window) => window !== allTime);
+  const amount = (cents: number | null) => (cents == null ? null : formatMoney(cents, money));
+  const category = categories(categoryKey(item.category));
   // Category pages list real products only, so demo products link to the filtered Browse list.
   const categoryHref = demo
     ? `/browse?category=${encodeURIComponent(item.category ?? "")}`
     : `/categories/${categorySlug(item.category ?? "Other")}`;
+  // What was verified, in US dollars, beside a converted MRR.
+  const usd =
+    item.mrr_cents != null && isConverted(money)
+      ? t("figures.inUsd", { amount: formatUsdIn(item.mrr_cents, intl) })
+      : null;
   const title = (
-    <h1 className="text-3xl font-semibold tracking-tight [overflow-wrap:anywhere]">{name}</h1>
+    <h1 dir="auto" className="text-3xl font-semibold tracking-tight [overflow-wrap:anywhere]">
+      {name}
+    </h1>
   );
   const maker = (
     <>
-      <PersonAvatar path={item.owner_avatar_path} name={item.owner_name ?? "Founder"} />
+      <PersonAvatar path={item.owner_avatar_path} name={item.owner_name ?? t("founderFallback")} />
       <span className="min-w-0">
-        <span className="block font-medium group-hover:underline">{item.owner_name}</span>
-        {headline && <span className="line-clamp-2 text-sm text-muted-foreground">{headline}</span>}
+        <span dir="auto" className="block font-medium group-hover:underline">
+          {item.owner_name}
+        </span>
+        {headline && (
+          <span dir="auto" className="line-clamp-2 text-sm text-muted-foreground">
+            {headline}
+          </span>
+        )}
       </span>
     </>
   );
 
   return (
     <Shell className="pt-6 sm:pt-8">
-      <nav aria-label="Breadcrumb" className="mb-4 text-sm text-muted-foreground">
+      <nav aria-label={t("breadcrumb")} className="mb-4 text-sm text-muted-foreground">
         <Link href="/browse" className="hover:text-foreground">
-          Browse
+          {t("browse")}
         </Link>
         <span aria-hidden="true" className="mx-2">
           /
@@ -159,14 +185,16 @@ export function ProductProfile({
         {!demo && item.category && (
           <>
             <Link href={categoryHref} className="hover:text-foreground">
-              {item.category}
+              {category}
             </Link>
             <span aria-hidden="true" className="mx-2">
               /
             </span>
           </>
         )}
-        <span className="text-foreground [overflow-wrap:anywhere]">{name}</span>
+        <span dir="auto" className="text-foreground [overflow-wrap:anywhere]">
+          {name}
+        </span>
       </nav>
 
       {/* Name, status, actions and key figures in one card. Visitors are never told that
@@ -183,40 +211,46 @@ export function ProductProfile({
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
               {title}
-              {demo && <Badge>Demo</Badge>}
+              {demo && <Badge>{common("demo")}</Badge>}
               {verified && (
                 <Badge tone="accent" className="gap-1">
                   <BadgeCheck aria-hidden="true" className="size-3.5" />
-                  Verified revenue
+                  {t("verifiedRevenue")}
                 </Badge>
               )}
               {domainVerified && (
                 <Badge className="gap-1">
                   <BadgeCheck aria-hidden="true" className="size-3.5 text-brand" />
-                  Domain verified
+                  {t("domainVerified")}
                 </Badge>
               )}
             </div>
-            <p className="mt-1.5 text-lg text-muted-foreground [overflow-wrap:anywhere]">
+            <p dir="auto" className="mt-1.5 text-lg text-muted-foreground [overflow-wrap:anywhere]">
               {item.tagline}
             </p>
             <p className="mt-3 text-sm text-muted-foreground">
-              by{" "}
-              {demo ? (
-                <span className="text-foreground">{item.owner_name}</span>
-              ) : (
-                <Link
-                  href={`/users/${item.owner_slug}`}
-                  className="text-foreground hover:underline"
-                >
-                  {item.owner_name}
-                </Link>
-              )}
+              {t.rich("byFounder", {
+                name: item.owner_name ?? "",
+                founder: (chunks) =>
+                  demo ? (
+                    <span dir="auto" className="text-foreground">
+                      {chunks}
+                    </span>
+                  ) : (
+                    <Link
+                      href={`/users/${item.owner_slug}`}
+                      dir="auto"
+                      className="text-foreground hover:underline"
+                    >
+                      {chunks}
+                    </Link>
+                  ),
+              })}
               <span aria-hidden="true" className="mx-2">
                 ·
               </span>
               <Link href={categoryHref} className="hover:text-foreground">
-                {item.category}
+                {category}
               </Link>
             </p>
           </div>
@@ -225,14 +259,14 @@ export function ProductProfile({
               {item.website && (
                 <Button asChild className="max-sm:flex-1">
                   <a href={item.website} target="_blank" rel={websiteRel(item.revenue_status)}>
-                    Visit website
+                    {t("visitWebsite")}
                     <ArrowUpRight className="rtl:-scale-x-100" />
                   </a>
                 </Button>
               )}
               {own ? (
                 <Button asChild variant="outline" className="max-sm:flex-1">
-                  <Link href={`/dashboard/saas/${item.id}`}>Edit product</Link>
+                  <Link href={`/dashboard/saas/${item.id}`}>{t("editProduct")}</Link>
                 </Button>
               ) : (
                 item.owner_id && (
@@ -250,24 +284,35 @@ export function ProductProfile({
             they hold in any number of rows. */}
         <dl className="grid gap-px border-t bg-border sm:grid-cols-2 lg:grid-cols-4">
           <Metric
-            label="Monthly recurring revenue"
-            value={item.mrr_cents == null ? null : formatUsd(item.mrr_cents)}
-            detail={item.mrr_growth_pct != null && <Growth pct={item.mrr_growth_pct} />}
+            label={t("figures.mrr")}
+            value={amount(item.mrr_cents)}
+            detail={
+              (usd || item.mrr_growth_pct != null) && (
+                <>
+                  {usd && (
+                    <span className="block text-[13px] text-muted-foreground tabular-nums">
+                      {usd}
+                    </span>
+                  )}
+                  {item.mrr_growth_pct != null && <Growth pct={item.mrr_growth_pct} />}
+                </>
+              )
+            }
             className="bg-subtle"
           />
           <Metric
-            label={allTime.label}
-            value={item[allTime.column] == null ? null : formatUsd(item[allTime.column]!)}
+            label={common(`windows.${allTime.ranking}.label`)}
+            value={amount(item[allTime.column])}
             className="bg-subtle"
           />
           <Metric
-            label="Subscribers"
-            value={item.customers?.toLocaleString("en-US") ?? null}
+            label={t("figures.subscribers")}
+            value={item.customers == null ? null : formatCount(item.customers, intl)}
             className="bg-subtle"
           />
           <Metric
-            label="Launched"
-            value={item.launched_on ? formatDate(item.launched_on) : null}
+            label={t("figures.launched")}
+            value={item.launched_on ? formatDate(item.launched_on, intl) : null}
             className="bg-subtle"
           />
         </dl>
@@ -275,17 +320,14 @@ export function ProductProfile({
             is shared. */}
         {revenueShared && (
           <dl className="grid gap-px border-t bg-border sm:grid-cols-2">
-            {windows.map(({ column, label }) => {
-              const cents = item[column];
-              return (
-                <Metric
-                  key={column}
-                  label={label}
-                  value={cents == null ? null : formatUsd(cents)}
-                  className="bg-subtle"
-                />
-              );
-            })}
+            {windows.map(({ column, ranking }) => (
+              <Metric
+                key={column}
+                label={common(`windows.${ranking}.label`)}
+                value={amount(item[column])}
+                className="bg-subtle"
+              />
+            ))}
           </dl>
         )}
       </header>
@@ -293,25 +335,36 @@ export function ProductProfile({
       {(verified || (demo && item.mrr_cents != null)) && (
         <p className="mt-3 flex items-center gap-1.5 px-1 text-[13px] text-muted-foreground">
           {demo ? (
-            "Demo figures, made up for this example and not verified."
+            t("demo.figures")
           ) : (
             <>
               <BadgeCheck aria-hidden="true" className="size-4 shrink-0 text-brand" />
               {/* One flex item, so the date sits in the sentence. */}
               <span>
-                Verified with {providerName(item.provider)} through {providerAccess(item.provider)}.
-                Last verified{" "}
-                {item.verified_at ? (
-                  <LocalTime format="date" value={item.verified_at} />
-                ) : (
-                  "Not shared"
-                )}
-                .{!item.livemode && " Test mode data."}
+                {t("verification.verifiedWith", {
+                  provider: isProviderId(item.provider)
+                    ? providerName(item.provider)
+                    : t("verification.someProvider"),
+                  access:
+                    isProviderId(item.provider) && connectsWithOAuth(item.provider)
+                      ? "oauth"
+                      : "key",
+                })}{" "}
+                {t.rich("verification.lastVerified", {
+                  date: () =>
+                    item.verified_at ? (
+                      <LocalTime format="date" value={item.verified_at} />
+                    ) : (
+                      common("notShared")
+                    ),
+                })}
+                {!item.livemode && ` ${t("verification.testMode")}`}
               </span>
             </>
           )}
         </p>
       )}
+      <ConversionNote className="mt-2 px-1" />
 
       {/* The details sit beside the chart and the description, so the chart keeps a readable
           width on wide screens. */}
@@ -320,16 +373,15 @@ export function ProductProfile({
           <RevenueHistory
             history={history}
             revenue={revenueHistory}
-            description={demo ? "Made-up figures for the last 12 months." : undefined}
-            revenueDescription={
-              demo
-                ? "Made-up figures for the last 12 months, after refunds and before tax."
-                : undefined
-            }
+            description={demo ? t("demo.mrrHistory") : undefined}
+            revenueDescription={demo ? t("demo.revenueHistory") : undefined}
           />
           <section>
-            <h2 className="text-lg font-semibold">About {name}</h2>
-            <p className="mt-3 leading-7 whitespace-pre-wrap text-foreground/85 [overflow-wrap:anywhere]">
+            <h2 className="text-lg font-semibold">{t("about", { name })}</h2>
+            <p
+              dir="auto"
+              className="mt-3 leading-7 whitespace-pre-wrap text-foreground/85 [overflow-wrap:anywhere]"
+            >
               {item.description}
             </p>
           </section>
@@ -338,7 +390,7 @@ export function ProductProfile({
         <aside className="grid content-start gap-4">
           {views && <ViewCounts views={views} />}
           <div className="rounded-xl border bg-surface p-5 shadow-card">
-            <h2 className="text-sm text-muted-foreground">Founder</h2>
+            <h2 className="text-sm text-muted-foreground">{t("details.founder")}</h2>
             {demo ? (
               <div className="mt-3 flex items-center gap-3">{maker}</div>
             ) : (
@@ -352,32 +404,34 @@ export function ProductProfile({
           </div>
           <dl className="grid gap-3 rounded-xl border bg-surface p-5 text-sm shadow-card">
             <div className="flex justify-between gap-4">
-              <dt className="text-muted-foreground">Category</dt>
-              <dd className="text-end">{item.category}</dd>
+              <dt className="text-muted-foreground">{t("details.category")}</dt>
+              <dd className="text-end">{category}</dd>
             </div>
             {site && (
               <div className="flex justify-between gap-4">
-                <dt className="text-muted-foreground">Website</dt>
-                <dd className="truncate text-end">{site}</dd>
+                <dt className="text-muted-foreground">{t("details.website")}</dt>
+                <dd dir="ltr" className="truncate text-end">
+                  {site}
+                </dd>
               </div>
             )}
             {/* Verifying the domain is optional; the founder adds a DNS record from the editor. */}
             {site && !demo && (
               <div className="flex justify-between gap-4">
-                <dt className="text-muted-foreground">Domain</dt>
+                <dt className="text-muted-foreground">{t("details.domain")}</dt>
                 {domainVerified ? (
                   <dd className="flex items-center gap-1.5 text-end">
                     <BadgeCheck aria-hidden="true" className="size-4 shrink-0 text-brand" />
-                    Verified
+                    {t("details.verified")}
                   </dd>
                 ) : (
-                  <dd className="text-end text-muted-foreground">Not verified</dd>
+                  <dd className="text-end text-muted-foreground">{t("details.notVerified")}</dd>
                 )}
               </div>
             )}
             {item.created_at && (
               <div className="flex justify-between gap-4">
-                <dt className="text-muted-foreground">Listed</dt>
+                <dt className="text-muted-foreground">{t("details.listed")}</dt>
                 <dd className="text-end">
                   <LocalTime format="date" value={item.created_at} />
                 </dd>
@@ -386,7 +440,7 @@ export function ProductProfile({
           </dl>
           {!demo && item.id && viewerId !== item.owner_id && (
             <ReportLink target="saas" id={item.id} className="mt-1">
-              Report this product
+              {t("report")}
             </ReportLink>
           )}
         </aside>

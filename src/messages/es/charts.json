@@ -1,1 +1,56 @@
-{}
+{
+  "axisWithYear": "{month} ’{year}",
+  "summary": {
+    "mrr": "El MRR a fin de mes pasó de {first} en {firstMonth} a {end} en {endMonth}.",
+    "mrrOne": "El MRR al cierre de {month} fue de {value}.",
+    "revenue": "Ingresos por mes de {firstMonth} a {endMonth}, {total} en total.",
+    "revenueOne": "Los ingresos de {month} fueron de {value}."
+  },
+  "periods": {
+    "months": "{months} M",
+    "year": "1 A",
+    "all": "Todo",
+    "name": "{label}, {long}",
+    "last": "{months, plural, one {último mes} other {últimos # meses}}",
+    "whole": "{months, plural, one {el único mes} other {los # meses}}",
+    "in": "{months, plural, one {en # mes} other {en # meses}}",
+    "over": "{months, plural, one {en el último mes} other {en los últimos # meses}}",
+    "inMonth": "en {month}",
+    "inLast": "{months, plural, one {en el último mes} other {en los últimos # meses}}"
+  },
+  "mrr": {
+    "tab": "MRR",
+    "title": "MRR a fin de mes",
+    "note": "MRR a fin de mes {months, plural, one {del último mes} other {de los últimos # meses}}, reconstruido a partir de los cobros pagados y convertido a USD al tipo de cambio de hoy.",
+    "month": "Mes",
+    "value": "MRR"
+  },
+  "revenue": {
+    "tab": "Ingresos",
+    "title": "Ingresos por mes",
+    "note": "Lo que pagaron los clientes cada mes, después de descuentos y reembolsos y antes de impuestos, convertido a USD al tipo de cambio de hoy.",
+    "noteSplit": "Lo que pagaron los clientes cada mes por suscripciones y compras únicas, después de descuentos y reembolsos y antes de impuestos, convertido a USD al tipo de cambio de hoy.",
+    "month": "Mes",
+    "subscriptions": "Suscripciones",
+    "oneTime": "Únicas",
+    "value": "Ingresos"
+  },
+  "table": "Ver como tabla",
+  "history": {
+    "tabs": "Gráfico",
+    "periods": "Periodo del gráfico",
+    "keys": "{title}. Usa las teclas de flecha para leer cada mes.",
+    "month": "{month}: {value}",
+    "monthSplit": "{month}: {value}, suscripciones {subscription}, compras únicas {oneTime}",
+    "legend": "Leyenda",
+    "subscriptions": "Suscripciones",
+    "oneTime": "Compras únicas"
+  },
+  "growth": {
+    "short": "30 d",
+    "long": "en los últimos 30 días",
+    "spoken": "{direction, select, up {Subió {amount}} down {Bajó {amount}} other {Sin cambios}} {period}",
+    "points": "{count, plural, one {# pt} other {# pts}}",
+    "pointsSpoken": "{count, plural, one {# punto porcentual} other {# puntos porcentuales}}"
+  }
+}

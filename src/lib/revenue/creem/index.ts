@@ -1,4 +1,5 @@
 import "server-only";
+import { revenueText } from "../errors";
 import { ProviderRequestError } from "../http";
 import type { ProviderAdapter } from "../types";
 import { fetchProduct, fetchSubscription, fetchSubscriptions, fetchTransactions } from "./client";
@@ -27,10 +28,9 @@ async function fetchProducts(key: string, livemode: boolean, subscriptions: Cree
   );
   if (ids.size > MAX_PRODUCT_LOOKUPS)
     throw new ProviderRequestError(
-      "The Creem account has more products than one verification reads.",
-      undefined,
-      "/v1/products",
-      true,
+      "creem.tooManyProducts",
+      {},
+      { path: "/v1/products", tooMuchData: true },
     );
   const products = new Map<string, CreemProduct>();
   for (const id of ids) products.set(id, await fetchProduct(key, livemode, id));
@@ -55,10 +55,9 @@ async function missingTaxTransactions(
   );
   if (missing.length > MAX_TAX_LOOKUPS)
     throw new ProviderRequestError(
-      "The Creem account has more tax-inclusive subscriptions than one verification reads.",
-      undefined,
-      "/v1/subscriptions",
-      true,
+      "creem.tooManyTaxInclusive",
+      {},
+      { path: "/v1/subscriptions", tooMuchData: true },
     );
   const transactions: CreemTransaction[] = [];
   for (const { id } of missing) {
@@ -86,8 +85,7 @@ export const creem: ProviderAdapter = {
         transactions = await fetchTransactions(key, live);
       } catch (error) {
         if (!(error instanceof ProviderRequestError && error.tooMuchData)) throw error;
-        historyNote =
-          "The Creem account has more transactions than one verification reads, so there is no revenue history.";
+        historyNote = revenueText("creem.historyTooLarge");
       }
     const forTax =
       transactions ?? (await missingTaxTransactions(key, live, subscriptions, products));

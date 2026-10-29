@@ -1,6 +1,8 @@
 import "server-only";
 import { cookies } from "next/headers";
+import { getLocale } from "next-intl/server";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { localizedPath, type Locale } from "@/i18n/config";
 import { cookieOptions } from "@/lib/supabase/config";
 import type { Database } from "@/lib/supabase/types";
 import { otherProviderSchema } from "@/lib/domain";
@@ -32,7 +34,8 @@ export async function beginRevenueCheck(
   refresh: boolean,
 ) {
   const { error } = await client.rpc("begin_revenue_check", { p_saas: saasId, p_refresh: refresh });
-  if (error?.code === "P0001") throw new VerificationError(`${error.message}.`);
+  // The database's own words, which `revenueErrors` holds as messages too (`check.*`).
+  if (error?.code === "P0001") throw new VerificationError({ text: `${error.message}.` });
   if (error) throw new Error(`The revenue check could not start: ${error.message}`);
 }
 
@@ -50,13 +53,13 @@ export function chosenProvider(form: FormData): ChosenProvider | null {
   if (provider === null || provider === "") return null;
   if (provider === "other") {
     const name = otherProviderSchema.safeParse(String(form.get("other_provider") ?? ""));
-    if (!name.success) throw new VerificationError(name.error.issues[0]!.message);
+    if (!name.success) throw new VerificationError({ text: name.error.issues[0]!.message });
     return { provider, name: name.data };
   }
-  if (!isProviderId(provider)) throw new VerificationError(CHOOSE_PROVIDER);
+  if (!isProviderId(provider)) throw new VerificationError({ text: CHOOSE_PROVIDER });
   // The form offers only these; a provider this server cannot connect is refused all the same.
   if (!availableProviders().includes(provider))
-    throw new VerificationError(`${PROVIDERS[provider].name} is not set up on this server yet.`);
+    throw new VerificationError("common.notSetUp", { provider: PROVIDERS[provider].name });
   if (connectsWithOAuth(provider)) return { provider, key: null };
   const key = adapter(provider).parseKey(
     {
@@ -71,8 +74,12 @@ export function chosenProvider(form: FormData): ChosenProvider | null {
   return { provider, key };
 }
 
-/** Keeps how connecting went for the product's editor, which shows it once it is opened. */
-export async function keepConnectionResult(result: Omit<ConnectionResult, "at">) {
+/**
+ * Keeps how connecting went for the product's editor, which shows it once it is opened. The cookie
+ * belongs to the dashboard in the founder's language (`/es/dashboard`), whose address the browser
+ * sends it to: the request's language, or `locale` for a route outside the language addresses.
+ */
+export async function keepConnectionResult(result: Omit<ConnectionResult, "at">, locale?: Locale) {
   (await cookies()).set(
     CONNECTION_RESULT_COOKIE,
     encodeConnectionResult({ ...result, at: Date.now() }),
@@ -81,7 +88,7 @@ export async function keepConnectionResult(result: Omit<ConnectionResult, "at">)
       sameSite: "lax",
       secure: cookieOptions.secure,
       maxAge: CONNECTION_RESULT_SECONDS,
-      path: "/dashboard",
+      path: localizedPath(locale ?? (await getLocale()), "/dashboard"),
     },
   );
 }

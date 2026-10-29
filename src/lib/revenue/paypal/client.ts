@@ -6,7 +6,10 @@ import {
   MAX_PAGES,
   providerGet,
   ProviderRequestError,
+  rateLimited,
+  returnedError,
   tooMuchData,
+  unreachable,
 } from "../http";
 import { SUBSCRIPTION_PAYMENT, type PayPalTransaction } from "./mrr";
 
@@ -39,17 +42,12 @@ export function readsOnly(scope: string) {
 
 /** Refuses a token that cannot search transactions, or that can do anything beyond reading. */
 export function requireReadOnly(scopes: string[]) {
-  if (!scopes.includes(SEARCH_SCOPE))
-    throw new VerificationError(
-      "The PayPal app cannot search transactions. Turn on Transaction search in the app's features. PayPal can take up to nine hours to apply a change to an existing app, so a new app is quicker.",
-    );
+  if (!scopes.includes(SEARCH_SCOPE)) throw new VerificationError("paypal.noTransactionSearch");
   const beyond = scopes.filter((scope) => !readsOnly(scope));
   if (beyond.length) {
     // Scope names only, to see which features founders' apps hold; never the credentials.
     console.warn("A PayPal app was refused for these scopes:", beyond.join(" "));
-    throw new VerificationError(
-      "The PayPal app can do more than search transactions. Create an app with only Transaction search turned on, and paste its Client ID and secret.",
-    );
+    throw new VerificationError("paypal.beyondSearch");
   }
 }
 
@@ -73,18 +71,14 @@ export async function fetchToken({ clientId, secret }: PayPalCredentials, livemo
       signal: AbortSignal.timeout(20_000),
     });
   } catch {
-    throw new ProviderRequestError("PayPal could not be reached. Try again shortly.");
+    throw unreachable("PayPal");
   }
   const body = await errorBody(response);
   if (response.status === 401)
-    throw new ProviderRequestError(
-      "PayPal refused the Client ID and secret. Check that both belong to the same app, created under Live.",
-      401,
-    );
-  if (response.status === 429)
-    throw new ProviderRequestError("PayPal is rate limiting requests. Try again later.", 429);
+    throw new ProviderRequestError("paypal.credentialsRefused", {}, { status: 401 });
+  if (response.status === 429) throw rateLimited("PayPal");
   if (!response.ok || typeof body?.access_token !== "string")
-    throw new ProviderRequestError("PayPal did not issue access for the app. Try again shortly.");
+    throw new ProviderRequestError("paypal.noAccess");
   const scopes = typeof body.scope === "string" ? body.scope.split(/\s+/).filter(Boolean) : [];
   return { token: body.access_token, scopes };
 }
@@ -109,19 +103,14 @@ async function search(token: string, livemode: boolean, params: URLSearchParams)
     ? (body.details as { issue?: unknown }[]).map((detail) => detail?.issue)
     : [];
   if (response.status === 401)
-    throw new ProviderRequestError("PayPal refused the app's access. Try again shortly.", 401);
+    throw new ProviderRequestError("paypal.accessRefused", {}, { status: 401 });
   if (response.status === 403)
-    throw new ProviderRequestError(
-      "The PayPal app cannot search transactions. Turn on Transaction search in the app's features.",
-      403,
-      PATH,
-    );
-  if (response.status === 429)
-    throw new ProviderRequestError("PayPal is rate limiting requests. Try again later.", 429);
+    throw new ProviderRequestError("paypal.searchForbidden", {}, { status: 403, path: PATH });
+  if (response.status === 429) throw rateLimited("PayPal");
   if (issues.includes("RESULTSET_TOO_LARGE") || body?.name === "RESULTSET_TOO_LARGE")
     throw tooMuchData("PayPal", PATH);
   const message = typeof body?.message === "string" ? body.message.slice(0, 300) : null;
-  throw new ProviderRequestError(`PayPal returned an error${message ? `: ${message}` : "."}`);
+  throw returnedError("PayPal", message);
 }
 
 const DAY = 86_400;

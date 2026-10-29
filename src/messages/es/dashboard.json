@@ -1,1 +1,60 @@
-{}
+{
+  "meta": {
+    "title": "Panel"
+  },
+  "title": "Panel",
+  "description": "Administra tus productos.",
+  "addSaas": "Añadir SaaS",
+  "notices": {
+    "saved": "Guardado. La página pública del producto está actualizada.",
+    "added": "Producto agregado. Su página es pública. Puedes conectar tu proveedor de pagos desde Editar en cualquier momento.",
+    "deleted": "Producto eliminado. Ya no aparece en el directorio ni en la clasificación."
+  },
+  "nextSteps": {
+    "title": "Próximos pasos",
+    "progress": "{done} de {total} completados",
+    "description": "Cada paso hace tu ficha más completa. Todos son opcionales, salvo el primero.",
+    "done": "(completado)",
+    "list": {
+      "label": "Publica tu primer producto",
+      "action": "Agregar"
+    },
+    "logo": {
+      "label": "Agrega un logo a cada producto",
+      "action": "Agregar un logo"
+    },
+    "profile": {
+      "label": "Agrega una foto y un titular a tu perfil",
+      "action": "Editar perfil"
+    },
+    "connect": {
+      "label": "Conecta tu proveedor de pagos para verificar tus ingresos y entrar en la clasificación",
+      "action": "Conectar"
+    },
+    "domain": {
+      "label": "Verifica tu dominio para que tu página muestre que el sitio web es tuyo",
+      "action": "Verificar"
+    }
+  },
+  "products": {
+    "title": "Tus productos",
+    "total": "{count} en total",
+    "emptyTitle": "Aún no tienes productos",
+    "emptyBody": "Agrega un producto para publicarlo en el directorio. Los ingresos verificados son públicos, salvo que los ocultes.",
+    "hidden": "Oculto",
+    "verified": "Verificado",
+    "syncFailed": "Error de sincronización",
+    "notVerified": "Sin verificar",
+    "view": "Ver",
+    "edit": "Editar"
+  },
+  "share": {
+    "post": "Acabo de publicar {name} en {site}.",
+    "title": "{name} ya está publicado",
+    "description": "Compártelo en X para que más personas lo encuentren. La publicación muestra la tarjeta del producto y enlaza a su página, que a su vez enlaza a tu sitio.",
+    "x": "Compartir en X",
+    "linkedin": "Compartir en LinkedIn",
+    "notNow": "Ahora no",
+    "seeFirst": "¿Quieres verla primero? <link>Ver tu página</link>"
+  }
+}

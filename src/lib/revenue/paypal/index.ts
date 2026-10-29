@@ -1,5 +1,6 @@
 import "server-only";
 import { splitAccountKey } from "../account-key";
+import { revenueText } from "../errors";
 import { historyWindowStart } from "../history";
 import { ProviderRequestError } from "../http";
 import type { ProviderAdapter } from "../types";
@@ -68,8 +69,7 @@ export const paypal: ProviderAdapter = {
       } catch (error) {
         if (!(error instanceof ProviderRequestError && error.tooMuchData)) throw error;
         charges = await read(mrrFrom);
-        historyNote =
-          "The PayPal account has more subscription payments than one verification reads, so there is no revenue history.";
+        historyNote = revenueText("paypal.historyTooLarge");
       }
     return {
       livemode: live,

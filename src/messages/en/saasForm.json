@@ -1,1 +1,82 @@
-{}
+{
+  "meta": {
+    "add": "Add SaaS",
+    "edit": "Edit SaaS"
+  },
+  "editor": {
+    "back": "Dashboard",
+    "addTitle": "Add SaaS",
+    "addDescription": "Start with your payment provider: connecting it with a read-only key verifies your MRR. If yours is not in the list, choose Other. Product details are public.",
+    "limit": "You have listed {limit} products, which is the most an account can have. Delete a product to add another.",
+    "editTitle": "Edit {name}",
+    "editDescription": "Product details and verified figures are public. You can hide the figures.",
+    "viewPage": "View page"
+  },
+  "chooseProvider": "Choose your payment provider. If it is not in the list, choose Other.",
+  "figures": {
+    "title": "Public figures",
+    "description": "Verified figures are public unless you hide them. Public revenue is ranked on the leaderboard, by MRR and by revenue over 30 days, 12 months and all time.",
+    "hideRevenue": "Hide verified revenue, MRR included",
+    "hideCustomers": "Hide subscriber count"
+  },
+  "details": {
+    "title": "Product",
+    "description": "Shown on the public product page and in listings. Fields marked * are required.",
+    "name": "Product name",
+    "category": "Category",
+    "chooseCategory": "Choose a category",
+    "tagline": "Tagline",
+    "taglineHint": "One sentence, up to 140 characters.",
+    "taglinePlaceholder": "What does it help people do?",
+    "productDescription": "Description",
+    "descriptionPlaceholder": "Who it is for, what it does, and what makes it different.",
+    "website": "Website",
+    "launchDate": "Launch date",
+    "hideLaunch": "Hide launch date"
+  },
+  "logo": {
+    "title": "Logo",
+    "description": "A square logo works best.",
+    "upload": "Upload logo"
+  },
+  "tech": {
+    "title": "Tech stack",
+    "description": "What the product is built with, up to {max}. Shown on its page, with links to other products built with the same."
+  },
+  "actions": {
+    "cancel": "Cancel",
+    "add": "Add SaaS",
+    "save": "Save changes",
+    "addAndConnect": "Add SaaS and connect {provider}",
+    "saveAndConnect": "Save and connect {provider}",
+    "addAndVerify": "Add SaaS and verify revenue",
+    "saveAndVerify": "Save and verify revenue",
+    "verifying": "Verifying revenue...",
+    "saving": "Saving..."
+  },
+  "badge": {
+    "title": "Badge for your website",
+    "description": "Shows your verified MRR on your own site and links to your product page. It shows the figure only while you share it; otherwise it says Listed on {site}.",
+    "theme": "Badge theme",
+    "light": "Light",
+    "dark": "Dark",
+    "preview": "Badge preview: {name} on {site}"
+  },
+  "save": {
+    "loadFailed": "The SaaS profile could not be loaded.",
+    "notOwner": "You can only edit your own SaaS.",
+    "failed": "The SaaS profile could not be saved. Please check your fields and try again.",
+    "usernameFirst": "Choose a username first.",
+    "productLimit": "An account can list up to {limit} products.",
+    "dailyLimit": "You can add up to {limit} products a day. Try again tomorrow.",
+    "savedNotConnected": "Your changes were saved, but {provider} was not connected. {reason}",
+    "addedNotConnected": "The product was added, but {provider} was not connected. {reason}"
+  },
+  "delete": {
+    "notOwner": "You can only delete your own SaaS.",
+    "loadFailed": "The SaaS profile could not be loaded.",
+    "confirmName": "Type the product name exactly as shown to confirm.",
+    "logoFailed": "The logo could not be deleted, so the product was kept. Please try again.",
+    "failed": "The SaaS could not be deleted. Please try again."
+  }
+}

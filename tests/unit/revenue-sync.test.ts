@@ -48,7 +48,7 @@ const healthy = () =>
 
 beforeAll(async () => {
   server = spawn(process.execPath, ["tests/e2e/fake-providers.mjs"], {
-    env: { ...process.env, FAKE_PROVIDERS_PORT: String(PORT) },
+    env: { ...process.env, FAKE_PROVIDERS_PORT: String(PORT), FAKE_DNS_PORT: "0" },
     stdio: "ignore",
   });
   process.env.STRIPE_API_BASE = base;

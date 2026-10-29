@@ -56,6 +56,24 @@ const chrome =
   "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/140.0 Safari/537.36";
 
 describe("addresses in other languages", () => {
+  it("skips only a rewrite's destination, and handles a Server Action's forwarded redirect", async () => {
+    const first = await visit("/es/auth/confirm", {}, "POST");
+    const pass = first.headers.get("x-middleware-request-x-harbor-proxy")!;
+    const forwarded = { "x-harbor-proxy": pass, "x-harbor-locale": "es" };
+    const destination = await visit("/auth/confirm", forwarded);
+    expect(destination.headers.get("x-middleware-next")).toBe("1");
+    expect(destination.headers.get("x-middleware-request-x-harbor-locale")).toBeNull();
+    const redirected = await visit("/es/dashboard/saas/new", forwarded);
+    expect(redirected.headers.get("x-middleware-rewrite")).toBe(
+      "http://localhost/dashboard/saas/new",
+    );
+    expect(redirected.headers.get("x-middleware-request-x-harbor-locale")).toBe("es");
+    const resolved = await visit("/dashboard/saas/new", forwarded);
+    expect(resolved.headers.get("x-middleware-request-x-harbor-locale")).toBe("es");
+    expect(resolved.headers.get("location")).toBeNull();
+    const shared = await visit("/admin", forwarded);
+    expect(shared.headers.get("x-middleware-request-x-harbor-locale")).toBe("en");
+  });
   it("serve the English route with the language as a header", async () => {
     const response = await visit("/es/browse?category=Design");
     expect(response.headers.get("x-middleware-rewrite")).toBe(
@@ -64,7 +82,10 @@ describe("addresses in other languages", () => {
     expect(response.headers.get("x-middleware-request-x-harbor-locale")).toBe("es");
   });
   it("tell English pages they are English, whatever the visitor sends", async () => {
-    const response = await visit("/browse", { "x-harbor-locale": "ar" });
+    const response = await visit("/browse", {
+      "x-harbor-locale": "ar",
+      "x-harbor-proxy": "forged:/browse",
+    });
     expect(response.headers.get("x-middleware-rewrite")).toBeNull();
     expect(response.headers.get("x-middleware-request-x-harbor-locale")).toBe("en");
   });

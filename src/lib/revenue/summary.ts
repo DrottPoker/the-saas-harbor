@@ -1,73 +1,49 @@
 // A verification's result in words for the founder, after connecting or refreshing.
-import { formatUsd } from "@/lib/domain";
-import type { ProviderId } from "./catalog";
+import { getLocale, getTranslations } from "next-intl/server";
+import { LOCALE_INFO, type Locale } from "@/i18n/config";
+import { formatUsdIn } from "@/lib/display-money";
+import { PROVIDERS } from "./catalog";
+import { localizeRevenueText } from "./errors";
 import type { Verification } from "./sync";
 
-// What could not be counted, in each provider's terms.
-const skipped: Record<ProviderId, [string, string]> = {
-  stripe: ["usage-based item was", "usage-based items were"],
-  paddle: ["subscription without a paid charge was", "subscriptions without a paid charge were"],
-  polar: ["subscription was", "subscriptions were"],
-  dodo: [
-    "tax-inclusive subscription without a payment was",
-    "tax-inclusive subscriptions without a payment were",
-  ],
-  creem: [
-    "subscription without a readable price or payment was",
-    "subscriptions without a readable price or payment were",
-  ],
-  chargebee: [
-    "subscription without a paid invoice was",
-    "subscriptions without a paid invoice were",
-  ],
-  whop: [
-    "tax-inclusive membership without a payment was",
-    "tax-inclusive memberships without a payment were",
-  ],
-  revenuecat: ["subscription was", "subscriptions were"],
-  gumroad: ["subscriber without a recent charge was", "subscribers without a recent charge were"],
-  paypal: ["subscription was", "subscriptions were"],
-  mollie: [
-    "subscription with an unreadable billing interval was",
-    "subscriptions with an unreadable billing interval were",
-  ],
-  paystack: [
-    "subscription without a readable plan was",
-    "subscriptions without a readable plan were",
-  ],
-  abacatepay: ["subscription was", "subscriptions were"],
-  asaas: [
-    "active subscription without a recent payment was",
-    "active subscriptions without a recent payment were",
-  ],
-  airwallex: [
-    "usage-based item or subscription paid outside Airwallex was",
-    "usage-based items or subscriptions paid outside Airwallex were",
-  ],
-  superwall: ["subscription was", "subscriptions were"],
-  appstore: ["subscription on a paid offer was", "subscriptions on a paid offer were"],
-  googleplay: [
-    "subscription charge that could not be read was",
-    "subscription charges that could not be read were",
-  ],
-  zoho: [
-    "subscription without a readable price or billing period was",
-    "subscriptions without a readable price or billing period were",
-  ],
-  mercadopago: [
-    "subscription without a readable amount or frequency was",
-    "subscriptions without a readable amount or frequency were",
-  ],
-};
+/**
+ * What a verification found, in words for the founder: in the request's language, or in `locale`
+ * for a request that has none, such as the return from an OAuth approval. MRR is in US dollars,
+ * as it was verified. What could not be counted is said in each provider's terms
+ * (`providers.<id>.skipped`), and the provider's notes follow in the founder's language.
+ */
+export async function verificationSummary(result: Verification, locale?: Locale) {
+  const language = locale ?? (await getLocale());
+  const [t, providers, mrrNote, historyNote] = await Promise.all([
+    getTranslations({ locale: language, namespace: "revenue.result" }),
+    getTranslations({ locale: language, namespace: "providers" }),
+    localizeRevenueText(result.mrrNote, language),
+    localizeRevenueText(result.historyNote, language),
+  ]);
+  return (
+    [
+      t("verified", {
+        mrr: formatUsdIn(result.mrrCents, LOCALE_INFO[language].intl),
+        count: result.customers,
+      }),
+      result.skippedItems
+        ? providers(`${result.provider}.skipped`, { count: result.skippedItems })
+        : null,
+      mrrNote,
+      historyNote,
+    ]
+      .filter(Boolean)
+      // Sentences follow each other without a space in Chinese.
+      .join(language === "zh" ? "" : " ")
+  );
+}
 
-/** What a verification found, in words for the founder. */
-export function summary(result: Verification) {
-  const customers = `${result.customers} ${result.customers === 1 ? "subscriber" : "subscribers"}`;
-  const [one, many] = skipped[result.provider];
-  const notCounted = result.skippedItems
-    ? ` ${result.skippedItems} ${result.skippedItems === 1 ? one : many} not counted.`
-    : "";
-  const mrr = result.mrrNote ? ` ${result.mrrNote}` : "";
-  const history = result.historyNote ? ` ${result.historyNote}` : "";
-  return `Verified MRR: ${formatUsd(result.mrrCents)} from ${customers}.${notCounted}${mrr}${history}`;
+/** The answer to a new connection, such as "Stripe connected." with what was verified. */
+export async function connectedSummary(result: Verification, locale?: Locale) {
+  const language = locale ?? (await getLocale());
+  const [t, summary] = await Promise.all([
+    getTranslations({ locale: language, namespace: "revenue.result" }),
+    verificationSummary(result, language),
+  ]);
+  return t("connected", { provider: PROVIDERS[result.provider].name, summary });
 }

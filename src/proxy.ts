@@ -23,9 +23,11 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 // next dev and next start run the proxy again for a rewrite's destination, with the headers the
 // first run set. That run would take /es/browse for the English /browse, so the first marks the
-// request with a value only this process knows, and the second leaves such a request alone.
+// request for that destination with a value only this process knows. Server Action redirects
+// forward the headers too, so a different destination must pass through the proxy again.
 const PASS_HEADER = "x-harbor-proxy";
 const PASS = crypto.randomUUID();
+const passFor = (path: string) => `${PASS}:${path}`;
 
 // Product and maker pages moved from ids to readable addresses. Links with an id or capital
 // letters get a permanent redirect here, before rendering: a page that streams could only redirect
@@ -83,7 +85,8 @@ function redirectTo(url: URL, status: 307 | 308) {
 }
 
 export async function proxy(request: NextRequest) {
-  if (request.headers.get(PASS_HEADER) === PASS) return NextResponse.next();
+  if (request.headers.get(PASS_HEADER) === passFor(request.nextUrl.pathname))
+    return NextResponse.next();
   const markdown = request.nextUrl.pathname.match(MARKDOWN_PAGE);
   if (markdown) {
     // The route answers ids, earlier slugs and capital letters with a redirect of its own.
@@ -99,7 +102,7 @@ export async function proxy(request: NextRequest) {
     url.pathname = path;
     const headers = new Headers(request.headers);
     headers.set(LOCALE_HEADER, prefix);
-    headers.set(PASS_HEADER, PASS);
+    headers.set(PASS_HEADER, passFor(path));
     return NextResponse.rewrite(url, { request: { headers } });
   }
   if (prefix === DEFAULT_LOCALE || (prefix && !isLocalizedPath(path))) {
@@ -108,8 +111,21 @@ export async function proxy(request: NextRequest) {
     url.pathname = path;
     return redirectTo(url, 308);
   }
-  const locale = prefix ?? DEFAULT_LOCALE;
-  if (!prefix && (request.method === "GET" || request.method === "HEAD") && isLocalizedPath(path)) {
+  // Next may resolve an action redirect to the rewrite's bare destination before rendering it
+  // again. Only headers marked by this process may retain the original page's language there.
+  const forwarded = request.headers.get(PASS_HEADER)?.startsWith(`${PASS}:`) === true;
+  const forwardedLocale = request.headers.get(LOCALE_HEADER);
+  const locale =
+    prefix ??
+    (forwarded && isLocalizedPath(path) && isLocale(forwardedLocale)
+      ? forwardedLocale
+      : DEFAULT_LOCALE);
+  if (
+    !prefix &&
+    !forwarded &&
+    (request.method === "GET" || request.method === "HEAD") &&
+    isLocalizedPath(path)
+  ) {
     const wanted = preferredLocale(request);
     if (wanted !== DEFAULT_LOCALE) {
       const url = request.nextUrl.clone();
@@ -141,7 +157,7 @@ export async function proxy(request: NextRequest) {
     headers.set("x-nonce", nonce);
     headers.set("Content-Security-Policy", csp);
     headers.set(LOCALE_HEADER, locale);
-    headers.set(PASS_HEADER, PASS);
+    headers.set(PASS_HEADER, passFor(path));
     let response: NextResponse;
     if (prefix) {
       const url = request.nextUrl.clone();

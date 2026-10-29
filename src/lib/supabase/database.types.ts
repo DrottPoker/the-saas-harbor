@@ -1339,6 +1339,7 @@ export type Database = {
           email: string
           id: number
           kind: string
+          locale: string
           name: string
         }[]
       }

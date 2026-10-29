@@ -6,6 +6,7 @@
 // payments in a row counts as yearly, which never overstates it, until its next payment shows the
 // period. It counts until a week after its period ends, for a payment PayPal retries or lists
 // late. Amounts are without the tax PayPal reports, and a payment refunded in full does not count.
+import { revenueText } from "../errors";
 import { unixSeconds, type ServiceLine } from "../history";
 import { addTo, AVERAGE_MONTH_DAYS, intervalMonths, toMinorUnits } from "../money";
 
@@ -138,10 +139,7 @@ export function mrrWindowStart(now: Date) {
 }
 
 function yearlyNote(count: number) {
-  if (!count) return null;
-  return count === 1
-    ? "1 subscription counts as yearly until its next payment shows how often it renews."
-    : `${count} subscriptions count as yearly until their next payment shows how often they renew.`;
+  return count ? revenueText("paypal.yearly", { count }) : null;
 }
 
 /** Each subscription valued by its latest charge over its billing period. */

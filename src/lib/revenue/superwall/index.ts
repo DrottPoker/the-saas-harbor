@@ -1,6 +1,6 @@
 import "server-only";
 import { splitAccountKey } from "../account-key";
-import { VerificationError } from "../errors";
+import { revenueText, VerificationError } from "../errors";
 import { ProviderRequestError } from "../http";
 import { dayOf, dayStart } from "../payments";
 import type { ProviderAdapter } from "../types";
@@ -32,15 +32,12 @@ const CHART_DAYS = 366;
  */
 async function requireChartsOnly(key: string, application: string) {
   for (const endpoint of otherAccess(application))
-    if (await canRead(key, endpoint))
-      throw new VerificationError(
-        "The key has more access than charts. Create an organization API key with only the charts:read scope.",
-      );
+    if (await canRead(key, endpoint)) throw new VerificationError("superwall.beyondCharts");
 }
 
 function chartOf(definitions: ChartDefinitions, chart: "mrr" | "proceeds", name: string) {
   const found = findChart(definitions, chart);
-  if (!found) throw new ProviderRequestError(`Superwall does not offer the ${name} chart.`);
+  if (!found) throw new ProviderRequestError("superwall.noChart", { chart: name });
   return found;
 }
 
@@ -56,9 +53,7 @@ async function dailyPoints(
   const data = await fetchChart(key, chartQuery(application, chart, dayOf(from), dayOf(to)));
   const given = data.y_axis?.value_type;
   if (given && given !== valueType)
-    throw new ProviderRequestError(
-      `Superwall's ${chart.name} chart did not give the figures asked for.`,
-    );
+    throw new ProviderRequestError("superwall.wrongFigures", { chart: chart.name });
   return chartPoints(data);
 }
 
@@ -96,9 +91,7 @@ export const superwall: ProviderAdapter = {
       customers,
       subscriptionIds: [`application:${application}`],
       skippedItems: 0,
-      mrrNote: activesChart
-        ? null
-        : "Superwall does not offer the Active Subscriptions chart for this app, so subscribers are not counted.",
+      mrrNote: activesChart ? null : revenueText("superwall.noActives"),
       lines: history ? superwallServiceLines(points, now) : null,
       historyNote: null,
     };

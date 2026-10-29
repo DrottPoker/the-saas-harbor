@@ -1,1 +1,32 @@
-{}
+{
+  "title": "Dominio",
+  "description": "Demuestra que el sitio web es tuyo: agrega un registro DNS a su dominio y la página del producto indicará que el dominio está verificado.",
+  "noDomain": "La dirección de tu sitio web no está en un dominio propio, como una dirección IP, así que no hay dónde agregar el registro. Usa una dirección en tu propio dominio para verificarlo.",
+  "verified": "{domain} está verificado.",
+  "lastChecked": "Última comprobación: <date></date>.",
+  "notVerified": "{domain} aún no está verificado.",
+  "missing": "El registro no se encontró el <date></date>. El dominio sigue verificado durante tres días desde entonces; vuelve a agregar el registro antes de que pasen.",
+  "instructions": "Agrega este registro TXT donde administras el DNS de {domain} y luego compruébalo. Mantén el registro: se comprueba de nuevo cada día, y si falta durante tres días se retira la marca. Las direcciones en el dominio de un servicio de alojamiento, como your-app.vercel.app, no admiten registros propios.",
+  "type": "Tipo",
+  "name": "Nombre",
+  "copyName": "Copiar nombre",
+  "nameHint": "Escribe {label} como nombre: tu proveedor de DNS agrega .{domain} por su cuenta. Si te pide el nombre completo, escribe {name}.",
+  "value": "Valor",
+  "copyValue": "Copiar valor",
+  "check": "Comprobar DNS",
+  "checking": "Comprobando...",
+  "result": {
+    "notOwner": "Solo puedes verificar el dominio de tu propio SaaS.",
+    "loadFailed": "No se pudo cargar el SaaS. Inténtalo de nuevo.",
+    "noDomain": "La dirección de tu sitio web no está en un dominio propio, así que no hay dónde agregar el registro.",
+    "failed": "No se pudo comprobar el dominio. Inténtalo de nuevo.",
+    "tooSoon": "El dominio se comprobó hace un momento. Inténtalo de nuevo en unos segundos.",
+    "tooOften": "Los dominios se comprobaron muchas veces en la última hora. Inténtalo más tarde.",
+    "verified": "{domain} está verificado. Volvemos a comprobar el registro cada día.",
+    "missing": "No se encontró el registro en {record}. Revisa su nombre y su valor; los registros nuevos pueden tardar unos minutos en aparecer.",
+    "grace": "No se encontró el registro en {record}. {domain} sigue verificado durante tres días después de que falte el registro, así que vuelve a agregarlo antes.",
+    "removed": "El registro lleva tres días sin aparecer, así que {domain} ya no está verificado. Vuelve a agregarlo para verificar el dominio.",
+    "dnsTimeout": "El DNS no respondió a tiempo. Inténtalo de nuevo en un momento.",
+    "changed": "Tu sitio web cambió durante la comprobación. Inténtalo de nuevo."
+  }
+}

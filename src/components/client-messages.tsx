@@ -1,6 +1,8 @@
 import type { ReactNode } from "react";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getMessages } from "next-intl/server";
+import { Direction } from "radix-ui";
+import { LOCALE_INFO } from "@/i18n/config";
 import { pickMessages, type Namespace } from "@/i18n/messages";
 
 /** What every page's Client Components may need: the header, menus and error pages. */
@@ -24,12 +26,14 @@ export async function ClientMessages({
 }) {
   const [locale, messages] = await Promise.all([getLocale(), getMessages()]);
   return (
-    <NextIntlClientProvider
-      locale={locale}
-      timeZone="UTC"
-      messages={pickMessages(messages, [...PAGE_NAMESPACES, ...namespaces])}
-    >
-      {children}
-    </NextIntlClientProvider>
+    <Direction.Provider dir={LOCALE_INFO[locale].dir}>
+      <NextIntlClientProvider
+        locale={locale}
+        timeZone="UTC"
+        messages={pickMessages(messages, [...PAGE_NAMESPACES, ...namespaces])}
+      >
+        {children}
+      </NextIntlClientProvider>
+    </Direction.Provider>
   );
 }

@@ -5,8 +5,12 @@ import {
   MAX_PAGES,
   providerGet,
   ProviderRequestError,
+  rateLimited,
+  returnedError,
   tooMuchData,
+  unreachable,
 } from "../http";
+import type { RevenueErrorKey } from "../errors";
 import type {
   AirwallexInvoice,
   AirwallexLineItem,
@@ -43,25 +47,16 @@ export async function fetchToken({ clientId, apiKey }: AirwallexCredentials, liv
       signal: AbortSignal.timeout(20_000),
     });
   } catch {
-    throw new ProviderRequestError("Airwallex could not be reached. Try again shortly.");
+    throw unreachable("Airwallex");
   }
   const body = await errorBody(response);
   if (response.status === 401)
-    throw new ProviderRequestError(
-      "Airwallex refused the Client ID and API key. Check that both come from the API keys of your live account, and that the key has not been regenerated.",
-      401,
-    );
+    throw new ProviderRequestError("airwallex.credentialsRefused", {}, { status: 401 });
   if (response.status === 403)
-    throw new ProviderRequestError(
-      "Airwallex refused access for the key. If the key only works from some IP addresses, remove that limit.",
-      403,
-    );
-  if (response.status === 429)
-    throw new ProviderRequestError("Airwallex is rate limiting requests. Try again later.", 429);
+    throw new ProviderRequestError("airwallex.ipLimited", {}, { status: 403 });
+  if (response.status === 429) throw rateLimited("Airwallex");
   if (!response.ok || typeof body?.token !== "string")
-    throw new ProviderRequestError(
-      "Airwallex did not issue access for the key. Try again shortly.",
-    );
+    throw new ProviderRequestError("airwallex.noAccess");
   return body.token;
 }
 
@@ -75,29 +70,22 @@ async function send(token: string, livemode: boolean, path: string, params: URLS
 }
 
 /** What a key refused at `path` is missing, in the words of the key's settings. */
-function missingAccess(path: string) {
-  if (path.startsWith("/api/v1/billing/subscriptions"))
-    return "The key cannot read subscriptions. Give it Read access to Subscriptions under Billing.";
-  if (path.startsWith("/api/v1/billing/invoices"))
-    return "The key cannot read invoices. Give it Read access to Invoices under Billing.";
-  if (path.startsWith("/api/v1/pa/"))
-    return "The key cannot read payments. Give it Read access to Payment Acceptance, for the one account that takes your payments.";
-  return "The key is missing a read permission.";
+function missingAccess(path: string): RevenueErrorKey {
+  if (path.startsWith("/api/v1/billing/subscriptions")) return "airwallex.cannotReadSubscriptions";
+  if (path.startsWith("/api/v1/billing/invoices")) return "airwallex.cannotReadInvoices";
+  if (path.startsWith("/api/v1/pa/")) return "airwallex.cannotReadPayments";
+  return "common.missingPermission";
 }
 
 async function failure(response: Response, path: string): Promise<never> {
   const body = await errorBody(response);
   const detail = typeof body?.message === "string" ? body.message.slice(0, 300) : null;
   if (response.status === 401)
-    throw new ProviderRequestError("Airwallex refused the key's access. Try again shortly.", 401);
-  if (response.status === 403) throw new ProviderRequestError(missingAccess(path), 403, path);
-  if (response.status === 429)
-    throw new ProviderRequestError("Airwallex is rate limiting requests. Try again later.", 429);
-  throw new ProviderRequestError(
-    `Airwallex returned an error${detail ? `: ${detail}` : "."}`,
-    response.status,
-    path,
-  );
+    throw new ProviderRequestError("airwallex.accessRefused", {}, { status: 401 });
+  if (response.status === 403)
+    throw new ProviderRequestError(missingAccess(path), {}, { status: 403, path });
+  if (response.status === 429) throw rateLimited("Airwallex");
+  throw returnedError("Airwallex", detail, { status: response.status, path });
 }
 
 async function airwallexGet<T>(

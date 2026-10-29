@@ -2,11 +2,12 @@
 
 import Link from "@/components/link";
 import { startTransition, useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 import { saveSaas, type SaveSaasState } from "@/app/actions";
+import { categoryKey, techGroupKey } from "@/i18n/names";
 import type { RevenueConnection, RevenueSnapshot, Saas, SaasSettings } from "@/lib/data";
 import { categories } from "@/lib/domain";
 import {
-  CHOOSE_PROVIDER,
   connectsWithOAuth,
   PROVIDERS,
   type ProviderId,
@@ -26,11 +27,13 @@ import { useEditorAction } from "./use-editor-action";
  * in them is ticked. `key` mounts the boxes again after a failed save, so they show what was sent.
  */
 function TechStackField({ stack }: { stack: string[] }) {
+  const t = useTranslations("tech");
   const chosen = new Set(stack);
   return (
     <div key={stack.join()} className="grid gap-2">
       {techGroups.map((group) => {
         const items = technologies.filter((tech) => tech.group === group);
+        const name = t(techGroupKey(group));
         return (
           <details
             key={group}
@@ -38,10 +41,10 @@ function TechStackField({ stack }: { stack: string[] }) {
             className="group rounded-lg border bg-surface shadow-control"
           >
             <summary className="cursor-pointer rounded-lg px-4 py-2.5 text-sm font-medium select-none hover:bg-subtle">
-              {group}
+              {name}
             </summary>
             <fieldset className="flex flex-wrap gap-1.5 border-t px-4 py-3">
-              <legend className="sr-only">{group}</legend>
+              <legend className="sr-only">{name}</legend>
               {items.map((tech) => (
                 <label
                   key={tech.slug}
@@ -66,12 +69,12 @@ function TechStackField({ stack }: { stack: string[] }) {
 }
 
 // What the save button does, in its own words: saving alone, or connecting the chosen provider too.
-function submitLabel(isNew: boolean, provider: ProviderOption | null) {
-  if (!provider || provider === "other") return isNew ? "Add SaaS" : "Save changes";
-  const save = isNew ? "Add SaaS" : "Save";
-  return connectsWithOAuth(provider)
-    ? `${save} and connect ${PROVIDERS[provider].name}`
-    : `${save} and verify revenue`;
+function useSubmitLabel(isNew: boolean, provider: ProviderOption | null) {
+  const t = useTranslations("saasForm.actions");
+  if (!provider || provider === "other") return isNew ? t("add") : t("save");
+  if (connectsWithOAuth(provider))
+    return t(isNew ? "addAndConnect" : "saveAndConnect", { provider: PROVIDERS[provider].name });
+  return isNew ? t("addAndVerify") : t("saveAndVerify");
 }
 
 /**
@@ -98,6 +101,8 @@ export function SaasForm({
   /** How connecting this product's provider last went. */
   result?: { provider: ProviderId; tone: "success" | "error"; text: string } | null;
 }) {
+  const t = useTranslations("saasForm");
+  const categoryName = useTranslations("categories");
   const [state, action, pending] = useEditorAction<SaveSaasState>(saveSaas);
   // A key the provider refused comes back with its provider chosen, ready for another key, and a
   // product saved under Other with Other chosen.
@@ -114,7 +119,7 @@ export function SaasForm({
     if (state.connectionError) document.getElementById("revenue")?.scrollIntoView();
   }, [state]);
   const shown = missing
-    ? { tone: "error" as const, text: CHOOSE_PROVIDER }
+    ? { tone: "error" as const, text: t("chooseProvider") }
     : state.connectionError
       ? { tone: "error" as const, text: state.connectionError }
       : result;
@@ -123,6 +128,7 @@ export function SaasForm({
     state.values ? !!state.values[`hide_${key}`] : settings ? !settings[`share_${key}`] : false;
   const stack = state.values ? (state.values.tech?.split("\n") ?? []) : (saas?.tech_stack ?? []);
   const verifying = !!provider && provider !== "other" && !connectsWithOAuth(provider);
+  const submitLabel = useSubmitLabel(!saas, provider);
   return (
     // Submitted from onSubmit rather than the action prop, so React does not reset the form after
     // a failed save: a reset would clear a chosen logo, the remove box and a pasted key, which no
@@ -165,31 +171,21 @@ export function SaasForm({
         >
           <div>
             <p id="figures-title" className="text-sm font-medium">
-              Public figures
+              {t("figures.title")}
             </p>
-            <p className="mt-1 text-[13px] text-muted-foreground">
-              Verified figures are public unless you hide them. Public revenue is ranked on the
-              leaderboard, by MRR and by revenue over 30 days, 12 months and all time.
-            </p>
+            <p className="mt-1 text-[13px] text-muted-foreground">{t("figures.description")}</p>
           </div>
-          <Share
-            name="hide_revenue"
-            label="Hide verified revenue, MRR included"
-            checked={hidden("revenue")}
-          />
+          <Share name="hide_revenue" label={t("figures.hideRevenue")} checked={hidden("revenue")} />
           <Share
             name="hide_customers"
-            label="Hide subscriber count"
+            label={t("figures.hideCustomers")}
             checked={hidden("customers")}
           />
         </div>
       </RevenueSection>
-      <Section
-        title="Product"
-        description="Shown on the public product page and in listings. Fields marked * are required."
-      >
+      <Section title={t("details.title")} description={t("details.description")}>
         <div className="grid gap-5 sm:grid-cols-2">
-          <Field name="name" label="Product name" required>
+          <Field name="name" label={t("details.name")} required>
             <Input
               id="name"
               name="name"
@@ -197,9 +193,10 @@ export function SaasForm({
               minLength={2}
               maxLength={80}
               defaultValue={state.values?.name ?? saas?.name}
+              dir="auto"
             />
           </Field>
-          <Field name="category" label="Category" required>
+          <Field name="category" label={t("details.category")} required>
             {/* No category is chosen for the founder, so a new product does not land in one by
                 default. */}
             <select
@@ -210,15 +207,18 @@ export function SaasForm({
               className={cn(fieldClasses, "h-10")}
             >
               <option value="" disabled>
-                Choose a category
+                {t("details.chooseCategory")}
               </option>
+              {/* The stored value stays the English name; the list shows it in the page's language. */}
               {categories.map((category) => (
-                <option key={category}>{category}</option>
+                <option key={category} value={category}>
+                  {categoryName(categoryKey(category))}
+                </option>
               ))}
             </select>
           </Field>
         </div>
-        <Field name="tagline" label="Tagline" hint="One sentence, up to 140 characters." required>
+        <Field name="tagline" label={t("details.tagline")} hint={t("details.taglineHint")} required>
           <Input
             id="tagline"
             name="tagline"
@@ -226,10 +226,11 @@ export function SaasForm({
             minLength={5}
             maxLength={140}
             defaultValue={state.values?.tagline ?? saas?.tagline}
-            placeholder="What does it help people do?"
+            placeholder={t("details.taglinePlaceholder")}
+            dir="auto"
           />
         </Field>
-        <Field name="description" label="Description" required>
+        <Field name="description" label={t("details.productDescription")} required>
           <Textarea
             id="description"
             name="description"
@@ -238,10 +239,11 @@ export function SaasForm({
             maxLength={5000}
             rows={6}
             defaultValue={state.values?.description ?? saas?.description}
-            placeholder="Who it is for, what it does, and what makes it different."
+            placeholder={t("details.descriptionPlaceholder")}
+            dir="auto"
           />
         </Field>
-        <Field name="website" label="Website" required>
+        <Field name="website" label={t("details.website")} required>
           {/* Text rather than url, so example.com is taken; the server adds https://. */}
           <Input
             id="website"
@@ -255,10 +257,11 @@ export function SaasForm({
             maxLength={500}
             defaultValue={state.values?.website ?? saas?.website}
             placeholder="example.com"
+            dir="ltr"
           />
         </Field>
         <div className="grid gap-2.5 sm:max-w-xs">
-          <Field name="launched_on" label="Launch date" required>
+          <Field name="launched_on" label={t("details.launchDate")} required>
             <Input
               id="launched_on"
               name="launched_on"
@@ -267,16 +270,13 @@ export function SaasForm({
               defaultValue={state.values?.launched_on ?? settings?.launched_on ?? ""}
             />
           </Field>
-          <Share name="hide_launch" label="Hide launch date" checked={hidden("launch")} />
+          <Share name="hide_launch" label={t("details.hideLaunch")} checked={hidden("launch")} />
         </div>
       </Section>
-      <Section title="Logo" description="A square logo works best.">
-        <ImageField label="Upload logo" current={saas?.logo_path} name={saas?.name ?? ""} />
+      <Section title={t("logo.title")} description={t("logo.description")}>
+        <ImageField label={t("logo.upload")} current={saas?.logo_path} name={saas?.name ?? ""} />
       </Section>
-      <Section
-        title="Tech stack"
-        description={`What the product is built with, up to ${TECH_STACK_MAX}. Shown on its page, with links to other products built with the same.`}
-      >
+      <Section title={t("tech.title")} description={t("tech.description", { max: TECH_STACK_MAX })}>
         <TechStackField stack={stack} />
       </Section>
       <div className="mb-4 empty:hidden">
@@ -286,13 +286,13 @@ export function SaasForm({
           a search below it. */}
       <Actions sticky>
         <Button asChild variant="ghost">
-          <Link href="/dashboard">Cancel</Link>
+          <Link href="/dashboard">{t("actions.cancel")}</Link>
         </Button>
         <Submit
           pending={pending || !!state.location}
-          pendingLabel={verifying ? "Verifying revenue..." : "Saving..."}
+          pendingLabel={verifying ? t("actions.verifying") : t("actions.saving")}
         >
-          {submitLabel(!saas, provider)}
+          {submitLabel}
         </Submit>
       </Actions>
     </form>

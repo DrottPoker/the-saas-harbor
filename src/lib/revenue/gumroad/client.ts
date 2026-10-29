@@ -1,5 +1,13 @@
 import "server-only";
-import { apiBase, errorBody, providerGet, ProviderRequestError, tooMuchData } from "../http";
+import {
+  apiBase,
+  errorBody,
+  providerGet,
+  ProviderRequestError,
+  rateLimited,
+  returnedError,
+  tooMuchData,
+} from "../http";
 import type { GumroadProduct, GumroadSale, GumroadSubscriber } from "./mrr";
 import type { GumroadSummaryDay } from "./payments";
 
@@ -22,20 +30,19 @@ async function gumroadGet<T>(token: string, path: string, params: Record<string,
   const message = typeof body?.message === "string" ? body.message.slice(0, 300) : null;
   if (response.status === 401)
     throw new ProviderRequestError(
-      "Gumroad no longer accepts the connection. It may have been revoked; connect Gumroad again.",
-      401,
+      "common.connectionRevoked",
+      { provider: "Gumroad" },
+      { status: 401 },
     );
   if (response.status === 403)
     throw new ProviderRequestError(
-      "The Gumroad connection cannot read what this verification needs. Connect Gumroad again.",
-      403,
-      path,
+      "common.connectionCannotRead",
+      { provider: "Gumroad" },
+      { status: 403, path },
     );
-  if (response.status === 429)
-    throw new ProviderRequestError("Gumroad is rate limiting requests. Try again later.", 429);
+  if (response.status === 429) throw rateLimited("Gumroad");
   // Gumroad answers some failures with 200 and success: false.
-  if (!response.ok || body?.success === false)
-    throw new ProviderRequestError(`Gumroad returned an error${message ? `: ${message}` : "."}`);
+  if (!response.ok || body?.success === false) throw returnedError("Gumroad", message);
   return body as T;
 }
 

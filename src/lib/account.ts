@@ -1,18 +1,32 @@
 import "server-only";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import { getTranslations } from "next-intl/server";
+import type en from "@/messages/en";
 import { supabaseConfig } from "./supabase/config";
 import type { Database } from "./supabase/types";
 
 type Bucket = ReturnType<SupabaseClient<Database>["storage"]["from"]>;
 
 const BUCKET = "profile-images";
-const IMAGES_FAILED = "Your images could not be deleted, so the account was kept. Try again.";
+
+/** A failure shown to the user, in the request's language (account.errors). */
+async function failure(key: keyof (typeof en)["account"]["errors"]) {
+  return new Error((await getTranslations("account.errors"))(key));
+}
+
+/**
+ * In how many days a locked username can be changed again, counting a part of a day as a day:
+ * at least one while `availableAt` is ahead.
+ */
+export function usernameLockDays(availableAt: string, now = Date.now()) {
+  return Math.max(1, Math.ceil((new Date(availableAt).getTime() - now) / 86_400_000));
+}
 
 // Every file path under the maker's folder, including subfolders at any depth: uploads now go only
 // directly in the folder, but files from before that rule may sit deeper.
 async function filesUnder(bucket: Bucket, prefix: string): Promise<string[]> {
   const { data, error } = await bucket.list(prefix, { limit: 1000 });
-  if (error) throw new Error(IMAGES_FAILED);
+  if (error) throw await failure("imagesFailed");
   const paths: string[] = [];
   for (const entry of data) {
     const path = `${prefix}/${entry.name}`;
@@ -31,16 +45,16 @@ async function removeImages(client: SupabaseClient<Database>, userId: string) {
     if (!paths.length) return;
     for (let start = 0; start < paths.length; start += 1000) {
       const { error } = await bucket.remove(paths.slice(start, start + 1000));
-      if (error) throw new Error(IMAGES_FAILED);
+      if (error) throw await failure("imagesFailed");
     }
   }
-  throw new Error(IMAGES_FAILED);
+  throw await failure("imagesFailed");
 }
 
 async function deleteWith(client: SupabaseClient<Database>, userId: string) {
   await removeImages(client, userId);
   const { error } = await client.rpc("delete_account");
-  if (error) throw new Error("Your account could not be deleted. Try again.");
+  if (error) throw await failure("deleteFailed");
 }
 
 /**
@@ -49,18 +63,16 @@ async function deleteWith(client: SupabaseClient<Database>, userId: string) {
  */
 async function signInAgain(email: string, password: string) {
   const config = supabaseConfig();
-  if (!config) throw new Error("Supabase is not configured.");
+  if (!config) throw await failure("notConfigured");
   const client = createClient<Database>(config.url, config.key, {
     auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
     global: { fetch: (url, options) => fetch(url, { ...options, cache: "no-store" }) },
   });
   const { data, error } = await client.auth.signInWithPassword({ email, password });
   if (error) {
-    if (error.status === 429)
-      throw new Error("Too many attempts. Wait a few minutes and try again.");
-    if (error.code !== "invalid_credentials")
-      throw new Error("Your password could not be checked. Try again shortly.");
-    throw new Error("The password is incorrect.");
+    if (error.status === 429) throw await failure("tooManyAttempts");
+    if (error.code !== "invalid_credentials") throw await failure("checkFailed");
+    throw await failure("wrongPassword");
   }
   return { client, data };
 }
@@ -79,15 +91,15 @@ export async function changePassword(
 ) {
   const { client, data } = await signInAgain(email, current);
   try {
-    if (data.user.id !== userId) throw new Error("Your password could not be changed. Try again.");
+    if (data.user.id !== userId) throw await failure("changeFailed");
     const { error } = await client.auth.updateUser({ password });
     if (error)
-      throw new Error(
+      throw await failure(
         error.code === "same_password"
-          ? "Choose a password that differs from your current one."
+          ? "samePassword"
           : error.code === "weak_password"
-            ? "Choose a stronger password."
-            : "Your password could not be changed. Try again.",
+            ? "weakPassword"
+            : "changeFailed",
       );
     return data.session;
   } catch (cause) {
@@ -115,7 +127,7 @@ export async function deleteAccount(userId: string, email: string, password: str
   const { client, data } = await signInAgain(email, password);
   try {
     // The email comes from the current session, so this only guards against a mix-up.
-    if (data.user.id !== userId) throw new Error("Your account could not be deleted. Try again.");
+    if (data.user.id !== userId) throw await failure("deleteFailed");
     await deleteWith(client, userId);
   } catch (cause) {
     // The confirmation session is not needed once the attempt failed.

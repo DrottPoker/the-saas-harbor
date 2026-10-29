@@ -22,9 +22,7 @@ const TOKEN = /^[A-Za-z0-9_-]{8,512}$/;
 const NUMBER = /^\d{1,20}$/;
 
 export function parseMercadoPagoKey(): ParsedKey {
-  throw new VerificationError(
-    "Connect Mercado Pago with the Connect with Mercado Pago button. Mercado Pago's access tokens can change your account, so they are not accepted here.",
-  );
+  throw new VerificationError("mercadopago.pasteRefused");
 }
 
 export function encodeMercadoPagoKey(key: MercadoPagoKey) {
@@ -35,7 +33,7 @@ export function encodeMercadoPagoKey(key: MercadoPagoKey) {
     key.expiresAt > 0 &&
     NUMBER.test(key.userId);
   if (!valid)
-    throw new VerificationError("Mercado Pago did not complete the connection. Try again.");
+    throw new VerificationError("common.connectionNotCompleted", { provider: "Mercado Pago" });
   return `1:${key.expiresAt}:${key.userId}:${key.accessToken}:${key.refreshToken}`;
 }
 
@@ -49,9 +47,7 @@ export function decodeMercadoPagoKey(stored: string): MercadoPagoKey {
     !TOKEN.test(accessToken ?? "") ||
     !TOKEN.test(refreshToken ?? "")
   )
-    throw new VerificationError(
-      "The Mercado Pago connection could not be read. Connect Mercado Pago again.",
-    );
+    throw new VerificationError("mercadopago.connectionUnreadable");
   return { accessToken, refreshToken, expiresAt: Number(expires), userId };
 }
 

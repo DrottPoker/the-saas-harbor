@@ -13,10 +13,7 @@ export function parseChargebeeSite(input: string) {
     .replace(/^https?:\/\//, "")
     .split("/")[0]
     .replace(/\.chargebee\.com$/, "");
-  if (!/^[a-z0-9][a-z0-9-]{0,62}$/.test(site))
-    throw new VerificationError(
-      "Enter your Chargebee site: the name before .chargebee.com in your dashboard's address.",
-    );
+  if (!/^[a-z0-9][a-z0-9-]{0,62}$/.test(site)) throw new VerificationError("chargebee.siteFormat");
   return site;
 }
 
@@ -27,14 +24,10 @@ export function parseChargebeeKey(
   const site = parseChargebeeSite(account);
   const key = input.trim();
   if (/^(rk|sk|pk)_(live|test)_|^pdl_|^polar_|^creem_/.test(key))
-    throw new VerificationError(
-      "This key belongs to another payment provider. Paste your Chargebee API key.",
-    );
-  if (!/^[A-Za-z0-9_-]{16,128}$/.test(key))
-    throw new VerificationError("Paste a Chargebee API key.");
+    throw new VerificationError("common.otherProviderKey", { provider: "Chargebee" });
+  if (!/^[A-Za-z0-9_-]{16,128}$/.test(key)) throw new VerificationError("chargebee.keyFormat");
   const livemode = !site.endsWith("-test");
-  if (!livemode && !allowTest)
-    throw new VerificationError("Use your live Chargebee site. Test sites are not accepted.");
+  if (!livemode && !allowTest) throw new VerificationError("chargebee.testSite");
   return {
     key: joinAccountKey(site, key),
     livemode,

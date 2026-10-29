@@ -1,1 +1,71 @@
-{}
+{
+  "meta": {
+    "title": "Mensajes",
+    "with": "Mensajes con {name}"
+  },
+  "inbox": {
+    "title": "Selecciona una conversación",
+    "body": "Elige una de tus conversaciones, o abre el perfil de un usuario y elige Enviar mensaje para iniciar una nueva."
+  },
+  "list": {
+    "heading": "Mensajes",
+    "label": "Conversaciones",
+    "userFallback": "Usuario",
+    "blocked": "Bloqueado",
+    "fromYou": "Tú: <body></body>",
+    "unread": "{count}<hidden> sin leer</hidden>",
+    "emptyBeside": "Tus conversaciones aparecen aquí cuando se envía un mensaje.",
+    "emptyTitle": "Todavía no hay mensajes",
+    "emptyBody": "Abre un producto o el perfil de un usuario y elige Enviar mensaje para iniciar una conversación.",
+    "browse": "Explorar productos"
+  },
+  "header": {
+    "back": "Volver a los mensajes",
+    "viewProfile": "Ver perfil"
+  },
+  "closed": {
+    "noProfile": "Configura tu <link>perfil</link> antes de enviar mensajes. Los demás usuarios ven tu nombre y tu foto.",
+    "suspended": "Tu cuenta está suspendida, así que no puedes enviar mensajes. Tu <link>panel</link> explica el motivo.",
+    "blocked": "Bloqueaste a {name}. Ninguno de los dos puede enviar mensajes hasta que lo desbloquees."
+  },
+  "conversation": {
+    "log": "Mensajes con {name}",
+    "privacy": "Solo tú y {name} pueden leer esta conversación.",
+    "loadingEarlier": "Cargando...",
+    "showEarlier": "Mostrar mensajes anteriores",
+    "empty": "Todavía no hay mensajes. Saluda a {name}.",
+    "fromYou": "Tú:",
+    "from": "{name}:",
+    "delivered": "Entregado",
+    "seen": "Visto<hidden> por {name}</hidden>",
+    "report": "Denunciar<hidden> este mensaje de {name}</hidden>",
+    "field": "Mensaje para {name}",
+    "placeholder": "Escribe a {name}",
+    "send": "Enviar",
+    "sending": "Enviando...",
+    "keys": "Enter envía. Shift+Enter inicia una nueva línea."
+  },
+  "block": {
+    "block": "Bloquear<hidden> a {name}</hidden>",
+    "unblock": "Desbloquear<hidden> a {name}</hidden>",
+    "blocking": "Bloqueando...",
+    "unblocking": "Desbloqueando..."
+  },
+  "sendButton": "Enviar mensaje",
+  "loading": "Cargando",
+  "errors": {
+    "userNotFound": "No se encontró este usuario.",
+    "empty": "Escribe un mensaje primero.",
+    "tooLong": "Los mensajes pueden tener hasta {max} caracteres.",
+    "sendFailed": "No se pudo enviar tu mensaje. Inténtalo de nuevo.",
+    "chooseOther": "Elige a otro usuario para enviarle un mensaje.",
+    "noProfile": "Configura tu perfil antes de enviar mensajes.",
+    "suspended": "Tu cuenta está suspendida, así que no puedes enviar mensajes.",
+    "cannotReceive": "Este usuario no puede recibir mensajes.",
+    "blocked": "Los mensajes entre tú y este usuario están bloqueados.",
+    "tooFast": "Estás enviando mensajes demasiado rápido. Inténtalo más tarde.",
+    "tooManyConversations": "Hoy iniciaste muchas conversaciones. Inténtalo mañana.",
+    "blockFailed": "No se pudo bloquear al usuario. Inténtalo de nuevo.",
+    "unblockFailed": "No se pudo desbloquear al usuario. Inténtalo de nuevo."
+  }
+}

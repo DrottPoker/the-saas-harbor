@@ -1,1 +1,24 @@
-{}
+{
+  "headline": "{kind, select, mrr {{amount} MRR} first {#1} other {टॉप {place}}}",
+  "sentence": "{kind, select, mrr {{name} ने {exact} का मासिक आवर्ती राजस्व हासिल किया।} first {{name} {site} पर सत्यापित राजस्व के लीडरबोर्ड में पहले स्थान पर पहुँचा।} other {{name} {site} पर सत्यापित राजस्व के लीडरबोर्ड में टॉप {place} में पहुँचा।}}",
+  "post": "{kind, select, mrr {{name} ने अभी {amount} MRR हासिल किया, {site} पर सत्यापित।} first {{name} अब {site} के सत्यापित राजस्व लीडरबोर्ड पर #1 है।} other {{name} अब {site} के सत्यापित राजस्व लीडरबोर्ड पर टॉप {place} में है।}}",
+  "meta": {
+    "title": "{kind, select, mrr {{name} ने {amount} MRR हासिल किया} first {{name} पहले स्थान पर पहुँचा} other {{name} टॉप {place} में पहुँचा}}",
+    "description": "{sentence} {site} पर सत्यापित राजस्व।"
+  },
+  "breadcrumb": "ब्रेडक्रंब",
+  "browse": "ब्राउज़ करें",
+  "milestone": "माइलस्टोन",
+  "reachedOn": "माइलस्टोन हासिल होने की तिथि: <date></date>",
+  "verifiedThrough": "राजस्व {provider} के ज़रिए सत्यापित है।",
+  "viewProduct": "उत्पाद देखें",
+  "share": {
+    "title": "यह माइलस्टोन साझा करें",
+    "body": "इस लिंक वाली पोस्ट में माइलस्टोन का कार्ड दिखता है।",
+    "x": "X पर साझा करें",
+    "linkedin": "LinkedIn पर साझा करें",
+    "download": "इमेज डाउनलोड करें",
+    "link": "लिंक",
+    "copyLink": "लिंक कॉपी करें"
+  }
+}

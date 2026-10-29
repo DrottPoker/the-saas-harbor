@@ -1,4 +1,9 @@
 {
+  "forms": {
+    "saving": "Guardando...",
+    "imageHint": "PNG, JPEG o WebP, de hasta 2 MB. Las imágenes son públicas.",
+    "removeImage": "Quitar la imagen actual"
+  },
   "notShared": "No compartido",
   "demo": "Demo",
   "mrr": "MRR",

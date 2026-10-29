@@ -1,1 +1,24 @@
-{}
+{
+  "headline": "{kind, select, mrr {{amount} de MRR} first {N.º 1} other {Top {place}}}",
+  "sentence": "{kind, select, mrr {{name} alcanzó {exact} de ingresos recurrentes mensuales.} first {{name} alcanzó el primer lugar en la clasificación de ingresos verificados de {site}.} other {{name} entró en el top {place} de la clasificación de ingresos verificados de {site}.}}",
+  "post": "{kind, select, mrr {{name} acaba de alcanzar {amount} de MRR, verificado en {site}.} first {{name} ya es el n.º 1 en la clasificación de ingresos verificados de {site}.} other {{name} ya está en el top {place} de la clasificación de ingresos verificados de {site}.}}",
+  "meta": {
+    "title": "{kind, select, mrr {{name} alcanzó {amount} de MRR} first {{name} alcanzó el primer lugar} other {{name} entró en el top {place}}}",
+    "description": "{sentence} Ingresos verificados en {site}."
+  },
+  "breadcrumb": "Ruta de navegación",
+  "browse": "Explorar",
+  "milestone": "Hito",
+  "reachedOn": "Hito alcanzado el <date></date>",
+  "verifiedThrough": "Los ingresos están verificados a través de {provider}.",
+  "viewProduct": "Ver producto",
+  "share": {
+    "title": "Comparte este hito",
+    "body": "Una publicación con este enlace muestra una tarjeta con el hito.",
+    "x": "Compartir en X",
+    "linkedin": "Compartir en LinkedIn",
+    "download": "Descargar imagen",
+    "link": "Enlace",
+    "copyLink": "Copiar enlace"
+  }
+}

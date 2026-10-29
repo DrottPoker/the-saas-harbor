@@ -11,17 +11,11 @@ const CREDENTIAL = /^[A-Za-z0-9_-]{20,128}$/;
 export function parsePayPalKey({ key: input, account }: KeyInput): ParsedKey {
   const clientId = account.trim();
   const secret = input.trim();
-  if (!CREDENTIAL.test(clientId))
-    throw new VerificationError("Enter the Client ID of your PayPal app.");
+  if (!CREDENTIAL.test(clientId)) throw new VerificationError("paypal.clientIdFormat");
   if (/^(rk|sk|pk)_(live|test)_|^pdl_|^polar_|^creem_|^apik_/.test(secret))
-    throw new VerificationError(
-      "This key belongs to another payment provider. Paste the secret of your PayPal app.",
-    );
-  if (!CREDENTIAL.test(secret)) throw new VerificationError("Paste the secret of your PayPal app.");
-  if (secret === clientId)
-    throw new VerificationError(
-      "The secret is the Client ID again. Paste Secret key 1 of the app.",
-    );
+    throw new VerificationError("paypal.otherProvider");
+  if (!CREDENTIAL.test(secret)) throw new VerificationError("paypal.secretFormat");
+  if (secret === clientId) throw new VerificationError("paypal.secretIsClientId");
   return {
     key: joinAccountKey(clientId, secret),
     livemode: null,

@@ -1,4 +1,195 @@
 {{/* Generated from src/lib/email/auth-templates.ts. Do not edit by hand. */}}
+{{- if eq (printf "%v" .Data.locale) "zh" }}
+<!doctype html>
+<html lang="zh-Hans">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
+<meta name="supported-color-schemes" content="light">
+<title>确认你的新邮箱地址</title>
+</head>
+<body style="margin: 0; padding: 0; background: #e8e6df">
+<div style="display: none; max-height: 0; overflow: hidden; opacity: 0">确认更改你在 The SaaS Harbor 的邮箱地址。&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;</div>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background: #e8e6df">
+<tr><td align="center" style="padding: 32px 12px">
+<table role="presentation" align="center" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width: 560px; margin: 0 auto; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'Noto Sans SC', 'Noto Sans CJK SC', sans-serif">
+<tr><td style="padding: 0 4px 20px">
+<a href="{{ .SiteURL }}/zh" style="color: #0b2a55; text-decoration: none">
+<img src="{{ .SiteURL }}/logo.png" width="36" height="36" alt="" style="display: inline-block; vertical-align: middle; border: 0">
+<span style="display: inline-block; vertical-align: middle; padding-left: 8px; font-size: 17px; font-weight: 700; letter-spacing: -0.01em; color: #0b2a55">The SaaS Harbor</span>
+</a>
+</td></tr>
+<tr><td style="background: #f0eee9; border: 1px solid #cfccc3; border-radius: 12px; padding: 28px 24px; font-size: 15px; line-height: 1.6; color: #1a1b1e">
+<h1 style="margin: 0 0 16px; font-size: 20px; line-height: 1.3; font-weight: 700; color: #1a1b1e">确认你的新邮箱地址</h1>
+<p style="margin: 0 0 16px">有人请求将你在 The SaaS Harbor 的账号邮箱地址从 {{ .Email }} 更改为 {{ .NewEmail }}。两个地址都确认后才会更改。</p>
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin: 8px 0 0">
+<tr><td style="background: #1a1b1e; border-radius: 8px">
+<a href="{{ .RedirectTo }}?token_hash={{ .TokenHash }}&amp;type=email_change" style="display: inline-block; padding: 12px 20px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'Noto Sans SC', 'Noto Sans CJK SC', sans-serif; font-size: 15px; font-weight: 600; line-height: 1.2; color: #f0eee9; text-decoration: none; border-radius: 8px">确认更改</a>
+</td></tr>
+</table>
+</td></tr>
+<tr><td style="padding: 20px 4px 0; font-size: 13px; line-height: 1.5; color: #4f5358">
+<p style="margin: 0">链接只能使用一次，一小时后失效，你可以在任何设备上打开它。如果这不是你的请求，请忽略这封邮件，你的邮箱地址不会改变。</p>
+</td></tr>
+</table>
+</td></tr>
+</table>
+</body>
+</html>
+{{- else if eq (printf "%v" .Data.locale) "hi" }}
+<!doctype html>
+<html lang="hi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
+<meta name="supported-color-schemes" content="light">
+<title>अपने नए ईमेल पते की पुष्टि करें</title>
+</head>
+<body style="margin: 0; padding: 0; background: #e8e6df">
+<div style="display: none; max-height: 0; overflow: hidden; opacity: 0">The SaaS Harbor पर अपना ईमेल पता बदलने की पुष्टि करें।&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;</div>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background: #e8e6df">
+<tr><td align="center" style="padding: 32px 12px">
+<table role="presentation" align="center" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width: 560px; margin: 0 auto; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, 'Kohinoor Devanagari', 'Nirmala UI', Mangal, 'Noto Sans Devanagari', sans-serif">
+<tr><td style="padding: 0 4px 20px">
+<a href="{{ .SiteURL }}/hi" style="color: #0b2a55; text-decoration: none">
+<img src="{{ .SiteURL }}/logo.png" width="36" height="36" alt="" style="display: inline-block; vertical-align: middle; border: 0">
+<span style="display: inline-block; vertical-align: middle; padding-left: 8px; font-size: 17px; font-weight: 700; letter-spacing: -0.01em; color: #0b2a55">The SaaS Harbor</span>
+</a>
+</td></tr>
+<tr><td style="background: #f0eee9; border: 1px solid #cfccc3; border-radius: 12px; padding: 28px 24px; font-size: 15px; line-height: 1.6; color: #1a1b1e">
+<h1 style="margin: 0 0 16px; font-size: 20px; line-height: 1.3; font-weight: 700; color: #1a1b1e">अपने नए ईमेल पते की पुष्टि करें</h1>
+<p style="margin: 0 0 16px">किसी ने The SaaS Harbor पर आपके खाते का ईमेल पता {{ .Email }} से बदलकर {{ .NewEmail }} करने का अनुरोध किया है। दोनों पतों से पुष्टि होने के बाद ही बदलाव होगा।</p>
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin: 8px 0 0">
+<tr><td style="background: #1a1b1e; border-radius: 8px">
+<a href="{{ .RedirectTo }}?token_hash={{ .TokenHash }}&amp;type=email_change" style="display: inline-block; padding: 12px 20px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, 'Kohinoor Devanagari', 'Nirmala UI', Mangal, 'Noto Sans Devanagari', sans-serif; font-size: 15px; font-weight: 600; line-height: 1.2; color: #f0eee9; text-decoration: none; border-radius: 8px">बदलाव की पुष्टि करें</a>
+</td></tr>
+</table>
+</td></tr>
+<tr><td style="padding: 20px 4px 0; font-size: 13px; line-height: 1.5; color: #4f5358">
+<p style="margin: 0">लिंक एक ही बार काम करता है और एक घंटे बाद समाप्त हो जाता है, और आप इसे किसी भी डिवाइस पर खोल सकते हैं। अगर आपने यह अनुरोध नहीं किया है, तो इस ईमेल को अनदेखा करें, आपका ईमेल पता नहीं बदलेगा।</p>
+</td></tr>
+</table>
+</td></tr>
+</table>
+</body>
+</html>
+{{- else if eq (printf "%v" .Data.locale) "ar" }}
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
+<meta name="supported-color-schemes" content="light">
+<title>أكّد بريدك الإلكتروني الجديد</title>
+</head>
+<body style="margin: 0; padding: 0; background: #e8e6df">
+<div style="display: none; max-height: 0; overflow: hidden; opacity: 0">أكّد تغيير بريدك الإلكتروني على The SaaS Harbor.&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;</div>
+<table role="presentation" dir="rtl" width="100%" cellpadding="0" cellspacing="0" border="0" style="background: #e8e6df">
+<tr><td align="center" style="padding: 32px 12px">
+<table role="presentation" align="center" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width: 560px; margin: 0 auto; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, 'Geeza Pro', 'Noto Sans Arabic', Tahoma, sans-serif">
+<tr><td style="padding: 0 4px 20px">
+<a href="{{ .SiteURL }}/ar" style="color: #0b2a55; text-decoration: none">
+<img src="{{ .SiteURL }}/logo.png" width="36" height="36" alt="" style="display: inline-block; vertical-align: middle; border: 0">
+<span style="display: inline-block; vertical-align: middle; padding-right: 8px; font-size: 17px; font-weight: 700; letter-spacing: -0.01em; color: #0b2a55">The SaaS Harbor</span>
+</a>
+</td></tr>
+<tr><td style="background: #f0eee9; border: 1px solid #cfccc3; border-radius: 12px; padding: 28px 24px; font-size: 15px; line-height: 1.6; color: #1a1b1e">
+<h1 style="margin: 0 0 16px; font-size: 20px; line-height: 1.3; font-weight: 700; color: #1a1b1e">أكّد بريدك الإلكتروني الجديد</h1>
+<p style="margin: 0 0 16px">طلب أحدهم تغيير البريد الإلكتروني لحسابك على The SaaS Harbor من ⁨{{ .Email }}⁩ إلى ⁨{{ .NewEmail }}⁩. يتم التغيير بعد تأكيده من العنوانين كليهما.</p>
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin: 8px 0 0">
+<tr><td style="background: #1a1b1e; border-radius: 8px">
+<a href="{{ .RedirectTo }}?token_hash={{ .TokenHash }}&amp;type=email_change" style="display: inline-block; padding: 12px 20px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, 'Geeza Pro', 'Noto Sans Arabic', Tahoma, sans-serif; font-size: 15px; font-weight: 600; line-height: 1.2; color: #f0eee9; text-decoration: none; border-radius: 8px">أكّد التغيير</a>
+</td></tr>
+</table>
+</td></tr>
+<tr><td style="padding: 20px 4px 0; font-size: 13px; line-height: 1.5; color: #4f5358">
+<p style="margin: 0">يعمل الرابط مرة واحدة وتنتهي صلاحيته بعد ساعة، ويمكنك فتحه على أي جهاز. إذا لم تطلب ذلك، فتجاهل هذه الرسالة وسيبقى بريدك الإلكتروني كما هو.</p>
+</td></tr>
+</table>
+</td></tr>
+</table>
+</body>
+</html>
+{{- else if eq (printf "%v" .Data.locale) "es" }}
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
+<meta name="supported-color-schemes" content="light">
+<title>Confirma tu nuevo correo electrónico</title>
+</head>
+<body style="margin: 0; padding: 0; background: #e8e6df">
+<div style="display: none; max-height: 0; overflow: hidden; opacity: 0">Confirma el cambio de tu correo electrónico en The SaaS Harbor.&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;</div>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background: #e8e6df">
+<tr><td align="center" style="padding: 32px 12px">
+<table role="presentation" align="center" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width: 560px; margin: 0 auto; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif">
+<tr><td style="padding: 0 4px 20px">
+<a href="{{ .SiteURL }}/es" style="color: #0b2a55; text-decoration: none">
+<img src="{{ .SiteURL }}/logo.png" width="36" height="36" alt="" style="display: inline-block; vertical-align: middle; border: 0">
+<span style="display: inline-block; vertical-align: middle; padding-left: 8px; font-size: 17px; font-weight: 700; letter-spacing: -0.01em; color: #0b2a55">The SaaS Harbor</span>
+</a>
+</td></tr>
+<tr><td style="background: #f0eee9; border: 1px solid #cfccc3; border-radius: 12px; padding: 28px 24px; font-size: 15px; line-height: 1.6; color: #1a1b1e">
+<h1 style="margin: 0 0 16px; font-size: 20px; line-height: 1.3; font-weight: 700; color: #1a1b1e">Confirma tu nuevo correo electrónico</h1>
+<p style="margin: 0 0 16px">Alguien pidió cambiar el correo electrónico de tu cuenta de The SaaS Harbor de {{ .Email }} a {{ .NewEmail }}. El cambio se hace cuando se confirma desde ambas direcciones.</p>
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin: 8px 0 0">
+<tr><td style="background: #1a1b1e; border-radius: 8px">
+<a href="{{ .RedirectTo }}?token_hash={{ .TokenHash }}&amp;type=email_change" style="display: inline-block; padding: 12px 20px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; font-size: 15px; font-weight: 600; line-height: 1.2; color: #f0eee9; text-decoration: none; border-radius: 8px">Confirmar el cambio</a>
+</td></tr>
+</table>
+</td></tr>
+<tr><td style="padding: 20px 4px 0; font-size: 13px; line-height: 1.5; color: #4f5358">
+<p style="margin: 0">El enlace funciona una sola vez y caduca después de una hora, y puedes abrirlo en cualquier dispositivo. Si no lo pediste, ignora este correo y tu correo electrónico seguirá siendo el mismo.</p>
+</td></tr>
+</table>
+</td></tr>
+</table>
+</body>
+</html>
+{{- else if eq (printf "%v" .Data.locale) "ru" }}
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
+<meta name="supported-color-schemes" content="light">
+<title>Подтвердите новый адрес почты</title>
+</head>
+<body style="margin: 0; padding: 0; background: #e8e6df">
+<div style="display: none; max-height: 0; overflow: hidden; opacity: 0">Подтвердите смену адреса почты на The SaaS Harbor.&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;</div>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background: #e8e6df">
+<tr><td align="center" style="padding: 32px 12px">
+<table role="presentation" align="center" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width: 560px; margin: 0 auto; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif">
+<tr><td style="padding: 0 4px 20px">
+<a href="{{ .SiteURL }}/ru" style="color: #0b2a55; text-decoration: none">
+<img src="{{ .SiteURL }}/logo.png" width="36" height="36" alt="" style="display: inline-block; vertical-align: middle; border: 0">
+<span style="display: inline-block; vertical-align: middle; padding-left: 8px; font-size: 17px; font-weight: 700; letter-spacing: -0.01em; color: #0b2a55">The SaaS Harbor</span>
+</a>
+</td></tr>
+<tr><td style="background: #f0eee9; border: 1px solid #cfccc3; border-radius: 12px; padding: 28px 24px; font-size: 15px; line-height: 1.6; color: #1a1b1e">
+<h1 style="margin: 0 0 16px; font-size: 20px; line-height: 1.3; font-weight: 700; color: #1a1b1e">Подтвердите новый адрес почты</h1>
+<p style="margin: 0 0 16px">Кто-то запросил смену адреса почты вашего аккаунта на The SaaS Harbor с {{ .Email }} на {{ .NewEmail }}. Адрес изменится после подтверждения с обоих адресов.</p>
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin: 8px 0 0">
+<tr><td style="background: #1a1b1e; border-radius: 8px">
+<a href="{{ .RedirectTo }}?token_hash={{ .TokenHash }}&amp;type=email_change" style="display: inline-block; padding: 12px 20px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; font-size: 15px; font-weight: 600; line-height: 1.2; color: #f0eee9; text-decoration: none; border-radius: 8px">Подтвердить смену</a>
+</td></tr>
+</table>
+</td></tr>
+<tr><td style="padding: 20px 4px 0; font-size: 13px; line-height: 1.5; color: #4f5358">
+<p style="margin: 0">Ссылка работает один раз и действует один час, открыть её можно на любом устройстве. Если вы этого не запрашивали, проигнорируйте письмо: адрес останется прежним.</p>
+</td></tr>
+</table>
+</td></tr>
+</table>
+</body>
+</html>
+{{- else }}
 <!doctype html>
 <html lang="en">
 <head>
@@ -36,3 +227,4 @@
 </table>
 </body>
 </html>
+{{- end }}

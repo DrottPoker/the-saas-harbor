@@ -5,6 +5,8 @@ import {
   MAX_PAGES,
   providerGet,
   ProviderRequestError,
+  rateLimited,
+  returnedError,
   tooMuchData,
 } from "../http";
 import type { CreemProduct, CreemSubscription, CreemTransaction } from "./mrr";
@@ -28,21 +30,14 @@ async function creemGet<T>(key: string, livemode: boolean, path: string, params:
   if (response.ok) return (await response.json()) as T;
   const body = await errorBody(response);
   if (response.status === 401)
-    throw new ProviderRequestError("Creem rejected the key. It may have been revoked.", 401);
+    throw new ProviderRequestError("common.keyRevoked", { provider: "Creem" }, { status: 401 });
   // Creem answers both an unknown key and a missing scope with 403.
   if (response.status === 403)
-    throw new ProviderRequestError(
-      "Creem refused the request. Check that the key is still active and can read products, subscriptions and transactions.",
-      403,
-      path,
-    );
-  if (response.status === 429)
-    throw new ProviderRequestError("Creem is rate limiting requests. Try again later.", 429);
+    throw new ProviderRequestError("creem.requestRefused", {}, { status: 403, path });
+  if (response.status === 429) throw rateLimited("Creem");
   const message = [body?.message].flat().find((value) => typeof value === "string") as
     string | undefined;
-  throw new ProviderRequestError(
-    `Creem returned an error${message ? `: ${message.slice(0, 300)}` : "."}`,
-  );
+  throw returnedError("Creem", message?.slice(0, 300));
 }
 
 type Page<T> = { items: T[]; pagination?: { next_page?: number | null } | null };

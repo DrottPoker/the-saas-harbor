@@ -1,5 +1,5 @@
 import "server-only";
-import { VerificationError } from "../errors";
+import { revenueText, VerificationError } from "../errors";
 import { historyWindowStart, type ServiceLine } from "../history";
 import { MAX_PAGES, ProviderRequestError, tooMuchData } from "../http";
 import type { ProviderAdapter } from "../types";
@@ -31,10 +31,7 @@ const EXPIRY_MARGIN = 3_600;
 const MAX_LOOKUPS = 100;
 
 function requireMode(live: boolean, allowTest: boolean) {
-  if (!live && !allowTest)
-    throw new VerificationError(
-      "This is a Mercado Pago test account. Connect the account that receives your payments.",
-    );
+  if (!live && !allowTest) throw new VerificationError("mercadopago.testAccount");
 }
 
 /** Whether a key's access token is due for renewal at `now` (Unix seconds). */
@@ -52,11 +49,7 @@ async function renewIfDue(key: MercadoPagoKey, now: Date) {
   if (!renewalDue(key, seconds)) return null;
   const client = mercadoPagoClient();
   try {
-    if (!client)
-      throw new MercadoPagoTokenError(
-        "Mercado Pago verification is not configured on this server.",
-        false,
-      );
+    if (!client) throw new MercadoPagoTokenError("mercadopago.notConfigured", {}, false);
     return await refreshMercadoPagoKey(client, key, now);
   } catch (error) {
     if (!(error instanceof MercadoPagoTokenError)) throw error;
@@ -64,10 +57,7 @@ async function renewIfDue(key: MercadoPagoKey, now: Date) {
       console.warn("A Mercado Pago access token could not be renewed:", error.message);
       return null;
     }
-    if (error.refused)
-      throw new VerificationError(
-        "Mercado Pago no longer accepts the connection. Connect Mercado Pago again.",
-      );
+    if (error.refused) throw new VerificationError("mercadopago.noLongerAccepted");
     throw error;
   }
 }
@@ -88,10 +78,9 @@ async function missingPreapprovals(
   );
   if (ids.size > MAX_LOOKUPS)
     throw new ProviderRequestError(
-      "The Mercado Pago account has more ended subscriptions than one verification reads.",
-      undefined,
-      "/preapproval",
-      true,
+      "mercadopago.tooManyEnded",
+      {},
+      { path: "/preapproval", tooMuchData: true },
     );
   const found = new Map<string, MercadoPagoPreapproval>();
   for (const id of ids) {
@@ -142,13 +131,10 @@ export const mercadopago: ProviderAdapter = {
           live,
           key.userId,
         );
-        if (!lines)
-          historyNote =
-            "Mercado Pago's payments did not name the subscriptions they paid for, so there is no revenue history.";
+        if (!lines) historyNote = revenueText("mercadopago.noSubscriptionNames");
       } catch (error) {
         if (!(error instanceof ProviderRequestError && error.tooMuchData)) throw error;
-        historyNote =
-          "The Mercado Pago account has more payments or subscriptions than one verification reads, so there is no revenue history.";
+        historyNote = revenueText("mercadopago.historyTooLarge");
       }
     return {
       livemode: live,
@@ -164,10 +150,7 @@ export const mercadopago: ProviderAdapter = {
     const key = decodeMercadoPagoKey(stored);
     requireMode(livemode, allowTest);
     const now = Math.floor(Date.now() / 1000);
-    if (key.expiresAt <= now)
-      throw new VerificationError(
-        "The Mercado Pago access has expired. The next verification renews it.",
-      );
+    if (key.expiresAt <= now) throw new VerificationError("mercadopago.accessExpired");
     const from = Math.max(since, searchStart(now));
     const end = before ?? now;
     if (end <= from) return { payments: [], complete: true };

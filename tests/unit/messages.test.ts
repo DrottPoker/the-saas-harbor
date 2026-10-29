@@ -4,9 +4,12 @@ import {
   deliveryStatus,
   laterTime,
   mergeMessages,
+  SEND_ERRORS,
   startsGroup,
   type ChatMessage,
 } from "../../src/lib/messages";
+import en from "../../src/messages/en";
+import { userErrorsOf } from "./support/migrations";
 
 const message = (id: string, created_at: string, sender_id = "a"): ChatMessage => ({
   id,
@@ -65,6 +68,15 @@ describe("read receipts", () => {
     expect(laterTime(null, sent.created_at)).toBe(sent.created_at);
     expect(laterTime("2026-09-24T10:00:00.1234+00:00", sent.created_at)).toBe(sent.created_at);
     expect(laterTime(reply.created_at, sent.created_at)).toBe(reply.created_at);
+  });
+});
+
+describe("errors from the database", () => {
+  it("has a message for every error send_message() gives users, worded as the database does", () => {
+    const raised = userErrorsOf("send_message");
+    expect([...SEND_ERRORS.keys()].sort()).toEqual([...new Set(raised)].sort());
+    for (const [text, key] of SEND_ERRORS)
+      expect(en.messages.errors[key].replace("{max}", "4,000")).toBe(`${text}.`);
   });
 });
 

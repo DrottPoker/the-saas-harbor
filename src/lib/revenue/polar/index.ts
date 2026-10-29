@@ -1,4 +1,5 @@
 import "server-only";
+import { revenueText } from "../errors";
 import { historyWindowStart } from "../history";
 import { ProviderRequestError } from "../http";
 import type { ProviderAdapter } from "../types";
@@ -43,8 +44,7 @@ export const polar: ProviderAdapter = {
       } catch (error) {
         if (!(error instanceof ProviderRequestError && error.tooMuchData)) throw error;
         orders = await recent();
-        historyNote =
-          "The Polar account has more orders than one verification reads, so there is no revenue history.";
+        historyNote = revenueText("polar.historyTooLarge");
       }
     return {
       livemode: live,

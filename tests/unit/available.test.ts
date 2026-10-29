@@ -56,7 +56,7 @@ describe("available providers", () => {
     const form = new FormData();
     form.set("provider", "zoho");
     expect(() => chosenProvider(form)).toThrow(
-      new VerificationError("Zoho Billing is not set up on this server yet."),
+      new VerificationError("common.notSetUp", { provider: "Zoho Billing" }),
     );
     form.set("provider", "gumroad");
     expect(chosenProvider(form)).toEqual({ provider: "gumroad", key: null });

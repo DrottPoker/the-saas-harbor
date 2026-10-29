@@ -1,5 +1,5 @@
 import "server-only";
-import { VerificationError } from "../errors";
+import { revenueText, VerificationError } from "../errors";
 import { historyWindowStart } from "../history";
 import { ProviderRequestError } from "../http";
 import { addDays, dayOf, dayStart } from "../payments";
@@ -36,10 +36,7 @@ const DAY = 86_400;
  */
 async function requireNarrowKey(key: string, live: boolean) {
   for (const [path, params] of otherAccessReads())
-    if (await canRead(key, live, path, params))
-      throw new VerificationError(
-        "The key can read more than subscriptions and charges, as a key created without permissions can: Asaas gives such a key full access. Create a key with only Read for Subscriptions and Charges.",
-      );
+    if (await canRead(key, live, path, params)) throw new VerificationError("asaas.beyondAccess");
 }
 
 /**
@@ -107,8 +104,7 @@ export const asaas: ProviderAdapter = {
       } catch (error) {
         if (!(error instanceof ProviderRequestError && error.tooMuchData)) throw error;
         subscriptions = charges = null;
-        historyNote =
-          "The Asaas account has more subscriptions or charges than one verification reads, so there is no revenue history.";
+        historyNote = revenueText("asaas.historyTooLarge");
       }
     const active = activeSubscriptions(
       subscriptions ?? (await fetchActiveSubscriptions(key, live)),

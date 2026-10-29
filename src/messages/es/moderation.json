@@ -1,1 +1,24 @@
-{}
+{
+  "product": {
+    "heading": "<hidden>Producto oculto: </hidden>Un administrador ocultó este producto el <date></date>.",
+    "effect": "No se muestra en ninguna parte de The SaaS Harbor. Aún puedes editarlo o eliminarlo."
+  },
+  "account": {
+    "heading": "<hidden>Cuenta suspendida: </hidden>Un administrador suspendió tu cuenta el <date></date>.",
+    "effect": "Tu perfil y tus productos están ocultos, y no puedes enviar mensajes ni denuncias. Aún puedes iniciar sesión, editar tus productos y eliminar tu cuenta."
+  },
+  "reason": "Motivo",
+  "explanation": "Explicación",
+  "notGiven": "No indicado",
+  "decisions": {
+    "spam": "Spam o publicidad",
+    "misleading": "Información engañosa o falsa",
+    "impersonation": "Se hace pasar por otra persona",
+    "harassment": "Acoso u odio",
+    "illegal": "Contenido ilegal",
+    "other": "Otro incumplimiento de los términos"
+  },
+  "byPerson": "Esta decisión la tomó una persona, no un sistema automático.",
+  "appeal": "Si crees que es un error, escribe a <contact></contact>.",
+  "terms": "Los <link>términos</link> explican lo que no está permitido."
+}

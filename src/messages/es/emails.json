@@ -1,1 +1,121 @@
-{}
+{
+  "greeting": "Hola, {name}:",
+  "greetingNoName": "Hola:",
+  "settings": "Elige qué correos recibes",
+  "terms": "Términos",
+  "message": {
+    "subject": "Nuevo mensaje de {sender}",
+    "body": "{count, plural, =1 {{sender} te envió un mensaje en The SaaS Harbor.} other {{sender} te envió # mensajes en The SaaS Harbor.}}",
+    "action": "Leer y responder",
+    "footer": "Recibes un correo por conversación hasta que la leas, y nunca incluye el mensaje."
+  },
+  "reports": {
+    "subject": "{count, plural, =1 {1 denuncia abierta en The SaaS Harbor} other {# denuncias abiertas en The SaaS Harbor}}",
+    "body": "{count, plural, =1 {Una denuncia espera revisión.} other {# denuncias esperan revisión.}}",
+    "action": "Abrir la cola de denuncias",
+    "footer": "Recibes como máximo uno de estos correos por hora, porque eres administrador."
+  },
+  "decision": {
+    "reason": "Motivo: {reason}",
+    "explanation": "Explicación:",
+    "person": "Esta decisión la tomó una persona, no un sistema automático.",
+    "personContact": "Esta decisión la tomó una persona, no un sistema automático. Si crees que es un error, escribe a {contact} y explica por qué.",
+    "dashboard": "Abrir tu panel",
+    "footer": "Este correo trata sobre tu cuenta, así que se envía aunque hayas desactivado los demás correos.",
+    "reasons": {
+      "spam": "Spam o publicidad",
+      "misleading": "Información engañosa o falsa",
+      "impersonation": "Se hace pasar por otra persona",
+      "harassment": "Acoso u odio",
+      "illegal": "Contenido ilegal",
+      "other": "Otro incumplimiento de los términos"
+    },
+    "hideSaas": {
+      "subject": "Un administrador ocultó tu producto {name}",
+      "body": "Un administrador ocultó {name} en The SaaS Harbor. No se muestra en ninguna parte del sitio, y todavía puedes editarlo o eliminarlo."
+    },
+    "restoreSaas": {
+      "subject": "Tu producto {name} se muestra de nuevo",
+      "body": "Un administrador revisó {name} de nuevo, y se vuelve a mostrar en The SaaS Harbor."
+    },
+    "suspendAccount": {
+      "subject": "Tu cuenta en The SaaS Harbor está suspendida",
+      "body": "Un administrador suspendió tu cuenta. Tu perfil y tus productos están ocultos, y no puedes enviar mensajes ni denuncias. Todavía puedes iniciar sesión, editar tus productos y eliminar tu cuenta."
+    },
+    "restoreAccount": {
+      "subject": "Tu cuenta en The SaaS Harbor vuelve a estar activa",
+      "body": "Un administrador levantó la suspensión de tu cuenta. Tu perfil y tus productos se muestran de nuevo, y puedes enviar mensajes."
+    }
+  },
+  "milestone": {
+    "subject": {
+      "mrr": "{name} alcanzó {amount} de MRR",
+      "top": "{name} entró en el top {place}",
+      "first": "{name} alcanzó el primer lugar"
+    },
+    "sentence": {
+      "mrr": "{name} alcanzó {amount} en ingresos recurrentes mensuales.",
+      "top": "{name} entró en el top {place} de la clasificación de ingresos verificados de The SaaS Harbor.",
+      "first": "{name} alcanzó el primer lugar de la clasificación de ingresos verificados de The SaaS Harbor."
+    },
+    "also": {
+      "mrr": "También alcanzó {amount} de MRR.",
+      "top": "También entró en el top {place}.",
+      "first": "También alcanzó el primer lugar."
+    },
+    "provider": "Los ingresos están verificados a través de {provider}.",
+    "card": "Hicimos una tarjeta para este hito. Cuando compartas el enlace, la tarjeta aparecerá con tu publicación.",
+    "alt": {
+      "mrr": "{name}: {amount} de MRR en The SaaS Harbor",
+      "top": "{name}: top {place} en The SaaS Harbor",
+      "first": "{name}: n.º 1 en The SaaS Harbor"
+    },
+    "share": {
+      "mrr": "{name} acaba de alcanzar {amount} de MRR, verificado en The SaaS Harbor.",
+      "top": "{name} ya está en el top {place} de la clasificación de ingresos verificados de The SaaS Harbor.",
+      "first": "{name} ya es el n.º 1 de la clasificación de ingresos verificados de The SaaS Harbor."
+    },
+    "shareX": "Compartir en X",
+    "shareLinkedIn": "Compartir en LinkedIn",
+    "page": "Abrir la página del hito",
+    "footer": "Recibes este correo una vez por cada hito que alcanza tu producto mientras su MRR está compartido."
+  },
+  "outcome": {
+    "subject": "Tu denuncia fue revisada",
+    "about": {
+      "message": "Un administrador revisó tu denuncia sobre un mensaje que recibiste.",
+      "saas": "Un administrador revisó tu denuncia sobre el producto {name}.",
+      "profile": "Un administrador revisó tu denuncia sobre el perfil de {name}."
+    },
+    "actioned": "Tomó medidas, por ejemplo ocultar el producto o suspender la cuenta.",
+    "dismissed": "Determinó que no incumple los términos ni la ley, así que no tomó medidas.",
+    "action": "Ver tus denuncias",
+    "footer": "Al usuario denunciado no se le dice quién lo denunció. Este correo se envía por cada denuncia que haces."
+  },
+  "auth": {
+    "confirmation": {
+      "subject": "Confirma tu correo para The SaaS Harbor",
+      "heading": "Confirma tu correo",
+      "preview": "Confirma tu correo electrónico para terminar de crear tu cuenta.",
+      "body": "Gracias por registrarte en The SaaS Harbor. Confirma tu correo electrónico para terminar de crear tu cuenta.",
+      "action": "Confirmar mi correo",
+      "footer": "El enlace funciona una sola vez y caduca después de una hora, y puedes abrirlo en cualquier dispositivo. Si no te registraste, ignora este correo y no se creará ninguna cuenta."
+    },
+    "recovery": {
+      "subject": "Restablece tu contraseña de The SaaS Harbor",
+      "heading": "Restablece tu contraseña",
+      "preview": "Elige una nueva contraseña para tu cuenta de The SaaS Harbor.",
+      "body": "Alguien pidió restablecer la contraseña de tu cuenta de The SaaS Harbor. Elige una nueva contraseña con el botón de abajo.",
+      "action": "Elegir una nueva contraseña",
+      "footer": "El enlace funciona una sola vez y caduca después de una hora, y puedes abrirlo en cualquier dispositivo. Si no lo pediste, ignora este correo y tu contraseña seguirá siendo la misma."
+    },
+    "emailChange": {
+      "subject": "Confirma tu nuevo correo para The SaaS Harbor",
+      "heading": "Confirma tu nuevo correo electrónico",
+      "preview": "Confirma el cambio de tu correo electrónico en The SaaS Harbor.",
+      "body": "Alguien pidió cambiar el correo electrónico de tu cuenta de The SaaS Harbor de {email} a {newEmail}. El cambio se hace cuando se confirma desde ambas direcciones.",
+      "action": "Confirmar el cambio",
+      "footer": "El enlace funciona una sola vez y caduca después de una hora, y puedes abrirlo en cualquier dispositivo. Si no lo pediste, ignora este correo y tu correo electrónico seguirá siendo el mismo."
+    }
+  }
+}

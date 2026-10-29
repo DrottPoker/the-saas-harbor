@@ -7,7 +7,6 @@ import { ProviderRequestError, tooMuchData } from "../http";
 import { toMinorUnits } from "../money";
 
 const NAME = "Google Play";
-const UNREADABLE = "A Google Play sales report could not be read. Try again later.";
 
 /** The largest CSV read from one report, so a huge account cannot exhaust the server's memory. */
 export const MAX_CSV_BYTES = 128 * 1024 * 1024;
@@ -17,7 +16,7 @@ const DIRECTORY_ENTRY = 0x02014b50;
 const LOCAL_HEADER = 0x04034b50;
 
 function unreadable(): never {
-  throw new ProviderRequestError(UNREADABLE);
+  throw new ProviderRequestError("googleplay.reportUnreadable");
 }
 
 /** The end of the central directory, searched back over a comment of up to 64 KB. */
@@ -209,9 +208,7 @@ export function saleRows(text: string, packages: string[]): SaleRow[] {
     (index.timestamp < 0 && index.date < 0) ||
     (index.itemPrice < 0 && index.charged < 0)
   )
-    throw new ProviderRequestError(
-      "A Google Play sales report does not have the columns verification reads.",
-    );
+    throw new ProviderRequestError("googleplay.reportColumns");
   const wanted = new Set(packages.map((name) => name.toLowerCase()));
   const cell = (row: string[], i: number) => (i >= 0 ? (row[i] ?? "").trim() : "");
   const result: SaleRow[] = [];

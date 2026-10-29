@@ -5,6 +5,8 @@ import {
   MAX_PAGES,
   providerGet,
   ProviderRequestError,
+  rateLimited,
+  returnedError,
   tooMuchData,
 } from "../http";
 import type { PolarOrder, PolarSubscription } from "./mrr";
@@ -36,24 +38,16 @@ async function polarGet<T>(key: string, livemode: boolean, path: string, params:
   if (response.ok) return (await response.json()) as T;
   const body = await errorBody(response);
   if (response.status === 401)
-    throw new ProviderRequestError(
-      "Polar rejected the token. It may have expired or been revoked.",
-      401,
-    );
+    throw new ProviderRequestError("polar.tokenRejected", {}, { status: 401 });
   if (response.status === 403) {
     const scope = missingScope(response);
-    throw new ProviderRequestError(
-      scope
-        ? `The token is missing the ${scope} scope.`
-        : "The token is missing a scope this verification needs.",
-      403,
-      path,
-    );
+    throw scope
+      ? new ProviderRequestError("polar.missingScope", { scope }, { status: 403, path })
+      : new ProviderRequestError("polar.missingAnyScope", {}, { status: 403, path });
   }
-  if (response.status === 429)
-    throw new ProviderRequestError("Polar is rate limiting requests. Try again later.", 429);
+  if (response.status === 429) throw rateLimited("Polar");
   const detail = typeof body?.detail === "string" ? body.detail.slice(0, 300) : null;
-  throw new ProviderRequestError(`Polar returned an error${detail ? `: ${detail}` : "."}`);
+  throw returnedError("Polar", detail);
 }
 
 type Page<T> = { items: T[]; pagination: { max_page: number } };

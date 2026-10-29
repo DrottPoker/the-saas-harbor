@@ -1,1 +1,49 @@
-{}
+{
+  "heading": {
+    "title": "Send feedback",
+    "description": "Report a bug or an error, suggest something, or tell us what you think."
+  },
+  "kinds": {
+    "bug": {
+      "label": "Bug or error",
+      "hint": "Something does not work, or shows the wrong thing."
+    },
+    "suggestion": {
+      "label": "Suggestion",
+      "hint": "An idea for something new, or something to do better."
+    },
+    "other": {
+      "label": "Other feedback",
+      "hint": "Anything else you want to tell us."
+    }
+  },
+  "form": {
+    "legend": "What is it about?",
+    "message": "Your feedback",
+    "messageHint": "For a bug: what you did, what happened, and what you expected.",
+    "email": "Email address (optional)",
+    "emailHint": "Only if you want a reply. You do not need an account to send feedback.",
+    "trap": "Leave this empty",
+    "privacyVisitor": "Only admins read feedback, together with the page you came from and your email address, if you give one.",
+    "privacyUser": "Only admins read feedback, together with your name and the page you came from.",
+    "submit": "Send feedback",
+    "sending": "Sending..."
+  },
+  "thanks": {
+    "title": "Thank you for your feedback",
+    "description": "It went straight to the team behind The SaaS Harbor, who read everything that comes in.",
+    "back": "Back to where you were",
+    "start": "Back to the start",
+    "done": "Done"
+  },
+  "errors": {
+    "sendFailed": "Your feedback could not be sent. Please try again.",
+    "chooseKind": "Choose what kind of feedback it is.",
+    "tooShort": "Write at least {min} characters.",
+    "tooLong": "Keep it under {max} characters.",
+    "email": "Enter a valid email address, or leave it empty.",
+    "suspended": "Your account is suspended, so you cannot send feedback.",
+    "tooMuch": "You have sent a lot of feedback. Try again later.",
+    "busy": "A lot of feedback came in just now. Try again later."
+  }
+}

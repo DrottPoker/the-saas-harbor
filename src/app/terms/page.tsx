@@ -1,233 +1,166 @@
+import type { Metadata } from "next";
+import { getLocale, getTranslations } from "next-intl/server";
 import Link from "@/components/link";
-import { Contact, LegalList, LegalSection, legalLink } from "@/components/legal";
+import {
+  Contact,
+  englishLink,
+  LegalList,
+  LegalSection,
+  legalLink,
+  legalStrong,
+  LegalVersion,
+  sentenceGap,
+} from "@/components/legal";
 import { PageHeader, Shell } from "@/components/shell";
+import { DEFAULT_LOCALE, LOCALE_INFO } from "@/i18n/config";
 import { legalDate, operator, termsUpdated } from "@/lib/legal";
 import { DAILY_PRODUCT_LIMIT, PRODUCT_LIMIT } from "@/lib/moderation";
 import { pageMetadata } from "@/lib/seo";
 
-const description =
-  "The rules for using The SaaS Harbor, how moderation works, and the limits of our responsibility.";
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("terms.meta");
+  return pageMetadata({ title: t("title"), description: t("description"), path: "/terms" });
+}
 
-export const metadata = pageMetadata({ title: "Terms of Service", description, path: "/terms" });
+const ACCOUNT_RULES = ["name", "password", "delete"] as const;
 
-export default function Terms() {
+const NOT_ALLOWED = [
+  "illegal",
+  "spam",
+  "misleading",
+  "impersonation",
+  "harassment",
+  "manipulation",
+  "intrusion",
+  "scraping",
+] as const;
+
+const LOSSES = ["profits", "reliance", "conduct", "errors", "thirdParty"] as const;
+
+// Translations are for convenience; the English text is the binding one (see the Language
+// section).
+export default async function Terms() {
+  const [locale, t] = await Promise.all([getLocale(), getTranslations("terms")]);
+  const contact = () => <Contact />;
   return (
     <Shell size="narrow">
-      <PageHeader title="Terms of Service" description={description} />
+      <PageHeader title={t("meta.title")} description={t("meta.description")} />
       <div className="grid gap-10 border-t pt-10">
-        <p className="text-sm text-muted-foreground">Last updated {legalDate(termsUpdated)}.</p>
+        <LegalVersion
+          updated={t("updated", { date: legalDate(termsUpdated, LOCALE_INFO[locale].intl) })}
+          notice={
+            locale !== DEFAULT_LOCALE &&
+            t.rich("translationNotice", { link: englishLink("/terms") })
+          }
+        />
 
-        <LegalSection id="about" title="About these terms">
+        <LegalSection id="about" title={t("about.title")}>
           <p>
-            These terms apply when you use The SaaS Harbor, which is run by {operator.name}. You
-            accept them when you create an account, by ticking the box on the sign-up form, and by
-            using the site. If you do not agree, do not use the site. The{" "}
-            <Link className={legalLink} href="/privacy">
-              privacy policy
-            </Link>{" "}
-            explains what we store about you and why.
+            {t.rich("about.body", {
+              operator: operator.name,
+              link: (chunks) => (
+                <Link className={legalLink} href="/privacy">
+                  {chunks}
+                </Link>
+              ),
+            })}
           </p>
         </LegalSection>
 
-        <LegalSection id="account" title="Your account">
+        <LegalSection id="account" title={t("account.title")}>
           <LegalList>
-            <li>
-              Use your own name, or the name you are known by, and keep your email address up to
-              date.
-            </li>
-            <li>
-              Keep your password to yourself. You are responsible for everything that is done with
-              your account.
-            </li>
-            <li>You can delete your account yourself at any time.</li>
+            {ACCOUNT_RULES.map((key) => (
+              <li key={key}>{t(`account.${key}`)}</li>
+            ))}
           </LegalList>
         </LegalSection>
 
-        <LegalSection id="content" title="What you publish">
+        <LegalSection id="content" title={t("content.title")}>
+          <p>{t("content.ownership")}</p>
           <p>
-            Your products, profile and messages stay yours, and you are solely responsible for them.
-            You must have the right to publish them, including logos and photos, and they must be
-            accurate and lawful. By publishing a product or a profile, you let us show it on the
-            site for as long as it is published.
-          </p>
-          <p>
-            We do not check or verify what users publish, apart from reading the revenue figures
-            described below. Only list products you run or are allowed to represent. An account can
-            list up to {PRODUCT_LIMIT} products and add up to {DAILY_PRODUCT_LIMIT} a day.
+            {t("content.checks", { productLimit: PRODUCT_LIMIT, dailyLimit: DAILY_PRODUCT_LIMIT })}
           </p>
         </LegalSection>
 
-        <LegalSection id="rules" title="What is not allowed">
+        <LegalSection id="rules" title={t("rules.title")}>
           <LegalList>
-            <li>
-              Illegal content, such as fraud or material that infringes someone&apos;s rights.
-            </li>
-            <li>Spam and unsolicited advertising, in listings as well as in messages.</li>
-            <li>Misleading or false information about a product or a person.</li>
-            <li>
-              Pretending to be someone else, or using their name, brand or work without permission.
-            </li>
-            <li>Harassment, threats or hateful content aimed at a person or a group.</li>
-            <li>
-              Manipulating revenue verification or the leaderboard, for example with fake
-              subscriptions or a payment provider account that belongs to another business.
-            </li>
-            <li>
-              Trying to reach other users&apos; accounts or data, collecting it for spam, or
-              disrupting the site.
-            </li>
-            <li>
-              Copying or scraping the site&apos;s listings, profiles or figures in bulk, or
-              republishing them elsewhere.
-            </li>
+            {NOT_ALLOWED.map((key) => (
+              <li key={key}>{t(`rules.${key}`)}</li>
+            ))}
           </LegalList>
         </LegalSection>
 
-        <LegalSection id="revenue" title="Revenue figures">
+        <LegalSection id="revenue" title={t("revenue.title")}>
           <p>
-            Revenue figures are read from your payment provider through a read-only key you provide
-            or read-only access you grant, and are calculated as described in{" "}
-            <Link className={legalLink} href="/about">
-              How it works
-            </Link>
-            . We do not change them, but we do not guarantee that they are accurate, complete or up
-            to date, and we may hide figures we have reason to believe were manipulated.
+            {t.rich("revenue.source", {
+              link: (chunks) => (
+                <Link className={legalLink} href="/about">
+                  {chunks}
+                </Link>
+              ),
+            })}
           </p>
-          <p>
-            The figures and everything else on the site are information only. They are not
-            financial, investment, legal or tax advice, and not an offer or recommendation to buy,
-            sell or invest in anything. You are responsible for your own decisions and should check
-            any information yourself before you rely on it.
-          </p>
-          <p>
-            You are responsible for the keys you provide and the access you grant: that you are
-            allowed to share them, and that they have only the read permissions described on the
-            site. Your payment provider&apos;s own terms apply to your account there, and we are not
-            responsible for the provider or its services.
-          </p>
+          <p>{t("revenue.noAdvice")}</p>
+          <p>{t("revenue.keys")}</p>
         </LegalSection>
 
-        <LegalSection id="messages" title="Messages and dealings between users">
-          <p>
-            Messages are private between two users. You can block a user, and limits stop an account
-            from sending too many messages. Do not use messages for advertising people did not ask
-            for.
-          </p>
-          <p>
-            We are not a party to anything users discuss, agree or do between themselves, such as
-            partnerships, sales, investments or other deals. Any such dealings, and any dispute that
-            comes from them, are solely between the users involved and at their own risk. We do not
-            verify users or what they say, and we do not mediate disputes.
-          </p>
+        <LegalSection id="messages" title={t("messages.title")}>
+          <p>{t("messages.private")}</p>
+          <p>{t("messages.dealings")}</p>
         </LegalSection>
 
-        <LegalSection id="moderation" title="Reports and moderation">
+        <LegalSection id="moderation" title={t("moderation.title")}>
           <p>
-            Signed-in users can report a product, a profile or a message they received.
+            {t("moderation.reporting")}
             {operator.email && (
               <>
-                {" "}
-                Anyone else can write to <Contact />.
+                {sentenceGap(locale)}
+                {t.rich("moderation.others", { contact })}
               </>
             )}
           </p>
-          <p>
-            Admins appointed by the operator review every report themselves. Nothing is decided
-            automatically. When something breaks these terms or the law, an admin can:
-          </p>
+          <p>{t("moderation.review")}</p>
           <LegalList>
-            <li>
-              <strong className="font-medium text-foreground">Hide a product.</strong> It is no
-              longer shown anywhere on the site.
-            </li>
-            <li>
-              <strong className="font-medium text-foreground">Suspend an account.</strong> The
-              profile and products are hidden, and the account cannot send messages or reports. The
-              user can still sign in, edit their products and delete the account.
-            </li>
+            <li>{t.rich("moderation.hide", { b: legalStrong })}</li>
+            <li>{t.rich("moderation.suspend", { b: legalStrong })}</li>
           </LegalList>
-          <p>
-            The user concerned is told the decision, the reason and an explanation, but not who
-            reported. Reporters are told the outcome of their reports. Admins may also act on
-            problems they find without a report, and we may remove content or suspend accounts at
-            our own discretion to protect the site, its users or us.
-          </p>
-          {operator.email && (
-            <p>
-              If you disagree with a decision, write to <Contact /> and say why. We will look at the
-              decision again and reply.
-            </p>
-          )}
+          <p>{t("moderation.decision")}</p>
+          {operator.email && <p>{t.rich("moderation.appeal", { contact })}</p>}
         </LegalSection>
 
-        <LegalSection id="changes" title="Changes and availability">
-          <p>
-            We may change, suspend or stop the site or any part of it at any time, with or without
-            notice. We may change these terms at any time. We then update the date at the top and
-            tell registered users about significant changes. By continuing to use the site after a
-            change, you accept the new terms.
-          </p>
+        <LegalSection id="changes" title={t("changes.title")}>
+          <p>{t("changes.body")}</p>
         </LegalSection>
 
-        <LegalSection id="warranties" title="No warranties">
-          <p>
-            The SaaS Harbor is free to use and is provided &quot;as is&quot; and &quot;as
-            available&quot;, without warranties of any kind. We do not promise that the site is
-            available, secure or free of errors, or that any information on it, including revenue
-            figures, profiles and listings, is accurate, complete or up to date. You use the site
-            and rely on its information at your own risk.
-          </p>
+        <LegalSection id="warranties" title={t("warranties.title")}>
+          <p>{t("warranties.body")}</p>
         </LegalSection>
 
-        <LegalSection id="liability" title="Limitation of liability">
-          <p>
-            To the maximum extent permitted by law, {operator.name} and anyone working with us are
-            not liable for any direct, indirect, incidental, special or consequential loss or damage
-            arising from your use of the site, including:
-          </p>
+        <LegalSection id="liability" title={t("liability.title")}>
+          <p>{t("liability.intro", { operator: operator.name })}</p>
           <LegalList>
-            <li>Lost profits, revenue, business, opportunities, goodwill or data.</li>
-            <li>
-              Losses from relying on information on the site, including revenue figures and what
-              other users publish.
-            </li>
-            <li>
-              Losses from the conduct of other users, including messages, misrepresentations and
-              fraud, and from deals or disputes between users.
-            </li>
-            <li>
-              Losses from errors, interruptions, lost content, or unauthorised access to the site or
-              your account.
-            </li>
-            <li>Losses connected with your payment provider or other third-party services.</li>
+            {LOSSES.map((key) => (
+              <li key={key}>{t(`liability.${key}`)}</li>
+            ))}
           </LegalList>
-          <p>
-            These limits do not apply where the law does not allow them, for example for harm caused
-            intentionally or by gross negligence.
-          </p>
+          <p>{t("liability.exceptions")}</p>
         </LegalSection>
 
-        <LegalSection id="indemnification" title="Indemnification">
-          <p>
-            You agree to indemnify and hold harmless {operator.name} and anyone working with us
-            against any claims, losses, damages, costs and expenses, including reasonable legal
-            fees, that arise from your use of the site, what you publish or send, your breach of
-            these terms or the law, or any dispute between you and another user.
-          </p>
+        <LegalSection id="indemnification" title={t("indemnification.title")}>
+          <p>{t("indemnification.body", { operator: operator.name })}</p>
         </LegalSection>
 
-        <LegalSection id="law" title="Governing law">
-          <p>
-            These terms are governed by Swedish law, and disputes are decided by the Swedish general
-            courts, unless mandatory law gives you the right to go to court elsewhere.
-          </p>
+        <LegalSection id="law" title={t("law.title")}>
+          <p>{t("law.body")}</p>
+        </LegalSection>
+
+        <LegalSection id="language" title={t("language.title")}>
+          <p>{t("language.body")}</p>
         </LegalSection>
 
         {operator.email && (
-          <LegalSection id="contact" title="Contact">
-            <p>
-              Questions about these terms, reports and appeals go to <Contact />.
-            </p>
+          <LegalSection id="contact" title={t("contact.title")}>
+            <p>{t.rich("contact.body", { contact })}</p>
           </LegalSection>
         )}
       </div>

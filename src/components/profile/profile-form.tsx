@@ -1,10 +1,11 @@
 "use client";
 
 import { startTransition, useEffect, useRef } from "react";
+import { useTranslations } from "next-intl";
 import Link from "@/components/link";
 import { saveProfile } from "@/app/actions";
 import type { Profile } from "@/lib/data";
-import { USERNAME_CHANGE_DAYS, usernameLockedMessage } from "@/lib/domain";
+import { USERNAME_CHANGE_DAYS } from "@/lib/domain";
 import { Actions, Feedback, Field, ImageField, Section, Submit, UsernameInput } from "../forms";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
@@ -12,12 +13,13 @@ import { useEditorAction } from "../use-editor-action";
 
 export function ProfileForm({
   profile,
-  usernameAvailableAt,
+  usernameLockDays,
 }: {
   profile: Profile | null;
-  /** When the username can be changed again, or null when it can now. */
-  usernameAvailableAt: string | null;
+  /** In how many days the username can be changed again, or null when it can now. */
+  usernameLockDays: number | null;
 }) {
+  const t = useTranslations("account.profile");
   const [state, action, pending] = useEditorAction(saveProfile);
   const form = useRef<HTMLFormElement>(null);
   // A saved photo must not be uploaded again with the next save.
@@ -28,6 +30,7 @@ export function ProfileForm({
   }, [state]);
   const text = (key: keyof Profile & string) =>
     state.values?.[key] ?? (profile?.[key] as string | null | undefined) ?? "";
+  const locked = usernameLockDays != null;
 
   return (
     // Submitted from onSubmit rather than the action prop, so React does not reset the form after
@@ -40,14 +43,12 @@ export function ProfileForm({
         startTransition(() => action(data));
       }}
     >
-      <Section
-        title="Intro"
-        description="Shown at the top of your profile and next to your products."
-      >
-        <Field name="name" label="Name">
+      <Section title={t("introTitle")} description={t("introDescription")}>
+        <Field name="name" label={t("name")}>
           <Input
             id="name"
             name="name"
+            dir="auto"
             required
             minLength={2}
             maxLength={60}
@@ -57,57 +58,56 @@ export function ProfileForm({
         </Field>
         <Field
           name="username"
-          label="Username"
+          label={t("username")}
           hint={
-            usernameAvailableAt
-              ? `Shown as @username under your name, and used as your profile address. ${usernameLockedMessage(usernameAvailableAt)}`
-              : `Shown as @username under your name, and used as your profile address. After a change, you can change it again in ${USERNAME_CHANGE_DAYS} days.`
+            locked
+              ? t("usernameLockedHint", { days: usernameLockDays })
+              : t("usernameHint", { days: USERNAME_CHANGE_DAYS })
           }
         >
           {/* Read-only rather than disabled, so the current username is still sent. */}
           <UsernameInput
-            readOnly={!!usernameAvailableAt}
+            readOnly={locked}
             defaultValue={
-              usernameAvailableAt
-                ? (profile?.slug ?? "")
-                : (state.values?.username ?? profile?.slug ?? "")
+              locked ? (profile?.slug ?? "") : (state.values?.username ?? profile?.slug ?? "")
             }
           />
         </Field>
-        <Field
-          name="headline"
-          label="Headline"
-          hint="For example: Solo founder building tools for finance teams."
-        >
-          <Input id="headline" name="headline" maxLength={120} defaultValue={text("headline")} />
+        <Field name="headline" label={t("headline")} hint={t("headlineHint")}>
+          <Input
+            id="headline"
+            name="headline"
+            dir="auto"
+            maxLength={120}
+            defaultValue={text("headline")}
+          />
         </Field>
-        <Field name="location" label="Location" hint="City and country, if you want to share it.">
+        <Field name="location" label={t("location")} hint={t("locationHint")}>
           <Input
             id="location"
             name="location"
+            dir="auto"
             maxLength={80}
             autoComplete="address-level2"
             defaultValue={text("location")}
           />
         </Field>
       </Section>
-      <Section title="Photo" description="A square photo works best.">
+      <Section title={t("photoTitle")} description={t("photoDescription")}>
         <ImageField
-          label="Upload photo"
+          label={t("photoUpload")}
           current={profile?.avatar_path}
           name={profile?.name ?? ""}
           person
         />
       </Section>
-      <Section
-        title="Links"
-        description="Web addresses, with or without https://. LinkedIn, GitHub and X show with their icons."
-      >
-        <Field name="website" label="Website">
+      <Section title={t("linksTitle")} description={t("linksDescription")}>
+        <Field name="website" label={t("website")}>
           <Input
             id="website"
             name="website"
             type="text"
+            dir="auto"
             inputMode="url"
             autoCapitalize="none"
             spellCheck={false}
@@ -116,11 +116,13 @@ export function ProfileForm({
             defaultValue={text("website")}
           />
         </Field>
+        {/* Brand names, the same in every language. */}
         <Field name="linkedin_url" label="LinkedIn">
           <Input
             id="linkedin_url"
             name="linkedin_url"
             type="text"
+            dir="auto"
             inputMode="url"
             autoCapitalize="none"
             spellCheck={false}
@@ -134,6 +136,7 @@ export function ProfileForm({
             id="github_url"
             name="github_url"
             type="text"
+            dir="auto"
             inputMode="url"
             autoCapitalize="none"
             spellCheck={false}
@@ -147,6 +150,7 @@ export function ProfileForm({
             id="x_url"
             name="x_url"
             type="text"
+            dir="auto"
             inputMode="url"
             autoCapitalize="none"
             spellCheck={false}
@@ -155,15 +159,12 @@ export function ProfileForm({
             defaultValue={text("x_url")}
           />
         </Field>
-        <Field
-          name="social_url"
-          label="Other link"
-          hint="Any other profile, such as a newsletter or a podcast."
-        >
+        <Field name="social_url" label={t("otherLink")} hint={t("otherLinkHint")}>
           <Input
             id="social_url"
             name="social_url"
             type="text"
+            dir="auto"
             inputMode="url"
             autoCapitalize="none"
             spellCheck={false}
@@ -177,9 +178,11 @@ export function ProfileForm({
         <Feedback state={state} />
         <Actions>
           <Button asChild variant="ghost">
-            <Link href="/dashboard">Cancel</Link>
+            <Link href="/dashboard">{t("cancel")}</Link>
           </Button>
-          <Submit pending={pending}>Save profile</Submit>
+          <Submit pending={pending} pendingLabel={t("saving")}>
+            {t("submit")}
+          </Submit>
         </Actions>
       </div>
     </form>

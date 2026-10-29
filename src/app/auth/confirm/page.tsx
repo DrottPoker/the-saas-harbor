@@ -1,65 +1,66 @@
 import type { Metadata } from "next";
+import { getTranslations } from "next-intl/server";
 import Link from "@/components/link";
+import { ClientMessages } from "@/components/client-messages";
 import { ConfirmLinkForm } from "@/components/forms";
 import { LogoMark } from "@/components/logo";
-import { emailLink } from "@/lib/domain";
+import { emailLink, type EmailLinkType } from "@/lib/domain";
 import { firstValues, type SearchParams } from "@/lib/params";
 
 type Props = { searchParams: Promise<SearchParams> };
 
-const copy = {
-  email: {
-    title: "Confirm your email",
-    description: "One last step: confirm your email address to finish creating your account.",
-    submit: "Confirm email",
-  },
-  recovery: {
-    title: "Reset your password",
-    description: "Continue to choose a new password for your account.",
-    submit: "Choose a new password",
-  },
-  email_change: {
-    title: "Confirm your new email address",
-    description: "Confirm the change of your account's email address.",
-    submit: "Confirm the change",
-  },
-};
+// Each kind of link's texts, in auth.confirm.
+const copyKey = {
+  email: "email",
+  recovery: "recovery",
+  email_change: "emailChange",
+} as const satisfies Record<EmailLinkType, string>;
 
 export async function generateMetadata({ searchParams }: Props): Promise<Metadata> {
-  const params = firstValues(await searchParams);
+  const [params, t] = await Promise.all([
+    searchParams.then(firstValues),
+    getTranslations("auth.confirm"),
+  ]);
   const link = emailLink(params.token_hash, params.type);
   // The address holds a one-time token, so it is never sent to another page as a referrer.
-  return { title: link ? copy[link.type].title : "Link incomplete", referrer: "no-referrer" };
+  return {
+    title: link ? t(`${copyKey[link.type]}.title`) : t("incompleteMeta"),
+    referrer: "no-referrer",
+  };
 }
 
 // Email links open here in any browser. The token is only used when the button is pressed.
 export default async function Confirm({ searchParams }: Props) {
-  const params = firstValues(await searchParams);
+  const [params, t] = await Promise.all([
+    searchParams.then(firstValues),
+    getTranslations("auth.confirm"),
+  ]);
   const link = emailLink(params.token_hash, params.type);
-  const text = link && copy[link.type];
+  const key = link && copyKey[link.type];
   return (
     <div className="mx-auto w-full max-w-sm px-4 pt-14 sm:pt-24">
       <LogoMark className="size-14" />
       <h1 className="mt-6 text-2xl font-semibold tracking-tight">
-        {text ? text.title : "This link is incomplete"}
+        {key ? t(`${key}.title`) : t("incompleteTitle")}
       </h1>
       <p className="mt-1.5 text-muted-foreground">
-        {text
-          ? text.description
-          : "Open the link again from the email, or copy the whole address into your browser."}
+        {key ? t(`${key}.description`) : t("incompleteBody")}
       </p>
       <div className="mt-8">
-        {link && text ? (
+        {link && key ? (
           <>
-            <ConfirmLinkForm tokenHash={link.tokenHash} type={link.type} submit={text.submit} />
-            <p className="mt-6 text-[13px] text-muted-foreground">
-              Why the extra click? Some email services open links on their own to check them, and
-              that would use up your link before you could.
-            </p>
+            <ClientMessages namespaces={["auth"]}>
+              <ConfirmLinkForm
+                tokenHash={link.tokenHash}
+                type={link.type}
+                submit={t(`${key}.submit`)}
+              />
+            </ClientMessages>
+            <p className="mt-6 text-[13px] text-muted-foreground">{t("whyClick")}</p>
           </>
         ) : (
           <Link className="text-sm font-medium hover:underline" href="/auth">
-            Back to sign in
+            {t("backToSignIn")}
           </Link>
         )}
       </div>

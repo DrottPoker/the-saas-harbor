@@ -34,46 +34,29 @@ export function parsePrivateKey(input: string): KeyObject {
     .replace(/\\n/g, "")
     .replace(/-----(BEGIN|END) PRIVATE KEY-----/g, "")
     .replace(/\s+/g, "");
-  if (!/^[A-Za-z0-9+/]{40,}={0,2}$/.test(body))
-    throw new VerificationError("Paste the contents of the .p8 file you downloaded for the key.");
+  if (!/^[A-Za-z0-9+/]{40,}={0,2}$/.test(body)) throw new VerificationError("appstore.p8Format");
   let key: KeyObject;
   try {
     key = createPrivateKey({ key: Buffer.from(body, "base64"), format: "der", type: "pkcs8" });
   } catch {
-    throw new VerificationError(
-      "The private key could not be read. Paste the whole contents of the .p8 file.",
-    );
+    throw new VerificationError("appstore.privateKeyUnreadable");
   }
   if (key.asymmetricKeyType !== "ec" || key.asymmetricKeyDetails?.namedCurve !== "prime256v1")
-    throw new VerificationError(
-      "This is not an App Store Connect API key. Paste the contents of the .p8 file of a Team key.",
-    );
+    throw new VerificationError("appstore.notTeamKey");
   return key;
 }
 
 export function parseAppStoreKey({ key: input, account, extra = [] }: KeyInput): ParsedKey {
   const issuer = account.trim().toLowerCase();
-  if (!ISSUER.test(issuer))
-    throw new VerificationError(
-      "Enter the Issuer ID shown above your Team keys in App Store Connect.",
-    );
+  if (!ISSUER.test(issuer)) throw new VerificationError("appstore.issuerFormat");
   const keyId = (extra[0] ?? "").trim().toUpperCase();
-  if (!KEY_ID.test(keyId))
-    throw new VerificationError("Enter the Key ID of the API key: ten letters and digits.");
+  if (!KEY_ID.test(keyId)) throw new VerificationError("appstore.keyIdFormat");
   const vendor = (extra[1] ?? "").trim();
-  if (!VENDOR.test(vendor))
-    throw new VerificationError(
-      "Enter your vendor number, shown in Payments and Financial Reports in App Store Connect.",
-    );
+  if (!VENDOR.test(vendor)) throw new VerificationError("appstore.vendorFormat");
   const pasted = input.trim();
   if (/^(rk|sk|pk)_(live|test)_|^pdl_|^polar_|^creem_|^apik_/.test(pasted))
-    throw new VerificationError(
-      "This key belongs to another payment provider. Paste the contents of the .p8 file of your App Store Connect API key.",
-    );
-  if (KEY_ID.test(pasted.toUpperCase()))
-    throw new VerificationError(
-      "This is a Key ID. Paste the contents of the .p8 file you downloaded for the key.",
-    );
+    throw new VerificationError("appstore.otherProvider");
+  if (KEY_ID.test(pasted.toUpperCase())) throw new VerificationError("appstore.keyIdPasted");
   const privateKey = parsePrivateKey(pasted);
   const der = privateKey.export({ format: "der", type: "pkcs8" }).toString("base64");
   return {

@@ -2,12 +2,7 @@ import "server-only";
 import { createHash } from "node:crypto";
 import { adminClient } from "@/lib/supabase/admin";
 import { providerName, type ProviderId } from "./catalog";
-import {
-  changedDuringCheck,
-  DISCONNECTED_DURING_CHECK,
-  REPLACED_DURING_CHECK,
-  VerificationError,
-} from "./errors";
+import { changedDuringCheck, VerificationError } from "./errors";
 import { usdRates } from "./fx";
 import { MAX_PAGES } from "./http";
 import { toUsdCents } from "./money";
@@ -89,12 +84,11 @@ export async function readRevenue(
   });
   if (error) throw new Error("The revenue read state could not be loaded.");
   // No connection any more: the founder disconnected the provider since the run began.
-  if (!data) throw new VerificationError(DISCONNECTED_DURING_CHECK);
+  if (!data) throw new VerificationError("run.disconnected");
   const state = data as ReadState;
-  if (state.provider !== provider)
-    throw new VerificationError("The product is connected to another provider.");
+  if (state.provider !== provider) throw new VerificationError("run.otherProvider");
   if (Date.parse(state.connected_at) !== Date.parse(connectedAt))
-    throw new VerificationError(REPLACED_DURING_CHECK);
+    throw new VerificationError("run.keyReplaced");
 
   const stored = (id: string): StoredPayment | null => {
     const found = state.stored[paymentHash(provider, id)];
@@ -118,9 +112,7 @@ export async function readRevenue(
     { recent: MAX_PAGES, older: OLDER_PAGES },
   );
   if (!plan)
-    throw new VerificationError(
-      `The ${providerName(provider)} account has more payments on one day than one read covers, so there is no revenue beyond MRR.`,
-    );
+    throw new VerificationError("run.paymentsTooDense", { provider: providerName(provider) });
   const { windows, listed, from, origin } = plan;
 
   const byHash = new Map<string, ListedPayment>();
@@ -165,9 +157,7 @@ export async function readRevenue(
   const refused = changedDuringCheck(recordError?.message);
   if (refused) throw refused;
   if (recordError?.message.includes("already verify another SaaS"))
-    throw new VerificationError(
-      `Payments of this ${providerName(provider)} account already verify another SaaS on The SaaS Harbor.`,
-    );
+    throw new VerificationError("run.paymentsClaimed", { provider: providerName(provider) });
   if (recordError || !totals)
     throw new Error(`The payments could not be recorded: ${recordError?.message}`);
 

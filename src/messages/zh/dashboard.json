@@ -1,1 +1,60 @@
-{}
+{
+  "meta": {
+    "title": "控制台"
+  },
+  "title": "控制台",
+  "description": "管理你的产品。",
+  "addSaas": "添加 SaaS",
+  "notices": {
+    "saved": "已保存。公开的产品页面已更新。",
+    "added": "产品已添加，页面已公开。你可以随时通过“编辑”连接支付服务商。",
+    "deleted": "产品已删除，已从目录和排行榜中移除。"
+  },
+  "nextSteps": {
+    "title": "下一步",
+    "progress": "已完成 {done}/{total}",
+    "description": "每完成一步，你的产品信息就更完整。除第一步外，其余都是可选的。",
+    "done": "（已完成）",
+    "list": {
+      "label": "提交你的第一个产品",
+      "action": "添加"
+    },
+    "logo": {
+      "label": "为每个产品添加 Logo",
+      "action": "添加 Logo"
+    },
+    "profile": {
+      "label": "为个人资料添加照片和一句话介绍",
+      "action": "编辑个人资料"
+    },
+    "connect": {
+      "label": "连接支付服务商，验证收入并加入排行榜",
+      "action": "连接"
+    },
+    "domain": {
+      "label": "验证你的域名，让产品页面显示网站归你所有",
+      "action": "验证"
+    }
+  },
+  "products": {
+    "title": "你的产品",
+    "total": "共 {count} 个",
+    "emptyTitle": "还没有产品",
+    "emptyBody": "添加产品后，它会出现在目录中。已验证收入默认公开，你也可以隐藏。",
+    "hidden": "已隐藏",
+    "verified": "已验证",
+    "syncFailed": "同步失败",
+    "notVerified": "未验证",
+    "view": "查看",
+    "edit": "编辑"
+  },
+  "share": {
+    "post": "我刚刚在 {site} 上提交了 {name}。",
+    "title": "{name} 已提交",
+    "description": "在 X 上分享，让更多人发现它。帖子会显示产品卡片并链接到产品页面，产品页面再链接到你的网站。",
+    "x": "分享到 X",
+    "linkedin": "分享到 LinkedIn",
+    "notNow": "以后再说",
+    "seeFirst": "想先看看吗？<link>查看你的页面</link>"
+  }
+}

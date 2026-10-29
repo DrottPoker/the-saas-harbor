@@ -13,6 +13,7 @@ import { useEditorAction } from "./use-editor-action";
 import { useFormStatus } from "react-dom";
 import Link from "@/components/link";
 import { MailCheck } from "lucide-react";
+import { useLocale, useTranslations } from "next-intl";
 import {
   authenticate,
   checkSignupDetails,
@@ -30,7 +31,7 @@ import {
   type ActionState,
   type EmailLinkType,
 } from "@/lib/domain";
-import { PROVIDER_NAMES, type OAuthProvider } from "@/lib/auth";
+import { oauthStartPath, PROVIDER_NAMES, type OAuthProvider } from "@/lib/auth";
 import { cn } from "@/lib/utils";
 import { PersonAvatar, ProductLogo } from "./avatars";
 import { ProviderButton } from "./provider-button";
@@ -39,11 +40,15 @@ import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
 
+function useBlockText() {
+  return useTranslations("common.forms");
+}
+
 export function Submit({
   className,
   variant,
   size,
-  pendingLabel = "Saving...",
+  pendingLabel,
   pending: busy,
   children,
 }: {
@@ -55,11 +60,12 @@ export function Submit({
   pending?: boolean;
   children: React.ReactNode;
 }) {
+  const text = useBlockText();
   const status = useFormStatus();
   const pending = busy ?? status.pending;
   return (
     <Button type="submit" variant={variant} size={size} disabled={pending} className={className}>
-      {pending ? pendingLabel : children}
+      {pending ? (pendingLabel ?? text("saving")) : children}
     </Button>
   );
 }
@@ -170,15 +176,16 @@ export function ImageField({
   name: string;
   person?: boolean;
 }) {
+  const text = useBlockText();
   const Preview = person ? PersonAvatar : ProductLogo;
   return (
     <div className="flex items-start gap-4">
       <Preview path={current} name={name || "?"} size="lg" />
       <div className="grid flex-1 gap-3">
-        <Field name="image" label={label} hint="PNG, JPEG or WebP, up to 2 MB. Images are public.">
+        <Field name="image" label={label} hint={text("imageHint")}>
           <Input name="image" id="image" type="file" accept="image/png,image/jpeg,image/webp" />
         </Field>
-        {current && <Share name="remove_image" label="Remove current image" checked={false} />}
+        {current && <Share name="remove_image" label={text("removeImage")} checked={false} />}
       </div>
     </div>
   );
@@ -242,6 +249,17 @@ export function UsernameInput(props: Omit<React.ComponentProps<typeof Input>, "t
 
 /** The Terms of Service box of a sign-up. The server checks it again and records the version. */
 function TermsCheckbox({ defaultChecked }: { defaultChecked: boolean }) {
+  const t = useTranslations("auth.form");
+  const legal = (href: string) => (chunks: React.ReactNode) => (
+    <Link
+      className="font-medium text-foreground underline"
+      href={href}
+      target="_blank"
+      rel="noopener"
+    >
+      {chunks}
+    </Link>
+  );
   return (
     <div className="flex items-start gap-3">
       <input
@@ -253,25 +271,7 @@ function TermsCheckbox({ defaultChecked }: { defaultChecked: boolean }) {
         className="mt-0.5 size-4 shrink-0 accent-brand"
       />
       <label htmlFor="terms" className="text-[13px] leading-5 text-muted-foreground">
-        I agree to the{" "}
-        <Link
-          className="font-medium text-foreground underline"
-          href="/terms"
-          target="_blank"
-          rel="noopener"
-        >
-          Terms of Service
-        </Link>
-        . I have read the{" "}
-        <Link
-          className="font-medium text-foreground underline"
-          href="/privacy"
-          target="_blank"
-          rel="noopener"
-        >
-          Privacy Policy
-        </Link>
-        .
+        {t.rich("terms", { terms: legal("/terms"), privacy: legal("/privacy") })}
       </label>
     </div>
   );
@@ -285,6 +285,7 @@ const RESEND_WAIT = 60;
  * which just sent one, and after each email it sends.
  */
 function ResendConfirmation({ email }: { email: string }) {
+  const t = useTranslations("auth.sent");
   const [result, setResult] = useState<ActionState>({});
   const [wait, setWait] = useState(RESEND_WAIT);
   const [sending, startSending] = useTransition();
@@ -309,25 +310,13 @@ function ResendConfirmation({ email }: { email: string }) {
           })
         }
       >
-        {sending
-          ? "Sending..."
-          : wait > 0
-            ? `Send the email again in ${wait} s`
-            : "Send the email again"}
+        {sending ? t("sending") : wait > 0 ? t("resendIn", { seconds: wait }) : t("resend")}
       </Button>
     </div>
   );
 }
 
-const authCopy = {
-  login: "Sign in",
-  signup: "Create account",
-  reset: "Send reset link",
-  update: "Update password",
-} as const;
-
-const USERNAME_HINT =
-  "3 to 30 letters, numbers and hyphens. Shown as @username and used as your profile address. You can change it later.";
+const usernameLimits = { min: USERNAME_MIN_LENGTH, max: USERNAME_MAX_LENGTH };
 
 // Sign-up has two steps: the email address and password, which the server checks first, then the
 // username and the Terms of Service, after which the account is created. Both steps stay in one form, so the
@@ -344,6 +333,8 @@ export function AuthForm({
   /** The sign-in providers Supabase Auth offers, such as Google and GitHub. */
   providers?: OAuthProvider[];
 }) {
+  const t = useTranslations("auth");
+  const locale = useLocale();
   const [state, action, creating] = useEditorAction(authenticate.bind(null, mode));
   const signup = mode === "signup";
   const [step, setStep] = useState<"details" | "username">("details");
@@ -394,30 +385,33 @@ export function AuthForm({
           tabIndex={-1}
           className="text-xl font-semibold tracking-tight focus:outline-none"
         >
-          Check your inbox
+          {t("sent.title")}
         </h2>
         <p className="leading-7 text-muted-foreground">
-          We sent a confirmation link to{" "}
-          <strong className="font-medium text-foreground [overflow-wrap:anywhere]">
-            {state.values?.email}
-          </strong>
-          . Open it to confirm your account and add your product.
+          {t.rich("sent.body", {
+            email: () => (
+              <strong className="font-medium text-foreground [overflow-wrap:anywhere]">
+                {state.values?.email}
+              </strong>
+            ),
+          })}
         </p>
-        <p className="text-[13px] leading-5 text-muted-foreground">
-          Nothing after a few minutes? Look in your spam folder, send it again, or sign up again if
-          the address was wrong.
-        </p>
+        <p className="text-[13px] leading-5 text-muted-foreground">{t("sent.help")}</p>
         <ResendConfirmation email={state.values?.email ?? ""} />
         <Button asChild variant="outline" className="h-10 w-full">
           <Link href={authHref()} replace>
-            Go to sign in
+            {t("sent.goToSignIn")}
           </Link>
         </Button>
       </section>
     );
 
   const withProviders = providers.length > 0 && (mode === "login" || (signup && !choosing));
-  const query = continuing && `?${continuing}`;
+  const quietLink = (href: string) => (chunks: React.ReactNode) => (
+    <Link className="font-medium text-foreground hover:underline" href={href} replace>
+      {chunks}
+    </Link>
+  );
   return (
     <div className="grid gap-5">
       {withProviders && (
@@ -427,15 +421,15 @@ export function AuthForm({
               <ProviderButton
                 key={provider}
                 provider={provider}
-                href={`/auth/oauth/${provider}${query}`}
+                href={oauthStartPath(provider, { next, locale })}
               >
-                Continue with {PROVIDER_NAMES[provider]}
+                {t("form.continueWith", { provider: PROVIDER_NAMES[provider] })}
               </ProviderButton>
             ))}
           </div>
           <div className="flex items-center gap-3 text-[13px] text-muted-foreground">
             <span className="h-px flex-1 bg-border" />
-            or with email
+            {t("form.orWithEmail")}
             <span className="h-px flex-1 bg-border" />
           </div>
         </>
@@ -448,7 +442,11 @@ export function AuthForm({
         {mode === "login" && next && <input type="hidden" name="next" value={next} />}
         {choosing && (
           <>
-            <Field name="username" label="Username" hint={USERNAME_HINT}>
+            <Field
+              name="username"
+              label={t("form.username")}
+              hint={t("form.usernameHint", usernameLimits)}
+            >
               <UsernameInput ref={username} defaultValue={state.values?.username} />
             </Field>
             {/* A refused username is the usual problem here, so it shows by the field. */}
@@ -459,7 +457,7 @@ export function AuthForm({
         )}
         <div className={cn("grid gap-5", choosing && "hidden")}>
           {mode !== "update" && (
-            <Field name="email" label="Email address">
+            <Field name="email" label={t("form.email")}>
               <Input
                 id="email"
                 name="email"
@@ -474,10 +472,10 @@ export function AuthForm({
           {mode !== "reset" && (
             <Field
               name="password"
-              label={mode === "update" ? "New password" : "Password"}
+              label={mode === "update" ? t("form.newPassword") : t("form.password")}
               hint={
                 mode === "signup" || mode === "update"
-                  ? `At least ${PASSWORD_MIN_LENGTH} characters.`
+                  ? t("form.passwordHint", { min: PASSWORD_MIN_LENGTH })
                   : undefined
               }
               aside={
@@ -489,7 +487,7 @@ export function AuthForm({
                     href={authHref("reset")}
                     replace
                   >
-                    Forgot password?
+                    {t("form.forgotPassword")}
                   </Link>
                 )
               }
@@ -507,43 +505,29 @@ export function AuthForm({
           )}
         </div>
         {!choosing && <Feedback state={signup ? details : state} />}
-        <Submit className="h-10 w-full" pending={signup ? checking || creating : undefined}>
-          {signup && !choosing ? "Continue" : authCopy[mode]}
+        <Submit
+          className="h-10 w-full"
+          pending={signup ? checking || creating : undefined}
+          pendingLabel={t("form.saving")}
+        >
+          {signup && !choosing ? t("form.continue") : t(`form.submit.${mode}`)}
         </Submit>
         <p className="text-center text-sm text-muted-foreground">
           {mode === "login" ? (
-            <>
-              No account yet?{" "}
-              <Link
-                className="font-medium text-foreground hover:underline"
-                href={authHref("signup")}
-                replace
-              >
-                Create one
-              </Link>
-            </>
+            t.rich("form.noAccount", { link: quietLink(authHref("signup")) })
           ) : signup && !choosing ? (
-            <>
-              Already have an account?{" "}
-              <Link
-                className="font-medium text-foreground hover:underline"
-                href={authHref()}
-                replace
-              >
-                Sign in
-              </Link>
-            </>
+            t.rich("form.haveAccount", { link: quietLink(authHref()) })
           ) : choosing ? (
             <button
               type="button"
               className="font-medium text-foreground hover:underline"
               onClick={() => setStep("details")}
             >
-              Back
+              {t("form.back")}
             </button>
           ) : (
             <Link className="font-medium text-foreground hover:underline" href={authHref()} replace>
-              Back to sign in
+              {t("form.backToSignIn")}
             </Link>
           )}
         </p>
@@ -598,23 +582,24 @@ export function EmailSettingsForm({
   milestones: boolean;
   admin: boolean;
 }) {
+  const t = useTranslations("account.notifications");
   const [state, action] = useEditorAction(saveEmailSettingsAction);
   const checked = (key: string, saved: boolean) =>
     state.values ? state.values[key] === "on" : saved;
   return (
     <form action={action} className="grid gap-5">
       <fieldset className="grid gap-4">
-        <legend className="sr-only">Emails you get</legend>
+        <legend className="sr-only">{t("legend")}</legend>
         <Setting
           name="messages"
-          label="New messages from other users"
-          hint="One email per conversation, only when a message is still unread after a few minutes. It never contains the message."
+          label={t("messages")}
+          hint={t("messagesHint")}
           checked={checked("messages", messages)}
         />
         <Setting
           name="milestones"
-          label="Milestones your products reach"
-          hint="When a product's shared MRR passes an amount such as $1K, or it reaches the top 10. Once per milestone, with a card to share."
+          label={t("milestones")}
+          hint={t("milestonesHint")}
           checked={checked("milestones", milestones)}
         />
         {admin && (
@@ -622,8 +607,8 @@ export function EmailSettingsForm({
             <input type="hidden" name="reports_shown" value="1" />
             <Setting
               name="reports"
-              label="New reports waiting for review"
-              hint="For admins. At most one email an hour."
+              label={t("reports")}
+              hint={t("reportsHint")}
               checked={checked("reports", reports)}
             />
           </>
@@ -631,7 +616,7 @@ export function EmailSettingsForm({
       </fieldset>
       <Feedback state={state} />
       <div>
-        <Submit>Save settings</Submit>
+        <Submit pendingLabel={t("saving")}>{t("submit")}</Submit>
       </div>
     </form>
   );
@@ -647,11 +632,12 @@ export function ConfirmLinkForm({
   type: EmailLinkType;
   submit: string;
 }) {
+  const t = useTranslations("auth.confirm");
   const [state, action] = useEditorAction(confirmEmailLinkAction);
   const back = {
-    email: { href: "/auth", label: "Back to sign in" },
-    recovery: { href: "/auth?mode=reset", label: "Request a new reset link" },
-    email_change: { href: "/dashboard/settings", label: "Back to settings" },
+    email: { href: "/auth", label: t("backToSignIn") },
+    recovery: { href: "/auth?mode=reset", label: t("requestReset") },
+    email_change: { href: "/dashboard/settings", label: t("backToSettings") },
   }[type];
   return (
     <form action={action} className="grid gap-5">
@@ -660,7 +646,7 @@ export function ConfirmLinkForm({
       <Feedback state={state} />
       {/* Once one address of an email change is confirmed, its link is used up. */}
       {!state.success && (
-        <Submit className="h-10 w-full" pendingLabel="Checking the link...">
+        <Submit className="h-10 w-full" pendingLabel={t("checking")}>
           {submit}
         </Submit>
       )}
@@ -675,17 +661,22 @@ export function ConfirmLinkForm({
 
 /** The last step of a sign-up through Google or GitHub: a username and the Terms of Service. */
 export function FinishSignupForm({ next }: { next?: string | null }) {
+  const t = useTranslations("auth");
   const [state, action] = useEditorAction(finishSignupAction);
   return (
     <form action={action} className="grid gap-5">
       {next && <input type="hidden" name="next" value={next} />}
-      <Field name="username" label="Username" hint={USERNAME_HINT}>
+      <Field
+        name="username"
+        label={t("form.username")}
+        hint={t("form.usernameHint", usernameLimits)}
+      >
         <UsernameInput defaultValue={state.values?.username} autoFocus />
       </Field>
       <TermsCheckbox defaultChecked={state.values?.terms === "on"} />
       <Feedback state={state} />
-      <Submit className="h-10 w-full" pendingLabel="Creating your account...">
-        Create account
+      <Submit className="h-10 w-full" pendingLabel={t("finish.creating")}>
+        {t("finish.submit")}
       </Submit>
     </form>
   );

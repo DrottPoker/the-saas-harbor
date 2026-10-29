@@ -16,6 +16,7 @@
 // The reports run a few days behind, so a subscription counts until a week after its period ends:
 // a new subscription shows once its first charge is in the report, and an ended one leaves MRR a
 // week after the period it paid for. A charge refunded in full does not count.
+import { revenueText } from "../errors";
 import type { ServiceLine } from "../history";
 import { addTo, intervalMonths } from "../money";
 import type { SaleRow } from "./report";
@@ -205,10 +206,7 @@ export function learnPeriods(charges: SaleCharge[]) {
 }
 
 function yearlyNote(count: number) {
-  if (!count) return null;
-  return count === 1
-    ? "1 subscription counts as yearly until a renewal shows how often it renews."
-    : `${count} subscriptions count as yearly until a renewal shows how often they renew.`;
+  return count ? revenueText("googleplay.yearly", { count }) : null;
 }
 
 /** Subscription charges from this day on hold every counted subscription's latest two. */

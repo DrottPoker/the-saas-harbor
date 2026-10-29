@@ -1,1 +1,160 @@
-{}
+{
+  "meta": {
+    "title": "Dónde lanzar tu SaaS",
+    "description": "Dónde publicar y lanzar un SaaS nuevo: días de lanzamiento, comunidades, directorios y sitios de reseñas, con para qué sirve cada uno y qué te pide."
+  },
+  "checked": "Revisado el {date}. Las reglas, las colas y los precios cambian, así que lee los términos de cada sitio antes de enviar tu producto.",
+  "labels": {
+    "how": "Cómo funciona",
+    "cost": "Costo",
+    "bestFor": "Ideal para",
+    "tip": "Consejo",
+    "newTab": "(se abre en una pestaña nueva)"
+  },
+  "order": {
+    "title": "Un orden que funciona",
+    "waitingList": "Antes del lanzamiento, reúne una lista de espera en una página propia. BetaList, que es de pago, muestra startups a los primeros usuarios antes de su lanzamiento y en torno a él.",
+    "directories": "En cuanto la gente pueda usar el producto, publícalo en directorios que permanecen, como The SaaS Harbor, SaaSHub y AlternativeTo. Algunos revisan cada envío a mano durante semanas o meses, así que envíalo pronto.",
+    "communities": "Comparte lo que construiste donde las reglas lo permitan: Show HN, Indie Hackers y los subreddits que lo aceptan.",
+    "launchDay": "Elige un día de lanzamiento cuando el producto funcione bien y tengas a quién avisar, y prepara con anticipación el texto, las imágenes y el primer comentario. Las colas gratuitas de algunos sitios de lanzamiento duran meses, así que reserva pronto.",
+    "reviews": "Cuando tengas clientes, suma sitios de reseñas como G2 y Capterra, y verifica tus ingresos para demostrar que la gente paga por el producto."
+  },
+  "groups": {
+    "launchDays": {
+      "title": "Días de lanzamiento",
+      "intro": "Un día de lanzamiento pone un producto frente a personas que vienen a ver las novedades de ese día o esa semana. Funciona mejor cuando el producto se puede probar de inmediato y tienes gente lista para verlo y comentar. La mayoría de los sitios de lanzamiento ordena por votos, y pedir votos va contra sus reglas."
+    },
+    "communities": {
+      "title": "Comunidades",
+      "intro": "Las comunidades valoran más la participación que los anuncios. Comparte lo que construiste donde las reglas lo permitan, quédate a responder preguntas y lee las reglas de cada comunidad antes de publicar."
+    },
+    "directories": {
+      "title": "Directorios",
+      "intro": "Una ficha en un directorio sigue en línea después del día de lanzamiento y ayuda a que las personas y los buscadores encuentren el producto más adelante. Algunos directorios revisan cada envío a mano, lo que puede tardar semanas o meses, y varios venden revisiones más rápidas o lugares destacados."
+    },
+    "reviewSites": {
+      "title": "Sitios de reseñas",
+      "intro": "Los compradores empresariales comparan software en sitios de reseñas. Importan cuando ya tienes clientes que pueden escribir reseñas, y casi todo lo que ofrecen además de un perfil es de pago."
+    }
+  },
+  "places": {
+    "productHunt": {
+      "summary": "Una clasificación diaria de productos tecnológicos nuevos, donde los miembros votan y comentan los lanzamientos de cada día.",
+      "how": "Publicas desde una cuenta personal, no de empresa, y programas un día con hasta 30 días de anticipación; una cuenta nueva debe esperar una semana antes de poder publicar. Cada día de lanzamiento empieza a las 12:01 a. m., hora del Pacífico. El equipo de Product Hunt elige qué lanzamientos se destacan en la página principal, y los demás siguen en la lista.",
+      "cost": "Gratis.",
+      "bestFor": "Productos en funcionamiento que la gente puede usar hoy. Las listas de espera y los productos previos al lanzamiento no se destacan.",
+      "tip": "Lánzalo tú mismo y pide a tu red que lo visite y comente, pero no que vote. Para relanzar se necesitan seis meses y una actualización importante."
+    },
+    "peerlist": {
+      "summary": "Una clasificación semanal de lanzamientos dentro de Peerlist, una red profesional para quienes crean software.",
+      "how": "Agregas el proyecto a tu perfil de Peerlist, completas todos los campos y lo lanzas en la semana que abre cada lunes. Solo pueden lanzar perfiles personales verificados, no empresas.",
+      "cost": "Las páginas de ayuda de Peerlist no mencionan ninguna tarifa de lanzamiento; verificar tu identidad puede costar una tarifa pequeña.",
+      "bestFor": "Desarrolladores, diseñadores y creadores individuales.",
+      "tip": "Responde preguntas y pide comentarios durante la semana. Escribir a desconocidos para pedir votos cuenta como spam."
+    },
+    "uneed": {
+      "summary": "Un sitio de lanzamientos diarios donde la comunidad vota los productos nuevos.",
+      "how": "Envías el producto y luego eliges cómo lanzarlo. Un lanzamiento gratuito recibe una fecha de 30 días a 5 meses en el futuro y ese día debe alcanzar una puntuación mínima de votos para seguir publicado; los lanzamientos pagados obtienen una fecha más cercana o la que elijas.",
+      "cost": "Gratis, con opciones de pago para lanzar antes.",
+      "bestFor": "Cualquier producto web o SaaS, incluidos los B2B.",
+      "tip": "Uneed recomienda de martes a jueves para productos B2B, y los votos se siguen contando después del día de lanzamiento."
+    },
+    "microlaunch": {
+      "summary": "Un sitio de lanzamientos donde los productos permanecen 30 días en una clasificación mensual, con valoraciones y críticas de la comunidad.",
+      "how": "Los lanzamientos gratuitos esperan en una cola. Los pagados se la saltan y suman promoción.",
+      "cost": "Gratis, con opciones de pago.",
+      "bestFor": "Productos en etapa temprana que buscan comentarios durante un mes y no en un solo día."
+    },
+    "devhunt": {
+      "summary": "Un sitio de lanzamientos semanales para herramientas de desarrollo, donde los desarrolladores votan con sus cuentas de GitHub.",
+      "how": "Envías tu herramienta y se lanza en una ronda semanal. DevHunt dice que un lanzamiento gratuito espera unos seis meses; si pagas, eliges la semana.",
+      "cost": "Gratis, con una opción de pago para elegir tu semana de lanzamiento.",
+      "bestFor": "Solo herramientas para desarrolladores: proyectos de código abierto, API, SDK, bibliotecas, editores y herramientas de pruebas y monitoreo."
+    },
+    "showHn": {
+      "summary": "Un tipo de publicación de Hacker News para algo que hiciste y que otras personas pueden probar.",
+      "how": "Envías una publicación cuyo título empieza con Show HN. Aparece entre las publicaciones Show HN más recientes y, cuando suma algunos puntos, en la página de Show HN.",
+      "cost": "Gratis.",
+      "bestFor": "Productos y demos que funcionan, para un público técnico, incluido el código abierto. Las páginas de registro, los boletines y las entradas de blog quedan fuera de tema.",
+      "tip": "Haz que sea fácil probarlo sin registrarse, quédate en el hilo para responder y no pidas votos a tus amigos."
+    },
+    "indieHackers": {
+      "summary": "Una comunidad de fundadores que crean negocios en línea rentables, con publicaciones, grupos y un directorio de productos.",
+      "how": "Escribes publicaciones sobre lo que estás construyendo y agregas tu producto al directorio, donde cada fundador declara sus propios ingresos. Las cuentas nuevas pueden tener que esperar antes de publicar.",
+      "cost": "Gratis, con una membresía de pago opcional que permite publicar desde el primer día.",
+      "bestFor": "Fundadores que se autofinancian y comparten su avance a lo largo del tiempo, no en un solo día.",
+      "tip": "Escribe títulos útiles para otros y deja fuera el nombre de tu empresa, salvo que sea conocido."
+    },
+    "reddit": {
+      "summary": "Subreddits como r/SaaS, r/SideProject, r/startups y r/indiehackers, donde los fundadores comparten proyectos y piden opiniones.",
+      "how": "Cada subreddit fija sus propias reglas. Varios permiten promoción solo en un hilo fijado o solo de vez en cuando, y eliminan las demás publicaciones promocionales.",
+      "cost": "Gratis.",
+      "bestFor": "Comentarios de otros fundadores, siempre que sigas las reglas de cada subreddit.",
+      "tip": "Lee las reglas de la barra lateral antes de publicar y, en lugar de anunciar, haz una pregunta de la que otros puedan aprender."
+    },
+    "theSaasHarbor": {
+      "summary": "Un directorio gratuito de SaaS independientes, con una clasificación de MRR verificado a través de {providers}.",
+      "how": "Creas una cuenta y añades tu producto, que es público en cuanto lo guardas, sin cola de revisión. Conectar un proveedor de pagos es opcional y clasifica el producto por su MRR verificado.",
+      "cost": "Gratis, sin planes de pago. El enlace dofollow es gratis y llega con los ingresos verificados.",
+      "bestFor": "Cualquier SaaS, nuevo o consolidado, incluidos los productos que todavía no tienen ingresos.",
+      "tip": "Verifica tus ingresos cuando los tengas: así los buscadores siguen el enlace a tu sitio web, aunque mantengas privadas las cifras."
+    },
+    "saashub": {
+      "summary": "Un marketplace de software para encontrar alternativas y comparar programas, en funcionamiento desde 2014.",
+      "how": "Te registras y envías el sitio web, las categorías y los competidores, y cada producto pasa por una aprobación. Se rechazan los productos no lanzados, las páginas de lista de espera y los productos en subdominios gratuitos.",
+      "cost": "Gratis, con una posición destacada de pago.",
+      "bestFor": "SaaS ya lanzados, en inglés y con competidores claros.",
+      "tip": "Indica tus competidores, porque los envíos sin ellos van al final de la cola, y verifica el producto con un correo electrónico de su propio dominio."
+    },
+    "alternativeto": {
+      "summary": "Un sitio colaborativo que recomienda alternativas a programas conocidos.",
+      "how": "Te registras y sugieres la app con sus plataformas, licencia y descripción. Cada envío se revisa a mano, y uno gratuito suele esperar algunos meses; una pequeña tarifa única lo pasa al principio de la cola.",
+      "cost": "Gratis, con una opción de pago para que te revisen antes.",
+      "bestFor": "Software ya lanzado, al menos en beta abierta, que se distinga claramente de lo que ya está en la lista. Solo en inglés.",
+      "tip": "Sugiere tu app en las páginas de los productos con los que compite, y usa una dirección limpia, sin parámetros de seguimiento."
+    },
+    "betalist": {
+      "summary": "Un sitio seleccionado por editores que muestra a los primeros usuarios startups a punto de lanzarse o recién lanzadas.",
+      "how": "Envías el producto mediante un formulario, eliges un plan y los editores lo revisan. El producto debe estar sin lanzar, en beta privada o recién lanzado, con una landing page de diseño propio y una forma de registrarse.",
+      "cost": "De pago: BetaList ya no acepta envíos gratuitos. A las startups rechazadas se les devuelve el dinero.",
+      "bestFor": "Startups de software y hardware justo antes o después del lanzamiento que buscan sus primeros registros.",
+      "tip": "BetaList busca una propuesta de valor clara y una landing page bien diseñada con registro."
+    },
+    "taaft": {
+      "summary": "Un gran directorio de herramientas de IA.",
+      "how": "Los envíos se revisan a mano, normalmente en uno o dos días, y se reembolsan si la herramienta no se publica. Una vez al mes también elige gratis una herramienta de un hilo en X.",
+      "cost": "Una revisión de pago por cada ficha, salvo la elección gratuita mensual.",
+      "bestFor": "Solo herramientas de IA."
+    },
+    "trustmrr": {
+      "summary": "Una base de datos de startups con ingresos verificados a través de sus proveedores de pagos, y un marketplace para comprar y vender startups.",
+      "how": "Conectas una clave de solo lectura de un proveedor compatible, como Stripe, Paddle, Polar, Dodo Payments o Lemon Squeezy, y el perfil se crea a partir de ella. No puedes publicar sin una clave así.",
+      "cost": "Publicar es gratis, con complementos de pago como un enlace seguido y más visibilidad, y planes de pago para vender una startup.",
+      "bestFor": "Fundadores con ingresos que quieren una prueba pública de ellos o que piensan vender."
+    },
+    "g2": {
+      "summary": "Un marketplace de reseñas de software y servicios para empresas.",
+      "how": "Solicitas el producto con una cuenta de LinkedIn o un correo de trabajo, el equipo de investigación de G2 lo revisa en unos tres a cinco días hábiles y luego reclamas el perfil.",
+      "cost": "Un perfil gratuito, con planes de pago.",
+      "bestFor": "Productos B2B en funcionamiento con clientes que puedan escribir reseñas. G2 no incluye productos de consumo ni productos en alfa o beta.",
+      "tip": "Un producto necesita al menos 10 reseñas para aparecer en el Grid de G2 de su categoría, así que pídeselas a tus primeros clientes."
+    },
+    "capterra": {
+      "summary": "Un sitio para comparar y reseñar software para empresas, gestionado por G2 desde principios de 2026 junto con GetApp y Software Advice.",
+      "how": "Para aparecer, se empieza por el formulario de productos de G2. El producto debe estar a la venta al público; una lista de espera por sí sola no se acepta.",
+      "cost": "Un perfil gratuito; los proveedores pagan por clic o por cliente potencial por los lugares patrocinados.",
+      "bestFor": "Software a la venta al público que pueda reunir reseñas.",
+      "tip": "Usa el nombre del producto exactamente como en tu sitio web, capturas de pantalla reales del producto y un texto neutral sin superlativos."
+    }
+  },
+  "cautions": {
+    "title": "A qué prestar atención",
+    "paidLinks": "Enlaces por los que pagas. Las políticas contra el spam de Google consideran los enlaces comprados como spam de enlaces, salvo que estén marcados como nofollow o sponsored, así que un enlace seguido de pago puede perjudicar al sitio al que apunta.",
+    "bulkDirectories": "Cientos de directorios a la vez. Una ráfaga de enlaces desde directorios de baja calidad parece spam para los buscadores; unos pocos sitios relevantes y actualizados rinden más.",
+    "unchecked": "Pagar por aparecer o por saltarte una cola sin comprobar el público. Revisa el tráfico y las fichas del propio sitio antes de pagar.",
+    "stale": "Fichas que nunca actualizas. Mantén al día tu descripción, tus precios y tus capturas de pantalla en todos los sitios donde aparezcas.",
+    "source": "Fuente: <link>Políticas contra el spam de la Búsqueda de Google</link>"
+  },
+  "closing": "The SaaS Harbor publica cualquier SaaS gratis, nuevo o consolidado, y clasifica a los que verifican sus ingresos.",
+  "cta": "Publica tu SaaS"
+}

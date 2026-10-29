@@ -1,6 +1,7 @@
 // Rules for signing in with Google or GitHub next to email and password. Pure, so they are
 // unit-tested.
 import type { User } from "@supabase/supabase-js";
+import { DEFAULT_LOCALE, isLocale, splitLocale, type Locale } from "@/i18n/config";
 import { safeNext } from "./domain";
 
 /** The sign-in providers the site offers, in the order their buttons appear. */
@@ -33,7 +34,8 @@ export function authNeedsFullPage(from: string | null) {
   if (!from) return false;
   let pathname: string;
   try {
-    pathname = new URL(from, "http://site.invalid").pathname;
+    // Pages in other languages are the same pages under a prefix, such as /es/dashboard.
+    pathname = splitLocale(new URL(from, "http://site.invalid").pathname).path;
   } catch {
     return false;
   }
@@ -64,9 +66,25 @@ export function confirmationMethod(user: Pick<User, "identities">): "password" |
   return provider && !providers.includes("email") ? provider : "password";
 }
 
+/**
+ * The address that starts a sign-in with a provider: where sign-in continues, or a confirmation
+ * before deleting the account, and the page's language, which the way back keeps. The route and
+ * the provider's return are shared by every language, so the language travels in the query.
+ */
+export function oauthStartPath(
+  provider: OAuthProvider,
+  { next, confirm = false, locale }: { next?: string | null; confirm?: boolean; locale: Locale },
+) {
+  const query = new URLSearchParams();
+  if (confirm) query.set("confirm", "delete");
+  if (next) query.set("next", next);
+  if (locale !== DEFAULT_LOCALE) query.set("locale", locale);
+  return `/auth/oauth/${provider}${query.size ? `?${query}` : ""}`;
+}
+
 // A sign-in with a provider remembers, in a short-lived cookie, which provider it went to, where
-// it continues afterwards, and for a confirmation before deleting the account, which account has
-// to come back.
+// it continues afterwards, for a confirmation before deleting the account which account has to
+// come back, and the language of the page it started on.
 export const OAUTH_FLOW_COOKIE = "harbor-oauth-flow";
 export const OAUTH_FLOW_SECONDS = 10 * 60;
 
@@ -74,6 +92,7 @@ export type OAuthFlow = {
   provider: OAuthProvider | null;
   next: string | null;
   confirm: string | null;
+  locale: Locale | null;
 };
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
@@ -86,17 +105,18 @@ export function decodeOAuthFlow(value: string | undefined): OAuthFlow {
   try {
     const parsed: unknown = JSON.parse(value ?? "");
     if (parsed && typeof parsed === "object") {
-      const { provider, next, confirm } = parsed as Record<string, unknown>;
+      const { provider, next, confirm, locale } = parsed as Record<string, unknown>;
       return {
         provider: isOAuthProvider(provider) ? provider : null,
         next: typeof next === "string" ? safeNext(next) : null,
         confirm: typeof confirm === "string" && UUID.test(confirm) ? confirm : null,
+        locale: isLocale(locale) ? locale : null,
       };
     }
   } catch {
     // A missing or damaged cookie continues like a plain sign-in.
   }
-  return { provider: null, next: null, confirm: null };
+  return { provider: null, next: null, confirm: null, locale: null };
 }
 
 /**
@@ -109,20 +129,16 @@ export function oauthFailure(code: string | null, description: string | null) {
     : "failed";
 }
 
-// Why a sign-in with a provider stopped, shown on the sign-in page from its error parameter.
-const OAUTH_ERRORS = {
-  failed: (name: string) =>
-    `Signing in with ${name} did not finish. Try again, or use your email address.`,
-  email: (name: string) =>
-    `${name} did not give us a verified email address. Verify your email address with ${name}, then try again.`,
-  unavailable: (name: string) =>
-    `Signing in with ${name} is not available right now. Use your email address.`,
-  account: (name: string) =>
-    `You confirmed with a different account at ${name}, so you were signed out. Sign in again with the account you want to delete.`,
-} as const;
+// Why a sign-in with a provider stopped, shown on the sign-in page from its error parameter. The
+// texts are in auth.oauthErrors.
+const OAUTH_ERRORS = ["failed", "email", "unavailable", "account"] as const;
+export type OAuthError = (typeof OAUTH_ERRORS)[number];
 
-export function oauthError(error: string | undefined, provider: string | undefined) {
-  if (!error || !Object.hasOwn(OAUTH_ERRORS, error)) return null;
-  const name = isOAuthProvider(provider) ? PROVIDER_NAMES[provider] : "that service";
-  return OAUTH_ERRORS[error as keyof typeof OAUTH_ERRORS](name);
+/** A known sign-in error from the sign-in page's address, and the provider it names, if any. */
+export function oauthError(
+  error: string | undefined,
+  provider: string | undefined,
+): { error: OAuthError; provider: OAuthProvider | null } | null {
+  if (!OAUTH_ERRORS.includes(error as OAuthError)) return null;
+  return { error: error as OAuthError, provider: isOAuthProvider(provider) ? provider : null };
 }

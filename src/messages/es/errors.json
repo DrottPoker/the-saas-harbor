@@ -1,4 +1,5 @@
 {
+  "loadProducts": "No se pudieron cargar los productos. Inténtalo en unos minutos.",
   "title": "No se pudo cargar esta página",
   "body": "Algo salió mal de nuestro lado. Inténtalo de nuevo o vuelve en unos minutos.",
   "retry": "Intentar de nuevo",

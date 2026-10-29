@@ -1,1 +1,82 @@
-{}
+{
+  "meta": {
+    "add": "Añadir SaaS",
+    "edit": "Editar SaaS"
+  },
+  "editor": {
+    "back": "Panel",
+    "addTitle": "Añadir SaaS",
+    "addDescription": "Empieza por tu proveedor de pagos: al conectarlo con una clave de solo lectura se verifica tu MRR. Si el tuyo no está en la lista, elige Otro. Los datos del producto son públicos.",
+    "limit": "Ya publicaste {limit} productos, el máximo que permite una cuenta. Elimina un producto para agregar otro.",
+    "editTitle": "Editar {name}",
+    "editDescription": "Los datos del producto y las cifras verificadas son públicos. Puedes ocultar las cifras.",
+    "viewPage": "Ver página"
+  },
+  "chooseProvider": "Elige tu proveedor de pagos. Si no está en la lista, elige Otro.",
+  "figures": {
+    "title": "Cifras públicas",
+    "description": "Las cifras verificadas son públicas, salvo que las ocultes. Los ingresos públicos aparecen en la clasificación, por MRR y por ingresos de los últimos 30 días, de los últimos 12 meses y de todo el tiempo.",
+    "hideRevenue": "Ocultar los ingresos verificados, incluido el MRR",
+    "hideCustomers": "Ocultar el número de suscriptores"
+  },
+  "details": {
+    "title": "Producto",
+    "description": "Se muestra en la página pública del producto y en los listados. Los campos marcados con * son obligatorios.",
+    "name": "Nombre del producto",
+    "category": "Categoría",
+    "chooseCategory": "Elige una categoría",
+    "tagline": "Eslogan",
+    "taglineHint": "Una frase, de hasta 140 caracteres.",
+    "taglinePlaceholder": "¿En qué ayuda a las personas?",
+    "productDescription": "Descripción",
+    "descriptionPlaceholder": "Para quién es, qué hace y qué lo hace diferente.",
+    "website": "Sitio web",
+    "launchDate": "Fecha de lanzamiento",
+    "hideLaunch": "Ocultar la fecha de lanzamiento"
+  },
+  "logo": {
+    "title": "Logo",
+    "description": "Un logo cuadrado funciona mejor.",
+    "upload": "Subir logo"
+  },
+  "tech": {
+    "title": "Stack tecnológico",
+    "description": "Con qué está hecho el producto, hasta {max} tecnologías. Se muestra en su página, con enlaces a otros productos hechos con lo mismo."
+  },
+  "actions": {
+    "cancel": "Cancelar",
+    "add": "Añadir SaaS",
+    "save": "Guardar cambios",
+    "addAndConnect": "Añadir SaaS y conectar {provider}",
+    "saveAndConnect": "Guardar y conectar {provider}",
+    "addAndVerify": "Añadir SaaS y verificar ingresos",
+    "saveAndVerify": "Guardar y verificar ingresos",
+    "verifying": "Verificando ingresos...",
+    "saving": "Guardando..."
+  },
+  "badge": {
+    "title": "Insignia para tu sitio web",
+    "description": "Muestra tu MRR verificado en tu propio sitio y enlaza a la página de tu producto. Muestra la cifra solo mientras la compartes; si no, dice «Listed on {site}».",
+    "theme": "Tema de la insignia",
+    "light": "Claro",
+    "dark": "Oscuro",
+    "preview": "Vista previa de la insignia: {name} en {site}"
+  },
+  "save": {
+    "loadFailed": "No se pudo cargar el perfil del SaaS.",
+    "notOwner": "Solo puedes editar tu propio SaaS.",
+    "failed": "No se pudo guardar el perfil del SaaS. Revisa los campos e inténtalo de nuevo.",
+    "usernameFirst": "Primero elige un nombre de usuario.",
+    "productLimit": "Una cuenta puede publicar hasta {limit} productos.",
+    "dailyLimit": "Puedes agregar hasta {limit} productos al día. Inténtalo de nuevo mañana.",
+    "savedNotConnected": "Tus cambios se guardaron, pero {provider} no se conectó. {reason}",
+    "addedNotConnected": "El producto se agregó, pero {provider} no se conectó. {reason}"
+  },
+  "delete": {
+    "notOwner": "Solo puedes eliminar tu propio SaaS.",
+    "loadFailed": "No se pudo cargar el perfil del SaaS.",
+    "confirmName": "Escribe el nombre del producto exactamente como aparece para confirmar.",
+    "logoFailed": "No se pudo eliminar el logo, así que el producto se conservó. Inténtalo de nuevo.",
+    "failed": "No se pudo eliminar el SaaS. Inténtalo de nuevo."
+  }
+}

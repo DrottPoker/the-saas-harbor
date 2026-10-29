@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+import { ClientMessages } from "@/components/client-messages";
 import { ConversationList } from "@/components/messages/conversation-list";
 import { MessagesPanes } from "@/components/messages/panes";
 import { ConversationListSkeleton } from "@/components/messages/skeletons";
@@ -9,15 +10,17 @@ import { currentUser, serverClient } from "@/lib/supabase/server";
 // visitors to sign in.
 export default function MessagesLayout({ children }: { children: React.ReactNode }) {
   return (
-    <MessagesPanes
-      list={
-        <Suspense fallback={<ConversationListSkeleton />}>
-          <Conversations />
-        </Suspense>
-      }
-    >
-      {children}
-    </MessagesPanes>
+    <ClientMessages namespaces={["messages"]}>
+      <MessagesPanes
+        list={
+          <Suspense fallback={<ConversationListSkeleton />}>
+            <Conversations />
+          </Suspense>
+        }
+      >
+        {children}
+      </MessagesPanes>
+    </ClientMessages>
   );
 }
 

@@ -1,4 +1,5 @@
 import "server-only";
+import { revenueText } from "../errors";
 import { historyWindowStart } from "../history";
 import { ProviderRequestError, tooMuchData } from "../http";
 import type { ProviderAdapter } from "../types";
@@ -45,9 +46,10 @@ function reportsFrom(files: ReportFile[], from: number) {
 
 function missingNote(missing: string[]) {
   if (!missing.length) return null;
-  return missing.length === 1
-    ? `Google Play's reports of the last 13 months have no sales of ${missing[0]}. Check the package name.`
-    : `Google Play's reports of the last 13 months have no sales of ${missing.join(", ")}. Check the package names.`;
+  return revenueText("googleplay.missingSales", {
+    packages: missing.join(", "),
+    several: missing.length > 1 ? "yes" : "no",
+  });
 }
 
 /**
@@ -74,8 +76,7 @@ export const googleplay: ProviderAdapter = {
       } catch (error) {
         if (!(error instanceof ProviderRequestError && error.tooMuchData)) throw error;
         rows = await readReports(token, connection, reportsFrom(files, mrrFrom));
-        historyNote =
-          "The Google Play sales reports of the last 25 months are larger than one verification reads, so there is no revenue history.";
+        historyNote = revenueText("googleplay.historyTooLarge");
       }
     const { charges, unreadable } = saleCharges(rows);
     // The same charges as an hourly read, so MRR does not depend on whether history was read.

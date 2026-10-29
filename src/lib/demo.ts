@@ -2,9 +2,15 @@
 // listing looks like instead of an empty page. They live only here, never in the database, and are
 // always marked as demos: never ranked or verified, with no maker account, website or contact. A
 // list shows only as many as it needs to fill its first page after the real products, and all of
-// them go once enough real products share verified MRR (demoActive in data.ts).
+// them go once enough real products share verified MRR (demoActive in data.ts). Their taglines,
+// descriptions and founder headlines are messages (product.demo), so they read in every language.
+import { getTranslations } from "next-intl/server";
+import english from "@/messages/en/product.json";
 import type { Listing, Sort } from "./data";
 import { categories, searchTerm } from "./domain";
+
+type DemoSlug = keyof typeof english.demo.products;
+type DemoFounder = keyof typeof english.demo.founders;
 
 /** Logo artwork, drawn by src/components/demo-logo.tsx. */
 export type DemoShape =
@@ -23,15 +29,18 @@ export type DemoShape =
   | "loop"
   | "swatches"
   | "calendar";
-export type DemoDetails = { headline: string; logo: { color: string; shape: DemoShape } };
+export type DemoDetails = {
+  headline: string;
+  founder: DemoFounder;
+  logo: { color: string; shape: DemoShape };
+};
 
 type DemoProduct = {
-  slug: string;
+  /** Also the key of its tagline and description in product.demo.products. */
+  slug: DemoSlug;
   name: string;
-  tagline: string;
-  description: string;
   category: (typeof categories)[number];
-  maker: { name: string; headline: string };
+  maker: DemoFounder;
   logo: DemoDetails["logo"];
   /** Whole dollars. Null keeps MRR private; verified: false means not verified at all. */
   mrr: number | null;
@@ -43,24 +52,19 @@ type DemoProduct = {
   start: number;
 };
 
-const makers = {
-  sara: {
-    name: "Sara Lindahl",
-    headline: "Former finance lead building tools for subscription businesses",
-  },
-  nadia: {
-    name: "Nadia Brandt",
-    headline: "Building support and marketing tools for small online shops",
-  },
-  elin: { name: "Elin Sjöberg", headline: "Platform engineer who dislikes silent failures" },
-  diego: { name: "Diego Álvarez", headline: "Freelance designer building tools for freelancers" },
-  tom: { name: "Tom Keller", headline: "Web developer who cares about privacy" },
-  kofi: { name: "Kofi Mensah", headline: "Podcast producer turned developer" },
-  anika: { name: "Anika Rao", headline: "Mobile developer making app launches easier" },
-  marcus: { name: "Marcus Webb", headline: "SEO consultant for small businesses" },
-  maya: { name: "Maya Brooks", headline: "Climber and software developer" },
-  lucas: { name: "Lucas Moreau", headline: "Design systems engineer" },
-  hana: { name: "Hana Sato", headline: "Remote team lead building calmer calendars" },
+// The founders' names; their headlines are in product.demo.founders.
+const makers: Record<DemoFounder, string> = {
+  sara: "Sara Lindahl",
+  nadia: "Nadia Brandt",
+  elin: "Elin Sjöberg",
+  diego: "Diego Álvarez",
+  tom: "Tom Keller",
+  kofi: "Kofi Mensah",
+  anika: "Anika Rao",
+  marcus: "Marcus Webb",
+  maya: "Maya Brooks",
+  lucas: "Lucas Moreau",
+  hana: "Hana Sato",
 };
 
 // The names were checked against existing products when they were chosen.
@@ -68,11 +72,8 @@ const products: DemoProduct[] = [
   {
     slug: "metricfold",
     name: "Metricfold",
-    tagline: "MRR, churn and cohorts from your Stripe account, without a spreadsheet.",
-    description:
-      "Metricfold connects to Stripe with a read-only key and turns your subscriptions into the numbers you check every Monday: MRR, net revenue retention, churn and trial conversion. Cohort charts show how long the customers from each signup month stay.\n\nIt is built for founders and small finance teams who want the answer on one screen rather than a reporting project. Weekly email summaries, CSV exports and notes for launches and price changes come with every plan.",
     category: "Analytics",
-    maker: makers.sara,
+    maker: "sara",
     logo: { color: "#2f4bd8", shape: "bars" },
     mrr: 38400,
     customers: 612,
@@ -82,11 +83,8 @@ const products: DemoProduct[] = [
   {
     slug: "inboxwren",
     name: "Inboxwren",
-    tagline: "Sorts your support inbox by urgency and drafts replies you can edit.",
-    description:
-      "Inboxwren reads new support emails and chat messages, tags them by topic and urgency, and drafts a reply from your help center and earlier answers. Nothing is sent until a person approves it.\n\nMost customers are online shops with two to ten people on support. They use it to answer order questions faster during sales and to catch refund requests before they turn into chargebacks.",
     category: "AI & Machine Learning",
-    maker: makers.nadia,
+    maker: "nadia",
     logo: { color: "#0f766e", shape: "tray" },
     mrr: 27950,
     customers: 418,
@@ -96,11 +94,8 @@ const products: DemoProduct[] = [
   {
     slug: "cronhawk",
     name: "Cronhawk",
-    tagline: "Know when a scheduled job did not run, ran late or failed.",
-    description:
-      "Add one line to the end of a cron job, a queue worker or a scheduled function, and Cronhawk expects it to check in on time. When it is late, fails or runs too long, the right person gets an email, a text message or a chat alert.\n\nIt started as a script for a team that lost a week of backups without noticing. Today it watches nightly backups, invoice runs and data imports for close to 900 teams, from solo developers to agencies with hundreds of servers.",
     category: "Developer Tools",
-    maker: makers.elin,
+    maker: "elin",
     logo: { color: "#1e293b", shape: "clock" },
     mrr: 21300,
     customers: 884,
@@ -110,11 +105,8 @@ const products: DemoProduct[] = [
   {
     slug: "clientloft",
     name: "Clientloft",
-    tagline: "A client portal for freelancers: files, approvals and invoices behind one link.",
-    description:
-      "Clientloft gives each client a private page with the project's files, feedback rounds, contracts and invoices. Clients approve work with one click and never have to search their email for the latest version.\n\nDesigners, developers and small studios use it to stop chasing approvals. Pages carry your own logo and domain, and a finished project can be archived and handed over with everything in it.",
     category: "Productivity",
-    maker: makers.diego,
+    maker: "diego",
     logo: { color: "#c2410c", shape: "house" },
     mrr: 16750,
     customers: 1237,
@@ -124,12 +116,8 @@ const products: DemoProduct[] = [
   {
     slug: "retrywell",
     name: "Retrywell",
-    tagline:
-      "Recovers failed subscription payments with well-timed retries and friendly reminders.",
-    description:
-      "When a card payment fails, Retrywell tries it again at the moment it is most likely to go through, and sends short, polite reminders with a link to update the card. Most recovered payments need nothing from you.\n\nIt connects to Stripe in a few minutes and reports how much it recovered each month. Customers are subscription businesses of every size, from side projects to companies with a finance team.",
     category: "Finance",
-    maker: makers.sara,
+    maker: "sara",
     logo: { color: "#15803d", shape: "retry" },
     mrr: 14180,
     customers: 187,
@@ -139,11 +127,8 @@ const products: DemoProduct[] = [
   {
     slug: "quietstats",
     name: "Quietstats",
-    tagline: "Simple website analytics without cookies or personal data.",
-    description:
-      "Quietstats shows visitors, pages, referrers and campaigns on a single page. It sets no cookies and stores no personal data, so visitors are never followed from site to site.\n\nThe script is under 2 KB and the dashboard loads at once. Bloggers, documentation sites and small companies use it to see what works without handing their visitors' data to an advertising network.",
     category: "Analytics",
-    maker: makers.tom,
+    maker: "tom",
     logo: { color: "#475569", shape: "line" },
     mrr: 11820,
     customers: 2046,
@@ -153,11 +138,8 @@ const products: DemoProduct[] = [
   {
     slug: "episodemint",
     name: "Episodemint",
-    tagline: "Transcripts, show notes and clips from each podcast episode in minutes.",
-    description:
-      "Upload an episode and Episodemint writes a transcript with speaker names, chapter markers, show notes and a short list of quotable moments. You edit everything before it goes out.\n\nIt was built by a podcast producer who spent hours on show notes every week. Independent shows and small production companies use it to publish on the day they record, and to turn old episodes into searchable pages.",
     category: "AI & Machine Learning",
-    maker: makers.kofi,
+    maker: "kofi",
     logo: { color: "#be185d", shape: "wave" },
     mrr: 9640,
     customers: null,
@@ -167,11 +149,8 @@ const products: DemoProduct[] = [
   {
     slug: "mockframe",
     name: "Mockframe",
-    tagline: "App store screenshots from your plain captures, in every size the stores need.",
-    description:
-      "Drop in plain screenshots, pick a layout, and Mockframe places them in device frames with captions and backgrounds, in the sizes every store listing needs. Changing a caption updates every device size at once.\n\nMobile developers and small app studios use it before each release. Captions in up to 40 languages come from a single spreadsheet, so a new language does not mean a day of design work.",
     category: "Design",
-    maker: makers.anika,
+    maker: "anika",
     logo: { color: "#4338ca", shape: "phone" },
     mrr: 7310,
     customers: 961,
@@ -181,11 +160,8 @@ const products: DemoProduct[] = [
   {
     slug: "rankmoss",
     name: "Rankmoss",
-    tagline: "Daily keyword rankings for small websites, with suggestions in plain words.",
-    description:
-      "Rankmoss checks every day where your pages rank for the searches you care about, on desktop and mobile, and tells you in plain words what changed and what to try next.\n\nIt is made for small businesses and freelancers who look after their own website. Reports can be shared with a client or a colleague by link, and prices stay low because it tracks hundreds of keywords rather than millions.",
     category: "Marketing",
-    maker: makers.marcus,
+    maker: "marcus",
     logo: { color: "#4d7c0f", shape: "steps" },
     mrr: 5480,
     customers: 309,
@@ -195,11 +171,8 @@ const products: DemoProduct[] = [
   {
     slug: "switchmoor",
     name: "Switchmoor",
-    tagline: "Feature flags and gradual rollouts for small engineering teams.",
-    description:
-      "Switchmoor turns a feature on for a few users, a share of traffic or a single customer, and off again without a deploy. Every change is logged with who made it and why.\n\nLibraries cover the common web and mobile stacks, flags are evaluated inside your app so they add no network delay, and the price is per team rather than per request.",
     category: "Developer Tools",
-    maker: makers.elin,
+    maker: "elin",
     logo: { color: "#b91c1c", shape: "toggle" },
     mrr: 4120,
     customers: 142,
@@ -209,11 +182,8 @@ const products: DemoProduct[] = [
   {
     slug: "praisenest",
     name: "Praisenest",
-    tagline: "Collect testimonials from happy customers and show them on your site.",
-    description:
-      "Praisenest sends customers a short link where they can leave a written or video testimonial. You approve the ones you like and show them on your website with a small embed that matches your design.\n\nCourse creators, agencies and software companies use it to collect social proof without chasing customers by email. Reviews from other sites can be imported, so everything is kept in one place.",
     category: "Marketing",
-    maker: makers.nadia,
+    maker: "nadia",
     logo: { color: "#b45309", shape: "quote" },
     mrr: 2860,
     customers: 471,
@@ -223,11 +193,8 @@ const products: DemoProduct[] = [
   {
     slug: "quarterpot",
     name: "Quarterpot",
-    tagline: "Sets aside the right amount for taxes every time a freelancer gets paid.",
-    description:
-      "Quarterpot watches incoming payments and tells you how much of each one to put aside for income tax and VAT, based on where you live and what you have earned so far this year. Reminders arrive before each payment is due.\n\nIt was built for freelancers who were surprised by their first tax bill. It does not file taxes for you; it makes sure the money is there when you or your accountant do.",
     category: "Finance",
-    maker: makers.diego,
+    maker: "diego",
     logo: { color: "#92400e", shape: "jar" },
     mrr: 2290,
     customers: 318,
@@ -237,11 +204,8 @@ const products: DemoProduct[] = [
   {
     slug: "belaybook",
     name: "Belaybook",
-    tagline: "Bookings, memberships and belay checks for small climbing gyms.",
-    description:
-      "Belaybook handles day passes, memberships, class bookings and the belay checks every gym needs to keep on record. Members book on their phone and check in with a QR code at the desk.\n\nIt was built by a climber who helped run a small bouldering gym and found the large gym systems too expensive and too complicated. About forty independent gyms use it today.",
     category: "Other",
-    maker: makers.maya,
+    maker: "maya",
     logo: { color: "#0e7490", shape: "loop" },
     mrr: 1940,
     customers: 37,
@@ -251,11 +215,8 @@ const products: DemoProduct[] = [
   {
     slug: "swatchline",
     name: "Swatchline",
-    tagline: "Keeps design tokens in your design files and your code in step.",
-    description:
-      "Swatchline reads colors, type and spacing from your design files and opens a pull request with updated tokens for the web, iOS and Android whenever a designer publishes a change.\n\nDesign system teams use it to stop copying values by hand. Every change is reviewed like code, and a changelog shows who changed which token and when.",
     category: "Design",
-    maker: makers.lucas,
+    maker: "lucas",
     logo: { color: "#7c3aed", shape: "swatches" },
     mrr: null,
     customers: null,
@@ -265,11 +226,8 @@ const products: DemoProduct[] = [
   {
     slug: "hourbridge",
     name: "Hourbridge",
-    tagline: "Finds meeting times that are fair to everyone across time zones.",
-    description:
-      "Hourbridge looks at everyone's working hours and calendars and suggests meeting times that share the early and late slots fairly across the team, instead of always asking the same people to stay up.\n\nIt is built for remote teams spread over several continents. Recurring meetings rotate on their own, and each person can mark hours that must never be booked.",
     category: "Productivity",
-    maker: makers.hana,
+    maker: "hana",
     logo: { color: "#0369a1", shape: "calendar" },
     mrr: null,
     customers: null,
@@ -360,17 +318,18 @@ function toListing(product: DemoProduct, now: Date): Listing {
           revenue_total_cents: null,
           revenue_history: null,
         };
+  const text = english.demo.products[product.slug];
   return {
     id: `demo-${product.slug}`,
     slug: product.slug,
     name: product.name,
-    tagline: product.tagline,
-    description: product.description,
+    tagline: text.tagline,
+    description: text.description,
     category: product.category,
     website: null,
     logo_path: null,
     owner_id: null,
-    owner_name: product.maker.name,
+    owner_name: makers[product.maker],
     owner_slug: null,
     owner_avatar_path: null,
     created_at: null,
@@ -394,13 +353,39 @@ function toListing(product: DemoProduct, now: Date): Listing {
         : null,
     ...revenue,
     rank: null,
-    demo: { headline: product.maker.headline, logo: product.logo },
+    demo: {
+      headline: english.demo.founders[product.maker],
+      founder: product.maker,
+      logo: product.logo,
+    },
   };
 }
 
-/** Every demo product as a listing, with history up to the last month-end before `now`. */
+/** Every demo product as a listing, in English, with history up to the last month-end before `now`. */
 export function demoListings(now = new Date()) {
   return products.map((product) => toListing(product, now));
+}
+
+function isDemoSlug(slug: string | null): slug is DemoSlug {
+  return !!slug && Object.hasOwn(english.demo.products, slug);
+}
+
+/**
+ * Demo listings with their tagline, description and founder headline in the page's language. Real
+ * listings pass through unchanged.
+ */
+export async function translateDemos(items: Listing[]): Promise<Listing[]> {
+  if (!items.some((item) => item.demo)) return items;
+  const t = await getTranslations("product.demo");
+  return items.map((item) => {
+    if (!item.demo || !isDemoSlug(item.slug)) return item;
+    return {
+      ...item,
+      tagline: t(`products.${item.slug}.tagline`),
+      description: t(`products.${item.slug}.description`),
+      demo: { ...item.demo, headline: t(`founders.${item.demo.founder}`) },
+    };
+  });
 }
 
 // The figure each ranking orders by, which a demo product needs to be in it.

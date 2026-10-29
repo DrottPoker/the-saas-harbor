@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "@/components/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
+import { getTranslations } from "next-intl/server";
 import { z } from "zod";
 import { PersonAvatar } from "@/components/avatars";
 import { BlockControl } from "@/components/messages/block-control";
@@ -17,8 +18,8 @@ type Props = { params: Promise<{ id: string }> };
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { id } = await params;
   if (!z.uuid().safeParse(id).success) return {};
-  const profile = await publicProfile(id);
-  return profile ? { title: `Messages with ${profile.name}` } : {};
+  const [profile, t] = await Promise.all([publicProfile(id), getTranslations("messages.meta")]);
+  return profile ? { title: t("with", { name: profile.name }) } : {};
 }
 
 // The route is the other maker's id: a pair of makers has one conversation, which is created
@@ -73,6 +74,7 @@ export default async function ConversationPage({ params }: Props) {
   }
   const blocked = !!block.data;
   const suspended = !!me.data?.suspended_at;
+  const t = await getTranslations("messages");
 
   // The right pane of the messages layout; below md it fills the window alone.
   return (
@@ -83,16 +85,18 @@ export default async function ConversationPage({ params }: Props) {
           className="inline-flex size-9 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-subtle hover:text-foreground md:hidden"
         >
           <ArrowLeft aria-hidden="true" className="size-4 rtl:-scale-x-100" />
-          <span className="sr-only">Back to messages</span>
+          <span className="sr-only">{t("header.back")}</span>
         </Link>
         <PersonAvatar path={other.avatar_path} name={other.name} size="sm" />
         <div className="min-w-0 flex-1">
-          <h1 className="truncate leading-tight font-semibold">{other.name}</h1>
+          <h1 dir="auto" className="truncate leading-tight font-semibold">
+            {other.name}
+          </h1>
           <Link
             href={`/users/${other.slug}`}
             className="text-xs text-muted-foreground hover:text-foreground hover:underline"
           >
-            View profile
+            {t("header.viewProfile")}
           </Link>
         </div>
         {me.data && <BlockControl makerId={other.id} name={other.name} blocked={blocked} />}
@@ -109,24 +113,26 @@ export default async function ConversationPage({ params }: Props) {
         closedNotice={
           !me.data ? (
             <Notice>
-              Set up your{" "}
-              <Link href="/dashboard/profile" className="font-medium underline">
-                profile
-              </Link>{" "}
-              before sending messages. Other users see your name and photo.
+              {t.rich("closed.noProfile", {
+                link: (chunks) => (
+                  <Link href="/dashboard/profile" className="font-medium underline">
+                    {chunks}
+                  </Link>
+                ),
+              })}
             </Notice>
           ) : suspended ? (
             <Notice>
-              Your account is suspended, so you cannot send messages. Your{" "}
-              <Link href="/dashboard" className="font-medium underline">
-                dashboard
-              </Link>{" "}
-              explains why.
+              {t.rich("closed.suspended", {
+                link: (chunks) => (
+                  <Link href="/dashboard" className="font-medium underline">
+                    {chunks}
+                  </Link>
+                ),
+              })}
             </Notice>
           ) : (
-            <Notice>
-              You blocked {other.name}. Neither of you can send messages until you unblock them.
-            </Notice>
+            <Notice>{t("closed.blocked", { name: other.name })}</Notice>
           )
         }
       />

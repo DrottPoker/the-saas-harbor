@@ -1,13 +1,17 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { badgeEmbedCode, BADGE_HEIGHT, type BadgeTheme } from "@/lib/badge";
 import { SITE_NAME } from "@/lib/seo";
 import { CopyField } from "./copy-field";
 import { Section } from "./forms";
 import { Button } from "./ui/button";
 
-/** The product editor's badge section: a preview in either theme and the code to paste. */
+/**
+ * The product editor's badge section: a preview in either theme and the code to paste. The badge
+ * itself is in English, as every site that shows it gets the same image.
+ */
 export function BadgeEmbed({
   path,
   pageUrl,
@@ -19,17 +23,15 @@ export function BadgeEmbed({
   pageUrl: string;
   name: string;
 }) {
+  const t = useTranslations("saasForm.badge");
   const [theme, setTheme] = useState<BadgeTheme>("light");
   const code = badgeEmbedCode({ pageUrl, name, theme });
   return (
     <div id="badge" className="mt-2 border-t pt-8">
-      <Section
-        title="Badge for your website"
-        description={`Shows your verified MRR on your own site and links to your product page. It shows the figure only while you share it; otherwise it says Listed on ${SITE_NAME}.`}
-      >
+      <Section title={t("title")} description={t("description", { site: SITE_NAME })}>
         <div
           role="group"
-          aria-label="Badge theme"
+          aria-label={t("theme")}
           className="flex w-fit gap-1 rounded-lg border p-1"
         >
           {(["light", "dark"] as const).map((option) => (
@@ -41,7 +43,7 @@ export function BadgeEmbed({
               aria-pressed={theme === option}
               onClick={() => setTheme(option)}
             >
-              {option === "light" ? "Light" : "Dark"}
+              {t(option)}
             </Button>
           ))}
         </div>
@@ -49,13 +51,16 @@ export function BadgeEmbed({
           {/* eslint-disable-next-line @next/next/no-img-element -- A live SVG from this site. */}
           <img
             src={`${path}/badge.svg${theme === "dark" ? "?theme=dark" : ""}`}
-            alt={`Badge preview: ${name} on ${SITE_NAME}`}
+            alt={t("preview", { name, site: SITE_NAME })}
             height={BADGE_HEIGHT}
             className="h-13 w-auto"
           />
         </div>
-        <CopyField id="badge_html" label="HTML" value={code.html} multiline />
-        <CopyField id="badge_markdown" label="Markdown" value={code.markdown} multiline />
+        {/* Code reads left to right in every language. */}
+        <div dir="ltr" className="grid gap-5">
+          <CopyField id="badge_html" label="HTML" value={code.html} multiline />
+          <CopyField id="badge_markdown" label="Markdown" value={code.markdown} multiline />
+        </div>
       </Section>
     </div>
   );

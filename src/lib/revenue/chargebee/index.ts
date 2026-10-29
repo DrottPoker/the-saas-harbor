@@ -1,5 +1,6 @@
 import "server-only";
 import { splitAccountKey } from "../account-key";
+import { revenueText } from "../errors";
 import { historyWindowStart } from "../history";
 import { ProviderRequestError } from "../http";
 import type { ProviderAdapter } from "../types";
@@ -29,8 +30,7 @@ export const chargebee: ProviderAdapter = {
       } catch (error) {
         if (!(error instanceof ProviderRequestError && error.tooMuchData)) throw error;
         invoices = await recent();
-        historyNote =
-          "The Chargebee site has more invoices than one verification reads, so there is no revenue history.";
+        historyNote = revenueText("chargebee.historyTooLarge");
       }
     return {
       livemode: live,

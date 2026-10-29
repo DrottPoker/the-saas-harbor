@@ -7,6 +7,8 @@ import {
   MAX_PAGES,
   providerGet,
   ProviderRequestError,
+  rateLimited,
+  returnedError,
   tooMuchData,
 } from "../http";
 import type { MolliePayment, MollieSubscription } from "./mrr";
@@ -34,14 +36,13 @@ export function requireReadOnly(permissions: MolliePermission[]) {
   );
   const writes = [...granted].filter((id) => !id.endsWith(".read"));
   if (writes.length)
-    throw new VerificationError(
-      `The token can do more than read, for example ${writes.slice(0, 3).join(", ")}. Create an advanced access token with only the read permissions listed.`,
-    );
+    throw new VerificationError("mollie.canWrite", { permissions: writes.slice(0, 3).join(", ") });
   const missing = REQUIRED_PERMISSIONS.filter((id) => !granted.has(id));
   if (missing.length)
-    throw new VerificationError(
-      `The token cannot read ${missing.map((id) => id.split(".")[0]).join(" or ")}. Create an advanced access token with read permissions for payments and subscriptions.`,
-    );
+    throw new VerificationError("mollie.cannotRead", {
+      // payments, subscriptions, or both
+      missing: missing.length > 1 ? "both" : missing[0]!.split(".")[0]!,
+    });
 }
 
 async function mollieGet<T>(token: string, path: string, params: URLSearchParams) {
@@ -55,29 +56,16 @@ async function mollieGet<T>(token: string, path: string, params: URLSearchParams
   const body = await errorBody(response);
   const detail = typeof body?.detail === "string" ? body.detail.slice(0, 300) : null;
   if (response.status === 401)
-    throw new ProviderRequestError(
-      "Mollie rejected the token. It may have been revoked, or have expired.",
-      401,
-    );
+    throw new ProviderRequestError("mollie.tokenRejected", {}, { status: 401 });
   if (response.status === 403)
-    throw new ProviderRequestError(
-      `Mollie refused the request. Check that the token can read payments and subscriptions, and is limited neither to test mode nor to another website profile.${detail ? ` Mollie says: ${detail}` : ""}`,
-      403,
-      path,
-    );
+    throw detail
+      ? new ProviderRequestError("mollie.requestRefusedDetail", { detail }, { status: 403, path })
+      : new ProviderRequestError("mollie.requestRefused", {}, { status: 403, path });
   // Lists answer a profile the token cannot reach as one that does not exist.
   if (response.status === 404 || (response.status === 422 && body?.field === "profileId"))
-    throw new ProviderRequestError(
-      "Mollie found no website profile with this ID that the token can read.",
-      response.status,
-      path,
-    );
-  if (response.status === 429)
-    throw new ProviderRequestError("Mollie is rate limiting requests. Try again later.", 429);
-  throw new ProviderRequestError(
-    `Mollie returned an error${detail ? `: ${detail}` : "."}`,
-    response.status,
-  );
+    throw new ProviderRequestError("mollie.noProfile", {}, { status: response.status, path });
+  if (response.status === 429) throw rateLimited("Mollie");
+  throw returnedError("Mollie", detail, { status: response.status });
 }
 
 type Page<T> = {

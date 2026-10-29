@@ -1,1 +1,95 @@
-{}
+{
+  "meta": {
+    "title": "举报"
+  },
+  "page": {
+    "description": "告诉我们哪里有问题。每条举报都会由管理员审核。",
+    "title": "举报 {name}",
+    "messageTitle": "举报一条消息",
+    "ownProduct": "这是你的产品，因此你无法举报它。",
+    "ownProfile": "这是你的个人主页，因此你无法举报它。",
+    "ownMessage": "这是你自己的消息，因此你无法举报它。",
+    "productFallback": "产品",
+    "messages": "消息",
+    "from": "来自 <sender>{name}</sender>，<time></time>"
+  },
+  "reasons": {
+    "spam": {
+      "label": "垃圾信息或广告",
+      "hint": "不请自来的推广、重复发送的消息，或并非真实产品的条目。"
+    },
+    "misleading": {
+      "label": "误导性或虚假信息",
+      "hint": "关于某个产品或某个人的不实说法。"
+    },
+    "impersonation": {
+      "label": "冒充他人",
+      "hint": "未经许可使用他人的名字、品牌或作品。"
+    },
+    "harassment": {
+      "label": "骚扰或仇恨",
+      "hint": "针对个人或群体的威胁、侮辱或仇恨内容。"
+    },
+    "illegal": {
+      "label": "违法内容",
+      "hint": "违反法律，例如欺诈或侵犯他人权利的内容。"
+    },
+    "other": {
+      "label": "其他问题",
+      "hint": "其他任何违反条款的情况。"
+    }
+  },
+  "form": {
+    "legend": "出了什么问题？",
+    "details": "详细说明",
+    "detailsHint": "哪里有问题，在什么位置？举报违法内容或其他问题时必填。",
+    "anonymous": "被举报的用户不会知道是谁举报的。<link>条款</link>列出了哪些内容不被允许。",
+    "submit": "提交举报",
+    "sending": "正在提交..."
+  },
+  "errors": {
+    "cannotReport": "无法举报此内容。",
+    "sendFailed": "举报提交失败，请重试。",
+    "chooseReason": "请选择一个原因。",
+    "detailsTooLong": "详细说明请控制在 {max} 个字符以内。",
+    "detailsRequired": "请描述问题，以便进行审核。",
+    "suspended": "你的账户已被暂停，因此无法提交举报。",
+    "tooMany": "你提交的举报过多，请稍后再试。",
+    "productNotFound": "找不到该产品。",
+    "ownProduct": "你不能举报自己的产品。",
+    "userNotFound": "找不到该用户。",
+    "ownProfile": "你不能举报自己。",
+    "messageNotFound": "找不到该消息。",
+    "ownMessage": "你不能举报自己的消息。",
+    "chooseTarget": "请选择要举报的内容。",
+    "alreadyReported": "你已经举报过此内容，正在等待审核。"
+  },
+  "list": {
+    "title": "我的举报",
+    "description": "你提交的关于产品、个人主页和消息的举报，以及处理结果。",
+    "sent": "谢谢。你的举报已提交，管理员会进行审核。",
+    "emptyTitle": "还没有举报",
+    "emptyBody": "如需举报产品、个人主页或你收到的消息，请点击旁边的“举报”。",
+    "label": "你提交的举报",
+    "about": "{target}：",
+    "targets": {
+      "saas": "产品",
+      "profile": "个人主页",
+      "message": "消息",
+      "unknown": "举报"
+    },
+    "quote": "“{text}”",
+    "aMessage": "一条消息",
+    "unnamed": "未命名",
+    "sentOn": "提交于 <date></date>",
+    "decidedOn": "处理于 <date></date>",
+    "statuses": {
+      "open": "等待审核",
+      "actioned": "已采取措施",
+      "dismissed": "未采取措施"
+    },
+    "reviewed": "每条举报都会由管理员审核。被举报的用户不会知道是谁举报的。",
+    "disagree": "如果你不同意某项决定，请发邮件至 <contact></contact>。",
+    "terms": "<link>条款</link>说明了举报的处理方式。"
+  }
+}

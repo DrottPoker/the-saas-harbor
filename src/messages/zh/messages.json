@@ -1,1 +1,71 @@
-{}
+{
+  "meta": {
+    "title": "消息",
+    "with": "与 {name} 的消息"
+  },
+  "inbox": {
+    "title": "选择一个对话",
+    "body": "选择你的一个对话，或打开某位用户的个人主页并点击“发送消息”，开始新的对话。"
+  },
+  "list": {
+    "heading": "消息",
+    "label": "对话",
+    "userFallback": "用户",
+    "blocked": "已屏蔽",
+    "fromYou": "你：<body></body>",
+    "unread": "{count}<hidden> 条未读</hidden>",
+    "emptyBeside": "发出消息后，你的对话会显示在这里。",
+    "emptyTitle": "还没有消息",
+    "emptyBody": "打开某个产品或某位用户的个人主页，点击“发送消息”即可开始对话。",
+    "browse": "浏览产品"
+  },
+  "header": {
+    "back": "返回消息",
+    "viewProfile": "查看个人主页"
+  },
+  "closed": {
+    "noProfile": "发送消息前，请先设置你的<link>个人资料</link>。其他用户会看到你的名字和照片。",
+    "suspended": "你的账户已被暂停，因此无法发送消息。你的<link>控制台</link>中说明了原因。",
+    "blocked": "你已屏蔽 {name}。在你解除屏蔽之前，你们双方都无法发送消息。"
+  },
+  "conversation": {
+    "log": "与 {name} 的消息",
+    "privacy": "只有你和 {name} 可以阅读此对话。",
+    "loadingEarlier": "加载中...",
+    "showEarlier": "显示更早的消息",
+    "empty": "还没有消息。向 {name} 打个招呼吧。",
+    "fromYou": "你：",
+    "from": "{name}：",
+    "delivered": "已送达",
+    "seen": "<hidden>{name} </hidden>已读",
+    "report": "举报<hidden> {name} 发来的这条消息</hidden>",
+    "field": "发给 {name} 的消息",
+    "placeholder": "给 {name} 写消息",
+    "send": "发送",
+    "sending": "正在发送...",
+    "keys": "按 Enter 发送，按 Shift+Enter 换行。"
+  },
+  "block": {
+    "block": "屏蔽<hidden> {name}</hidden>",
+    "unblock": "解除屏蔽<hidden> {name}</hidden>",
+    "blocking": "正在屏蔽...",
+    "unblocking": "正在解除屏蔽..."
+  },
+  "sendButton": "发送消息",
+  "loading": "正在加载",
+  "errors": {
+    "userNotFound": "找不到该用户。",
+    "empty": "请先写一条消息。",
+    "tooLong": "消息最多 {max} 个字符。",
+    "sendFailed": "消息发送失败，请重试。",
+    "chooseOther": "请选择其他用户发送消息。",
+    "noProfile": "发送消息前，请先设置你的个人资料。",
+    "suspended": "你的账户已被暂停，因此无法发送消息。",
+    "cannotReceive": "该用户无法接收消息。",
+    "blocked": "你和该用户之间的消息已被屏蔽。",
+    "tooFast": "你发送消息过于频繁，请稍后再试。",
+    "tooManyConversations": "你今天已发起很多对话，请明天再试。",
+    "blockFailed": "无法屏蔽该用户，请重试。",
+    "unblockFailed": "无法解除对该用户的屏蔽，请重试。"
+  }
+}

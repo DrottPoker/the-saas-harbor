@@ -1,5 +1,6 @@
 import "server-only";
 import { createHash, randomBytes } from "node:crypto";
+import { DEFAULT_LOCALE, isLocale, type Locale } from "@/i18n/config";
 import { siteUrl } from "@/lib/seo";
 import type { ProviderId } from "./catalog";
 import type { ParsedKey } from "./types";
@@ -10,16 +11,24 @@ import type { ParsedKey } from "./types";
 // which call `startOAuth` and `finishOAuth` in `oauth-routes.ts` with it. The product form sends a
 // founder to `/api/<id>/connect?saas=<id>` (`saveSaas`), so every provider's routes live there,
 // and `/api/<id>/callback` is the address registered with the provider. This module imports nothing
-// of the app beyond the site's address, so provider modules and their adapters can use it freely.
+// of the app beyond the site's address and its languages, so provider modules and their adapters
+// can use it freely.
 
 /** This site's OAuth application with a provider, from the environment. */
 export type OAuthClient = { id: string; secret: string };
 
 /**
  * A connection in progress, carried in a cookie from the start to the callback: a random state,
- * the PKCE verifier its code needs, and the product and founder it was started for.
+ * the PKCE verifier its code needs, the product and founder it was started for, and the language
+ * the founder started in, since the routes are outside the language addresses.
  */
-export type OAuthFlow = { state: string; verifier: string; saasId: string; userId: string };
+export type OAuthFlow = {
+  state: string;
+  verifier: string;
+  saasId: string;
+  userId: string;
+  locale: Locale;
+};
 
 /**
  * What the callback hands the provider to exchange: the code, the flow's verifier, the whole
@@ -72,12 +81,17 @@ export function oauthCallbackUrl(id: ProviderId) {
 const base64url = (bytes: Buffer) => bytes.toString("base64url");
 
 /** A new connection for a product: its state, and the PKCE verifier its code needs. */
-export function newOAuthFlow(saasId: string, userId: string): OAuthFlow {
+export function newOAuthFlow(
+  saasId: string,
+  userId: string,
+  locale: Locale = DEFAULT_LOCALE,
+): OAuthFlow {
   return {
     state: base64url(randomBytes(24)),
     verifier: base64url(randomBytes(48)),
     saasId,
     userId,
+    locale,
   };
 }
 
@@ -89,11 +103,14 @@ export function decodeOAuthFlow(value: string | undefined): OAuthFlow | null {
   if (!value) return null;
   try {
     const flow = JSON.parse(Buffer.from(value, "base64url").toString("utf8")) as OAuthFlow;
-    return [flow.state, flow.verifier, flow.saasId, flow.userId].every(
-      (part) => typeof part === "string" && part.length > 0,
+    if (
+      ![flow.state, flow.verifier, flow.saasId, flow.userId].every(
+        (part) => typeof part === "string" && part.length > 0,
+      )
     )
-      ? flow
-      : null;
+      return null;
+    // A flow started before flows named their language answers in English.
+    return { ...flow, locale: isLocale(flow.locale) ? flow.locale : DEFAULT_LOCALE };
   } catch {
     return null;
   }

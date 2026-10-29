@@ -1,1 +1,61 @@
-{}
+{
+  "section": {
+    "title": "Ingresos verificados",
+    "description": "Conecta tu proveedor de pagos con una clave de solo lectura para verificar el MRR y los suscriptores. El MRR verificado entra en la clasificación, y los buscadores siguen el enlace a tu sitio web. Si tu proveedor no está en la lista, elige Otro."
+  },
+  "choice": {
+    "label": "Proveedor de pagos",
+    "placeholder": "Elige tu proveedor de pagos",
+    "other": "Otro",
+    "keepCurrent": "Mantener la conexión actual",
+    "reconnect": "Volver a conectar o cambiar de proveedor",
+    "replace": "Reemplazar la clave o cambiar de proveedor"
+  },
+  "fields": {
+    "keyNote": "La clave se guarda cifrada y solo se usa para leer {reads}. Puedes revocarla en {provider} en cualquier momento. <link>Cómo tratamos los datos de los proveedores de pagos</link>",
+    "accessNote": "El acceso que otorga {provider} se guarda cifrado y solo se usa para leer {reads}. Puedes retirarlo en {provider} en cualquier momento. <link>Cómo tratamos los datos de los proveedores de pagos</link>"
+  },
+  "other": {
+    "title": "Los productos conectados llegan a más visitantes",
+    "intro": "Con un proveedor de la lista, tu producto obtiene:",
+    "gainLeaderboard": "Un lugar en la clasificación, que es la página de inicio.",
+    "gainCategories": "Un lugar por encima de los productos sin clasificar en sus páginas de categoría y de tecnología.",
+    "gainLink": "Un enlace a tu sitio web que los buscadores siguen, incluso con las cifras ocultas.",
+    "unverified": "Los ingresos de otros proveedores todavía no se pueden verificar, así que los productos en Otro no se clasifican y el enlace a su sitio web lleva nofollow. Conectar solo da acceso de lectura.",
+    "label": "Tu proveedor de pagos",
+    "hint": "Si todavía no recibes pagos, escribe ninguno.",
+    "note": "Puedes conectar un proveedor de la lista en cualquier momento. El nombre no se muestra en el sitio; lo usamos para decidir qué proveedores admitir después."
+  },
+  "connected": {
+    "title": "Conectado a {provider}",
+    "failed": "La última verificación falló",
+    "testMode": "Modo de prueba",
+    "key": "Clave {hint}",
+    "access": "Acceso de lectura {hint}",
+    "lastVerified": "Última verificación: <date></date>",
+    "subscribers": "Suscriptores",
+    "refresh": "Actualizar ahora",
+    "refreshing": "Actualizando...",
+    "keepConnected": "Mantener conectado",
+    "disconnect": "Desconectar",
+    "confirmDisconnect": "Confirmar desconexión",
+    "disconnecting": "Desconectando..."
+  },
+  "figures": {
+    "title": "Ingresos, compras únicas incluidas",
+    "last30Days": "Últimos 30 días",
+    "last12Months": "Últimos 12 meses",
+    "allTime": "Total histórico",
+    "notRead": "Aún sin leer",
+    "firstRead": "Los pagos se leen poco después de conectar y luego cada día.",
+    "readingBack": "Todavía se están leyendo pagos más antiguos. Por ahora llegan hasta el {date}."
+  },
+  "result": {
+    "connected": "{provider} conectado. {summary}",
+    "verified": "MRR verificado: {mrr} de {count, plural, one {# suscriptor} other {# suscriptores}}.",
+    "disconnected": "{access, select, oauth {Desconectado. Se eliminó el acceso guardado.} other {Desconectado. Se eliminó la clave guardada.}}",
+    "expired": "La conexión con {provider} expiró. Inténtalo de nuevo.",
+    "denied": "No se aprobó el acceso a {provider}, así que no se conectó nada.",
+    "incomplete": "{provider} no completó la conexión. Inténtalo de nuevo."
+  }
+}

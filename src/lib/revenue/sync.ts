@@ -6,12 +6,7 @@ import { adminClient } from "@/lib/supabase/admin";
 import type { Database } from "@/lib/supabase/types";
 import { providerName, type ProviderId } from "./catalog";
 import { decryptProviderKey, encryptProviderKey } from "./crypto";
-import {
-  changedDuringCheck,
-  makerMessage,
-  REPLACED_DURING_CHECK,
-  VerificationError,
-} from "./errors";
+import { changedDuringCheck, makerMessage, VerificationError } from "./errors";
 import { usdRates } from "./fx";
 import { monthEnds, mrrAt } from "./history";
 import { toUsdCents } from "./money";
@@ -158,9 +153,9 @@ async function record(
   const refused = changedDuringCheck(error?.message);
   if (refused) throw refused;
   if (error?.message.includes("already verify another SaaS"))
-    throw new VerificationError(
-      `This ${providerName(verification.provider)} account already verifies another SaaS on The SaaS Harbor.`,
-    );
+    throw new VerificationError("run.accountClaimed", {
+      provider: providerName(verification.provider),
+    });
   if (error) throw new Error(`The verification could not be recorded: ${error.message}`);
 }
 
@@ -173,7 +168,7 @@ async function renewKey(saasId: string, connectedAt: string, key: string) {
     p_encrypted_key: encryptProviderKey(key, saasId),
   });
   if (error) throw new Error(`The renewed key could not be stored: ${error.message}`);
-  if (!data) throw new VerificationError(REPLACED_DURING_CHECK);
+  if (!data) throw new VerificationError("run.keyReplaced");
 }
 
 // Connects a new or replacement key. The key is verified before anything is stored. Its payments
@@ -282,8 +277,8 @@ export async function syncConnection(
     .select("provider, encrypted_key, livemode, revenue_checked_at, connected_at")
     .eq("saas_id", saasId)
     .maybeSingle();
-  if (error) throw new VerificationError("The connection could not be loaded.");
-  if (!connection) throw new VerificationError("No payment provider is connected.");
+  if (error) throw new VerificationError("run.connectionNotLoaded");
+  if (!connection) throw new VerificationError("run.noProvider");
   const readPayments = scheduled ? revenue : refreshReadsPayments(connection.revenue_checked_at);
   // A scheduled run marked the payments checked when it claimed them; a refresh does so here.
   if (readPayments && !scheduled)
@@ -327,7 +322,7 @@ export async function syncConnection(
       .update({ status: "error", last_error: message })
       .eq("saas_id", saasId)
       .eq("connected_at", connection.connected_at);
-    throw new VerificationError(message, { cause });
+    throw new VerificationError({ text: message }, { cause });
   }
 }
 
@@ -337,8 +332,7 @@ export async function syncConnection(
  */
 export async function disconnectProvider(client: SupabaseClient<Database>, saasId: string) {
   const { error } = await client.from("revenue_connections").delete().eq("saas_id", saasId);
-  if (error)
-    throw new VerificationError("The provider could not be disconnected. Please try again.");
+  if (error) throw new VerificationError("run.disconnectFailed");
 }
 
 // The scheduled run: verifies the connections that are due, oldest first, three at a time, and

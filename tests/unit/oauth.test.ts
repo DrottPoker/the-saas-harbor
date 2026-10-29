@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 import { NextRequest } from "next/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { formatUsdIn } from "../../src/lib/display-money";
 import { VerificationError } from "../../src/lib/revenue/errors";
 import {
   decodeOAuthFlow,
@@ -12,8 +13,8 @@ import {
   type OAuthFlow,
   type OAuthProvider,
 } from "../../src/lib/revenue/oauth";
+import { oauthConnectPath } from "../../src/lib/revenue/connection-result";
 import { finishOAuth, startOAuth } from "../../src/lib/revenue/oauth-routes";
-import { summary } from "../../src/lib/revenue/summary";
 import type { Verification } from "../../src/lib/revenue/sync";
 
 // The routes run with the session, the cookies, the database and the verification replaced, so
@@ -129,7 +130,7 @@ describe("OAuth flows", () => {
 
   it("are random, carry a PKCE verifier and come back only whole", () => {
     const flow = newOAuthFlow("saas-1", "user-1");
-    expect(flow).toMatchObject({ saasId: "saas-1", userId: "user-1" });
+    expect(flow).toMatchObject({ saasId: "saas-1", userId: "user-1", locale: "en" });
     expect(flow.state).not.toBe(newOAuthFlow("saas-1", "user-1").state);
     expect(flow.verifier).toMatch(/^[A-Za-z0-9_-]{64}$/);
     expect(pkceChallenge(flow.verifier)).toBe(
@@ -140,6 +141,23 @@ describe("OAuth flows", () => {
     expect(decodeOAuthFlow("not-json")).toBeNull();
     const partial = { ...flow, verifier: "" };
     expect(decodeOAuthFlow(Buffer.from(JSON.stringify(partial)).toString("base64url"))).toBeNull();
+  });
+
+  it("carry the founder's language, English for a flow without one", () => {
+    const flow = newOAuthFlow("saas-1", "user-1", "es");
+    expect(decodeOAuthFlow(encodeOAuthFlow(flow))?.locale).toBe("es");
+    const unnamed = Buffer.from(JSON.stringify({ ...flow, locale: undefined })).toString(
+      "base64url",
+    );
+    expect(decodeOAuthFlow(unnamed)?.locale).toBe("en");
+    const unknown = Buffer.from(JSON.stringify({ ...flow, locale: "fr" })).toString("base64url");
+    expect(decodeOAuthFlow(unknown)?.locale).toBe("en");
+  });
+
+  it("start from an address that names the founder's language", () => {
+    expect(oauthConnectPath("gumroad", "saas-1", "ar")).toBe(
+      "/api/gumroad/connect?saas=saas-1&locale=ar",
+    );
   });
 });
 
@@ -181,10 +199,37 @@ describe("Starting a connection", () => {
       path: "/api/gumroad",
     });
     const flow = decodeOAuthFlow(cookie.value)!;
-    expect(flow).toMatchObject({ saasId: SAAS, userId: "user-1" });
+    expect(flow).toMatchObject({ saasId: SAAS, userId: "user-1", locale: "en" });
     expect(location(response)).toBe(
       `https://provider.test/authorize?client=client-1&state=${flow.state}`,
     );
+  });
+
+  it("keeps the language the product form names, else the one of the page it came from", async () => {
+    const started = async (url: string, headers?: Record<string, string>) => {
+      await startOAuth(new NextRequest(url, { headers }), provider);
+      return decodeOAuthFlow(state.jar.get("harbor_gumroad_flow")?.value)?.locale;
+    };
+    expect(await started(`${SITE}${oauthConnectPath("gumroad", SAAS, "hi")}`)).toBe("hi");
+    const connect = `${SITE}/api/gumroad/connect?saas=${SAAS}`;
+    expect(await started(connect, { referer: `${SITE}/ru/dashboard/saas/new` })).toBe("ru");
+    expect(await started(connect, { referer: `${SITE}/dashboard/saas/new` })).toBe("en");
+    // Another site's page says nothing; the visitor's own choice of language does.
+    expect(
+      await started(connect, { referer: "https://example.com/zh/x", cookie: "locale=ar" }),
+    ).toBe("ar");
+    expect(await started(connect, { "accept-language": "es-MX,es;q=0.9" })).toBe("es");
+  });
+
+  it("says so in the founder's language", async () => {
+    ready = false;
+    const response = await startOAuth(
+      new NextRequest(`${SITE}${oauthConnectPath("gumroad", SAAS, "es")}`),
+      provider,
+    );
+    expect(location(response)).toBe(`${SITE}/es/dashboard/saas/${SAAS}?connection=1#revenue`);
+    expect(lastResult()?.text).toBe("Gumroad aún no está configurado en este servidor.");
+    expect(keepConnectionResult.mock.calls.at(-1)?.[1]).toBe("es");
   });
 });
 
@@ -263,12 +308,35 @@ describe("Finishing a connection", () => {
       saasId: SAAS,
       provider: "gumroad",
       tone: "success",
-      text: `Gumroad connected. ${summary(verification)}`,
+      text: "Gumroad connected. Verified MRR: $50 from 3 subscribers. 1 subscriber without a recent charge was not counted.",
     });
+    expect(keepConnectionResult.mock.calls.at(-1)?.[1]).toBe("en");
+  });
+
+  it("answers in the language the founder started in, and opens the editor in it", async () => {
+    flow = newOAuthFlow(SAAS, "user-1", "es");
+    state.jar.set("harbor_gumroad_flow", { value: encodeOAuthFlow(flow) });
+    expect(location(await finish("state=other&code=c"))).toBe(
+      `${SITE}/es/dashboard/saas/${SAAS}?connection=1#revenue`,
+    );
+    expect(lastResult()?.text).toBe("La conexión con Gumroad expiró. Inténtalo de nuevo.");
+    expect(keepConnectionResult.mock.calls.at(-1)?.[1]).toBe("es");
+
+    state.jar.set("harbor_gumroad_flow", { value: encodeOAuthFlow(flow) });
+    await finish(`state=${flow.state}&code=c`);
+    expect(lastResult()?.text).toBe(
+      `Gumroad conectado. MRR verificado: ${formatUsdIn(5000, "es-419")} de 3 suscriptores. No se contó 1 suscriptor sin un cobro reciente.`,
+    );
+
+    state.userId = "user-2";
+    state.jar.set("harbor_gumroad_flow", { value: encodeOAuthFlow(flow) });
+    expect(location(await finish(`state=${flow.state}&code=c`))).toBe(`${SITE}/es/dashboard`);
   });
 
   it("shows failures written for founders, and others as a generic failure", async () => {
-    exchange.mockRejectedValueOnce(new VerificationError("Gumroad granted other access."));
+    exchange.mockRejectedValueOnce(
+      new VerificationError({ text: "Gumroad granted other access." }),
+    );
     await finish(`state=${flow.state}&code=c`);
     expect(lastResult()).toMatchObject({ tone: "error", text: "Gumroad granted other access." });
     expect(connectProvider).not.toHaveBeenCalled();
@@ -280,7 +348,7 @@ describe("Finishing a connection", () => {
     expect(lastResult()?.text).toBe("Verification failed. Try again shortly.");
     logged.mockRestore();
 
-    beginRevenueCheck.mockRejectedValueOnce(new VerificationError("Too many checks."));
+    beginRevenueCheck.mockRejectedValueOnce(new VerificationError({ text: "Too many checks." }));
     state.jar.set("harbor_gumroad_flow", { value: encodeOAuthFlow(flow) });
     exchange.mockClear();
     await finish(`state=${flow.state}&code=c`);

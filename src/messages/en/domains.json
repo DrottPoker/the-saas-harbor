@@ -1,1 +1,32 @@
-{}
+{
+  "title": "Domain",
+  "description": "Show that the website is yours: add a DNS record to its domain, and the product page says the domain is verified.",
+  "noDomain": "Your website's address is not on a domain of its own, such as an IP address, so there is nowhere to add the record. Use an address on your own domain to verify it.",
+  "verified": "{domain} is verified.",
+  "lastChecked": "Last checked <date></date>.",
+  "notVerified": "{domain} is not verified yet.",
+  "missing": "The record was not found on <date></date>. The domain stays verified for three days after that; add the record back before then.",
+  "instructions": "Add this TXT record where you manage DNS for {domain}, then check it. Keep the record in place: it is checked again every day, and a record missing for three days removes the mark. Addresses on a hosting service's domain, such as your-app.vercel.app, cannot take records of their own.",
+  "type": "Type",
+  "name": "Name",
+  "copyName": "Copy name",
+  "nameHint": "Enter {label} as the name: your DNS provider adds .{domain} itself. If it asks for the full name, enter {name}.",
+  "value": "Value",
+  "copyValue": "Copy value",
+  "check": "Check DNS",
+  "checking": "Checking...",
+  "result": {
+    "notOwner": "You can only verify the domain of your own SaaS.",
+    "loadFailed": "The SaaS could not be loaded. Please try again.",
+    "noDomain": "Your website's address is not on a domain of its own, so there is nowhere to add the record.",
+    "failed": "The domain could not be checked. Please try again.",
+    "tooSoon": "The domain was checked a moment ago. Try again in a few seconds.",
+    "tooOften": "Domains were checked many times in the last hour. Try again later.",
+    "verified": "{domain} is verified. We check the record again every day.",
+    "missing": "The record was not found at {record}. Check its name and value; new records can take a few minutes to appear.",
+    "grace": "The record was not found at {record}. {domain} stays verified for three days after the record goes missing, so add it back before then.",
+    "removed": "The record has been missing for three days, so {domain} is no longer verified. Add it again to verify the domain.",
+    "dnsTimeout": "DNS did not answer in time. Please try again in a moment.",
+    "changed": "Your website changed during the check. Please try again."
+  }
+}

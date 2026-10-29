@@ -2,7 +2,16 @@ import "server-only";
 import type { StripeCoupon, StripePrice, StripeSubscription, StripeSubscriptionItem } from "./mrr";
 import { COUNTED_STATUSES, includesTax, untaxedShare } from "./mrr";
 import { VerificationError } from "../errors";
-import { apiBase, MAX_PAGES, ProviderRequestError } from "../http";
+import {
+  apiBase,
+  MAX_PAGES,
+  missingPermission,
+  ProviderRequestError,
+  rateLimited,
+  returnedError,
+  tooMuchData,
+  unreachable,
+} from "../http";
 import { linePriceId, type StripeInvoice, type StripeInvoiceLine } from "./history";
 import type {
   StripeCharge,
@@ -35,26 +44,16 @@ async function stripeGet<T>(
       signal: AbortSignal.timeout(20_000),
     });
   } catch {
-    throw new ProviderRequestError("Stripe could not be reached. Try again shortly.");
+    throw unreachable("Stripe");
   }
   if (response.ok) return (await response.json()) as T;
   const body = (await response.json().catch(() => null)) as { error?: { message?: string } } | null;
   const detail = body?.error?.message?.slice(0, 300);
   if (response.status === 401)
-    throw new ProviderRequestError("Stripe rejected the key. It may have been revoked.", 401);
-  if (response.status === 403)
-    throw new ProviderRequestError(
-      `The key is missing a read permission.${detail ? ` Stripe says: ${detail}` : ""}`,
-      403,
-      path,
-    );
-  if (response.status === 429)
-    throw new ProviderRequestError("Stripe is rate limiting requests. Try again later.", 429);
-  throw new ProviderRequestError(
-    `Stripe returned an error${detail ? `: ${detail}` : "."}`,
-    response.status,
-    path,
-  );
+    throw new ProviderRequestError("common.keyRevoked", { provider: "Stripe" }, { status: 401 });
+  if (response.status === 403) throw missingPermission("Stripe", detail, { status: 403, path });
+  if (response.status === 429) throw rateLimited("Stripe");
+  throw returnedError("Stripe", detail, { status: response.status, path });
 }
 
 type List<T> = { data: T[]; has_more: boolean };
@@ -74,12 +73,7 @@ async function listAll<T extends { id: string }>(
     if (!list.has_more || list.data.length === 0) return items;
     startingAfter = list.data.at(-1)!.id;
   }
-  throw new ProviderRequestError(
-    "The Stripe account has too much data to verify in one run.",
-    undefined,
-    path,
-    true,
-  );
+  throw tooMuchData("Stripe", path);
 }
 
 /**
@@ -254,9 +248,10 @@ export async function fetchStripeAccountData(key: string): Promise<StripeAccount
       );
       const option = full.currency_options?.[currency];
       if (!option)
-        throw new VerificationError(
-          `The price ${item.price.id} has no amount in ${currency.toUpperCase()}.`,
-        );
+        throw new VerificationError("stripe.priceCurrency", {
+          price: item.price.id,
+          currency: currency.toUpperCase(),
+        });
       item.price = {
         ...item.price,
         currency,

@@ -1,1 +1,61 @@
-{}
+{
+  "section": {
+    "title": "Verified revenue",
+    "description": "Connect your payment provider with a read-only key to verify MRR and subscribers. Verified MRR is ranked on the leaderboard, and the link to your website is followed by search engines. If your provider is not in the list, choose Other."
+  },
+  "choice": {
+    "label": "Payment provider",
+    "placeholder": "Choose your payment provider",
+    "other": "Other",
+    "keepCurrent": "Keep the current connection",
+    "reconnect": "Reconnect or change the provider",
+    "replace": "Replace the key or change the provider"
+  },
+  "fields": {
+    "keyNote": "The key is encrypted and only used to read {reads}. You can revoke it in {provider} at any time. <link>How we handle payment provider data</link>",
+    "accessNote": "The access {provider} grants is encrypted and only used to read {reads}. You can remove it in {provider} at any time. <link>How we handle payment provider data</link>"
+  },
+  "other": {
+    "title": "Connected products are seen by more visitors",
+    "intro": "With a provider from the list, your product gets:",
+    "gainLeaderboard": "A place on the leaderboard, which is the home page.",
+    "gainCategories": "A place above unranked products on its category and technology pages.",
+    "gainLink": "A link to your website that search engines follow, even with the figures hidden.",
+    "unverified": "Revenue from other providers cannot be verified yet, so products under Other are not ranked and their website link is marked nofollow. Connecting only gives read access.",
+    "label": "Your payment provider",
+    "hint": "If you take no payments yet, write none.",
+    "note": "You can connect a provider from the list at any time. The name is not shown on the site; we use it to choose which providers to support next."
+  },
+  "connected": {
+    "title": "Connected to {provider}",
+    "failed": "The last verification failed",
+    "testMode": "Test mode",
+    "key": "Key {hint}",
+    "access": "Read access {hint}",
+    "lastVerified": "Last verified <date></date>",
+    "subscribers": "Subscribers",
+    "refresh": "Refresh now",
+    "refreshing": "Refreshing...",
+    "keepConnected": "Keep connected",
+    "disconnect": "Disconnect",
+    "confirmDisconnect": "Confirm disconnect",
+    "disconnecting": "Disconnecting..."
+  },
+  "figures": {
+    "title": "Revenue, one-time purchases included",
+    "last30Days": "Last 30 days",
+    "last12Months": "Last 12 months",
+    "allTime": "All time",
+    "notRead": "Not read yet",
+    "firstRead": "Payments are read shortly after connecting, and then every day.",
+    "readingBack": "Older payments are still being read. So far they go back to {date}."
+  },
+  "result": {
+    "connected": "{provider} connected. {summary}",
+    "verified": "Verified MRR: {mrr} from {count, plural, one {# subscriber} other {# subscribers}}.",
+    "disconnected": "{access, select, oauth {Disconnected. The stored access was deleted.} other {Disconnected. The stored key was deleted.}}",
+    "expired": "The connection to {provider} expired. Try again.",
+    "denied": "{provider} access was not approved, so nothing was connected.",
+    "incomplete": "{provider} did not complete the connection. Try again."
+  }
+}

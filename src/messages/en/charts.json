@@ -1,1 +1,56 @@
-{}
+{
+  "axisWithYear": "{month} ’{year}",
+  "summary": {
+    "mrr": "MRR at month end went from {first} in {firstMonth} to {end} in {endMonth}.",
+    "mrrOne": "MRR was {value} at the end of {month}.",
+    "revenue": "Revenue by month from {firstMonth} to {endMonth}, {total} in total.",
+    "revenueOne": "Revenue was {value} in {month}."
+  },
+  "periods": {
+    "months": "{months}M",
+    "year": "1Y",
+    "all": "All",
+    "name": "{label}, {long}",
+    "last": "last {months, plural, one {# month} other {# months}}",
+    "whole": "all {months, plural, one {# month} other {# months}}",
+    "in": "in {months, plural, one {# month} other {# months}}",
+    "over": "over the last {months, plural, one {month} other {# months}}",
+    "inMonth": "in {month}",
+    "inLast": "in the last {months, plural, one {month} other {# months}}"
+  },
+  "mrr": {
+    "tab": "MRR",
+    "title": "MRR at month end",
+    "note": "Month-end MRR for the last {months, plural, one {month} other {# months}}, reconstructed from paid charges and converted to USD at today's rates.",
+    "month": "Month",
+    "value": "MRR"
+  },
+  "revenue": {
+    "tab": "Revenue",
+    "title": "Revenue by month",
+    "note": "What customers paid each month, after discounts and refunds and before tax, converted to USD at today's rates.",
+    "noteSplit": "What customers paid each month, for subscriptions and one-time purchases, after discounts and refunds and before tax, converted to USD at today's rates.",
+    "month": "Month",
+    "subscriptions": "Subscriptions",
+    "oneTime": "One-time",
+    "value": "Revenue"
+  },
+  "table": "Show as table",
+  "history": {
+    "tabs": "Chart",
+    "periods": "Chart period",
+    "keys": "{title}. Use the arrow keys to read each month.",
+    "month": "{month}: {value}",
+    "monthSplit": "{month}: {value}, subscriptions {subscription}, one-time purchases {oneTime}",
+    "legend": "Legend",
+    "subscriptions": "Subscriptions",
+    "oneTime": "One-time purchases"
+  },
+  "growth": {
+    "short": "30d",
+    "long": "over the last 30 days",
+    "spoken": "{direction, select, up {Up {amount}} down {Down {amount}} other {Unchanged}} {period}",
+    "points": "{count, plural, one {# pt} other {# pts}}",
+    "pointsSpoken": "{count, plural, one {# percentage point} other {# percentage points}}"
+  }
+}

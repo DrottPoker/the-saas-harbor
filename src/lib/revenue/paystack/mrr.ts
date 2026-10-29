@@ -8,6 +8,7 @@
 // one. Completed and cancelled subscriptions do not count, nor one that starts later, which is a
 // free period. The amount is the whole charge, not multiplied by `quantity`, which Paystack
 // documents no way to set. Paystack records no tax, so what was charged counts.
+import { revenueText } from "../errors";
 import { unixSeconds, type ServiceLine } from "../history";
 import { addTo, AVERAGE_MONTH_DAYS, intervalMonths, minorUnitsPerMajor } from "../money";
 
@@ -122,10 +123,7 @@ export function subscriptionsFromPlans(plans: PaystackPlan[]) {
 
 /** What MRR may leave out when the plans list fewer subscriptions than they have, or null. */
 export function unlistedNote(count: number) {
-  if (!count) return null;
-  return count === 1
-    ? "Paystack did not list 1 subscription to your plans, so MRR may leave it out."
-    : `Paystack did not list ${count} subscriptions to your plans, so MRR may leave them out.`;
+  return count ? revenueText("paystack.unlisted", { count }) : null;
 }
 
 function customerOf(subscription: PaystackSubscription) {

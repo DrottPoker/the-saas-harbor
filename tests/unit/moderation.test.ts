@@ -2,23 +2,29 @@ import { describe, expect, it } from "vitest";
 import { safeAdminPath } from "../../src/lib/admin";
 import { decisionSchema, noteSchema, reportSchema, safeNext } from "../../src/lib/domain";
 import {
+  decisionLabels,
   excerpt,
   isReason,
   isReportTarget,
   REASONS,
-  reasonHints,
   reasonLabels,
+  REPORT_ERRORS,
   reportPath,
+  reportSubject,
   reportTitle,
 } from "../../src/lib/moderation";
+import en from "../../src/messages/en";
+import { userErrorsOf } from "./support/migrations";
 
 const uuid = "b0000000-0000-4000-8000-000000000001";
 
 describe("report reasons", () => {
-  it("has a label and a hint for every reason", () => {
+  it("has a label and a hint for every reason, the same in English for users and admins", () => {
     for (const reason of REASONS) {
       expect(reasonLabels[reason]).toBeTruthy();
-      expect(reasonHints[reason]).toBeTruthy();
+      expect(en.reports.reasons[reason].label).toBe(reasonLabels[reason]);
+      expect(en.reports.reasons[reason].hint).toBeTruthy();
+      expect(en.moderation.decisions[reason]).toBe(decisionLabels[reason]);
     }
   });
   it("recognizes only known reasons and targets", () => {
@@ -91,6 +97,18 @@ describe("report links and titles", () => {
       "“Buy now please”",
     );
     expect(reportTitle({ target: "message", content: null })).toBe("A message");
+  });
+  it("finds what a report is about, for titles in every language", () => {
+    expect(reportSubject({ target: "saas", content: { name: "Ledgerloop" } })).toBe("Ledgerloop");
+    expect(reportSubject({ target: "profile", content: { name: "" } })).toBeNull();
+    expect(reportSubject({ target: "message", content: { body: "Hi\nthere" } })).toBe("Hi there");
+    expect(reportSubject({ target: "message", content: { name: "Jane" } })).toBeNull();
+  });
+  it("has a message for every error submit_report() gives users, worded as the database does", () => {
+    const raised = userErrorsOf("submit_report");
+    expect([...REPORT_ERRORS.keys()].sort()).toEqual([...new Set(raised)].sort());
+    for (const [text, key] of REPORT_ERRORS)
+      expect(en.reports.errors[key].replace("{max}", "1,000")).toBe(`${text}.`);
   });
   it("shortens long text at a word", () => {
     expect(excerpt("short")).toBe("short");

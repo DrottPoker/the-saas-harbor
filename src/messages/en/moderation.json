@@ -1,1 +1,24 @@
-{}
+{
+  "product": {
+    "heading": "<hidden>Product hidden: </hidden>An admin hid this product on <date></date>.",
+    "effect": "It is not shown anywhere on The SaaS Harbor. You can still edit or delete it."
+  },
+  "account": {
+    "heading": "<hidden>Account suspended: </hidden>An admin suspended your account on <date></date>.",
+    "effect": "Your profile and products are hidden, and you cannot send messages or reports. You can still sign in, edit your products and delete your account."
+  },
+  "reason": "Reason",
+  "explanation": "Explanation",
+  "notGiven": "Not given",
+  "decisions": {
+    "spam": "Spam or advertising",
+    "misleading": "Misleading or false information",
+    "impersonation": "Pretends to be someone else",
+    "harassment": "Harassment or hate",
+    "illegal": "Illegal content",
+    "other": "Another breach of the terms"
+  },
+  "byPerson": "A person made this decision, not an automated system.",
+  "appeal": "If you think it is wrong, write to <contact></contact>.",
+  "terms": "The <link>terms</link> explain what is not allowed."
+}

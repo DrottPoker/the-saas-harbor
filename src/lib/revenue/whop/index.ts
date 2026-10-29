@@ -1,5 +1,5 @@
 import "server-only";
-import { VerificationError } from "../errors";
+import { revenueText, VerificationError } from "../errors";
 import { historyWindowStart } from "../history";
 import { ProviderRequestError } from "../http";
 import type { ProviderAdapter } from "../types";
@@ -46,20 +46,18 @@ async function requireReadOnly(key: string, live: boolean, account: string) {
     .filter((permission) => permission.granted && !permission.action.endsWith(":read"))
     .map((permission) => permission.action);
   if (writes.length)
-    throw new VerificationError(
-      `The key can do more than read, for example ${writes.slice(0, 3).join(", ")}. Create a key with only the read permissions listed.`,
-    );
+    throw new VerificationError("whop.canWrite", { permissions: writes.slice(0, 3).join(", ") });
 }
 
-async function lookUp<T>(ids: Iterable<string>, read: (id: string) => Promise<T>, what: string) {
+/** Looks up what charges name, for at most `MAX_LOOKUPS` ids; `tooMany` says when there are more. */
+async function lookUp<T>(
+  ids: Iterable<string>,
+  read: (id: string) => Promise<T>,
+  tooMany: "whop.tooManyPlans" | "whop.tooManyPromoCodes",
+) {
   const unique = [...new Set(ids)];
   if (unique.length > MAX_LOOKUPS)
-    throw new ProviderRequestError(
-      `The Whop account has more ${what} than one verification reads.`,
-      undefined,
-      undefined,
-      true,
-    );
+    throw new ProviderRequestError(tooMany, {}, { tooMuchData: true });
   const found = new Map<string, T>();
   for (const id of unique)
     try {
@@ -92,7 +90,7 @@ export const whop: ProviderAdapter = {
     const plans = await lookUp<WhopPlan>(
       counted.map((membership) => membership.plan_id),
       (id) => fetchPlan(key, live, id),
-      "plans",
+      "whop.tooManyPlans",
     );
     const recent = () => fetchPayments(key, live, account, paymentWindowStart(counted, plans, now));
     let payments;
@@ -104,13 +102,12 @@ export const whop: ProviderAdapter = {
       } catch (error) {
         if (!(error instanceof ProviderRequestError && error.tooMuchData)) throw error;
         payments = await recent();
-        historyNote =
-          "The Whop account has more payments than one verification reads, so there is no revenue history.";
+        historyNote = revenueText("whop.historyTooManyPayments");
       }
     const promos = await lookUp<WhopPromo>(
       promoCodesToRead(counted, payments),
       (id) => fetchPromo(key, live, id),
-      "promo codes",
+      "whop.tooManyPromoCodes",
     );
     let lines = null;
     if (history && !historyNote) {
@@ -118,12 +115,15 @@ export const whop: ProviderAdapter = {
         payment.plan_id && !plans.has(payment.plan_id) ? [payment.plan_id] : [],
       );
       try {
-        const older = await lookUp<WhopPlan>(missing, (id) => fetchPlan(key, live, id), "plans");
+        const older = await lookUp<WhopPlan>(
+          missing,
+          (id) => fetchPlan(key, live, id),
+          "whop.tooManyPlans",
+        );
         lines = whopServiceLines(payments, new Map([...plans, ...older]));
       } catch (error) {
         if (!(error instanceof ProviderRequestError && error.tooMuchData)) throw error;
-        historyNote =
-          "The Whop account has more plans than one verification reads, so there is no revenue history.";
+        historyNote = revenueText("whop.historyTooManyPlans");
       }
     }
     return {

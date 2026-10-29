@@ -17,26 +17,17 @@ export function parseSuperwallApplication(input: string) {
     /app\.superwall\.com\/\d+\/(\d+)(?:[/?#]|$)/.exec(value)?.[1] ??
     /superwall\.com\/applications\/(\d+)(?:[/?#]|$)/.exec(value)?.[1] ??
     value;
-  if (!/^\d{1,20}$/.test(application))
-    throw new VerificationError(
-      "Enter your Superwall application ID, or paste the address of your app's dashboard.",
-    );
+  if (!/^\d{1,20}$/.test(application)) throw new VerificationError("superwall.applicationFormat");
   return application;
 }
 
 export function parseSuperwallKey({ key: input, account }: KeyInput): ParsedKey {
   const application = parseSuperwallApplication(account);
   const key = input.trim();
-  if (/^pk_/.test(key))
-    throw new VerificationError(
-      "This is the app's public SDK key. Create an organization API key under Settings, API Keys.",
-    );
+  if (/^pk_/.test(key)) throw new VerificationError("superwall.publicKey");
   if (/^(rk|sk|pk)_(live|test)_|^pdl_|^polar_|^creem_|^apik_/.test(key))
-    throw new VerificationError(
-      "This key belongs to another payment provider. Paste your Superwall organization API key.",
-    );
-  if (!/^sk_[A-Za-z0-9_-]{16,200}$/.test(key))
-    throw new VerificationError("Paste a Superwall organization API key. It starts with sk_.");
+    throw new VerificationError("superwall.otherProvider");
+  if (!/^sk_[A-Za-z0-9_-]{16,200}$/.test(key)) throw new VerificationError("superwall.keyFormat");
   return {
     key: joinAccountKey(application, key),
     // The charts are read for production purchases only.

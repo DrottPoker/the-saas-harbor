@@ -14,8 +14,7 @@ export async function usdRates(currencies: string[]) {
   const quotes = [...new Set(currencies.map((c) => c.toLowerCase()))].filter((c) => c !== "usd");
   if (!quotes.length) return { rates: new Map<string, number>(), date: null };
   const base = ratesBase();
-  if (!base)
-    throw new VerificationError("Exchange rates are not configured correctly on this server.");
+  if (!base) throw new VerificationError("run.ratesNotConfigured");
   const url = new URL("/v2/rates", base);
   url.searchParams.set("base", "usd");
   url.searchParams.set("quotes", quotes.join(","));
@@ -25,23 +24,27 @@ export async function usdRates(currencies: string[]) {
     if (!response.ok) throw new Error();
     rows = await response.json();
   } catch {
-    throw new VerificationError("Exchange rates are unavailable right now. Try again shortly.");
+    throw new VerificationError("run.ratesUnavailable");
   }
   return ratesFrom(rows);
 }
 
 function ratesFrom(rows: { date: string; quote: string; rate: number }[]) {
-  const rates = new Map(
-    rows
-      .filter((row) => Number.isFinite(row.rate) && row.rate > 0)
-      .map((row) => [row.quote.toLowerCase(), row.rate]),
+  const usable = rows.filter(
+    (row) =>
+      typeof row.quote === "string" &&
+      /^\d{4}-\d{2}-\d{2}$/.test(row.date) &&
+      Number.isFinite(row.rate) &&
+      row.rate > 0,
   );
+  const rates = new Map(usable.map((row) => [row.quote.toLowerCase(), row.rate]));
+  const dates = new Map(usable.map((row) => [row.quote.toLowerCase(), row.date]));
   const date =
-    rows
+    usable
       .map((row) => row.date)
       .sort()
       .at(-1) ?? null;
-  return { rates, date };
+  return { rates, dates, date };
 }
 
 type Rates = ReturnType<typeof ratesFrom>;

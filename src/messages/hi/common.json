@@ -1,4 +1,9 @@
 {
+  "forms": {
+    "saving": "सेव हो रहा है...",
+    "imageHint": "PNG, JPEG या WebP, अधिकतम 2 MB। इमेज सार्वजनिक होती हैं।",
+    "removeImage": "मौजूदा इमेज हटाएँ"
+  },
   "notShared": "साझा नहीं किया गया",
   "demo": "डेमो",
   "mrr": "MRR",

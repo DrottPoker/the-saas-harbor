@@ -1,7 +1,7 @@
 import "server-only";
 import { historyWindowStart } from "../history";
 import { ProviderRequestError } from "../http";
-import { VerificationError } from "../errors";
+import { revenueText, VerificationError } from "../errors";
 import type { ProviderAdapter } from "../types";
 import {
   fetchCharges,
@@ -46,11 +46,7 @@ const PERMISSIONS: [string, string][] = [
 function permissionError(error: unknown) {
   if (!(error instanceof ProviderRequestError && error.status === 403)) return error;
   const name = PERMISSIONS.find(([path]) => error.path?.startsWith(path))?.[1];
-  return name
-    ? new VerificationError(
-        `Revenue beyond MRR needs the ${name}: Read permission on the restricted key.`,
-      )
-    : error;
+  return name ? new VerificationError("stripe.revenuePermission", { permission: name }) : error;
 }
 
 /** The untaxed share and kind of each charge that needs them, from its invoice or session. */
@@ -78,13 +74,12 @@ async function invoiceHistory(key: string, now: Date) {
     if (error instanceof ProviderRequestError && error.status === 403)
       return {
         lines: null,
-        note: `Revenue history needs the ${error.path?.startsWith("/v1/prices") ? "Prices" : "Invoices"}: Read permission on the restricted key.`,
+        note: revenueText("stripe.historyPermission", {
+          permission: error.path?.startsWith("/v1/prices") ? "Prices" : "Invoices",
+        }),
       };
     if (error instanceof ProviderRequestError && error.tooMuchData)
-      return {
-        lines: null,
-        note: "The Stripe account has more invoices than one verification reads, so there is no revenue history.",
-      };
+      return { lines: null, note: revenueText("stripe.historyTooLarge") };
     throw error;
   }
 }
@@ -92,22 +87,8 @@ async function invoiceHistory(key: string, now: Date) {
 /** What MRR left out or could not take tax out of, in words for the founder, or null. */
 export function mrrNote(deletedCoupons: number, taxIncluded: number) {
   const notes: string[] = [];
-  if (deletedCoupons === 1)
-    notes.push(
-      "1 subscription has a coupon that was deleted in Stripe and can no longer be read, so it was not counted.",
-    );
-  else if (deletedCoupons)
-    notes.push(
-      `${deletedCoupons} subscriptions have coupons that were deleted in Stripe and can no longer be read, so they were not counted.`,
-    );
-  if (taxIncluded === 1)
-    notes.push(
-      "1 subscription's price includes tax that could not be taken out, since its latest invoice could not be read.",
-    );
-  else if (taxIncluded)
-    notes.push(
-      `${taxIncluded} subscriptions' prices include tax that could not be taken out, since their latest invoices could not be read.`,
-    );
+  if (deletedCoupons) notes.push(revenueText("stripe.deletedCoupons", { count: deletedCoupons }));
+  if (taxIncluded) notes.push(revenueText("stripe.taxIncluded", { count: taxIncluded }));
   return notes.length ? notes.join(" ") : null;
 }
 

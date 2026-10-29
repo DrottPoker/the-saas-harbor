@@ -1,48 +1,51 @@
 import { z } from "zod";
+import { splitLocale } from "@/i18n/config";
+import type en from "@/messages/en";
 import { hasUnsafeUrlCharacters } from "./domain";
+import { invalid } from "./validation";
 
 // Feedback from users and visitors to the admins. The database has the same kinds and limits
 // (public.submit_feedback and public.submit_visitor_feedback).
 export const FEEDBACK_KINDS = ["bug", "suggestion", "other"] as const;
 export type FeedbackKind = (typeof FEEDBACK_KINDS)[number];
 
+/** The kinds in English, for the admin panel. The form takes its own from feedback.kinds. */
 export const feedbackLabels: Record<FeedbackKind, string> = {
   bug: "Bug or error",
   suggestion: "Suggestion",
   other: "Other feedback",
 };
 
-export const feedbackHints: Record<FeedbackKind, string> = {
-  bug: "Something does not work, or shows the wrong thing.",
-  suggestion: "An idea for something new, or something to do better.",
-  other: "Anything else you want to tell us.",
-};
-
-/** The heading of the form, on the page and in the dialog. */
-export const feedbackHeading = {
-  title: "Send feedback",
-  description: "Report a bug or an error, suggest something, or tell us what you think.",
-};
-
 export const FEEDBACK_MIN_LENGTH = 10;
 export const FEEDBACK_MAX_LENGTH = 2000;
 
+/**
+ * The errors submit_feedback() and submit_visitor_feedback() raise (P0001), as keys in
+ * feedback.errors, so they read in the page's language. `tooShort` takes `min`, `tooLong` `max`.
+ */
+export const FEEDBACK_ERRORS = new Map<string, keyof (typeof en)["feedback"]["errors"]>([
+  ["Choose what kind of feedback it is", "chooseKind"],
+  ["Write at least 10 characters", "tooShort"],
+  ["Keep it under 2,000 characters", "tooLong"],
+  ["Enter a valid email address, or leave it empty", "email"],
+  ["Your account is suspended, so you cannot send feedback", "suspended"],
+  ["You have sent a lot of feedback. Try again later", "tooMuch"],
+  ["A lot of feedback came in just now. Try again later", "busy"],
+]);
+
 export const feedbackSchema = z.object({
-  kind: z.enum(FEEDBACK_KINDS, { error: "Choose what kind of feedback it is." }),
+  kind: z.enum(FEEDBACK_KINDS, { error: invalid("feedback.kind") }),
   message: z
     .string()
     .trim()
-    .min(FEEDBACK_MIN_LENGTH, `Write at least ${FEEDBACK_MIN_LENGTH} characters.`)
-    .max(FEEDBACK_MAX_LENGTH, "Keep it under 2,000 characters."),
+    .min(FEEDBACK_MIN_LENGTH, invalid("feedback.min", { min: FEEDBACK_MIN_LENGTH }))
+    .max(FEEDBACK_MAX_LENGTH, invalid("feedback.max")),
   /** Where a visitor wants a reply, if anywhere. A user's address is in their account. */
   email: z
     .string()
     .trim()
-    .max(254, "Enter a valid email address, or leave it empty.")
-    .refine(
-      (value) => !value || z.email().safeParse(value).success,
-      "Enter a valid email address, or leave it empty.",
-    )
+    .max(254, invalid("feedback.email"))
+    .refine((value) => !value || z.email().safeParse(value).success, invalid("feedback.email"))
     .default(""),
 });
 
@@ -71,12 +74,13 @@ export function feedbackHref(from: string | null) {
 /**
  * How the form opens on a link inside the site, from the Next-Url of the navigation: in a dialog
  * over the page, as the full page after signing in on the full sign-in page, where a dialog would
- * sit over sign-in, or not at all over the full feedback page, which already shows the form.
+ * sit over sign-in, or not at all over the full feedback page, which already shows the form. The
+ * same holds in every language (/es/auth).
  */
 export function feedbackOpening(nextUrl: string | null): "dialog" | "page" | "none" {
   let pathname: string;
   try {
-    pathname = new URL(nextUrl ?? "", "http://site.invalid").pathname;
+    pathname = splitLocale(new URL(nextUrl ?? "", "http://site.invalid").pathname).path;
   } catch {
     return "dialog";
   }

@@ -5,6 +5,7 @@ import {
   MAX_PAGES,
   providerGet,
   ProviderRequestError,
+  returnedError,
   tooMuchData,
 } from "../http";
 import { dayOf } from "../payments";
@@ -41,37 +42,20 @@ async function errorsOf(response: Response): Promise<AsaasErrors> {
 
 function failure(status: number, path: string, { code, description }: AsaasErrors): never {
   if (status === 401 && code === "invalid_environment")
-    throw new WrongEnvironment(
-      "The key belongs to the other Asaas environment. Production keys start with $aact_prod_.",
-      401,
-    );
-  if (status === 401)
-    throw new ProviderRequestError(
-      "Asaas rejected the key. It may have been deleted or expired, or disabled after three months without use.",
-      401,
-    );
+    throw new WrongEnvironment("asaas.wrongEnvironment", {}, { status: 401 });
+  if (status === 401) throw new ProviderRequestError("asaas.keyRejected", {}, { status: 401 });
   if (status === 403 && code === "insufficient_permission")
-    throw new ProviderRequestError(
-      `The key cannot read everything verification needs. Give it Read access to Subscriptions and Charges.${description ? ` Asaas says: ${description}` : ""}`,
-      403,
-      path,
-    );
+    throw description
+      ? new ProviderRequestError(
+          "asaas.missingPermissionDetail",
+          { detail: description },
+          { status: 403, path },
+        )
+      : new ProviderRequestError("asaas.missingPermission", {}, { status: 403, path });
   if (status === 403)
-    throw new ProviderRequestError(
-      "Asaas refused the request. A key limited to certain IP addresses cannot be verified.",
-      403,
-      path,
-    );
-  if (status === 429)
-    throw new ProviderRequestError(
-      "Asaas is limiting requests, or the account has used its requests for the last 12 hours. Try again later.",
-      429,
-    );
-  throw new ProviderRequestError(
-    `Asaas returned an error${description ? `: ${description}` : "."}`,
-    status,
-    path,
-  );
+    throw new ProviderRequestError("asaas.requestRefused", {}, { status: 403, path });
+  if (status === 429) throw new ProviderRequestError("asaas.rateLimited", {}, { status: 429 });
+  throw returnedError("Asaas", description, { status, path });
 }
 
 function send(key: string, livemode: boolean, path: string, params: URLSearchParams) {

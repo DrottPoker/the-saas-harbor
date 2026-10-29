@@ -1,1 +1,56 @@
-{}
+{
+  "axisWithYear": "{year}年{month}",
+  "summary": {
+    "mrr": "月末 MRR 由 {firstMonth}的 {first} 变为 {endMonth}的 {end}。",
+    "mrrOne": "{month}末的 MRR 为 {value}。",
+    "revenue": "{firstMonth}至{endMonth}的月度收入，合计 {total}。",
+    "revenueOne": "{month}的收入为 {value}。"
+  },
+  "periods": {
+    "months": "{months}个月",
+    "year": "1年",
+    "all": "全部",
+    "name": "{label}，{long}",
+    "last": "最近 {months} 个月",
+    "whole": "全部 {months} 个月",
+    "in": "{months} 个月内",
+    "over": "最近 {months} 个月",
+    "inMonth": "{month}",
+    "inLast": "最近 {months} 个月"
+  },
+  "mrr": {
+    "tab": "MRR",
+    "title": "月末 MRR",
+    "note": "最近 {months} 个月的月末 MRR，根据已支付的款项重建，并按今日汇率换算为美元。",
+    "month": "月份",
+    "value": "MRR"
+  },
+  "revenue": {
+    "tab": "收入",
+    "title": "月度收入",
+    "note": "客户每月实际支付的金额，已扣除折扣和退款，不含税，并按今日汇率换算为美元。",
+    "noteSplit": "客户每月为订阅和一次性购买实际支付的金额，已扣除折扣和退款，不含税，并按今日汇率换算为美元。",
+    "month": "月份",
+    "subscriptions": "订阅",
+    "oneTime": "一次性",
+    "value": "收入"
+  },
+  "table": "以表格显示",
+  "history": {
+    "tabs": "图表",
+    "periods": "图表时间范围",
+    "keys": "{title}。使用方向键逐月查看。",
+    "month": "{month}：{value}",
+    "monthSplit": "{month}：{value}，订阅 {subscription}，一次性购买 {oneTime}",
+    "legend": "图例",
+    "subscriptions": "订阅",
+    "oneTime": "一次性购买"
+  },
+  "growth": {
+    "short": "30天",
+    "long": "过去 30 天",
+    "spoken": "{period}{direction, select, up {上升 {amount}} down {下降 {amount}} other {无变化}}",
+    "points": "{count} 个百分点",
+    "pointsSpoken": "{count} 个百分点"
+  }
+}

@@ -1,5 +1,6 @@
 import "server-only";
 import { cache } from "react";
+import { getTranslations } from "next-intl/server";
 import { publicClient } from "./supabase/server";
 import { demoFill, demoListings, type DemoDetails } from "./demo";
 import { categories, containsPattern } from "./domain";
@@ -67,7 +68,7 @@ export async function listings({
     return {
       rows: [] as Listing[],
       count: 0,
-      error: "Supabase is not configured. See the setup guide in README.md.",
+      error: (await getTranslations("errors"))("loadProducts"),
     };
   const revenueRank =
     sort in REVENUE_RANKS ? REVENUE_RANKS[sort as keyof typeof REVENUE_RANKS] : null;
@@ -103,7 +104,7 @@ export async function listings({
   return {
     rows: rows as Listing[],
     count: count ?? 0,
-    error: error ? "Products could not be loaded. Please try again shortly." : null,
+    error: error ? (await getTranslations("errors"))("loadProducts") : null,
   };
 }
 /** The top of the leaderboard, for llms.txt. */

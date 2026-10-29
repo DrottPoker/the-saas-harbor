@@ -5,6 +5,8 @@ import {
   MAX_PAGES,
   providerGet,
   ProviderRequestError,
+  rateLimited,
+  returnedError,
   tooMuchData,
 } from "../http";
 import type { ChargebeeCreditNote, ChargebeeInvoice, ChargebeeSubscription } from "./mrr";
@@ -27,22 +29,14 @@ async function chargebeeGet<T>(site: string, key: string, path: string, params: 
   const body = await errorBody(response);
   const code = typeof body?.api_error_code === "string" ? body.api_error_code : "";
   if (response.status === 401)
-    throw new ProviderRequestError(
-      "Chargebee rejected the key. It may have been deleted, or belong to another site.",
-      401,
-    );
+    throw new ProviderRequestError("chargebee.keyRejected", {}, { status: 401 });
   if (response.status === 403)
-    throw new ProviderRequestError(
-      "The key cannot read subscriptions and invoices. Use a read-only key with access to all data or to transactional data.",
-      403,
-      path,
-    );
+    throw new ProviderRequestError("chargebee.cannotRead", {}, { status: 403, path });
   if (response.status === 404 && code === "site_not_found")
-    throw new ProviderRequestError(`Chargebee has no site called ${site}.`, 404);
-  if (response.status === 429)
-    throw new ProviderRequestError("Chargebee is rate limiting requests. Try again later.", 429);
+    throw new ProviderRequestError("chargebee.noSite", { site }, { status: 404 });
+  if (response.status === 429) throw rateLimited("Chargebee");
   const message = typeof body?.message === "string" ? body.message.slice(0, 300) : null;
-  throw new ProviderRequestError(`Chargebee returned an error${message ? `: ${message}` : "."}`);
+  throw returnedError("Chargebee", message);
 }
 
 type Page<T> = { list: T[]; next_offset?: string | null };

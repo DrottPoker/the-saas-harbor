@@ -53,7 +53,7 @@ export function minorUnitsPerMajor(currency: string) {
 /** Minor units from an amount in major units, such as "10.00" or 10 for ten dollars. */
 export function toMinorUnits(amount: string | number, currency: string) {
   const value = Number(amount);
-  if (!Number.isFinite(value)) throw new VerificationError("An amount could not be read.");
+  if (!Number.isFinite(value)) throw new VerificationError("run.amountUnreadable");
   return value * minorUnitsPerMajor(currency);
 }
 
@@ -71,7 +71,8 @@ export function toUsdCents(byCurrency: Record<string, number>, rates: ReadonlyMa
   let usd = 0;
   for (const [currency, minor] of Object.entries(byCurrency)) {
     const rate = currency === "usd" ? 1 : rates.get(currency);
-    if (!rate) throw new VerificationError(`No exchange rate for ${currency.toUpperCase()}.`);
+    if (!rate)
+      throw new VerificationError("run.noExchangeRate", { currency: currency.toUpperCase() });
     usd += minor / minorUnitsPerMajor(currency) / rate;
   }
   return Math.round(usd * 100);

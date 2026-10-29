@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { authHeading, authMode, AuthPanel } from "@/components/auth-panel";
+import { ClientMessages } from "@/components/client-messages";
 import { LogoMark } from "@/components/logo";
 import { requireUser } from "@/lib/supabase/server";
 import { safeNext } from "@/lib/domain";
@@ -8,7 +9,7 @@ import { firstValues, type SearchParams } from "@/lib/params";
 type Props = { searchParams: Promise<SearchParams> };
 
 export async function generateMetadata({ searchParams }: Props): Promise<Metadata> {
-  return { title: authHeading(authMode(firstValues(await searchParams).mode), null).title };
+  return { title: (await authHeading(authMode(firstValues(await searchParams).mode), null)).title };
 }
 
 /**
@@ -19,14 +20,16 @@ export default async function Auth({ searchParams }: Props) {
   const params = await searchParams;
   const mode = authMode(firstValues(params).mode);
   if (mode === "update") await requireUser();
-  const { title, description } = authHeading(mode, safeNext(firstValues(params).next));
+  const { title, description } = await authHeading(mode, safeNext(firstValues(params).next));
   return (
     <div className="mx-auto w-full max-w-sm px-4 pt-14 sm:pt-24">
       <LogoMark className="size-14" />
       <h1 className="mt-6 text-2xl font-semibold tracking-tight">{title}</h1>
       <p className="mt-1.5 text-muted-foreground">{description}</p>
       <div className="mt-8">
-        <AuthPanel searchParams={params} />
+        <ClientMessages namespaces={["auth"]}>
+          <AuthPanel searchParams={params} />
+        </ClientMessages>
       </div>
     </div>
   );

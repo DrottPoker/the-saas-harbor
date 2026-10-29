@@ -11,10 +11,14 @@ export function shareLinks(url: string, text: string) {
 
 /**
  * The text of a post about a product its founder just listed. X adds the page's address after it,
- * and the post shows the product's sharing card.
+ * and the post shows the product's sharing card. `intro` is the first line in the founder's
+ * language (dashboard.share.post); English when it is left out.
  */
-export function productShareText(name: string, tagline: string | null) {
-  const intro = `I just listed ${name} on ${SITE_NAME}.`;
+export function productShareText(
+  name: string,
+  tagline: string | null,
+  intro = `I just listed ${name} on ${SITE_NAME}.`,
+) {
   const line = tagline ? excerpt(tagline, 160) : "";
   return line ? `${intro}\n\n${line}` : intro;
 }

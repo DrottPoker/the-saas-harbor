@@ -1,5 +1,6 @@
 import "server-only";
 import { splitAccountKey } from "../account-key";
+import { revenueText } from "../errors";
 import { historyWindowStart } from "../history";
 import { MAX_PAGES, ProviderRequestError, tooMuchData } from "../http";
 import { addDays, dayOf, dayStart } from "../payments";
@@ -82,8 +83,7 @@ export const mollie: ProviderAdapter = {
       } catch (error) {
         if (!(error instanceof ProviderRequestError && error.tooMuchData)) throw error;
         payments = await recent();
-        historyNote =
-          "The Mollie profile has more payments than one verification reads, so there is no revenue history.";
+        historyNote = revenueText("mollie.historyTooLarge");
       }
     return {
       livemode: access.live,

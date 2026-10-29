@@ -1,1 +1,24 @@
-{}
+{
+  "headline": "{kind, select, mrr {{amount} MRR} first {#1} other {Top {place}}}",
+  "sentence": "{kind, select, mrr {{name} reached {exact} in monthly recurring revenue.} first {{name} reached first place on the leaderboard of verified revenue on {site}.} other {{name} reached the top {place} on the leaderboard of verified revenue on {site}.}}",
+  "post": "{kind, select, mrr {{name} just reached {amount} MRR, verified on {site}.} first {{name} is now #1 on {site}'s leaderboard of verified revenue.} other {{name} is now in the top {place} on {site}'s leaderboard of verified revenue.}}",
+  "meta": {
+    "title": "{kind, select, mrr {{name} reached {amount} MRR} first {{name} reached first place} other {{name} reached the top {place}}}",
+    "description": "{sentence} Verified revenue on {site}."
+  },
+  "breadcrumb": "Breadcrumb",
+  "browse": "Browse",
+  "milestone": "Milestone",
+  "reachedOn": "Milestone reached on <date></date>",
+  "verifiedThrough": "The revenue is verified through {provider}.",
+  "viewProduct": "View product",
+  "share": {
+    "title": "Share this milestone",
+    "body": "A post with this link shows a card with the milestone.",
+    "x": "Share on X",
+    "linkedin": "Share on LinkedIn",
+    "download": "Download image",
+    "link": "Link",
+    "copyLink": "Copy link"
+  }
+}

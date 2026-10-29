@@ -1,1 +1,102 @@
-{}
+{
+  "meta": {
+    "title": "Privacy policy",
+    "description": "What The SaaS Harbor stores about you, why, who can see it, and how to delete it."
+  },
+  "updated": "Last updated {date}.",
+  "translationNotice": "This translation is provided for convenience. The <link>English version</link> is binding.",
+  "responsible": {
+    "title": "Who is responsible",
+    "body": "The SaaS Harbor is run by {operator}, which is responsible for the personal data described here.",
+    "contact": "For privacy questions and requests, write to <contact></contact>."
+  },
+  "data": {
+    "title": "What we store",
+    "account": "<b>Account.</b> Your email address, your password as a salted hash, which version of the Terms of Service you accepted and when, account events such as sign-ins with their time and IP address, the country of your latest sign-in, and your language (see Your language and currency).",
+    "google": "<b>Sign-in with Google or GitHub.</b> If you sign in with Google or GitHub, that service sends us your account ID there, email address, name and the address of your profile picture, and for GitHub your username. They are stored with your account and used to sign you in.",
+    "profile": "<b>Profile.</b> Your username, which is also your page address, the details you add, such as your name, headline, location, links and photo, and when you last changed your username.",
+    "products": "<b>Products.</b> The details you add, such as name, tagline, description, category, website, logo, tech stack and launch date, the name of your payment provider when it is not one we connect, and for a product's domain, the domain, its DNS record and when it was checked.",
+    "revenue": "<b>Revenue verification.</b> Which payment provider you connect ({providers}), the key you provide or the access you grant, and the account details it needs, stored encrypted, and the results of verification, such as monthly recurring revenue, paying customers, totals per currency, revenue history and revenue over time. For each payment we store what it earned, its currency, the day it was paid and whether it paid for a subscription, without who paid it. One-way hashes of subscription, payment, project or app IDs stop one account from verifying two products.",
+    "milestones": "<b>Milestones.</b> The MRR amounts and leaderboard places your products reach, and when.",
+    "messages": "<b>Messages.</b> The messages you send and receive, how far you have read each conversation, and the users you block.",
+    "reports": "<b>Reports and moderation.</b> The reports you send, with a copy of what you reported, and decisions about your products or account, with their reasons.",
+    "feedback": "<b>Feedback.</b> What you send as feedback, the page you sent it from, and whether it has been handled. Without an account, you may also leave an email address for a reply, and we keep the day's hash of your IP address and browser, as for the site statistics, to limit how much feedback one visitor sends.",
+    "emails": "<b>Emails.</b> Which emails you want, and a record of the emails sent to you.",
+    "visits": "<b>Visits.</b> Statistics about visits to the site (see Site statistics).",
+    "source": "<b>How you found the site.</b> When you create an account, where the visit that led to it came from, such as the site or app that linked to it, its campaign tags and its first page.",
+    "usage": "<b>How you use the service.</b> What follows from the data above, such as when you confirmed your email address, listed a product or verified revenue.",
+    "preferences": "<b>Preferences.</b> Whether you chose the light or dark theme, and the language and currency you chose, in cookies on your device."
+  },
+  "revenue": {
+    "title": "What we read from your payment provider",
+    "read": "With the key you provide or the access you grant, our server reads what it needs to verify revenue from the account you connect, such as subscriptions, invoices, payments, transactions, sales, refunds, disputes, products, prices, discounts and plans, depending on the provider. These records can include details about your customers, such as names, email addresses and countries. We use the records to calculate the figures described above, and do not store your customers' details.",
+    "disconnect": "Disconnecting deletes the stored key or access. Earlier verification results stay in your private history until you delete the product or your account. You can also revoke the key or access with your payment provider."
+  },
+  "website": {
+    "title": "What we look up about your website",
+    "body": "When you verify your product's domain, our server looks up the DNS record you add for it, and checks it again while the domain is verified."
+  },
+  "timeZone": {
+    "title": "Your time zone",
+    "body": "Dates and times are shown in the time zone set on your device. Until your browser has given it, a page uses the time zone our host looks up from your IP address. Neither is stored."
+  },
+  "language": {
+    "title": "Your language and currency",
+    "choice": "Pages are shown in the language you choose, and amounts in the currency you choose. Each choice is kept in a cookie in your browser for a year and is not sent to other sites. Until you choose, the language follows your browser's language settings, and the currency is that of the country our host looks up from your IP address. Neither the IP address nor the country is stored for this.",
+    "account": "If you are signed in, your language is also kept with your account, so that emails reach you in that language. It is set when you sign up, sign in or change the language, and it is deleted with your account.",
+    "rates": "Amounts in other currencies are converted from US dollars with daily reference rates from Frankfurter. Our server fetches the rates without sending anything about you."
+  },
+  "purposes": {
+    "title": "Why we use it",
+    "service": "To provide the service: your account, profile and products, revenue verification and domain checks, messages, and emails about your account and what happens on it, such as unread messages and milestones (performance of a contract, GDPR Article 6(1)(b)).",
+    "security": "To keep the service secure and fair, for example through sign-in records, limits on what an account can do, and checks that stop one account from verifying two products (our legitimate interests, Article 6(1)(f)).",
+    "moderation": "To handle reports and moderate the site, including what the EU Digital Services Act requires (a legal obligation, Article 6(1)(c), and our legitimate interests, Article 6(1)(f)).",
+    "improvement": "To understand how people find and use the service, and to improve and develop it, from the site statistics, how accounts found the site, how far they get, the payment providers founders name and the feedback they send, in totals and for single accounts (our legitimate interests, Article 6(1)(f)).",
+    "contact": "To write to you about your account, your products and the service, for example to help you finish a listing or to ask for your view (our legitimate interests, Article 6(1)(f)).",
+    "choices": "You can turn some emails off in your settings, and object to use based on our legitimate interests (see Your rights)."
+  },
+  "statistics": {
+    "title": "Site statistics",
+    "collected": "We keep statistics about how the site is used: the pages visited and how long they were visible, clicks on links to other sites, where visits came from (the linking site or app and campaign tags), the country and city looked up from the IP address, the browser's language, and the type and version of the device, browser and operating system. To tell visitors apart, our server combines the IP address and the browser's user agent with a value that changes every day, and keeps the result instead of the IP address. When you create an account, this is used to find where the visit that led to it came from, which is then kept with your account.",
+    "access": "Admins see the statistics as totals, and how a single account found the site. The founder of a product sees how often its page was viewed.",
+    "vercel": "We also use Vercel Web Analytics and Vercel Speed Insights, which record similar information about visits and how fast pages load."
+  },
+  "visibility": {
+    "title": "Who can see it",
+    "everyone": "<b>Everyone:</b> your profile, your products, and the figures you do not hide, such as verified MRR and its history, with the payment provider that verified them and the milestones reached. Whether a product's domain is verified is public too. A badge you embed on your own site shows the shared figures there.",
+    "you": "<b>You:</b> your account and settings, the figures you keep private, your verification history and how often your products' pages were viewed.",
+    "correspondents": "<b>The users you write to:</b> the conversations you have with them, and how far you have read them. Messages are not end-to-end encrypted.",
+    "admins": "<b>Admins:</b> the people the operator appoints to run and moderate the site. They see account details such as your email address, when you joined and signed in and from which country, how you found the site and how far you have come with the service, the latest verified MRR and revenue of your products, including the figures you keep private, reports, decisions, feedback, and messages that are reported. Alerts are also sent to the admins' chat on Telegram: about new accounts, with the name and username, how the account was created and whether its email address is confirmed; about new products, with their name, tagline, category, payment provider and founder, and the name written for a provider that is not supported; about reports, with who sent them, what or whom they are about, the reason and the explanation; and about feedback, with who sent it, from which page, and its text, and for a visitor whether they left an email address, never the address itself. So is a notice with your name and username when you write to the site's own account, but never the message.",
+    "providers": "<b>Service providers:</b> our hosting, database and email providers process data on our behalf to run the site. The site runs on Vercel, with its servers in Frankfurt, Germany. The database, sign-in and image storage run on Supabase, in its Frankfurt, Germany region. Emails are sent through Resend. Vercel also records the statistics described above. If you sign in with Google or GitHub, that service learns that you signed in here, under its own privacy policy. Vercel and Resend are based in the United States. When they handle data outside the EU or EEA, we rely on the safeguards the GDPR provides for, such as the EU standard contractual clauses. Telegram, which delivers the alerts to admins under its own terms, is based outside the EU.",
+    "outboundLinks": "When you follow a link to a product's website, that site may see that you came from The SaaS Harbor.",
+    "disclosure": "We may disclose personal data when the law requires it, to protect the rights and safety of the site, its users or us, or to a buyer or successor if the service is sold or merged (a legal obligation, Article 6(1)(c), or our legitimate interests, Article 6(1)(f))."
+  },
+  "cookies": {
+    "title": "Cookies",
+    "body": "The site uses cookies to keep you signed in, to remember whether you chose the light or dark theme, and to remember the language and currency you chose (see Your language and currency). Short-lived cookies also carry a sign-in with Google or GitHub, or a connection that you approve on a payment provider's own site, from its start to its end, and for a few minutes after you add a product or connect a payment provider, which product it was and how connecting went."
+  },
+  "retention": {
+    "title": "How long we keep it",
+    "periods": "We keep your data while you have an account. An account whose sign-up is not finished, such as one whose email address is not confirmed, is deleted after about a week. When you delete a product or your account, the data that belongs to it is deleted, apart from what is needed for longer, such as reports and decisions that are still relevant, and copies in backups until those backups expire. The site statistics are kept apart from accounts for up to 25 months. Feedback from visitors without an account, with any email address left for a reply, is deleted after 12 months. Records of sent emails and other technical records are kept for a short time. Alerts sent to admins on Telegram stay in their chat until they are deleted there. Information that was public may already have been copied by others, such as search engines.",
+    "security": "We use technical and organisational measures to protect your data, such as encryption of provider keys and access rules in the database."
+  },
+  "rights": {
+    "title": "Your rights",
+    "self": "You can change your profile and products, choose which emails you get, and delete a product or your whole account yourself.",
+    "gdpr": "Under the GDPR you also have the right to access your data, have it corrected, erased or moved to another service, restrict how it is used, and object to use based on our legitimate interests.",
+    "contact": "To use these rights, write to <contact></contact>.",
+    "complaint": "You can also complain to a data protection authority, for example in the country where you live or work."
+  },
+  "changes": {
+    "title": "Changes to this policy",
+    "body": "This policy changes as the service does. The date at the top shows when it last changed."
+  },
+  "accountDeleted": {
+    "metaTitle": "Account deleted",
+    "title": "Your account has been deleted",
+    "description": "Your profile, products, images, payment provider connections, verification history and conversations are gone, and your products have left the leaderboard.",
+    "keys": "If you connected a payment provider, you can also delete the keys you created there or revoke the access you granted. We no longer have a copy of them.",
+    "search": "Pages that were public can still show up in search engines for a while, until they update.",
+    "back": "Back to the leaderboard"
+  }
+}

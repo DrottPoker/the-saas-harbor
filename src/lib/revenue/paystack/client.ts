@@ -5,6 +5,8 @@ import {
   MAX_PAGES,
   providerGet,
   ProviderRequestError,
+  rateLimited,
+  returnedError,
   tooMuchData,
 } from "../http";
 import type { PaystackPlan, PaystackSubscription, PaystackTransaction } from "./mrr";
@@ -20,9 +22,9 @@ function base(livemode: boolean) {
 }
 
 /**
- * What each list reads, and the scope it needs. Paystack lists its scopes by resource but not
- * which endpoints each covers, and has none named for subscriptions, so plans:read is the likely
- * one.
+ * What each list reads, as `paystack.cannotRead` names it, and the scope it needs. Paystack lists
+ * its scopes by resource but not which endpoints each covers, and has none named for
+ * subscriptions, so plans:read is the likely one.
  */
 const LISTS: Record<string, [string, string]> = {
   "/subscription": ["subscriptions", "plans:read"],
@@ -49,24 +51,13 @@ async function paystackGet<T>(
   // Paystack answers a revoked, expired or rotated key, and one it does not know, with 401.
   // Stripe's restricted keys start with rk_ too.
   if (response.status === 401)
-    throw new ProviderRequestError(
-      "Paystack rejected the key. It may have been revoked, rotated or expired, or be another provider's key.",
-      401,
-    );
+    throw new ProviderRequestError("paystack.keyRejected", {}, { status: 401 });
   if (response.status === 403) {
-    const [what, scope] = LISTS[path] ?? ["this", "read"];
-    throw new ProviderRequestError(
-      `The key cannot read ${what}. Give it the ${scope} scope on the Paystack dashboard.`,
-      403,
-      path,
-    );
+    const [list, scope] = LISTS[path] ?? ["this", "read"];
+    throw new ProviderRequestError("paystack.cannotRead", { list, scope }, { status: 403, path });
   }
-  if (response.status === 429)
-    throw new ProviderRequestError("Paystack is rate limiting requests. Try again later.", 429);
-  throw new ProviderRequestError(
-    `Paystack returned an error${detail ? `: ${detail}` : "."}`,
-    response.status,
-  );
+  if (response.status === 429) throw rateLimited("Paystack");
+  throw returnedError("Paystack", detail, { status: response.status });
 }
 
 type Page<T> = {

@@ -1,6 +1,8 @@
 import { cookies } from "next/headers";
 import { NextResponse, type NextRequest } from "next/server";
+import { localizedPath } from "@/i18n/config";
 import { recordAccountSource } from "@/lib/account-source";
+import { rememberAccountLanguage } from "@/lib/account-language";
 import { decodeOAuthFlow, OAUTH_FLOW_COOKIE, oauthFailure } from "@/lib/auth";
 import {
   hasFinishedSignup,
@@ -10,12 +12,18 @@ import {
 } from "@/lib/supabase/server";
 
 // Google and GitHub return here through Supabase with a one-time code, which becomes the session
-// in this browser. New accounts continue to choosing a username and accepting the Terms.
+// in this browser. New accounts continue to choosing a username and accepting the Terms. Every
+// page it leads to is in the language the sign-in started in; the sign-in page shows an error
+// from its code (src/components/auth-panel.tsx).
 export async function GET(request: NextRequest) {
-  const to = (path: string) => NextResponse.redirect(new URL(path, request.url));
   const store = await cookies();
   const flow = decodeOAuthFlow(store.get(OAUTH_FLOW_COOKIE)?.value);
   store.delete({ name: OAUTH_FLOW_COOKIE, path: "/auth" });
+  // Without a language, the proxy sends the visitor to theirs.
+  const to = (path: string) =>
+    NextResponse.redirect(
+      new URL(flow.locale ? localizedPath(flow.locale, path) : path, request.url),
+    );
   const provider = flow.provider ? `&provider=${flow.provider}` : "";
   const search = request.nextUrl.searchParams;
   // A cancelled confirmation leaves the current session as it was.
@@ -36,6 +44,7 @@ export async function GET(request: NextRequest) {
     await client.auth.signOut({ scope: "local" });
     return to(`/auth?error=account${provider}`);
   }
+  if (flow.locale) await rememberAccountLanguage(client, data.user, flow.locale);
   await recordSignInCountry(client);
   // An account made by this sign-in keeps the source of the visit that led to it.
   if (Date.parse(data.user.created_at) > Date.now() - 60 * 60 * 1000)

@@ -70,7 +70,8 @@ export async function deliverEmails(limit = 25) {
       if (error) throw new Error("Queued emails could not be read.");
       const row = data[0];
       if (!row) break;
-      const email = renderEmail(row, { origin: siteUrl(), contact: operator.email });
+      // In the recipient's language, which the claim reads from their account.
+      const email = await renderEmail(row, { origin: siteUrl(), contact: operator.email });
       let status: "sent" | "skipped" | "failed" | "deferred" = "skipped";
       let problem: string | null = "Nothing to send any more";
       let failure: unknown = null;

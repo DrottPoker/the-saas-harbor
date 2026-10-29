@@ -1,24 +1,20 @@
 "use client";
 
 import Link from "@/components/link";
+import { useTranslations } from "next-intl";
 import { submitReportAction } from "@/app/report-actions";
-import {
-  DETAILS_MAX_LENGTH,
-  REASONS,
-  reasonHints,
-  reasonLabels,
-  type ReportTarget,
-} from "@/lib/moderation";
+import { DETAILS_MAX_LENGTH, REASONS, type ReportTarget } from "@/lib/moderation";
 import { Feedback, Field, Submit } from "./forms";
 import { Textarea } from "./ui/textarea";
 import { useEditorAction } from "./use-editor-action";
 
 export function ReportForm({ target, id }: { target: ReportTarget; id: string }) {
+  const t = useTranslations("reports");
   const [state, action] = useEditorAction(submitReportAction.bind(null, target, id));
   return (
     <form action={action} className="grid gap-6">
       <fieldset className="grid gap-2.5">
-        <legend className="mb-3 text-sm font-medium">What is the problem?</legend>
+        <legend className="mb-3 text-sm font-medium">{t("form.legend")}</legend>
         {REASONS.map((reason) => (
           <label
             key={reason}
@@ -33,17 +29,15 @@ export function ReportForm({ target, id }: { target: ReportTarget; id: string })
               className="mt-1 size-4 shrink-0 accent-brand"
             />
             <span>
-              <span className="block text-sm font-medium">{reasonLabels[reason]}</span>
-              <span className="block text-[13px] text-muted-foreground">{reasonHints[reason]}</span>
+              <span className="block text-sm font-medium">{t(`reasons.${reason}.label`)}</span>
+              <span className="block text-[13px] text-muted-foreground">
+                {t(`reasons.${reason}.hint`)}
+              </span>
             </span>
           </label>
         ))}
       </fieldset>
-      <Field
-        name="details"
-        label="Details"
-        hint="What is wrong, and where? Required for illegal content and for something else."
-      >
+      <Field name="details" label={t("form.details")} hint={t("form.detailsHint")}>
         <Textarea
           id="details"
           name="details"
@@ -55,13 +49,15 @@ export function ReportForm({ target, id }: { target: ReportTarget; id: string })
       <Feedback state={state} />
       <div className="flex flex-col-reverse gap-4 sm:flex-row sm:items-center sm:justify-between">
         <p className="text-[13px] text-muted-foreground">
-          The reported user is not told who reported. The{" "}
-          <Link href="/terms#rules" className="font-medium text-foreground underline">
-            terms
-          </Link>{" "}
-          list what is not allowed.
+          {t.rich("form.anonymous", {
+            link: (chunks) => (
+              <Link href="/terms#rules" className="font-medium text-foreground underline">
+                {chunks}
+              </Link>
+            ),
+          })}
         </p>
-        <Submit pendingLabel="Sending...">Send report</Submit>
+        <Submit pendingLabel={t("form.sending")}>{t("form.submit")}</Submit>
       </div>
     </form>
   );

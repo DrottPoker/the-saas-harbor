@@ -1,1 +1,24 @@
-{}
+{
+  "product": {
+    "heading": "<hidden>产品已隐藏：</hidden>管理员于 <date></date> 隐藏了此产品。",
+    "effect": "它不会在 The SaaS Harbor 的任何地方显示。你仍然可以编辑或删除它。"
+  },
+  "account": {
+    "heading": "<hidden>账户已暂停：</hidden>管理员于 <date></date> 暂停了你的账户。",
+    "effect": "你的个人主页和产品已被隐藏，你无法发送消息或举报。你仍然可以登录、编辑你的产品以及删除你的账户。"
+  },
+  "reason": "原因",
+  "explanation": "说明",
+  "notGiven": "未提供",
+  "decisions": {
+    "spam": "垃圾信息或广告",
+    "misleading": "误导性或虚假信息",
+    "impersonation": "冒充他人",
+    "harassment": "骚扰或仇恨",
+    "illegal": "违法内容",
+    "other": "其他违反条款的行为"
+  },
+  "byPerson": "这项决定由人工做出，而非自动系统。",
+  "appeal": "如果你认为决定有误，请发邮件至 <contact></contact>。",
+  "terms": "<link>条款</link>说明了哪些内容不被允许。"
+}

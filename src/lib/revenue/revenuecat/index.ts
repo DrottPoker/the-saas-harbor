@@ -30,18 +30,14 @@ const CHART_DAYS = 366;
  */
 async function requireChartsOnly(key: string, project: string) {
   for (const path of otherAccessPaths(project))
-    if (await canRead(key, path))
-      throw new VerificationError(
-        "The key has more access than charts. Create a V2 secret API key with read access to Charts & metrics only.",
-      );
+    if (await canRead(key, path)) throw new VerificationError("revenuecat.beyondCharts");
 }
 
 /** A daily chart between two instants, with the options it needs. */
 async function dailyChart(key: string, project: string, chart: string, from: number, to: number) {
   const options = await fetchChartOptions(key, project, chart);
   const resolution = dailyResolution(options);
-  if (!resolution)
-    throw new ProviderRequestError(`RevenueCat does not offer the ${chart} chart by day.`);
+  if (!resolution) throw new ProviderRequestError("revenuecat.noDailyChart", { chart });
   return fetchChart(key, project, chart, {
     resolution,
     start: date(from),
@@ -89,7 +85,7 @@ export const revenuecat: ProviderAdapter = {
     const options = await fetchChartOptions(key, project, "revenue");
     const resolution = dailyResolution(options);
     if (!resolution)
-      throw new ProviderRequestError("RevenueCat does not offer the revenue chart by day.");
+      throw new ProviderRequestError("revenuecat.noDailyChart", { chart: "revenue" });
     const first = Math.max(since, dayStart(FIRST_CHART_DAY));
     let end = before ?? Math.floor(Date.now() / 1000);
     const payments = [];

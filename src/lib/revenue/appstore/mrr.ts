@@ -44,9 +44,7 @@ export function parseReport(text: string): ReportRow[] {
 export function requireColumns(rows: ReportRow[], columns: string[]) {
   const missing = rows.length ? columns.filter((column) => !(column in rows[0])) : [];
   if (missing.length)
-    throw new VerificationError(
-      `An App Store report did not have the expected columns (${missing.join(", ")}).`,
-    );
+    throw new VerificationError("appstore.missingColumns", { columns: missing.join(", ") });
 }
 
 export const SUBSCRIPTION_COLUMNS = {

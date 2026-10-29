@@ -1,1 +1,240 @@
-{}
+{
+  "choose": "Elige tu proveedor de pagos. Si no está en la lista, elige Otro.",
+  "fallback": "un proveedor de pagos",
+  "notSetUp": "{provider} aún no está configurado en este servidor.",
+  "verifiedWith": "Verificado con {provider} mediante {access, select, oauth {acceso de solo lectura} other {una clave de solo lectura}}.",
+  "fields": {
+    "site": "Sitio",
+    "projectId": "ID del proyecto",
+    "clientId": "Client ID",
+    "profileId": "ID del perfil",
+    "applicationId": "ID de la aplicación",
+    "issuerId": "Issuer ID",
+    "keyId": "Key ID",
+    "vendorNumber": "Número de proveedor",
+    "cloudStorageUri": "URI de Cloud Storage",
+    "packageName": "Nombre del paquete"
+  },
+  "placeholders": {
+    "dodoKey": "Clave de API de solo lectura",
+    "paypalAccount": "Client ID de la app",
+    "airwallexKey": "Clave de API con permisos limitados",
+    "airwallexAccount": "Client ID que aparece con tus claves de API",
+    "superwallAccount": "Dirección o ID del panel de la app",
+    "appstoreKey": "Contenido del archivo .p8"
+  },
+  "stripe": {
+    "keyLabel": "Clave restringida",
+    "newKeyLabel": "Nueva clave restringida",
+    "dashboard": "Crear una clave de solo lectura en Stripe",
+    "reads": "suscripciones, facturas, cargos, sesiones de Checkout y disputas",
+    "step1": "Stripe abre una nueva clave restringida con su nombre y sus permisos ya completados.",
+    "step2": "Comprueba que <b>Read</b> (lectura) esté seleccionado para {permissions} y None (ninguno) para todo lo demás, y luego elige <b>Create key</b> (crear clave).",
+    "step3": "Copia la clave, que empieza por rk_live_, y pégala abajo.",
+    "noHistory": "Aún no hay historial de ingresos. Reemplaza la clave por una que también tenga Invoices: Read para mostrar los últimos 12 meses en un gráfico.",
+    "skipped": "{count, plural, one {No se contó # concepto con cobro por uso.} other {No se contaron # conceptos con cobro por uso.}}"
+  },
+  "paddle": {
+    "keyLabel": "Clave de API",
+    "newKeyLabel": "Nueva clave de API",
+    "dashboard": "Abrir las claves de API de Paddle",
+    "reads": "suscripciones y transacciones",
+    "step1": "En Developer tools → Authentication, elige <b>New API key</b>.",
+    "step2": "Dale <b>Read</b> (lectura) para Subscriptions y Transactions y ningún otro permiso. Deja vacía la fecha de vencimiento, o la clave dejará de funcionar cuando venza.",
+    "step3": "Copia la clave, que empieza por pdl_live_apikey_, y pégala abajo.",
+    "noHistory": "Sin historial de ingresos: la cuenta de Paddle tiene más transacciones de las que lee una verificación.",
+    "skipped": "{count, plural, one {No se contó # suscripción sin un cobro pagado.} other {No se contaron # suscripciones sin un cobro pagado.}}"
+  },
+  "polar": {
+    "keyLabel": "Token de acceso de la organización",
+    "newKeyLabel": "Nuevo token de acceso de la organización",
+    "dashboard": "Abrir el panel de Polar",
+    "reads": "tu organización, sus suscripciones y sus pedidos",
+    "step1": "En Settings → Developers de tu organización, elige <b>New Token</b>.",
+    "step2": "Selecciona solo los scopes organizations:read, subscriptions:read y orders:read, y elige <b>No expiration</b> (sin vencimiento).",
+    "step3": "Copia el token, que empieza por polar_oat_, y pégalo abajo.",
+    "noHistory": "Sin historial de ingresos: la cuenta de Polar tiene más pedidos de los que lee una verificación.",
+    "skipped": "{count, plural, one {No se contó # suscripción.} other {No se contaron # suscripciones.}}"
+  },
+  "dodo": {
+    "keyLabel": "Clave de API",
+    "newKeyLabel": "Nueva clave de API",
+    "dashboard": "Abrir el panel de Dodo Payments",
+    "reads": "suscripciones y pagos",
+    "step1": "En Developer → API Keys, elige <b>Add API Key</b>.",
+    "step2": "Desactiva <b>Enable write access</b> (acceso de escritura) para que la clave solo pueda leer.",
+    "step3": "Copia la clave, que Dodo Payments muestra una sola vez, y pégala abajo.",
+    "noHistory": "Sin historial de ingresos: Dodo Payments no indica qué período cubre un pago.",
+    "skipped": "{count, plural, one {No se contó # suscripción con impuestos incluidos y sin pago.} other {No se contaron # suscripciones con impuestos incluidos y sin pago.}}"
+  },
+  "creem": {
+    "keyLabel": "Clave de API",
+    "newKeyLabel": "Nueva clave de API",
+    "dashboard": "Abrir la configuración para desarrolladores de Creem",
+    "reads": "productos, suscripciones y transacciones",
+    "step1": "En Developers → API keys, crea una clave nueva.",
+    "step2": "En el selector de scopes, dale acceso de <b>read</b> (lectura) a productos, suscripciones y transacciones, y nada más.",
+    "step3": "Copia la clave, que empieza por creem_, y pégala abajo.",
+    "noHistory": "Sin historial de ingresos: la cuenta de Creem tiene más transacciones de las que lee una verificación.",
+    "skipped": "{count, plural, one {No se contó # suscripción sin un precio o un pago legible.} other {No se contaron # suscripciones sin un precio o un pago legible.}}"
+  },
+  "chargebee": {
+    "keyLabel": "Clave de API de solo lectura",
+    "newKeyLabel": "Nueva clave de API de solo lectura",
+    "dashboard": "Iniciar sesión en Chargebee",
+    "reads": "suscripciones, facturas y reembolsos",
+    "step1": "Abre Settings → Configure Chargebee → API keys and events y elige <b>Add API key</b>.",
+    "step2": "Elige una <b>Read-only key</b> (clave de solo lectura) con acceso a todos los datos, o limitada a los datos transaccionales.",
+    "step3": "Copia la clave e ingresa tu sitio: el nombre que va antes de .chargebee.com en la dirección de tu panel.",
+    "noHistory": "Sin historial de ingresos: el sitio de Chargebee tiene más facturas de las que lee una verificación.",
+    "skipped": "{count, plural, one {No se contó # suscripción sin una factura pagada.} other {No se contaron # suscripciones sin una factura pagada.}}"
+  },
+  "whop": {
+    "keyLabel": "Clave de API",
+    "newKeyLabel": "Nueva clave de API",
+    "dashboard": "Abrir el panel de Whop",
+    "reads": "membresías, planes, códigos promocionales y pagos",
+    "step1": "Elige tu negocio, abre Developer → Account API keys y crea una clave con permisos personalizados.",
+    "step2": "Dale solo member:basic:read, plan:basic:read, payment:basic:read y promo_code:basic:read. Se rechaza una clave con cualquier permiso que vaya más allá de leer.",
+    "step3": "Copia la clave y pégala abajo.",
+    "noHistory": "Sin historial de ingresos: la cuenta de Whop tiene más pagos o planes de los que lee una verificación.",
+    "skipped": "{count, plural, one {No se contó # membresía con impuestos incluidos y sin pago.} other {No se contaron # membresías con impuestos incluidos y sin pago.}}"
+  },
+  "revenuecat": {
+    "keyLabel": "Clave de API secreta",
+    "newKeyLabel": "Nueva clave de API secreta",
+    "dashboard": "Abrir el panel de RevenueCat",
+    "reads": "el MRR de tu proyecto, sus suscripciones activas y sus gráficos de ingresos",
+    "step1": "En tu proyecto, abre Project settings → API keys y elige <b>New secret API key</b> con la versión V2.",
+    "step2": "Pon Charts & metrics en <b>Read only</b> (solo lectura) y todo lo demás en No access. Se rechaza una clave con más acceso.",
+    "step3": "Copia la clave, que empieza por sk_, y el ID del proyecto, que aparece después de /projects/ en la dirección de cualquier página de tu proyecto.",
+    "noHistory": "Aún no hay historial de ingresos. Actualiza para leer el gráfico de MRR de RevenueCat.",
+    "skipped": "{count, plural, one {No se contó # suscripción.} other {No se contaron # suscripciones.}}"
+  },
+  "gumroad": {
+    "dashboard": "Ver las apps conectadas a tu cuenta de Gumroad",
+    "reads": "tus productos, membresías y ventas",
+    "step1": "Guarda con el botón al final del formulario. Se abre Gumroad, que te pide iniciar sesión si aún no lo hiciste.",
+    "step2": "Aprueba <b>View your sales</b> (ver tus ventas). Es el único acceso que se pide: no puede cambiar productos, reembolsar ventas ni enviar correos a tus clientes.",
+    "step3": "Gumroad te trae de vuelta aquí y los ingresos quedan verificados.",
+    "noHistory": "Sin historial de ingresos: la cuenta de Gumroad tiene más ventas de las que lee una verificación.",
+    "skipped": "{count, plural, one {No se contó # suscriptor sin un cobro reciente.} other {No se contaron # suscriptores sin un cobro reciente.}}"
+  },
+  "paypal": {
+    "keyLabel": "Clave secreta",
+    "newKeyLabel": "Nueva clave secreta",
+    "dashboard": "Abrir las apps y credenciales de PayPal",
+    "reads": "tus transacciones",
+    "step1": "Inicia sesión con tu cuenta comercial de PayPal, comprueba que <b>Live</b> esté seleccionado y elige <b>Create App</b>.",
+    "step2": "En las funciones de la nueva app, activa <b>Transaction search</b> (búsqueda de transacciones) y desactiva todo lo demás. Se rechaza una app que pueda hacer algo más que buscar transacciones.",
+    "step3": "Copia el Client ID y la Secret key 1, y pégalos abajo. El MRR cuenta las suscripciones de PayPal; los demás pagos cuentan como ingresos.",
+    "noHistory": "Sin historial de ingresos: la cuenta de PayPal tiene más pagos de suscripciones de los que lee una verificación.",
+    "skipped": "{count, plural, one {No se contó # suscripción.} other {No se contaron # suscripciones.}}"
+  },
+  "mollie": {
+    "keyLabel": "Token de acceso avanzado",
+    "newKeyLabel": "Nuevo token de acceso avanzado",
+    "dashboard": "Abrir los tokens de acceso a la API de Mollie",
+    "reads": "tus suscripciones y pagos",
+    "step1": "Elige <b>Build your own</b> (crear el tuyo) para un token de acceso avanzado y dale Read solo para Payments y Subscriptions. Se rechaza un token que pueda hacer algo más que leer.",
+    "step2": "Copia el token, que empieza por access_. Las claves de API (live_ o test_) pueden crear pagos y no se aceptan.",
+    "step3": "Copia el ID del perfil del sitio web de este producto, que empieza por pfl_, desde Developers → API keys. El MRR cuenta las suscripciones de Mollie; los demás pagos cuentan como ingresos.",
+    "noHistory": "Sin historial de ingresos: el perfil de Mollie tiene más pagos de los que lee una verificación.",
+    "skipped": "{count, plural, one {No se contó # suscripción con un intervalo de facturación ilegible.} other {No se contaron # suscripciones con un intervalo de facturación ilegible.}}"
+  },
+  "paystack": {
+    "keyLabel": "Clave restringida",
+    "newKeyLabel": "Nueva clave restringida",
+    "dashboard": "Abrir el panel de Paystack",
+    "reads": "suscripciones, planes, transacciones y reembolsos",
+    "step1": "Cambia el panel a Live, abre Developers y crea una clave restringida.",
+    "step2": "Dale solo plans:read, transactions:read y disputes_refunds:read. Nunca pegues tu clave secreta (sk_), que puede hacerlo todo.",
+    "step3": "Confirma con la contraseña de tu panel y luego copia la clave, que empieza por rk_ y se muestra una sola vez, y pégala abajo.",
+    "noHistory": "Sin historial de ingresos: la clave no puede leer transacciones, o la cuenta de Paystack tiene más de las que lee una verificación.",
+    "skipped": "{count, plural, one {No se contó # suscripción sin un plan legible.} other {No se contaron # suscripciones sin un plan legible.}}"
+  },
+  "abacatepay": {
+    "keyLabel": "Token de Trust MRR",
+    "newKeyLabel": "Nuevo token de Trust MRR",
+    "dashboard": "Abrir el panel de AbacatePay",
+    "reads": "el MRR de tu tienda, sus suscripciones activas y sus ingresos por día",
+    "step1": "Sal del modo de prueba (Modo teste), abre Apps y busca Trust MRR.",
+    "step2": "Activa la app y elige <b>Salvar configurações</b> (guardar configuración). Se rechazan las claves de API, que empiezan por abc_.",
+    "step3": "Copia el token, que empieza por mrr_, y pégalo abajo.",
+    "noHistory": "Aún no hay historial de ingresos. Actualiza para leer el MRR diario de AbacatePay.",
+    "skipped": "{count, plural, one {No se contó # suscripción.} other {No se contaron # suscripciones.}}"
+  },
+  "asaas": {
+    "keyLabel": "Clave de API",
+    "newKeyLabel": "Nueva clave de API",
+    "dashboard": "Abrir las claves de API de Asaas",
+    "reads": "suscripciones y cobros",
+    "step1": "Como administrador, abre Integrações → Chaves de API y crea una clave.",
+    "step2": "Dale <b>Read</b> (lectura) solo para Assinaturas (suscripciones) y Cobranças (cobros), sin lista de IP permitidas. Se rechaza una clave creada sin permisos, porque tiene acceso total.",
+    "step3": "Copia la clave, que empieza por $aact_prod_ y se muestra una sola vez, y pégala abajo.",
+    "noHistory": "Sin historial de ingresos: la cuenta de Asaas tiene más suscripciones o cobros de los que lee una verificación.",
+    "skipped": "{count, plural, one {No se contó # suscripción activa sin un pago reciente.} other {No se contaron # suscripciones activas sin un pago reciente.}}"
+  },
+  "airwallex": {
+    "keyLabel": "Clave de API con permisos limitados",
+    "newKeyLabel": "Nueva clave de API con permisos limitados",
+    "dashboard": "Abrir las claves de API de Airwallex",
+    "reads": "suscripciones, facturas y pagos",
+    "step1": "En Settings → Developer → API keys, elige <b>New scoped API key</b>.",
+    "step2": "Dale Read para Subscriptions e Invoices (Billing) y para Payment Acceptance, y nada más. Se rechaza una clave que pueda leer más.",
+    "step3": "Copia la clave y el Client ID que aparece con ella, y pégalos abajo. El MRR cuenta las suscripciones de Airwallex Billing; los demás pagos cuentan como ingresos.",
+    "noHistory": "Sin historial de ingresos: la cuenta de Airwallex tiene más facturas de suscripciones de las que lee una verificación.",
+    "skipped": "{count, plural, one {No se contó # concepto con cobro por uso o suscripción pagada fuera de Airwallex.} other {No se contaron # conceptos con cobro por uso o suscripciones pagadas fuera de Airwallex.}}"
+  },
+  "superwall": {
+    "keyLabel": "Clave de API de la organización",
+    "newKeyLabel": "Nueva clave de API de la organización",
+    "dashboard": "Abrir el panel de Superwall",
+    "reads": "el MRR de tu app, sus suscripciones activas y sus gráficos de ingresos netos",
+    "step1": "En Settings → API Keys, crea una clave.",
+    "step2": "Dale solo el scope <b>charts:read</b>, limitado al proyecto de la app si quieres. Se rechaza una clave con más acceso.",
+    "step3": "Copia la clave, que empieza por sk_, y pégala abajo junto con la dirección del panel de tu app.",
+    "noHistory": "Aún no hay historial de ingresos. Actualiza para leer el gráfico de MRR de Superwall.",
+    "skipped": "{count, plural, one {No se contó # suscripción.} other {No se contaron # suscripciones.}}"
+  },
+  "appstore": {
+    "keyLabel": "Clave privada",
+    "newKeyLabel": "Nueva clave privada",
+    "dashboard": "Abrir las claves de API de App Store Connect",
+    "reads": "tus informes de ventas y suscripciones",
+    "step1": "En Users and Access → Integrations → App Store Connect API, abre Team Keys y elige <b>Generate API Key</b>.",
+    "step2": "En Access, elige <b>Sales</b> con acceso a los informes, o <b>Finance</b>. Se rechaza una clave que pueda hacer más, como Admin o App Manager.",
+    "step3": "Descarga el archivo .p8 y pega su contenido abajo, junto con el Issuer ID, el Key ID y tu número de proveedor de Payments and Financial Reports.",
+    "noHistory": "Aún no hay historial de ingresos. Actualiza para leer los informes de suscripciones de Apple de los últimos 12 meses.",
+    "skipped": "{count, plural, one {No se contó # suscripción con una oferta promocional de pago.} other {No se contaron # suscripciones con una oferta promocional de pago.}}"
+  },
+  "googleplay": {
+    "keyLabel": "Clave JSON de la cuenta de servicio",
+    "newKeyLabel": "Nueva clave JSON de la cuenta de servicio",
+    "dashboard": "Abrir las cuentas de servicio de Google Cloud",
+    "reads": "los informes de ventas estimadas de tus apps",
+    "step1": "Crea una cuenta de servicio sin roles y, en Keys, agrega una clave <b>JSON</b>.",
+    "step2": "En Play Console, abre Users and permissions, invita al correo de la cuenta de servicio y dale solo <b>View financial data</b> (ver datos financieros).",
+    "step3": "En Download reports, copia el URI de Cloud Storage de los informes financieros y pégalo abajo junto con el nombre del paquete de tu app y la clave JSON. Un permiso nuevo puede tardar algunas horas en aplicarse.",
+    "noHistory": "Sin historial de ingresos: los informes de ventas de Google Play son más grandes de lo que lee una verificación.",
+    "skipped": "{count, plural, one {No se contó # cobro de suscripción que no se pudo leer.} other {No se contaron # cobros de suscripciones que no se pudieron leer.}}"
+  },
+  "zoho": {
+    "dashboard": "Ver las apps conectadas a tu cuenta de Zoho",
+    "reads": "tus organizaciones, suscripciones y pagos",
+    "step1": "Guarda con el botón al final del formulario. Se abre Zoho, que te pide iniciar sesión si aún no lo hiciste.",
+    "step2": "Aprueba el <b>acceso de lectura</b> a la configuración, las suscripciones y los pagos. Es el único acceso que se pide: no puede cambiar nada.",
+    "step3": "Zoho te trae de vuelta aquí y se verifica tu organización predeterminada de Zoho Billing. Para verificar otra, primero conviértela en la predeterminada.",
+    "noHistory": "Sin historial de ingresos: Zoho Billing no indica qué período cubre una factura.",
+    "skipped": "{count, plural, one {No se contó # suscripción sin un precio o un período de facturación legible.} other {No se contaron # suscripciones sin un precio o un período de facturación legible.}}"
+  },
+  "mercadopago": {
+    "dashboard": "Abrir Mercado Pago",
+    "reads": "tus suscripciones y pagos",
+    "step1": "Guarda con el botón al final del formulario. Se abre Mercado Pago, que te pide iniciar sesión si aún no lo hiciste.",
+    "step2": "Permite el acceso. Es el único acceso que se pide: <b>solo puede leer</b>, y no puede cobrar, reembolsar ni cambiar nada.",
+    "step3": "Mercado Pago te trae de vuelta aquí y los ingresos quedan verificados.",
+    "noHistory": "Sin historial de ingresos: la cuenta de Mercado Pago tiene más pagos de los que lee una verificación, o sus pagos no indican a qué suscripción corresponden.",
+    "skipped": "{count, plural, one {No se contó # suscripción sin un monto o una frecuencia legible.} other {No se contaron # suscripciones sin un monto o una frecuencia legible.}}"
+  }
+}

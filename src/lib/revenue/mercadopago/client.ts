@@ -1,5 +1,13 @@
 import "server-only";
-import { apiBase, errorBody, providerGet, ProviderRequestError, tooMuchData } from "../http";
+import {
+  apiBase,
+  errorBody,
+  providerGet,
+  ProviderRequestError,
+  rateLimited,
+  returnedError,
+  tooMuchData,
+} from "../http";
 import type { MercadoPagoPayment, MercadoPagoPreapproval } from "./mrr";
 
 // Mercado Pago's API, with the seller's OAuth access token as a bearer token. An override points
@@ -19,29 +27,21 @@ async function mercadoPagoGet<T>(token: string, path: string, params = new URLSe
   const body = await errorBody(response);
   if (response.status === 401)
     throw new ProviderRequestError(
-      "Mercado Pago no longer accepts the connection. It may have been revoked; connect Mercado Pago again.",
-      401,
+      "common.connectionRevoked",
+      { provider: "Mercado Pago" },
+      { status: 401 },
     );
   if (response.status === 403)
     throw new ProviderRequestError(
-      "The Mercado Pago connection cannot read what this verification needs. Connect Mercado Pago again.",
-      403,
-      path,
+      "common.connectionCannotRead",
+      { provider: "Mercado Pago" },
+      { status: 403, path },
     );
   if (response.status === 404)
-    throw new ProviderRequestError(
-      "Mercado Pago could not find what this verification reads.",
-      404,
-      path,
-    );
-  if (response.status === 429)
-    throw new ProviderRequestError("Mercado Pago is rate limiting requests. Try again later.", 429);
+    throw new ProviderRequestError("mercadopago.notFound", {}, { status: 404, path });
+  if (response.status === 429) throw rateLimited("Mercado Pago");
   const message = typeof body?.message === "string" ? body.message.slice(0, 300) : null;
-  throw new ProviderRequestError(
-    `Mercado Pago returned an error${message ? `: ${message}` : "."}`,
-    response.status,
-    path,
-  );
+  throw returnedError("Mercado Pago", message, { status: response.status, path });
 }
 
 type SearchPage<T> = {

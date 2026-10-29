@@ -1,5 +1,12 @@
 import "server-only";
-import { apiBase, errorBody, providerGet, ProviderRequestError } from "../http";
+import {
+  apiBase,
+  errorBody,
+  providerGet,
+  ProviderRequestError,
+  rateLimited,
+  returnedError,
+} from "../http";
 import type { ChartData, ChartOptions } from "./mrr";
 
 // RevenueCat's API v2. It has no environments: charts count production purchases.
@@ -22,26 +29,15 @@ async function failure(response: Response, path: string): Promise<never> {
   const body = await errorBody(response);
   const detail = typeof body?.message === "string" ? body.message.slice(0, 300) : null;
   if (response.status === 401)
-    throw new ProviderRequestError(
-      "RevenueCat rejected the key. It may have been revoked, or be a V1 key rather than a V2 secret key.",
-      401,
-    );
+    throw new ProviderRequestError("revenuecat.keyRejected", {}, { status: 401 });
   if (response.status === 403)
-    throw new ProviderRequestError(
-      "The key cannot read this project's charts. Check the project ID and give the key read access to Charts & metrics.",
-      403,
-      path,
-    );
+    throw new ProviderRequestError("revenuecat.cannotReadCharts", {}, { status: 403, path });
   if (response.status === 404)
-    throw new ProviderRequestError("RevenueCat found no project with this ID.", 404, path);
+    throw new ProviderRequestError("revenuecat.noProject", {}, { status: 404, path });
   if (response.status === 423)
-    throw new ProviderRequestError(
-      "RevenueCat is still preparing this project's charts. Try again later.",
-      423,
-    );
-  if (response.status === 429)
-    throw new ProviderRequestError("RevenueCat is rate limiting requests. Try again later.", 429);
-  throw new ProviderRequestError(`RevenueCat returned an error${detail ? `: ${detail}` : "."}`);
+    throw new ProviderRequestError("revenuecat.preparingCharts", {}, { status: 423 });
+  if (response.status === 429) throw rateLimited("RevenueCat");
+  throw returnedError("RevenueCat", detail);
 }
 
 async function revenueCatGet<T>(key: string, path: string, params = new URLSearchParams()) {

@@ -6,7 +6,10 @@ import {
   MAX_PAGES,
   providerGet,
   ProviderRequestError,
+  rateLimited,
+  returnedError,
   tooMuchData,
+  unreachable,
 } from "../http";
 import { signedAssertion, type ServiceAccount } from "./key";
 import { reportMonth } from "./report";
@@ -34,13 +37,8 @@ export function requireReadOnly(scope: unknown) {
   if (scope === undefined || scope === null) return;
   const scopes = typeof scope === "string" ? scope.split(/\s+/).filter(Boolean) : [];
   if (!scopes.length || scopes.some((granted) => granted !== READ_ONLY_SCOPE))
-    throw new VerificationError(
-      "Google gave the service account more access than reading Cloud Storage, so it was not used. Create a new service account without roles and paste a JSON key of that one.",
-    );
+    throw new VerificationError("googleplay.beyondReadOnly");
 }
-
-const KEY_REFUSED =
-  "Google refused the service account's JSON key. It may have been deleted or disabled: create a new JSON key for the service account and paste it.";
 
 /**
  * A token that can only read Cloud Storage. This is the one POST sent to Google: it exchanges a
@@ -69,13 +67,12 @@ export async function fetchToken(account: ServiceAccount) {
       signal: AbortSignal.timeout(20_000),
     });
   } catch {
-    throw new ProviderRequestError(`${NAME} could not be reached. Try again shortly.`);
+    throw unreachable(NAME);
   }
   const body = await errorBody(response);
   const error = typeof body?.error === "string" ? body.error : null;
   const description = typeof body?.error_description === "string" ? body.error_description : "";
-  if (response.status === 429)
-    throw new ProviderRequestError("Google is rate limiting requests. Try again later.", 429);
+  if (response.status === 429) throw rateLimited("Google");
   if (
     (error === "invalid_grant" && /signature|account not found/i.test(description)) ||
     error === "invalid_client" ||
@@ -83,12 +80,9 @@ export async function fetchToken(account: ServiceAccount) {
     error === "deleted_client" ||
     error === "unauthorized_client"
   )
-    throw new ProviderRequestError(KEY_REFUSED, response.status);
+    throw new ProviderRequestError("googleplay.keyRefused", {}, { status: response.status });
   if (!response.ok || typeof body?.access_token !== "string")
-    throw new ProviderRequestError(
-      "Google did not issue access for the service account. Try again shortly.",
-      response.status,
-    );
+    throw new ProviderRequestError("googleplay.noAccess", {}, { status: response.status });
   requireReadOnly(body.scope);
   return body.access_token;
 }
@@ -103,33 +97,18 @@ async function failure(response: Response, path: string): Promise<never> {
   const message = typeof error?.message === "string" ? error.message : "";
   const reasons = (error?.errors ?? []).map((item) => item?.reason);
   if (response.status === 401)
-    throw new ProviderRequestError("Google refused the access token. Try again shortly.", 401);
+    throw new ProviderRequestError("googleplay.tokenRefused", {}, { status: 401 });
   if (
     response.status === 403 &&
     (reasons.includes("accessNotConfigured") || /has not been used|is disabled/i.test(message))
   )
-    throw new ProviderRequestError(
-      "The Cloud Storage API is turned off in the service account's Google Cloud project. Turn on the Cloud Storage JSON API there.",
-      403,
-      path,
-    );
+    throw new ProviderRequestError("googleplay.apiDisabled", {}, { status: 403, path });
   if (response.status === 403)
-    throw new ProviderRequestError(
-      "The service account cannot read the reports in this bucket. In Play Console, under Users and permissions, give it View financial data for the whole account. A new permission can take some hours to apply.",
-      403,
-      path,
-    );
+    throw new ProviderRequestError("googleplay.cannotReadReports", {}, { status: 403, path });
   if (response.status === 404)
-    throw new ProviderRequestError(
-      "Google found no reports bucket with this name. Copy the Cloud Storage URI from Download reports in Play Console.",
-      404,
-      path,
-    );
-  if (response.status === 429)
-    throw new ProviderRequestError("Google is rate limiting requests. Try again later.", 429);
-  throw new ProviderRequestError(
-    `Google Cloud Storage returned an error${message ? `: ${message.slice(0, 300)}` : "."}`,
-  );
+    throw new ProviderRequestError("googleplay.noBucket", {}, { status: 404, path });
+  if (response.status === 429) throw rateLimited("Google");
+  throw returnedError("Google Cloud Storage", message.slice(0, 300));
 }
 
 const bucketPath = (bucket: string) => `/storage/v1/b/${encodeURIComponent(bucket)}/o`;
@@ -179,6 +158,6 @@ export async function downloadReport(token: string, bucket: string, file: Report
   try {
     return Buffer.from(await response.arrayBuffer());
   } catch {
-    throw new ProviderRequestError(`${NAME} could not be reached. Try again shortly.`);
+    throw unreachable(NAME);
   }
 }

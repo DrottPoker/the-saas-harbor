@@ -6,10 +6,7 @@ import type { ParsedKey } from "../types";
 export function parseDodoKey(input: string): ParsedKey {
   const key = input.trim();
   if (/^(rk|sk|pk)_(live|test)_|^pdl_|^polar_|^creem_/.test(key))
-    throw new VerificationError(
-      "This key belongs to another payment provider. Paste your Dodo Payments API key.",
-    );
-  if (!/^[A-Za-z0-9._-]{16,256}$/.test(key))
-    throw new VerificationError("Paste a Dodo Payments API key.");
+    throw new VerificationError("common.otherProviderKey", { provider: "Dodo Payments" });
+  if (!/^[A-Za-z0-9._-]{16,256}$/.test(key)) throw new VerificationError("dodo.keyFormat");
   return { key, livemode: null, hint: `…${key.slice(-4)}` };
 }

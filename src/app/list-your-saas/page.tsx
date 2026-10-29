@@ -1,89 +1,60 @@
+import type { Metadata } from "next";
+import { getLocale, getTranslations } from "next-intl/server";
 import Link from "@/components/link";
 import { ArrowRight, Check } from "lucide-react";
 import { JsonLd } from "@/components/json-ld";
 import { PageHeader, Shell } from "@/components/shell";
 import { Button } from "@/components/ui/button";
+import { localizedPath } from "@/i18n/config";
+import { formatList } from "@/i18n/list";
 import { DAILY_PRODUCT_LIMIT, PRODUCT_LIMIT } from "@/lib/moderation";
 import { availableProviders } from "@/lib/revenue/available";
-import { providerList } from "@/lib/revenue/catalog";
+import { providerNames } from "@/lib/revenue/catalog";
 import { pageMetadata } from "@/lib/seo";
 import { faqJsonLd, type FaqItem } from "@/lib/structured-data";
 import { currentUser } from "@/lib/supabase/server";
 
+const path = "/list-your-saas";
+
 // For founders deciding where to list a new SaaS, and for the search engines and AI assistants
 // they ask. Every statement describes how the site works today.
-export const metadata = pageMetadata({
-  title: "List your SaaS for free",
-  description:
-    "Submit your SaaS for free: a public page, no review queue, and a dofollow link once your revenue is verified. New products without revenue are welcome.",
-  path: "/list-your-saas",
-});
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("listYourSaas.meta");
+  return pageMetadata({ title: t("title"), description: t("description"), path });
+}
 
+// The page's lists, as keys in listYourSaas.
 const gains = [
-  "A public page for your product with its logo, description, category, tech stack and a link to your website.",
-  "A place in New arrivals, Browse and your category and technology pages as soon as you save it.",
-  "A profile as the product's founder, where other users can write to you.",
-  "Page views for your product's page, which only you see.",
-  "A place on the leaderboard once you connect your payment provider and share your verified MRR.",
-  "A badge for your own site that shows your verified MRR, or that your product is listed.",
-];
+  "gains.page",
+  "gains.lists",
+  "gains.profile",
+  "gains.views",
+  "gains.leaderboard",
+  "gains.badge",
+] as const;
 
 const differences = [
-  "Free, with no paid plans or upgrades.",
-  "No review queue: your page is public as soon as you save it.",
-  "No paid placements: the leaderboard is ordered by verified MRR, and equal amounts by revenue of all time, then by the date the product was listed.",
-  "Revenue is read from your payment provider through a read-only key, never typed in.",
-  "The link to your website is followed by search engines (dofollow) once your revenue is verified, whether you share the figures or not. It is free.",
-  "Search engines hear about your page at once: it joins the sitemap, and Bing and the other search engines that take IndexNow notices are told when you save it.",
-];
+  "differences.free",
+  "differences.noQueue",
+  "differences.noPaidPlacements",
+  "differences.readOnly",
+  "differences.dofollow",
+  "differences.indexing",
+] as const;
 
-const steps = [
-  "Create an account with your email address and a username.",
-  `Choose your payment provider at the top of the form. Connect ${providerList("or", availableProviders())} with a read-only key to verify your MRR, and choose what to share. For any other provider, or none yet, choose Other and write its name.`,
-  "Add your product: name, tagline, description, category, website, launch date, logo and tech stack. It is public when you save it.",
-  "If you like, verify your domain with a DNS record and add the badge to your site.",
-];
+const steps = ["steps.account", "steps.provider", "steps.product", "steps.extras"] as const;
 
-const questions: FaqItem[] = [
-  {
-    question: "Is it free to list a SaaS on The SaaS Harbor?",
-    answer:
-      "Yes. Listing, revenue verification, messages and the badge are free, and there are no paid plans.",
-  },
-  {
-    question: "Can I list a product that has no revenue yet?",
-    answer:
-      "Yes. Choose Other as the payment provider and write none. A product without a connected payment provider gets the same public page and appears in Browse, New arrivals and its category and technology pages. Only the leaderboard needs verified MRR.",
-  },
-  {
-    question: "How long until my listing is public?",
-    answer:
-      "It is public as soon as you save it. There is no review queue; admins act on reports afterwards, as the terms describe.",
-  },
-  {
-    question: "Do I have to share my revenue?",
-    answer:
-      "No. Verified revenue, the subscriber count and the launch date are public by default, and you can hide each of them when you add the product or later. Hiding revenue hides MRR too.",
-  },
-  {
-    question: "Which payment providers can verify revenue?",
-    answer: `${providerList("and", availableProviders())}, one per product, through a key that can only read. Revenue is verified again every hour.`,
-  },
-  {
-    question: "Is the link to my website dofollow?",
-    answer:
-      "Yes, and for free, once your revenue is verified, whether you share the figures or not. Without verified revenue the link is marked nofollow.",
-  },
-  {
-    question: "How many products can I list?",
-    answer: `Up to ${PRODUCT_LIMIT} per account, and ${DAILY_PRODUCT_LIMIT} a day.`,
-  },
-  {
-    question: "Can I remove my listing later?",
-    answer:
-      "Yes. You can delete a product, or your whole account, at any time, and everything that belongs to it goes with it.",
-  },
-];
+// The questions in listYourSaas.faq, which the page and its structured data both show.
+const questions = [
+  "free",
+  "noRevenue",
+  "public",
+  "share",
+  "providers",
+  "dofollow",
+  "limits",
+  "remove",
+] as const;
 
 function Section({
   id,
@@ -118,71 +89,70 @@ function Checks({ items }: { items: string[] }) {
 }
 
 export default async function ListYourSaas() {
+  const [t, locale, user] = await Promise.all([
+    getTranslations("listYourSaas"),
+    getLocale(),
+    currentUser(),
+  ]);
+  const names = providerNames(availableProviders());
+  const faq: FaqItem[] = questions.map((key) => ({
+    question: t(`faq.${key}.question`),
+    answer: t(`faq.${key}.answer`, {
+      providers: formatList(names, locale),
+      total: PRODUCT_LIMIT,
+      daily: DAILY_PRODUCT_LIMIT,
+    }),
+  }));
   // Visitors create an account first; signed-in users go straight to the product form.
-  const start = (await currentUser()) ? "/dashboard/saas/new" : "/auth?mode=signup";
+  const start = user ? "/dashboard/saas/new" : "/auth?mode=signup";
   const actions = (
     <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
       <Button asChild size="lg">
         <Link href={start}>
-          List your SaaS
+          {t("cta")}
           <ArrowRight className="rtl:-scale-x-100" />
         </Link>
       </Button>
       <Link href="/about" className="text-sm font-medium underline-offset-4 hover:underline">
-        How it works
+        {t("howItWorks")}
       </Link>
     </div>
   );
   return (
     <Shell size="narrow">
-      <JsonLd data={faqJsonLd("/list-your-saas", "List your SaaS for free", questions)} />
-      <PageHeader
-        title="List your SaaS for free"
-        description="The SaaS Harbor welcomes new products from day one. A listing is free, public as soon as you save it, and needs no revenue and no payment details."
-      />
+      <JsonLd data={faqJsonLd(localizedPath(locale, path), t("title"), faq)} />
+      <PageHeader title={t("title")} description={t("description")} />
       {actions}
       <section
         aria-labelledby="dofollow"
         className="mt-8 rounded-xl border bg-surface p-5 leading-7 shadow-card"
       >
         <h2 id="dofollow" className="font-semibold">
-          A free dofollow link, earned with verified revenue
+          {t("dofollow.title")}
         </h2>
-        <p className="mt-1 text-foreground/85">
-          Many directories charge for a followed link to your site. Here it is free: connect your
-          payment provider with a read-only key, and the link from your product page is followed by
-          search engines while your revenue stays verified, even if you hide the figures.
-        </p>
+        <p className="mt-1 text-foreground/85">{t("dofollow.body")}</p>
       </section>
       <div className="mt-10 grid gap-10 border-t pt-10">
-        <Section id="gains" title="What a listing gives">
-          <Checks items={gains} />
+        <Section id="gains" title={t("gains.title")}>
+          <Checks items={gains.map((key) => t(key))} />
         </Section>
-        <Section id="new" title="Made for new SaaS">
-          <p>
-            Many directories order products by reviews, votes or paid placement, which a new product
-            does not have yet. Here a new product gets the same page as an established one, and
-            appears at the top of New arrivals when it joins.
-          </p>
-          <p className="mt-3">
-            You do not need revenue to list. Once you have it, verifying it through your payment
-            provider puts your product on the leaderboard and makes the link to your website one
-            that search engines follow.
-          </p>
+        <Section id="new" title={t("newSaas.title")}>
+          <p>{t("newSaas.samePage")}</p>
+          <p className="mt-3">{t("newSaas.noRevenue")}</p>
         </Section>
-        <Section id="differences" title="How it differs from other directories">
-          <Checks items={differences} />
+        <Section id="differences" title={t("differences.title")}>
+          <Checks items={differences.map((key) => t(key))} />
         </Section>
-        <Section id="steps" title="How to list your SaaS">
+        <Section id="steps" title={t("steps.title")}>
           <ol className="grid list-decimal gap-2 ps-5 marker:text-faint-foreground">
-            {steps.map((step) => (
-              <li key={step}>{step}</li>
+            {steps.map((key) => (
+              <li key={key}>{t(key, { providers: formatList(names, locale, "disjunction") })}</li>
             ))}
           </ol>
         </Section>
-        <Section id="questions" title="Common questions">
+        <Section id="questions" title={t("faq.title")}>
           <div className="grid gap-6">
-            {questions.map(({ question, answer }) => (
+            {faq.map(({ question, answer }) => (
               <div key={question}>
                 <h3 className="font-medium text-foreground">{question}</h3>
                 <p className="mt-1">{answer}</p>
@@ -193,11 +163,13 @@ export default async function ListYourSaas() {
         <div className="grid gap-4">
           {actions}
           <p className="text-sm text-muted-foreground">
-            Launching somewhere else too?{" "}
-            <Link href="/where-to-launch" className="font-medium text-foreground underline">
-              Where to launch your SaaS
-            </Link>{" "}
-            lists other places founders use, and what each is good for.
+            {t.rich("elsewhere", {
+              link: (chunks) => (
+                <Link href="/where-to-launch" className="font-medium text-foreground underline">
+                  {chunks}
+                </Link>
+              ),
+            })}
           </p>
         </div>
       </div>

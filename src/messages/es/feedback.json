@@ -1,1 +1,49 @@
-{}
+{
+  "heading": {
+    "title": "Enviar comentarios",
+    "description": "Informa de un error, sugiere algo o cuéntanos qué te parece."
+  },
+  "kinds": {
+    "bug": {
+      "label": "Error o fallo",
+      "hint": "Algo no funciona o muestra información incorrecta."
+    },
+    "suggestion": {
+      "label": "Sugerencia",
+      "hint": "Una idea para algo nuevo o algo que se puede mejorar."
+    },
+    "other": {
+      "label": "Otros comentarios",
+      "hint": "Cualquier otra cosa que quieras contarnos."
+    }
+  },
+  "form": {
+    "legend": "¿Sobre qué es?",
+    "message": "Tus comentarios",
+    "messageHint": "Para un error: qué hiciste, qué pasó y qué esperabas.",
+    "email": "Correo electrónico (opcional)",
+    "emailHint": "Solo si quieres una respuesta. No necesitas una cuenta para enviar comentarios.",
+    "trap": "Deja este campo vacío",
+    "privacyVisitor": "Solo los administradores leen los comentarios, junto con la página de la que vienes y tu correo electrónico, si lo indicas.",
+    "privacyUser": "Solo los administradores leen los comentarios, junto con tu nombre y la página de la que vienes.",
+    "submit": "Enviar comentarios",
+    "sending": "Enviando..."
+  },
+  "thanks": {
+    "title": "Gracias por tus comentarios",
+    "description": "Llegaron directamente al equipo de The SaaS Harbor, que lee todo lo que recibe.",
+    "back": "Volver a donde estabas",
+    "start": "Volver al inicio",
+    "done": "Listo"
+  },
+  "errors": {
+    "sendFailed": "No se pudieron enviar tus comentarios. Inténtalo de nuevo.",
+    "chooseKind": "Elige qué tipo de comentario es.",
+    "tooShort": "Escribe al menos {min} caracteres.",
+    "tooLong": "Escribe menos de {max} caracteres.",
+    "email": "Ingresa un correo electrónico válido o deja el campo vacío.",
+    "suspended": "Tu cuenta está suspendida, así que no puedes enviar comentarios.",
+    "tooMuch": "Enviaste muchos comentarios. Inténtalo más tarde.",
+    "busy": "Acaban de llegar muchos comentarios. Inténtalo más tarde."
+  }
+}

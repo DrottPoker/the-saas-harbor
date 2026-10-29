@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "@/components/link";
 import { useSelectedLayoutSegment } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { INBOX_COLUMNS, type InboxConversation } from "@/lib/messages";
 import { browserClient } from "@/lib/supabase/browser";
 import { cn } from "@/lib/utils";
@@ -19,6 +20,7 @@ export function ConversationList({
   userId: string;
   initialConversations: InboxConversation[];
 }) {
+  const t = useTranslations("messages.list");
   const [conversations, setConversations] = useState(initialConversations);
   const [serverConversations, setServerConversations] = useState(initialConversations);
   // A fresh server render, such as after a block, brings a fresh list.
@@ -55,14 +57,16 @@ export function ConversationList({
   return (
     <>
       <div className="flex min-h-14 shrink-0 items-center border-b px-4">
-        <Heading className="text-lg font-semibold tracking-tight">Messages</Heading>
+        <Heading className="text-lg font-semibold tracking-tight">{t("heading")}</Heading>
       </div>
       {conversations.length ? (
-        <ul aria-label="Conversations" className="min-h-0 flex-1 overflow-y-auto">
+        <ul aria-label={t("label")} className="min-h-0 flex-1 overflow-y-auto">
           {conversations.map((conversation) => {
             const open = conversation.other_id === openId;
             // The open conversation is read as its messages arrive.
             const unread = open ? 0 : (conversation.unread ?? 0);
+            // What the newest message says, in its own direction.
+            const body = <span dir="auto">{conversation.last_body}</span>;
             return (
               <li key={conversation.id}>
                 <Link
@@ -75,11 +79,12 @@ export function ConversationList({
                 >
                   <PersonAvatar
                     path={conversation.other_avatar_path}
-                    name={conversation.other_name ?? "User"}
+                    name={conversation.other_name ?? t("userFallback")}
                   />
                   <div className="min-w-0 flex-1">
                     <div className="flex items-baseline justify-between gap-3">
                       <span
+                        dir="auto"
                         className={cn("truncate text-sm", unread ? "font-semibold" : "font-medium")}
                       >
                         {conversation.other_name}
@@ -99,14 +104,17 @@ export function ConversationList({
                           unread ? "text-foreground" : "text-muted-foreground",
                         )}
                       >
-                        {conversation.blocked && "Blocked · "}
-                        {conversation.last_sender_id === userId && "You: "}
-                        {conversation.last_body}
+                        {conversation.blocked && `${t("blocked")} · `}
+                        {conversation.last_sender_id === userId
+                          ? t.rich("fromYou", { body: () => body })
+                          : body}
                       </p>
                       {unread > 0 && (
                         <span className="min-w-5 shrink-0 rounded-full bg-brand px-1.5 text-center text-xs leading-5 font-medium text-primary-foreground tabular-nums">
-                          {unread}
-                          <span className="sr-only"> unread</span>
+                          {t.rich("unread", {
+                            count: unread,
+                            hidden: (chunks) => <span className="sr-only">{chunks}</span>,
+                          })}
                         </span>
                       )}
                     </div>
@@ -118,17 +126,13 @@ export function ConversationList({
         </ul>
       ) : openId ? (
         // The first conversation is open beside this, so there is nothing to explain.
-        <p className="px-4 py-6 text-sm text-muted-foreground">
-          Your conversations show here once a message is sent.
-        </p>
+        <p className="px-4 py-6 text-sm text-muted-foreground">{t("emptyBeside")}</p>
       ) : (
         <div className="flex flex-1 flex-col items-center justify-center px-6 py-10 text-center">
-          <p className="font-semibold">No messages yet</p>
-          <p className="mt-1.5 max-w-xs text-sm text-muted-foreground">
-            Open a product or a user&apos;s profile and choose Send message to start a conversation.
-          </p>
+          <p className="font-semibold">{t("emptyTitle")}</p>
+          <p className="mt-1.5 max-w-xs text-sm text-muted-foreground">{t("emptyBody")}</p>
           <Button asChild variant="outline" className="mt-5">
-            <Link href="/browse">Browse products</Link>
+            <Link href="/browse">{t("browse")}</Link>
           </Button>
         </div>
       )}

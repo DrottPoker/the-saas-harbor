@@ -1,13 +1,16 @@
 "use client";
 
+import { useLocale, useTranslations } from "next-intl";
 import Link from "@/components/link";
 import { deleteAccountAction, deleteSaasAction } from "@/app/actions";
 import { Feedback, Field, Section, Submit } from "./forms";
-import { PROVIDER_NAMES, type OAuthProvider } from "@/lib/auth";
+import { oauthStartPath, PROVIDER_NAMES, type OAuthProvider } from "@/lib/auth";
 import { ProviderButton } from "./provider-button";
 import { Notice } from "./shell";
 import { Input } from "./ui/input";
 import { useEditorAction } from "./use-editor-action";
+
+// Both forms read the account messages, which their pages pass to the browser.
 
 function DeleteSection({
   id,
@@ -41,32 +44,28 @@ export function DeleteAccount({
   /** Whether the last confirmation with the provider did not finish. */
   failed?: boolean;
 }) {
+  const t = useTranslations("account.deleteAccount");
+  const locale = useLocale();
   const [state, action] = useEditorAction(deleteAccountAction);
   const provider = method === "password" ? null : method;
-  const name = provider && PROVIDER_NAMES[provider];
+  const name = provider ? PROVIDER_NAMES[provider] : "";
   return (
-    <DeleteSection
-      id="delete-account"
-      title="Delete account"
-      description="Permanently deletes your account and everything in it. This cannot be undone."
-    >
+    <DeleteSection id="delete-account" title={t("title")} description={t("description")}>
       <form action={action} className="grid gap-5">
         <div className="grid gap-2 text-sm text-muted-foreground">
+          <p>{t("whatGoes")}</p>
           <p>
-            Your profile, your products and their logos, your payment provider connections with the
-            stored keys, all verification history, the reports you sent and your conversations are
-            deleted, also for the users you wrote with. Your products leave the leaderboard at once.
-          </p>
-          <p>
-            Keys you created stay with your payment provider until you delete them there. See the{" "}
-            <Link href="/privacy" className="font-medium text-foreground underline">
-              privacy policy
-            </Link>{" "}
-            for what we store.
+            {t.rich("keys", {
+              link: (chunks) => (
+                <Link href="/privacy" className="font-medium text-foreground underline">
+                  {chunks}
+                </Link>
+              ),
+            })}
           </p>
         </div>
         {!provider ? (
-          <Field name="delete_password" label="Confirm with your password">
+          <Field name="delete_password" label={t("password")}>
             <Input
               id="delete_password"
               name="password"
@@ -77,22 +76,18 @@ export function DeleteAccount({
             />
           </Field>
         ) : confirmed ? (
-          <Notice>You confirmed with {name}. Delete your account within five minutes.</Notice>
+          <Notice>{t("confirmed", { provider: name })}</Notice>
         ) : (
           <div className="grid gap-3">
-            <p className="text-sm text-muted-foreground">
-              Your account signs in with {name}. Confirm it is you with {name} first.
-            </p>
-            {failed && (
-              <Notice tone="error">{name} did not confirm it is you. Please try again.</Notice>
-            )}
+            <p className="text-sm text-muted-foreground">{t("confirmFirst", { provider: name })}</p>
+            {failed && <Notice tone="error">{t("failed", { provider: name })}</Notice>}
             <div>
               <ProviderButton
                 provider={provider}
-                href={`/auth/oauth/${provider}?confirm=delete`}
+                href={oauthStartPath(provider, { confirm: true, locale })}
                 className="h-9"
               >
-                Confirm with {name}
+                {t("confirmWith", { provider: name })}
               </ProviderButton>
             </div>
           </div>
@@ -100,8 +95,8 @@ export function DeleteAccount({
         <Feedback state={state} />
         {(!provider || confirmed) && (
           <div>
-            <Submit variant="destructive" pendingLabel="Deleting...">
-              Delete account
+            <Submit variant="destructive" pendingLabel={t("deleting")}>
+              {t("submit")}
             </Submit>
           </div>
         )}
@@ -119,28 +114,16 @@ export function DeleteProduct({
   name: string;
   connected: boolean;
 }) {
+  const t = useTranslations("account.deleteProduct");
   const [state, action] = useEditorAction(deleteSaasAction.bind(null, saasId));
   return (
-    <DeleteSection
-      id="delete-product"
-      title="Delete product"
-      description="Permanently deletes this product. This cannot be undone."
-    >
+    <DeleteSection id="delete-product" title={t("title")} description={t("description")}>
       <form action={action} className="grid gap-5">
         <div className="grid gap-2 text-sm text-muted-foreground">
-          <p>
-            The product page, its logo, its payment provider connection with the stored key, and all
-            verification history are deleted, and the product leaves the leaderboard at once. Your
-            profile and other products are not affected.
-          </p>
-          {connected && (
-            <p>
-              The payment provider account can then verify another product. The key stays with your
-              provider until you delete it there.
-            </p>
-          )}
+          <p>{t("whatGoes")}</p>
+          {connected && <p>{t("connected")}</p>}
         </div>
-        <Field name="confirm_name" label={`Type “${name}” to confirm`}>
+        <Field name="confirm_name" label={t("confirmName", { name })}>
           <Input
             id="confirm_name"
             name="confirm_name"
@@ -152,8 +135,8 @@ export function DeleteProduct({
         </Field>
         <Feedback state={state} />
         <div>
-          <Submit variant="destructive" pendingLabel="Deleting...">
-            Delete product
+          <Submit variant="destructive" pendingLabel={t("deleting")}>
+            {t("submit")}
           </Submit>
         </div>
       </form>

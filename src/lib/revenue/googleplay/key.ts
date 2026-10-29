@@ -31,9 +31,7 @@ export function parseGooglePlayBucket(input: string) {
     value.split("/")[0]!;
   const bucket = named.toLowerCase();
   if (!/^pubsite_prod_[a-z0-9_-]{4,50}$/.test(bucket))
-    throw new VerificationError(
-      "Enter the Cloud Storage URI of your reports, from Download reports in Play Console. It starts with gs://pubsite_prod_.",
-    );
+    throw new VerificationError("googleplay.bucketFormat");
   return bucket;
 }
 
@@ -53,16 +51,11 @@ export function parseGooglePlayPackages(input: string) {
     .map((value) => /[?&]id=([^&#\s]+)/.exec(value)?.[1] ?? value);
   const packages = [...new Set(names)];
   if (!packages.length || packages.some((name) => name.length > 150 || !PACKAGE.test(name)))
-    throw new VerificationError(
-      "Enter the package name of your app, such as com.example.app, as Play Console shows it under the app's name.",
-    );
+    throw new VerificationError("googleplay.packageFormat");
   if (packages.length > MAX_PACKAGES || packages.join(",").length > MAX_PACKAGES_LENGTH)
-    throw new VerificationError(`Enter at most ${MAX_PACKAGES} package names.`);
+    throw new VerificationError("googleplay.tooManyPackages", { max: MAX_PACKAGES });
   return packages;
 }
-
-const FULL_ACCESS =
-  "This is a default service account, which can manage your Google Cloud project. Create a new service account without roles and paste a JSON key of that one.";
 
 /**
  * Refuses the service accounts Google or Firebase create with broad access to the project: App
@@ -74,63 +67,46 @@ function requireOwnAccount(email: string) {
     /-compute@developer\.gserviceaccount\.com$/.test(email) ||
     /^firebase-adminsdk-[a-z0-9]+@/.test(email)
   )
-    throw new VerificationError(FULL_ACCESS);
+    throw new VerificationError("googleplay.defaultAccount");
   if (!/^[a-z0-9-]{1,63}@[a-z0-9-]{1,63}\.iam\.gserviceaccount\.com$/.test(email))
-    throw new VerificationError(
-      "The JSON key does not name a service account. Paste the whole JSON key of a service account.",
-    );
+    throw new VerificationError("googleplay.notServiceAccount");
 }
-
-const WHOLE_KEY =
-  "Paste the whole JSON key of the service account, as Google Cloud downloaded it. It starts with {.";
 
 /** The service account in a pasted JSON key, with its RSA private key loaded. */
 export function parseServiceAccountJson(input: string) {
   const value = input.trim();
   if (/^(rk|sk|pk)_(live|test)_|^pdl_|^polar_|^creem_|^apik_/.test(value))
-    throw new VerificationError(
-      "This key belongs to another payment provider. Paste the JSON key of your service account.",
-    );
+    throw new VerificationError("googleplay.otherProvider");
   if (/^AIza[0-9A-Za-z_-]{30,}$/.test(value))
-    throw new VerificationError(
-      "This is a Google API key. Paste the JSON key of a service account instead.",
-    );
+    throw new VerificationError("googleplay.googleApiKey");
   if (value.includes("-----BEGIN") && !value.startsWith("{"))
-    throw new VerificationError(
-      "This is only the private key. Paste the whole JSON key file of the service account.",
-    );
+    throw new VerificationError("googleplay.privateKeyOnly");
   let json: unknown;
   try {
     json = JSON.parse(value);
   } catch {
-    throw new VerificationError(WHOLE_KEY);
+    throw new VerificationError("googleplay.wholeKey");
   }
-  if (!json || typeof json !== "object") throw new VerificationError(WHOLE_KEY);
+  if (!json || typeof json !== "object") throw new VerificationError("googleplay.wholeKey");
   const fields = json as Record<string, unknown>;
   if (fields.type === "authorized_user")
-    throw new VerificationError(
-      "These are a person's Google credentials, which can do anything they can. Paste a JSON key of a service account instead.",
-    );
-  if (fields.type !== "service_account") throw new VerificationError(WHOLE_KEY);
+    throw new VerificationError("googleplay.personalCredentials");
+  if (fields.type !== "service_account") throw new VerificationError("googleplay.wholeKey");
   const email = typeof fields.client_email === "string" ? fields.client_email.toLowerCase() : "";
   requireOwnAccount(email);
   const keyId = fields.private_key_id;
   if (typeof keyId !== "string" || !/^[A-Za-z0-9]{16,64}$/.test(keyId))
-    throw new VerificationError(WHOLE_KEY);
+    throw new VerificationError("googleplay.wholeKey");
   let privateKey: KeyObject;
   try {
     if (typeof fields.private_key !== "string") throw new Error();
     privateKey = createPrivateKey(fields.private_key);
   } catch {
-    throw new VerificationError(
-      "The private key in the JSON key could not be read. Download a new JSON key for the service account.",
-    );
+    throw new VerificationError("googleplay.privateKeyUnreadable");
   }
   const bits = privateKey.asymmetricKeyDetails?.modulusLength ?? 0;
   if (privateKey.asymmetricKeyType !== "rsa" || bits < 2048 || bits > 4096)
-    throw new VerificationError(
-      "The JSON key does not hold an RSA key of 2048 to 4096 bits, as Google Cloud creates them. Download a new JSON key.",
-    );
+    throw new VerificationError("googleplay.keyStrength");
   return { email, keyId, privateKey };
 }
 
@@ -156,7 +132,7 @@ function inverse(a: bigint, m: bigint) {
     [oldR, r] = [r, oldR - quotient * r];
     [oldS, s] = [s, oldS - quotient * s];
   }
-  if (oldR !== 1n) throw new VerificationError(WHOLE_KEY);
+  if (oldR !== 1n) throw new VerificationError("googleplay.wholeKey");
   return ((oldS % m) + m) % m;
 }
 
@@ -188,11 +164,11 @@ export function keyFromPrimes({ e, p, q }: Primes) {
 
 function primesOf(privateKey: KeyObject): Primes {
   const jwk = privateKey.export({ format: "jwk" });
-  if (!jwk.e || !jwk.p || !jwk.q || !jwk.n) throw new VerificationError(WHOLE_KEY);
+  if (!jwk.e || !jwk.p || !jwk.q || !jwk.n) throw new VerificationError("googleplay.wholeKey");
   const primes = { e: jwk.e, p: jwk.p, q: jwk.q };
   // A key whose primes do not give its own modulus is not one Google Cloud made.
   if (keyFromPrimes(primes).export({ format: "jwk" }).n !== jwk.n)
-    throw new VerificationError(WHOLE_KEY);
+    throw new VerificationError("googleplay.wholeKey");
   return primes;
 }
 
@@ -210,10 +186,7 @@ export function parseGooglePlayKey({ key: input, account, extra }: KeyInput): Pa
       JSON.stringify({ email, id: keyId, ...primesOf(privateKey) }),
     ),
   );
-  if (stored.length > MAX_STORED_LENGTH)
-    throw new VerificationError(
-      "The JSON key and package names are too long to store. Use fewer package names.",
-    );
+  if (stored.length > MAX_STORED_LENGTH) throw new VerificationError("googleplay.tooLong");
   const label = packages.length > 1 ? `${packages[0]} +${packages.length - 1}` : packages[0]!;
   return {
     key: stored,
@@ -235,9 +208,7 @@ export function storedConnection(stored: string): GooglePlayConnection {
       account: { email: parts.email, keyId: parts.id, privateKey: keyFromPrimes(parts) },
     };
   } catch {
-    throw new VerificationError(
-      "The stored key is not readable. Connect the payment provider again.",
-    );
+    throw new VerificationError("common.keyUnreadable");
   }
 }
 

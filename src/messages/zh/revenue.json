@@ -1,1 +1,61 @@
-{}
+{
+  "section": {
+    "title": "已验证收入",
+    "description": "用只读密钥连接你的支付服务商，以验证 MRR 和订阅用户。已验证 MRR 会在排行榜上排名，指向你网站的链接也会被搜索引擎跟随。如果你的服务商不在列表中，请选择“其他”。"
+  },
+  "choice": {
+    "label": "支付服务商",
+    "placeholder": "选择你的支付服务商",
+    "other": "其他",
+    "keepCurrent": "保留当前连接",
+    "reconnect": "重新连接或更换服务商",
+    "replace": "更换密钥或服务商"
+  },
+  "fields": {
+    "keyNote": "密钥经过加密，仅用于读取{reads}。你可以随时在 {provider} 中撤销它。<link>我们如何处理支付服务商数据</link>",
+    "accessNote": "{provider} 授予的访问权限经过加密，仅用于读取{reads}。你可以随时在 {provider} 中移除它。<link>我们如何处理支付服务商数据</link>"
+  },
+  "other": {
+    "title": "已连接的产品会被更多访客看到",
+    "intro": "选择列表中的服务商后，你的产品将获得：",
+    "gainLeaderboard": "在排行榜上的位置，排行榜就是首页。",
+    "gainCategories": "在其类别和技术页面上排在未排名的产品之前。",
+    "gainLink": "一个会被搜索引擎跟随的网站链接，即使隐藏了数据也是如此。",
+    "unverified": "暂时无法验证其他服务商的收入，因此“其他”下的产品不参与排名，其网站链接会标记为 nofollow。连接只授予读取权限。",
+    "label": "你的支付服务商",
+    "hint": "如果你还没有收款，请填写“无”。",
+    "note": "你可以随时连接列表中的服务商。该名称不会在网站上显示；我们用它来决定接下来支持哪些服务商。"
+  },
+  "connected": {
+    "title": "已连接到 {provider}",
+    "failed": "上次验证失败",
+    "testMode": "测试模式",
+    "key": "密钥 {hint}",
+    "access": "读取权限 {hint}",
+    "lastVerified": "上次验证：<date></date>",
+    "subscribers": "订阅用户",
+    "refresh": "立即刷新",
+    "refreshing": "正在刷新...",
+    "keepConnected": "保持连接",
+    "disconnect": "断开连接",
+    "confirmDisconnect": "确认断开",
+    "disconnecting": "正在断开..."
+  },
+  "figures": {
+    "title": "收入（含一次性购买）",
+    "last30Days": "最近 30 天",
+    "last12Months": "最近 12 个月",
+    "allTime": "累计",
+    "notRead": "尚未读取",
+    "firstRead": "连接后不久会读取付款，之后每天读取一次。",
+    "readingBack": "仍在读取更早的付款。目前已追溯到 {date}。"
+  },
+  "result": {
+    "connected": "{provider} 已连接。{summary}",
+    "verified": "已验证 MRR：{mrr}，来自 {count} 位订阅用户。",
+    "disconnected": "{access, select, oauth {已断开连接。保存的访问权限已删除。} other {已断开连接。保存的密钥已删除。}}",
+    "expired": "与 {provider} 的连接已过期。请重试。",
+    "denied": "{provider} 的访问请求未获批准，因此没有连接任何内容。",
+    "incomplete": "{provider} 未完成连接。请重试。"
+  }
+}

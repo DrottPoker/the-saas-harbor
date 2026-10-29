@@ -2,13 +2,15 @@
 -- completion. Runs in a rolled-back transaction.
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(33);
+select plan(34);
 
-insert into auth.users(id, email) values
-  ('a1000000-0000-4000-8000-000000000001', 'writer@notify.test'),
-  ('a1000000-0000-4000-8000-000000000002', 'reader@notify.test'),
-  ('a1000000-0000-4000-8000-000000000003', 'admin@notify.test'),
-  ('a1000000-0000-4000-8000-000000000004', 'quiet-admin@notify.test');
+-- The language in the user metadata: one the site has, one it lacks, a value that is no language
+-- (users write their own metadata) and none.
+insert into auth.users(id, email, raw_user_meta_data) values
+  ('a1000000-0000-4000-8000-000000000001', 'writer@notify.test', '{"locale": 5}'),
+  ('a1000000-0000-4000-8000-000000000002', 'reader@notify.test', '{"locale": "es"}'),
+  ('a1000000-0000-4000-8000-000000000003', 'admin@notify.test', '{"locale": "fr"}'),
+  ('a1000000-0000-4000-8000-000000000004', 'quiet-admin@notify.test', null);
 insert into public.profiles(id, name) values
   ('a1000000-0000-4000-8000-000000000001', 'Notify Writer'),
   ('a1000000-0000-4000-8000-000000000002', 'Notify Reader'),
@@ -72,12 +74,12 @@ select is_empty($$ select * from public.claim_emails(10, 3600) where kind = 'mes
   'message emails wait for the delay');
 select results_eq(
   $$ select c.email, c.name, c.context ->> 'sender_name', (c.context ->> 'wanted')::boolean,
-      (c.context ->> 'unread')::int
+      (c.context ->> 'unread')::int, c.locale
     from public.claim_emails(10, 0) c where c.kind = 'message' and c.email like '%@notify.test'
     order by c.id $$,
-  $$ values ('reader@notify.test'::text, 'Notify Reader'::text, 'Notify Writer'::text, true, 0),
-    ('reader@notify.test'::text, 'Notify Reader'::text, 'Notify Writer'::text, true, 1) $$,
-  'message emails know both makers, and an unread message counts in one email only');
+  $$ values ('reader@notify.test'::text, 'Notify Reader'::text, 'Notify Writer'::text, true, 0, 'es'::text),
+    ('reader@notify.test'::text, 'Notify Reader'::text, 'Notify Writer'::text, true, 1, 'es'::text) $$,
+  'message emails know both makers and the recipient''s language, and an unread message counts in one email only');
 select is_empty($$ select * from public.claim_emails(10, 0) where kind = 'message' and email like '%@notify.test' $$,
   'claimed emails are not claimed twice while locked');
 reset role;
@@ -138,8 +140,9 @@ select results_eq(
   'two reports queue one email for the admin who wants them');
 set local role service_role;
 select results_eq(
-  $$ select (context ->> 'open')::int >= 2, (context ->> 'wanted')::boolean from public.claim_emails(10, 0) where kind = 'reports' and email = 'admin@notify.test' $$,
-  $$ values (true, true) $$, 'the report email counts the open reports when it is sent');
+  $$ select (context ->> 'open')::int >= 2, (context ->> 'wanted')::boolean, locale from public.claim_emails(10, 0) where kind = 'reports' and email = 'admin@notify.test' $$,
+  $$ values (true, true, 'en'::text) $$,
+  'the report email counts the open reports when it is sent, in English for a language the site lacks');
 reset role;
 select public.complete_email((select id from pgtap_outbox where kind = 'reports'), 'sent', null);
 set local role authenticated;
@@ -188,10 +191,10 @@ insert into public.blocks(blocker_id, blocked_id)
   values ('a1000000-0000-4000-8000-000000000001', 'a1000000-0000-4000-8000-000000000002');
 set local role service_role;
 select results_eq(
-  $$ select (context ->> 'unread')::int, (context ->> 'blocked')::boolean from public.claim_emails(10, 0)
+  $$ select (context ->> 'unread')::int, (context ->> 'blocked')::boolean, locale from public.claim_emails(10, 0)
     where kind = 'message' and email = 'writer@notify.test' $$,
-  $$ values (2, true) $$,
-  'a message email counts the unread messages and marks a blocked sender');
+  $$ values (2, true, 'en'::text) $$,
+  'a message email counts the unread messages and marks a blocked sender, in English for a language that is no text');
 
 -- Old history goes, and account deletion removes settings and queued emails.
 reset role;
@@ -238,6 +241,11 @@ reset role;
 select is((select count(*)::int from pgtap_outbox
     where kind = 'message' and user_id = 'a1000000-0000-4000-8000-000000000004'), 2,
   'a message after reading the one that queued an email queues a new email');
+set local role service_role;
+select results_eq(
+  $$ select distinct locale from public.claim_emails(10, 0) where email = 'quiet-admin@notify.test' $$,
+  $$ values ('en'::text) $$, 'an account without a language gets its emails in English');
+reset role;
 
 select * from finish();
 rollback;

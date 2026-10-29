@@ -1,21 +1,40 @@
 // Chart models for revenue history. Pure and deterministic: labels are computed here, on the
-// server, so client charts only position marks and never format numbers themselves.
+// server, so client charts only position marks and never format numbers themselves. The series
+// stay in USD cents; amounts are written in the visitor's money and months in its language.
+import { createTranslator } from "next-intl";
 import { z } from "zod";
+import english from "@/messages/en/charts.json";
+import { formatMoney, usdMoney, type Money } from "./display-money";
 
-const MONTHS = [
-  "January",
-  "February",
-  "March",
-  "April",
-  "May",
-  "June",
-  "July",
-  "August",
-  "September",
-  "October",
-  "November",
-  "December",
-];
+/** The keys of the charts namespace this module writes with. */
+type ChartKey =
+  | "axisWithYear"
+  | "summary.mrr"
+  | "summary.mrrOne"
+  | "summary.revenue"
+  | "summary.revenueOne"
+  | "periods.months"
+  | "periods.year"
+  | "periods.all"
+  | "periods.last"
+  | "periods.whole";
+
+/** Words from the charts namespace, such as `await getTranslations("charts")`. */
+export type ChartWords = (key: ChartKey, values?: Record<string, string | number>) => string;
+
+/** How a chart writes its labels: amounts in `money`, whose locale also names the months. */
+export type ChartFormat = { money: Money; t: ChartWords };
+
+/** US dollars and English, as the Markdown versions and the tests read charts. */
+export const ENGLISH_CHART: ChartFormat = {
+  money: usdMoney(),
+  t: createTranslator({
+    locale: "en",
+    messages: { charts: english },
+    namespace: "charts",
+    timeZone: "UTC",
+  }),
+};
 
 const historySchema = z
   .array(
@@ -85,48 +104,54 @@ export function historySince<T extends MrrPoint>(
   return kept.length ? kept : null;
 }
 
-function monthParts(month: string) {
+const monthFormats = new Map<string, Intl.DateTimeFormat>();
+
+/** A YYYY-MM month written by `Intl` in a language. */
+function formatMonth(month: string, locale: string, options: Intl.DateTimeFormatOptions) {
+  const key = `${locale}|${JSON.stringify(options)}`;
+  let format = monthFormats.get(key);
+  if (!format) {
+    format = new Intl.DateTimeFormat(locale, { ...options, timeZone: "UTC" });
+    monthFormats.set(key, format);
+  }
   const [year, index] = month.split("-").map(Number);
-  return { year, name: MONTHS[index - 1] };
+  return format.format(new Date(Date.UTC(year!, index! - 1, 1)));
 }
 
-export function monthLabel(month: string) {
-  const { year, name } = monthParts(month);
-  return `${name} ${year}`;
+/** A month and its year as a sentence names them: "January 2026", "enero de 2026". */
+export function monthLabel(month: string, locale = "en-US") {
+  return formatMonth(month, locale, { month: "long", year: "numeric" });
+}
+
+/** A month standing alone, as a table row or a tooltip names it: "Enero de 2026" in Spanish. */
+function monthHeading(month: string, locale: string) {
+  const label = monthLabel(month, locale);
+  return label.charAt(0).toLocaleUpperCase(locale) + label.slice(1);
 }
 
 /**
  * Short month labels for the months an axis shows (null for the rest). A label carries the year
  * when it is the first one shown or the year changed since the previous one shown.
  */
-function axisLabels(months: string[], shown: (index: number) => boolean) {
-  let previousYear: number | null = null;
+function axisLabels(months: string[], shown: (index: number) => boolean, format: ChartFormat) {
+  let previousYear: string | null = null;
   return months.map((month, i) => {
     if (!shown(i)) return null;
-    const { year, name } = monthParts(month);
+    const year = month.slice(2, 4);
+    const name = formatMonth(month, format.money.locale, { month: "short" });
     const withYear = year !== previousYear;
     previousYear = year;
-    return withYear ? `${name.slice(0, 3)} ’${String(year).slice(2)}` : name.slice(0, 3);
+    return withYear ? format.t("axisWithYear", { month: name, year }) : name;
   });
 }
 
 // Whole dollars: a reconstructed, currency-converted history is not accurate to the cent.
 export function wholeUsd(cents: number) {
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-    maximumFractionDigits: 0,
-  }).format(Math.round(cents / 100));
+  return formatMoney(cents, usdMoney(), "whole");
 }
 
 export function compactUsd(cents: number) {
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-    notation: "compact",
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 2,
-  }).format(cents / 100);
+  return formatMoney(cents, usdMoney(), "compact");
 }
 
 /**
@@ -144,6 +169,22 @@ export function niceScale(maxCents: number, intervals = 4) {
   return {
     max: steps * step,
     ticks: Array.from({ length: steps + 1 }, (_, i) => Math.round(i * step)),
+  };
+}
+
+/**
+ * The axis of a series in the visitor's currency: round steps of that currency, so a converted
+ * axis reads €0, €2.5K, €5K rather than the converted dollar steps. `y` turns USD cents into a
+ * position from the top.
+ */
+function moneyAxis(values: number[], money: Money) {
+  const scale = niceScale(Math.max(...values) * money.rate);
+  return {
+    y: (cents: number) => (cents * money.rate) / scale.max,
+    ticks: scale.ticks.map((tick) => ({
+      y: 1 - tick / scale.max,
+      label: formatMoney(tick / money.rate, money, "compact"),
+    })),
   };
 }
 
@@ -170,38 +211,54 @@ export type MrrChartModel = {
  * Month labels for an axis: every month on wide plots; on narrow ones every other month, or every
  * third in a history longer than six months, so labels with a year never touch, ending at the last.
  */
-function monthAxis(months: string[]) {
+function monthAxis(months: string[], format: ChartFormat) {
   const last = months.length - 1;
   const step = months.length > 6 ? 3 : 2;
-  const wide = axisLabels(months, () => true);
-  const narrow = axisLabels(months, (i) => (last - i) % step === 0);
+  const wide = axisLabels(months, () => true, format);
+  const narrow = axisLabels(months, (i) => (last - i) % step === 0, format);
   return months.map((month, i) => ({
     month,
-    label: monthLabel(month),
+    label: monthHeading(month, format.money.locale),
     axisLabel: wide[i]!,
     narrowLabel: narrow[i],
   }));
 }
 
-export function mrrChartModel(history: MrrPoint[]): MrrChartModel {
-  const scale = niceScale(Math.max(...history.map((p) => p.cents)));
+export function mrrChartModel(
+  history: MrrPoint[],
+  format: ChartFormat = ENGLISH_CHART,
+): MrrChartModel {
+  const { money, t } = format;
+  const axis = moneyAxis(
+    history.map((p) => p.cents),
+    money,
+  );
   const last = history.length - 1;
-  const axis = monthAxis(history.map((p) => p.month));
+  const months = monthAxis(
+    history.map((p) => p.month),
+    format,
+  );
   const points = history.map((p, i) => ({
-    ...axis[i]!,
-    value: wholeUsd(p.cents),
+    ...months[i]!,
+    value: formatMoney(p.cents, money, "whole"),
     x: last === 0 ? 1 : i / last,
-    y: 1 - p.cents / scale.max,
+    y: 1 - axis.y(p.cents),
   }));
-  const [first, end] = [points[0], points[last]];
+  const [first, end] = [points[0]!, points[last]!];
+  const month = (point: ChartPoint) => monthLabel(point.month, money.locale);
   return {
     kind: "line",
     points,
-    ticks: scale.ticks.map((cents) => ({ y: 1 - cents / scale.max, label: compactUsd(cents) })),
+    ticks: axis.ticks,
     summary:
       last === 0
-        ? `MRR was ${end.value} at the end of ${end.label}.`
-        : `MRR at month end went from ${first.value} in ${first.label} to ${end.value} in ${end.label}.`,
+        ? t("summary.mrrOne", { value: end.value, month: month(end) })
+        : t("summary.mrr", {
+            first: first.value,
+            firstMonth: month(first),
+            end: end.value,
+            endMonth: month(end),
+          }),
   };
 }
 
@@ -229,20 +286,31 @@ export type RevenueChartModel = {
  * Revenue by month as columns, each in the middle of its month's band, split into subscriptions
  * and one-time purchases only when every month is, so the parts read the same across the period.
  */
-export function revenueChartModel(history: RevenuePoint[]): RevenueChartModel {
-  const scale = niceScale(Math.max(...history.map((p) => p.cents)));
-  const axis = monthAxis(history.map((p) => p.month));
+export function revenueChartModel(
+  history: RevenuePoint[],
+  format: ChartFormat = ENGLISH_CHART,
+): RevenueChartModel {
+  const { money, t } = format;
+  const whole = (amount: number) => formatMoney(amount, money, "whole");
+  const axis = moneyAxis(
+    history.map((p) => p.cents),
+    money,
+  );
+  const months = monthAxis(
+    history.map((p) => p.month),
+    format,
+  );
   const split = history.every((p) => p.split);
   const sum = (part: (p: RevenuePoint) => number) => history.reduce((s, p) => s + part(p), 0);
   const part = (amount: number, total: number) => ({
-    value: wholeUsd(amount),
+    value: whole(amount),
     share: total > 0 ? amount / total : 0,
   });
   const bars = history.map((p, i) => ({
-    ...axis[i]!,
-    value: wholeUsd(p.cents),
+    ...months[i]!,
+    value: whole(p.cents),
     x: (i + 0.5) / history.length,
-    height: p.cents / scale.max,
+    height: axis.y(p.cents),
     parts:
       split && p.split
         ? {
@@ -251,21 +319,22 @@ export function revenueChartModel(history: RevenuePoint[]): RevenueChartModel {
           }
         : null,
   }));
-  const total = wholeUsd(sum((p) => p.cents));
+  const total = whole(sum((p) => p.cents));
   const [first, end] = [bars[0]!, bars.at(-1)!];
+  const month = (bar: RevenueBar) => monthLabel(bar.month, money.locale);
   return {
     kind: "bars",
     bars,
-    ticks: scale.ticks.map((cents) => ({ y: 1 - cents / scale.max, label: compactUsd(cents) })),
+    ticks: axis.ticks,
     summary:
       bars.length === 1
-        ? `Revenue was ${end.value} in ${end.label}.`
-        : `Revenue by month from ${first.label} to ${end.label}, ${total} in total.`,
+        ? t("summary.revenueOne", { value: end.value, month: month(end) })
+        : t("summary.revenue", { firstMonth: month(first), endMonth: month(end), total }),
     total,
     totalParts: split
       ? {
-          subscription: wholeUsd(sum((p) => p.split!.subscription)),
-          oneTime: wholeUsd(sum((p) => p.split!.oneTime)),
+          subscription: whole(sum((p) => p.split!.subscription)),
+          oneTime: whole(sum((p) => p.split!.oneTime)),
         }
       : null,
   };
@@ -275,12 +344,23 @@ export function revenueChartModel(history: RevenuePoint[]): RevenueChartModel {
  * The periods a revenue chart offers, as month counts: 3, 6 and 12 months where the history is
  * longer, and always the whole history, which is last and chosen first.
  */
-export function chartPeriods(months: number) {
+export function chartPeriods(months: number, t: ChartWords = ENGLISH_CHART.t) {
+  const year = t("periods.year");
   return [...[3, 6, 12].filter((n) => n < months), months].map((n) => ({
     months: n,
-    label: n < months ? (n === 12 ? "1Y" : `${n}M`) : months === 12 ? "1Y" : "All",
+    label:
+      n < months
+        ? n === 12
+          ? year
+          : t("periods.months", { months: n })
+        : months === 12
+          ? year
+          : t("periods.all"),
     /** For screen readers, after the label. */
-    long: n < months || months === 12 ? `last ${n} months` : `all ${n} months`,
+    long:
+      n < months || months === 12
+        ? t("periods.last", { months: n })
+        : t("periods.whole", { months: n }),
   }));
 }
 

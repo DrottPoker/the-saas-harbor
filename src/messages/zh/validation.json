@@ -1,1 +1,54 @@
-{}
+{
+  "form": {
+    "checkFields": "请检查表单中的字段。",
+    "failed": "出了点问题，请重试。"
+  },
+  "image": {
+    "size": "请选择小于 2 MB 的图片。",
+    "format": "请选择有效的 PNG、JPEG 或 WebP 图片。",
+    "dimensions": "请选择宽度和高度均不超过 {max} 像素的图片。",
+    "failed": "无法上传图片。请重试。"
+  },
+  "address": {
+    "web": "请输入网址，例如 example.com，不要包含空格。",
+    "profile": "请使用你的 {site} 地址，例如 {example}。"
+  },
+  "profile": {
+    "name": "名称长度应为 2 到 60 个字符。",
+    "headline": "一句话介绍请少于 120 个字符。",
+    "location": "所在地请少于 80 个字符。"
+  },
+  "product": {
+    "name": "产品名称长度应为 2 到 80 个字符。",
+    "tagline": "一句话介绍长度应为 5 到 140 个字符。",
+    "description": "简介长度应为 20 到 5,000 个字符。",
+    "category": "请选择类别。",
+    "website": "网站为必填项。",
+    "launchDate": "请输入发布日期。",
+    "validDate": "请输入有效日期。",
+    "launchRange": "请输入 1970 年到今天之间的发布日期。",
+    "techMax": "最多选择 {max} 项技术。",
+    "techList": "请从列表中选择技术。"
+  },
+  "otherProvider": {
+    "required": "请填写你的支付服务商名称。",
+    "max": "支付服务商名称请少于 {max} 个字符。"
+  },
+  "username": {
+    "rules": "请使用 3 到 30 个字母、数字和单个连字符，例如 jane-doe。",
+    "reserved": "该用户名已被保留，请换一个。",
+    "taken": "该用户名已被占用，请换一个。",
+    "locked": "你可以在 {days} 天后再次更改用户名。"
+  },
+  "report": {
+    "reason": "请选择原因。",
+    "details": "详细说明请少于 1,000 个字符。",
+    "describe": "请描述问题，以便审核。"
+  },
+  "feedback": {
+    "kind": "请选择反馈类型。",
+    "min": "请至少写 {min} 个字符。",
+    "max": "内容请少于 2,000 个字符。",
+    "email": "请输入有效的邮箱地址，或留空。"
+  }
+}

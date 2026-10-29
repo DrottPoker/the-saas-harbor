@@ -3,9 +3,13 @@
 import Link from "@/components/link";
 import { startTransition, useActionState, useState } from "react";
 import { Check, ChevronDown, CircleAlert, CircleCheck, Ellipsis, ExternalLink } from "lucide-react";
+import { useLocale, useTranslations } from "next-intl";
 import { Select } from "radix-ui";
 import { disconnectProviderAction, refreshRevenueAction } from "@/app/revenue-actions";
-import { formatDate, formatUsd, OTHER_PROVIDER_MAX_LENGTH, type ActionState } from "@/lib/domain";
+import { LOCALE_INFO } from "@/i18n/config";
+import { formatList } from "@/i18n/list";
+import { formatCount, formatMoney, isConverted } from "@/lib/display-money";
+import { formatDate, OTHER_PROVIDER_MAX_LENGTH, type ActionState } from "@/lib/domain";
 import type { RevenueConnection, RevenueSnapshot } from "@/lib/data";
 import {
   connectsWithOAuth,
@@ -14,376 +18,86 @@ import {
   PROVIDERS,
   providerAccount,
   providerExtra,
+  providerKeyPlaceholder,
+  type ProviderField,
   type ProviderId,
   type ProviderOption,
 } from "@/lib/revenue/catalog";
-import { STRIPE_KEY_PERMISSIONS, stripeKeyCreationUrl } from "@/lib/revenue/stripe/key";
+import { STRIPE_KEY_PERMISSIONS, stripeKeyCreationUrl } from "@/lib/revenue/stripe/permissions";
 import { SITE_NAME } from "@/lib/seo";
 import { cn } from "@/lib/utils";
 import { Feedback, Field, Section } from "./forms";
 import { LocalTime } from "./local-time";
+import { useMoney } from "./money-provider";
 import { ProviderLogo } from "./provider-logo";
 import { Notice } from "./shell";
 import { Button } from "./ui/button";
 import { fieldClasses, Input } from "./ui/input";
 
-const resources = STRIPE_KEY_PERMISSIONS.map(({ resource }) => resource);
-const permissionList = `${resources.slice(0, -1).join(", ")} and ${resources.at(-1)}`;
+// The words of everything below are messages: the section's in `revenue`, each provider's in
+// `providers.<id>`. Providers' own buttons and permissions keep the names their dashboards show.
 
-const strong = (text: string) => <strong className="font-medium text-foreground">{text}</strong>;
+// Stripe's names for the resources its key reads, as its dashboard shows them.
+const stripeResources = STRIPE_KEY_PERMISSIONS.map(({ resource }) => resource);
 
-type Guide = {
-  /** Where the key is made, and the link's words. */
-  dashboard: { href: string; label: string };
-  steps: React.ReactNode[];
-  /** What the key is used to read. */
-  reads: string;
+// Where each provider's key is made, or where the access a founder approved can be removed. The
+// link's words are `providers.<id>.dashboard`, and the steps `step1` to `step3`.
+const dashboards: Record<ProviderId, string> = {
+  stripe: stripeKeyCreationUrl(SITE_NAME),
+  paddle: "https://vendors.paddle.com/authentication-v2",
+  polar: "https://polar.sh/dashboard",
+  dodo: "https://app.dodopayments.com",
+  creem: "https://creem.io/dashboard/developers",
+  chargebee: "https://app.chargebee.com/login",
+  whop: "https://whop.com/dashboard",
+  revenuecat: "https://app.revenuecat.com",
+  gumroad: "https://gumroad.com/settings/authorized_applications",
+  paypal: "https://developer.paypal.com/dashboard/applications/live",
+  mollie: "https://my.mollie.com/dashboard/developers/api-access-tokens",
+  paystack: "https://dashboard.paystack.com",
+  abacatepay: "https://app.abacatepay.com",
+  asaas: "https://www.asaas.com/customerApiAccessToken/index",
+  airwallex: "https://www.airwallex.com/app/settings/developer/api-keys",
+  superwall: "https://app.superwall.com",
+  appstore: "https://appstoreconnect.apple.com/access/integrations/api",
+  googleplay: "https://console.cloud.google.com/iam-admin/serviceaccounts",
+  zoho: "https://accounts.zoho.com/home#sessions/userconnectedapps",
+  mercadopago: "https://www.mercadopago.com",
 };
 
-// How to create a read-only key with each provider.
-const guides: Record<ProviderId, Guide> = {
-  stripe: {
-    dashboard: {
-      href: stripeKeyCreationUrl(SITE_NAME),
-      label: "Create a read-only key in Stripe",
-    },
-    reads: "subscriptions, invoices, charges, Checkout Sessions and disputes",
-    steps: [
-      "Stripe opens a new restricted key with its name and permissions filled in.",
-      <>
-        Check that {strong("Read")} is set for {permissionList} and None for everything else, then
-        choose {strong("Create key")}.
-      </>,
-      "Copy the key, which starts with rk_live_, and paste it below.",
-    ],
-  },
-  paddle: {
-    dashboard: {
-      href: "https://vendors.paddle.com/authentication-v2",
-      label: "Open Paddle's API keys",
-    },
-    reads: "subscriptions and transactions",
-    steps: [
-      <>Under Developer tools → Authentication, choose {strong("New API key")}.</>,
-      <>
-        Give it {strong("Read")} for Subscriptions and Transactions and no other permissions. Leave
-        the expiry date empty, or the key stops working when it expires.
-      </>,
-      "Copy the key, which starts with pdl_live_apikey_, and paste it below.",
-    ],
-  },
-  polar: {
-    dashboard: { href: "https://polar.sh/dashboard", label: "Open the Polar dashboard" },
-    reads: "your organization, subscriptions and orders",
-    steps: [
-      <>In your organization&apos;s Settings → Developers, choose {strong("New Token")}.</>,
-      <>
-        Select the scopes organizations:read, subscriptions:read and orders:read and nothing else,
-        and choose {strong("No expiration")}.
-      </>,
-      "Copy the token, which starts with polar_oat_, and paste it below.",
-    ],
-  },
-  dodo: {
-    dashboard: { href: "https://app.dodopayments.com", label: "Open the Dodo Payments dashboard" },
-    reads: "subscriptions and payments",
-    steps: [
-      <>Under Developer → API Keys, choose {strong("Add API Key")}.</>,
-      <>Turn off {strong("Enable write access")}, so the key can only read.</>,
-      "Copy the key, which Dodo Payments shows only once, and paste it below.",
-    ],
-  },
-  creem: {
-    dashboard: {
-      href: "https://creem.io/dashboard/developers",
-      label: "Open Creem's developer settings",
-    },
-    reads: "products, subscriptions and transactions",
-    steps: [
-      <>Under Developers → API keys, create a new key.</>,
-      <>
-        In the scope picker, give it {strong("read")} access to products, subscriptions and
-        transactions and nothing else.
-      </>,
-      "Copy the key, which starts with creem_, and paste it below.",
-    ],
-  },
-  chargebee: {
-    dashboard: { href: "https://app.chargebee.com/login", label: "Sign in to Chargebee" },
-    reads: "subscriptions, invoices and refunds",
-    steps: [
-      <>
-        Open Settings → Configure Chargebee → API keys and events, and choose{" "}
-        {strong("Add API key")}.
-      </>,
-      <>
-        Choose a {strong("Read-only key")} with access to all data, or restricted to transactional
-        data.
-      </>,
-      "Copy the key, and enter your site: the name before .chargebee.com in your dashboard's address.",
-    ],
-  },
-  whop: {
-    dashboard: { href: "https://whop.com/dashboard", label: "Open the Whop dashboard" },
-    reads: "memberships, plans, promo codes and payments",
-    steps: [
-      <>
-        Choose your business, open Developer → Account API keys and create a key with custom
-        permissions.
-      </>,
-      <>
-        Give it only member:basic:read, plan:basic:read, payment:basic:read and
-        promo_code:basic:read. A key with any permission beyond reading is refused.
-      </>,
-      "Copy the key and paste it below.",
-    ],
-  },
-  revenuecat: {
-    dashboard: { href: "https://app.revenuecat.com", label: "Open the RevenueCat dashboard" },
-    reads: "your project's MRR, active subscriptions and revenue charts",
-    steps: [
-      <>
-        In your project, open Project settings → API keys and choose {strong("New secret API key")}{" "}
-        with version V2.
-      </>,
-      <>
-        Set Charts & metrics to {strong("Read only")} and everything else to No access. A key with
-        more access is refused.
-      </>,
-      "Copy the key, which starts with sk_, and the project ID, which follows /projects/ in the address of any page in your project.",
-    ],
-  },
-  gumroad: {
-    dashboard: {
-      href: "https://gumroad.com/settings/authorized_applications",
-      label: "See the apps connected to your Gumroad account",
-    },
-    reads: "your products, memberships and sales",
-    steps: [
-      "Save with the button at the end of the form. Gumroad opens, and asks you to sign in if you are not.",
-      <>
-        Approve {strong("View your sales")}. That is the only access asked for: it cannot change
-        products, refund sales or email your customers.
-      </>,
-      "Gumroad sends you back here, and the revenue is verified.",
-    ],
-  },
-  paypal: {
-    dashboard: {
-      href: "https://developer.paypal.com/dashboard/applications/live",
-      label: "Open PayPal's apps and credentials",
-    },
-    reads: "your transactions",
-    steps: [
-      <>
-        Sign in with your PayPal business account, check that {strong("Live")} is selected, and
-        choose {strong("Create App")}.
-      </>,
-      <>
-        In the new app&apos;s features, turn on {strong("Transaction search")} and turn off
-        everything else. An app that can do more than search transactions is refused.
-      </>,
-      "Copy the Client ID and Secret key 1, and paste them below. MRR counts PayPal subscriptions; other payments count as revenue.",
-    ],
-  },
-  mollie: {
-    dashboard: {
-      href: "https://my.mollie.com/dashboard/developers/api-access-tokens",
-      label: "Open Mollie's API access tokens",
-    },
-    reads: "your subscriptions and payments",
-    steps: [
-      <>
-        Choose {strong("Build your own")} advanced access token, and give it Read for Payments and
-        Subscriptions only. A token that can do more than read is refused.
-      </>,
-      "Copy the token, which starts with access_. API keys (live_ or test_) can create payments and are not accepted.",
-      "Copy the ID of this product's website profile, which starts with pfl_, from Developers → API keys. MRR counts Mollie subscriptions; other payments count as revenue.",
-    ],
-  },
-  paystack: {
-    dashboard: { href: "https://dashboard.paystack.com", label: "Open the Paystack dashboard" },
-    reads: "subscriptions, plans, transactions and refunds",
-    steps: [
-      "Switch the dashboard to Live, open Developers and create a restricted key.",
-      <>
-        Give it only plans:read, transactions:read and disputes_refunds:read. Never paste your
-        secret key (sk_), which can do everything.
-      </>,
-      "Confirm with your dashboard password, then copy the key, which starts with rk_ and is shown once, and paste it below.",
-    ],
-  },
-  abacatepay: {
-    dashboard: { href: "https://app.abacatepay.com", label: "Open the AbacatePay dashboard" },
-    reads: "your store's MRR, active subscriptions and revenue by day",
-    steps: [
-      "Leave test mode (Modo teste), open Apps and find Trust MRR.",
-      <>
-        Turn the app on and choose {strong("Salvar configurações")}. API keys, which start with
-        abc_, are refused.
-      </>,
-      "Copy the token, which starts with mrr_, and paste it below.",
-    ],
-  },
-  asaas: {
-    dashboard: {
-      href: "https://www.asaas.com/customerApiAccessToken/index",
-      label: "Open Asaas's API keys",
-    },
-    reads: "subscriptions and charges",
-    steps: [
-      <>As an administrator, open Integrações → Chaves de API and create a key.</>,
-      <>
-        Give it {strong("Read")} for Assinaturas (Subscriptions) and Cobranças (Charges) only, with
-        no IP allowlist. A key created without permissions has full access and is refused.
-      </>,
-      "Copy the key, which starts with $aact_prod_ and is shown once, and paste it below.",
-    ],
-  },
-  airwallex: {
-    dashboard: {
-      href: "https://www.airwallex.com/app/settings/developer/api-keys",
-      label: "Open Airwallex's API keys",
-    },
-    reads: "subscriptions, invoices and payments",
-    steps: [
-      <>Under Settings → Developer → API keys, choose {strong("New scoped API key")}.</>,
-      <>
-        Give it Read for Subscriptions and Invoices (Billing) and for Payment Acceptance, and
-        nothing else. A key that can read more is refused.
-      </>,
-      "Copy the key and the Client ID shown with it, and paste them below. MRR counts Airwallex Billing subscriptions; other payments count as revenue.",
-    ],
-  },
-  superwall: {
-    dashboard: { href: "https://app.superwall.com", label: "Open the Superwall dashboard" },
-    reads: "your app's MRR, active subscriptions and proceeds charts",
-    steps: [
-      <>Under Settings → API Keys, create a key.</>,
-      <>
-        Give it only the {strong("charts:read")} scope, limited to the app&apos;s project if you
-        like. A key with more access is refused.
-      </>,
-      "Copy the key, which starts with sk_, and paste it below with the address of your app's dashboard.",
-    ],
-  },
-  appstore: {
-    dashboard: {
-      href: "https://appstoreconnect.apple.com/access/integrations/api",
-      label: "Open App Store Connect's API keys",
-    },
-    reads: "your sales and subscription reports",
-    steps: [
-      <>
-        In Users and Access → Integrations → App Store Connect API, open Team Keys and choose{" "}
-        {strong("Generate API Key")}.
-      </>,
-      <>
-        Under Access, choose {strong("Sales")} with access to reports, or {strong("Finance")}. A key
-        that can do more, such as Admin or App Manager, is refused.
-      </>,
-      "Download the .p8 file and paste its contents below, with the Issuer ID, the Key ID and your vendor number from Payments and Financial Reports.",
-    ],
-  },
-  googleplay: {
-    dashboard: {
-      href: "https://console.cloud.google.com/iam-admin/serviceaccounts",
-      label: "Open Google Cloud's service accounts",
-    },
-    reads: "your apps' estimated sales reports",
-    steps: [
-      <>Create a service account without roles, and under Keys add a {strong("JSON")} key.</>,
-      <>
-        In Play Console, open Users and permissions, invite the service account&apos;s email, and
-        give it only {strong("View financial data")}.
-      </>,
-      "On Download reports, copy the Cloud Storage URI of the financial reports, and paste it below with your app's package name and the JSON key. A new permission can take some hours to apply.",
-    ],
-  },
-  zoho: {
-    dashboard: {
-      href: "https://accounts.zoho.com/home#sessions/userconnectedapps",
-      label: "See the apps connected to your Zoho account",
-    },
-    reads: "your organizations, subscriptions and payments",
-    steps: [
-      "Save with the button at the end of the form. Zoho opens, and asks you to sign in if you are not.",
-      <>
-        Approve {strong("read access")} to settings, subscriptions and payments. That is the only
-        access asked for: it cannot change anything.
-      </>,
-      "Zoho sends you back here, and your default Zoho Billing organization is verified. To verify another, make it the default first.",
-    ],
-  },
-  mercadopago: {
-    dashboard: { href: "https://www.mercadopago.com", label: "Open Mercado Pago" },
-    reads: "your subscriptions and payments",
-    steps: [
-      "Save with the button at the end of the form. Mercado Pago opens, and asks you to sign in if you are not.",
-      <>
-        Allow access. That is the only access asked for: it can {strong("only read")}, and cannot
-        charge, refund or change anything.
-      </>,
-      "Mercado Pago sends you back here, and the revenue is verified.",
-    ],
-  },
-};
+const STEPS = ["step1", "step2", "step3"] as const;
 
 // Where to make the key, with the steps: the dashboard link opens in a new tab.
-function KeyGuide({ guide }: { guide: Guide }) {
+function KeyGuide({ provider }: { provider: ProviderId }) {
+  const t = useTranslations("providers");
+  const locale = useLocale();
+  const values = {
+    b: (chunks: React.ReactNode) => (
+      <strong className="font-medium text-foreground">{chunks}</strong>
+    ),
+    permissions: formatList(stripeResources, locale),
+  };
   return (
     <div className="rounded-xl border bg-subtle p-4">
       <a
-        href={guide.dashboard.href}
+        href={dashboards[provider]}
         target="_blank"
         rel="noopener noreferrer"
         className="group flex items-center justify-between gap-3 text-sm font-medium"
       >
-        <span className="underline-offset-2 group-hover:underline">{guide.dashboard.label}</span>
+        <span className="underline-offset-2 group-hover:underline">
+          {t(`${provider}.dashboard`)}
+        </span>
         <ExternalLink aria-hidden="true" className="size-4 shrink-0 text-muted-foreground" />
       </a>
       <ol className="mt-3 grid list-decimal gap-1.5 ps-5 text-sm text-muted-foreground">
-        {guide.steps.map((step, index) => (
-          <li key={index}>{step}</li>
+        {STEPS.map((step) => (
+          <li key={step}>{t.rich(`${provider}.${step}`, values)}</li>
         ))}
       </ol>
     </div>
   );
 }
-
-// Why a connected product has no chart, in each provider's terms.
-const noHistory: Record<ProviderId, string> = {
-  stripe:
-    "No revenue history yet. Replace the key with one that also has Invoices: Read to show the last 12 months as a chart.",
-  paddle:
-    "No revenue history: the Paddle account has more transactions than one verification reads.",
-  polar: "No revenue history: the Polar account has more orders than one verification reads.",
-  dodo: "No revenue history: Dodo Payments does not say which period a payment covers.",
-  creem: "No revenue history: the Creem account has more transactions than one verification reads.",
-  chargebee:
-    "No revenue history: the Chargebee site has more invoices than one verification reads.",
-  whop: "No revenue history: the Whop account has more payments or plans than one verification reads.",
-  revenuecat: "No revenue history yet. Refresh to read RevenueCat's MRR chart.",
-  gumroad: "No revenue history: the Gumroad account has more sales than one verification reads.",
-  paypal:
-    "No revenue history: the PayPal account has more subscription payments than one verification reads.",
-  mollie: "No revenue history: the Mollie profile has more payments than one verification reads.",
-  paystack:
-    "No revenue history: the key cannot read transactions, or the Paystack account has more of them than one verification reads.",
-  abacatepay: "No revenue history yet. Refresh to read AbacatePay's daily MRR.",
-  asaas:
-    "No revenue history: the Asaas account has more subscriptions or charges than one verification reads.",
-  airwallex:
-    "No revenue history: the Airwallex account has more subscription invoices than one verification reads.",
-  superwall: "No revenue history yet. Refresh to read Superwall's MRR chart.",
-  appstore:
-    "No revenue history yet. Refresh to read Apple's subscription reports of the last 12 months.",
-  googleplay:
-    "No revenue history: the Google Play sales reports are larger than one verification reads.",
-  zoho: "No revenue history: Zoho Billing does not say which period an invoice covers.",
-  mercadopago:
-    "No revenue history: the Mercado Pago account has more payments than one verification reads, or its payments do not name their subscriptions.",
-};
 
 const option =
   "flex cursor-default items-center gap-2.5 rounded-md px-2 py-2 text-sm outline-none select-none data-highlighted:bg-muted";
@@ -414,10 +128,11 @@ function ProviderChoice({
   onClear?: () => void;
   clearLabel?: string;
 }) {
+  const t = useTranslations("revenue.choice");
   return (
     <Field
       name="provider"
-      label="Payment provider"
+      label={t("label")}
       required={offerOther}
       aside={
         onClear && (
@@ -448,7 +163,7 @@ function ProviderChoice({
             "flex h-10 items-center gap-2.5 text-start data-placeholder:text-faint-foreground",
           )}
         >
-          <Select.Value placeholder="Choose your payment provider" />
+          <Select.Value placeholder={t("placeholder")} />
           <Select.Icon className="ms-auto">
             <ChevronDown aria-hidden="true" className="size-4 text-muted-foreground" />
           </Select.Icon>
@@ -486,7 +201,7 @@ function ProviderChoice({
                         >
                           <Ellipsis className="size-3.5 text-muted-foreground" />
                         </span>
-                        Other
+                        {t("other")}
                       </span>
                     </Select.ItemText>
                     <Select.ItemIndicator className="ms-auto">
@@ -504,9 +219,9 @@ function ProviderChoice({
   );
 }
 
-const privacyLink = (
+const privacyLink = (chunks: React.ReactNode) => (
   <Link href="/privacy#revenue" className="font-medium text-foreground underline">
-    How we handle payment provider data
+    {chunks}
   </Link>
 );
 
@@ -526,33 +241,41 @@ function ProviderFields({
   /** What the form sent last, after a failed save. Keys are never among them. */
   values?: Record<string, string>;
 }) {
-  const { name, keyLabel, newKeyLabel, placeholder } = PROVIDERS[provider];
-  const guide = guides[provider];
+  const t = useTranslations("revenue.fields");
+  const providers = useTranslations("providers");
+  const { name } = PROVIDERS[provider];
+  const reads = providers(`${provider}.reads`);
   if (connectsWithOAuth(provider))
     return (
       <div className="grid gap-4">
-        <KeyGuide guide={guide} />
-        {!available.includes(provider) && <Notice>{name} is not set up on this server yet.</Notice>}
+        <KeyGuide provider={provider} />
+        {!available.includes(provider) && (
+          <Notice>{providers("notSetUp", { provider: name })}</Notice>
+        )}
         <p className="text-[13px] text-muted-foreground">
-          The access {name} grants is encrypted and only used to read {guide.reads}. You can remove
-          it in {name} at any time. {privacyLink}
+          {t.rich("accessNote", { provider: name, reads, link: privacyLink })}
         </p>
       </div>
     );
+  // A sample of the value, or words that say what goes in.
+  const placeholder = ({ placeholder, placeholderText }: Omit<ProviderField, "label">) =>
+    placeholder ?? (placeholderText && providers(`placeholders.${placeholderText}`));
   const account = providerAccount(provider);
   return (
     <div className="grid gap-4">
-      <KeyGuide guide={guide} />
+      <KeyGuide provider={provider} />
       {account && (
-        <Field name="provider_account" label={account.label}>
+        <Field name="provider_account" label={providers(`fields.${account.label}`)}>
           <Input
             // Another provider's site or project never carries over.
             key={provider}
             id="provider_account"
             name="provider_account"
+            // Ids, sites and addresses read left to right in every language.
+            dir="ltr"
             autoComplete="off"
             spellCheck={false}
-            placeholder={account.placeholder}
+            placeholder={placeholder(account)}
             defaultValue={values?.provider === provider ? values.provider_account : undefined}
             required
           />
@@ -561,96 +284,106 @@ function ProviderFields({
       {providerExtra(provider).map((field, index) => {
         const name = `provider_extra_${index + 1}`;
         return (
-          <Field key={name} name={name} label={field.label}>
+          <Field key={name} name={name} label={providers(`fields.${field.label}`)}>
             <Input
               key={provider}
               id={name}
               name={name}
+              dir="ltr"
               autoComplete="off"
               spellCheck={false}
-              placeholder={field.placeholder}
+              placeholder={placeholder(field)}
               defaultValue={values?.provider === provider ? values[name] : undefined}
               required
             />
           </Field>
         );
       })}
-      <Field name="provider_key" label={replace ? newKeyLabel : keyLabel}>
+      <Field
+        name="provider_key"
+        label={providers(replace ? `${provider}.newKeyLabel` : `${provider}.keyLabel`)}
+      >
         <Input
           key={provider}
           id="provider_key"
           name="provider_key"
           type="password"
+          dir="ltr"
           autoComplete="off"
           spellCheck={false}
-          placeholder={placeholder}
+          placeholder={placeholder(providerKeyPlaceholder(provider))}
           required
         />
       </Field>
       <p className="text-[13px] text-muted-foreground">
-        The key is encrypted and only used to read {guide.reads}. You can revoke it in {name} at any
-        time. {privacyLink}
+        {t.rich("keyNote", { provider: name, reads, link: privacyLink })}
       </p>
     </div>
   );
 }
 
 // What a connected provider gives that Other does not, so founders who have one connect it.
-const connectedGains = [
-  "A place on the leaderboard, which is the home page.",
-  "A place above unranked products on its category and technology pages.",
-  "A link to your website that search engines follow, even with the figures hidden.",
-];
+const connectedGains = ["gainLeaderboard", "gainCategories", "gainLink"] as const;
 
 /** Other: the founder writes which provider they use, which only they and admins see. */
 function OtherProviderField({ defaultValue }: { defaultValue?: string }) {
+  const t = useTranslations("revenue.other");
   return (
     <div className="grid gap-4">
       <div className="rounded-xl border bg-subtle p-4">
-        <p className="text-sm font-medium">Connected products are seen by more visitors</p>
-        <p className="mt-1 text-sm text-muted-foreground">
-          With a provider from the list, your product gets:
-        </p>
+        <p className="text-sm font-medium">{t("title")}</p>
+        <p className="mt-1 text-sm text-muted-foreground">{t("intro")}</p>
         <ul className="mt-2 grid gap-1.5 text-sm text-muted-foreground">
           {connectedGains.map((gain) => (
             <li key={gain} className="flex gap-2">
               <Check aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-brand" />
-              {gain}
+              {t(gain)}
             </li>
           ))}
         </ul>
-        <p className="mt-3 text-[13px] text-muted-foreground">
-          Revenue from other providers cannot be verified yet, so products under Other are not
-          ranked and their website link is marked nofollow. Connecting only gives read access.
-        </p>
+        <p className="mt-3 text-[13px] text-muted-foreground">{t("unverified")}</p>
       </div>
-      <Field
-        name="other_provider"
-        label="Your payment provider"
-        hint="If you take no payments yet, write none."
-        required
-      >
+      <Field name="other_provider" label={t("label")} hint={t("hint")} required>
         <Input
           id="other_provider"
           name="other_provider"
+          // The founder's own words.
+          dir="auto"
           autoComplete="off"
           required
           maxLength={OTHER_PROVIDER_MAX_LENGTH}
           defaultValue={defaultValue}
         />
       </Field>
-      <p className="text-[13px] text-muted-foreground">
-        You can connect a provider from the list at any time. The name is not shown on the site; we
-        use it to choose which providers to support next.
-      </p>
+      <p className="text-[13px] text-muted-foreground">{t("note")}</p>
     </div>
+  );
+}
+
+/**
+ * Says that the amounts above are converted from US dollars, and at which day's rate, as
+ * `ConversionNote` does on the server; nothing in US dollars.
+ */
+function ConvertedNote() {
+  const money = useMoney();
+  const t = useTranslations("money");
+  if (!isConverted(money) || !money.date) return null;
+  const name = new Intl.DisplayNames([money.locale], { type: "currency" }).of(money.currency);
+  const date = new Intl.DateTimeFormat(money.locale, { dateStyle: "long", timeZone: "UTC" }).format(
+    new Date(`${money.date}T00:00:00Z`),
+  );
+  const currency = name && name !== money.currency ? `${name} (${money.currency})` : money.currency;
+  return (
+    <p className="border-t px-5 py-3 text-[13px] text-faint-foreground">
+      {t("converted", { currency, date })}
+    </p>
   );
 }
 
 /**
  * Revenue besides MRR as the latest snapshot has it, with where reading payments stands: they are
  * read about once a day, and a new connection's first read goes back to its first payment over a
- * few runs.
+ * few runs. Amounts are in the visitor's currency.
  */
 function RevenueFigures({
   connection,
@@ -659,21 +392,26 @@ function RevenueFigures({
   connection: RevenueConnection;
   snapshot: RevenueSnapshot | null;
 }) {
+  const t = useTranslations("revenue.figures");
+  const money = useMoney();
+  const locale = useLocale();
   const figures = [
-    { label: "Last 30 days", cents: snapshot?.revenue_30d_cents ?? null },
-    { label: "Last 12 months", cents: snapshot?.revenue_12m_cents ?? null },
-    { label: "All time", cents: snapshot?.revenue_total_cents ?? null },
+    { label: t("last30Days"), cents: snapshot?.revenue_30d_cents ?? null },
+    { label: t("last12Months"), cents: snapshot?.revenue_12m_cents ?? null },
+    { label: t("allTime"), cents: snapshot?.revenue_total_cents ?? null },
   ];
   const status = connection.revenue_note
     ? connection.revenue_note
     : !connection.revenue_read_at
-      ? "Payments are read shortly after connecting, and then every day."
+      ? t("firstRead")
       : !connection.revenue_origin && connection.revenue_from
-        ? `Older payments are still being read. So far they go back to ${formatDate(connection.revenue_from)}.`
+        ? t("readingBack", {
+            date: formatDate(connection.revenue_from, LOCALE_INFO[locale].intl),
+          })
         : null;
   return (
     <div className="border-t">
-      <p className="px-5 pt-4 text-sm font-medium">Revenue, one-time purchases included</p>
+      <p className="px-5 pt-4 text-sm font-medium">{t("title")}</p>
       <dl className="grid grid-cols-3 divide-x">
         {figures.map(({ label, cents }) => (
           <div key={label} className="px-5 py-3">
@@ -684,7 +422,7 @@ function RevenueFigures({
                 cents == null ? "text-sm text-faint-foreground" : "text-lg font-semibold",
               )}
             >
-              {cents == null ? "Not read yet" : formatUsd(cents)}
+              {cents == null ? t("notRead") : formatMoney(cents, money)}
             </dd>
           </div>
         ))}
@@ -719,6 +457,10 @@ function Connected({
   outcome: ActionState;
   onOutcome: (result: ActionState) => void;
 }) {
+  const t = useTranslations("revenue.connected");
+  const common = useTranslations("common");
+  const providers = useTranslations("providers");
+  const money = useMoney();
   const [refreshState, refresh, refreshing] = useActionState<ActionState>(async () => {
     onOutcome({});
     return refreshRevenueAction(saasId);
@@ -735,6 +477,8 @@ function Connected({
   const provider = isProviderId(connection.provider) ? connection.provider : "stripe";
   // A provider connected through OAuth gave access the founder approved, not a key they pasted.
   const oauth = connectsWithOAuth(provider);
+  const hint = connection.key_hint;
+  const synced = connection.last_synced_at;
   return (
     <div className="grid gap-4">
       <div className="rounded-xl border bg-surface shadow-card">
@@ -746,19 +490,21 @@ function Connected({
           )}
           <div className="min-w-0">
             <p className="font-medium">
-              {ok ? `Connected to ${PROVIDERS[provider].name}` : "The last verification failed"}
+              {ok ? t("title", { provider: PROVIDERS[provider].name }) : t("failed")}
               {!connection.livemode && (
                 <span className="ms-2 rounded-full border px-2 py-0.5 text-xs font-normal text-muted-foreground">
-                  Test mode
+                  {t("testMode")}
                 </span>
               )}
             </p>
             <p className="text-sm text-muted-foreground [overflow-wrap:anywhere]">
-              {oauth ? "Read access" : "Key"} {connection.key_hint}
-              {connection.last_synced_at && (
+              {oauth ? t("access", { hint }) : t("key", { hint })}
+              {synced && (
                 <>
-                  {" "}
-                  · Last verified <LocalTime format="date" value={connection.last_synced_at} />
+                  {" · "}
+                  {t.rich("lastVerified", {
+                    date: () => <LocalTime format="date" value={synced} />,
+                  })}
                 </>
               )}
             </p>
@@ -770,25 +516,27 @@ function Connected({
         {snapshot && (
           <dl className="grid grid-cols-2 divide-x border-t">
             <div className="px-5 py-4">
-              <dt className="text-sm text-muted-foreground">Verified MRR</dt>
+              <dt className="text-sm text-muted-foreground">{common("verifiedMrr")}</dt>
               <dd className="mt-1 text-xl font-semibold tabular-nums">
-                {formatUsd(snapshot.mrr_cents)}
+                {formatMoney(snapshot.mrr_cents, money)}
               </dd>
             </div>
             <div className="px-5 py-4">
-              <dt className="text-sm text-muted-foreground">Subscribers</dt>
+              <dt className="text-sm text-muted-foreground">{t("subscribers")}</dt>
               <dd className="mt-1 text-xl font-semibold tabular-nums">
-                {snapshot.customers.toLocaleString("en-US")}
+                {formatCount(snapshot.customers, money.locale)}
               </dd>
             </div>
           </dl>
         )}
         {snapshot && !snapshot.history && (
           <p className="border-t px-5 py-3 text-[13px] text-muted-foreground">
-            {noHistory[provider]}
+            {providers(`${provider}.noHistory`)}
           </p>
         )}
         <RevenueFigures connection={connection} snapshot={snapshot} />
+        {/* The amounts above are in the visitor's currency. */}
+        {snapshot && <ConvertedNote />}
         <div className="flex flex-wrap items-center justify-end gap-2 border-t p-4">
           <Button
             type="button"
@@ -796,12 +544,12 @@ function Connected({
             disabled={refreshing}
             onClick={() => startTransition(refresh)}
           >
-            {refreshing ? "Refreshing..." : "Refresh now"}
+            {refreshing ? t("refreshing") : t("refresh")}
           </Button>
           {confirming ? (
             <>
               <Button type="button" variant="ghost" size="sm" onClick={() => setConfirming(false)}>
-                Keep connected
+                {t("keepConnected")}
               </Button>
               <Button
                 type="button"
@@ -810,12 +558,12 @@ function Connected({
                 disabled={disconnecting}
                 onClick={() => startTransition(disconnect)}
               >
-                {disconnecting ? "Disconnecting..." : "Confirm disconnect"}
+                {disconnecting ? t("disconnecting") : t("confirmDisconnect")}
               </Button>
             </>
           ) : (
             <Button type="button" variant="ghost" size="sm" onClick={() => setConfirming(true)}>
-              Disconnect
+              {t("disconnect")}
             </Button>
           )}
         </div>
@@ -864,6 +612,7 @@ export function RevenueSection({
   /** What visitors see of the figures. */
   children: React.ReactNode;
 }) {
+  const t = useTranslations("revenue");
   // What a disconnection found. The card that did it is replaced as soon as the page has the
   // change, so the result is kept here.
   const [outcome, setOutcome] = useState<ActionState>({});
@@ -871,11 +620,7 @@ export function RevenueSection({
   const [replacing, setReplacing] = useState(() => !!connection && provider !== null);
   const current = connection && isProviderId(connection.provider) ? connection.provider : null;
   return (
-    <Section
-      id="revenue"
-      title="Verified revenue"
-      description="Connect your payment provider with a read-only key to verify MRR and subscribers. Verified MRR is ranked on the leaderboard, and the link to your website is followed by search engines. If your provider is not in the list, choose Other."
-    >
+    <Section id="revenue" title={t("section.title")} description={t("section.description")}>
       {result && <Notice tone={result.tone}>{result.text}</Notice>}
       {connection ? (
         <>
@@ -898,7 +643,7 @@ export function RevenueSection({
                   onProvider(null);
                   setReplacing(false);
                 }}
-                clearLabel="Keep the current connection"
+                clearLabel={t("choice.keepCurrent")}
               />
               {provider && provider !== "other" && (
                 <ProviderFields provider={provider} replace available={available} values={values} />
@@ -910,9 +655,7 @@ export function RevenueSection({
               onClick={() => setReplacing(true)}
               className="w-fit text-start text-sm text-muted-foreground hover:text-foreground"
             >
-              {current && connectsWithOAuth(current)
-                ? "Reconnect or change the provider"
-                : "Replace the key or change the provider"}
+              {current && connectsWithOAuth(current) ? t("choice.reconnect") : t("choice.replace")}
             </button>
           )}
         </>

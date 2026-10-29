@@ -1,1 +1,24 @@
-{}
+{
+  "headline": "{kind, select, mrr {{amount} MRR} first {المركز الأول} other {أفضل {place}}}",
+  "sentence": "{kind, select, mrr {بلغت الإيرادات الشهرية المتكررة لـ {name} ما قيمته {exact}.} first {احتل {name} المركز الأول في لوحة صدارة الإيرادات الموثّقة على {site}.} other {دخل {name} قائمة أفضل {place} في لوحة صدارة الإيرادات الموثّقة على {site}.}}",
+  "post": "{kind, select, mrr {بلغ {name} للتو {amount} MRR، موثّقة على {site}.} first {أصبح {name} الآن في المركز الأول في لوحة صدارة الإيرادات الموثّقة على {site}.} other {أصبح {name} الآن ضمن أفضل {place} في لوحة صدارة الإيرادات الموثّقة على {site}.}}",
+  "meta": {
+    "title": "{kind, select, mrr {بلغ {name} {amount} MRR} first {احتل {name} المركز الأول} other {دخل {name} قائمة أفضل {place}}}",
+    "description": "{sentence} إيرادات موثّقة على {site}."
+  },
+  "breadcrumb": "مسار التنقل",
+  "browse": "تصفّح",
+  "milestone": "إنجاز",
+  "reachedOn": "تحقق الإنجاز في <date></date>",
+  "verifiedThrough": "الإيرادات موثّقة عبر {provider}.",
+  "viewProduct": "عرض المنتج",
+  "share": {
+    "title": "شارك هذا الإنجاز",
+    "body": "يعرض أي منشور يحتوي على هذا الرابط بطاقة بالإنجاز.",
+    "x": "شارك على X",
+    "linkedin": "شارك على LinkedIn",
+    "download": "تنزيل الصورة",
+    "link": "الرابط",
+    "copyLink": "نسخ الرابط"
+  }
+}

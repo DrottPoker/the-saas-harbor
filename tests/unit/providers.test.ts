@@ -1,3 +1,4 @@
+import { getTranslations } from "next-intl/server";
 import { describe, expect, it } from "vitest";
 import {
   CHOOSE_PROVIDER,
@@ -5,10 +6,13 @@ import {
   isProviderOption,
   PROVIDER_IDS,
   providerAccess,
+  providerAccessKind,
   providerAccount,
   providerExtra,
+  providerKeyPlaceholder,
   providerList,
   providerName,
+  type ProviderId,
 } from "../../src/lib/revenue/catalog";
 import { chosenProvider } from "../../src/lib/revenue/connect";
 import { VerificationError } from "../../src/lib/revenue/errors";
@@ -70,6 +74,8 @@ describe("provider catalog", () => {
     expect(isProviderId("toString")).toBe(false);
     expect(providerName("dodo")).toBe("Dodo Payments");
     expect(providerName(null)).toBe("a payment provider");
+    expect(providerName("lemonsqueezy", "un proveedor de pagos")).toBe("un proveedor de pagos");
+    expect(providerName("paddle", "un proveedor de pagos")).toBe("Paddle");
   });
 
   it("names them in a sentence", () => {
@@ -79,19 +85,53 @@ describe("provider catalog", () => {
     expect(providerList("and")).toMatch(/, Zoho Billing and Mercado Pago$/);
   });
 
-  it("asks for a site, project or app only where the key needs one", () => {
-    expect(providerAccount("chargebee")?.label).toBe("Site");
-    expect(providerAccount("revenuecat")?.label).toBe("Project ID");
-    expect(providerAccount("paypal")?.label).toBe("Client ID");
-    expect(providerAccount("mollie")?.label).toBe("Profile ID");
+  it("asks for a site, project or app only where the key needs one", async () => {
+    const t = await getTranslations({ locale: "en", namespace: "providers.fields" });
+    const label = (id: ProviderId) => {
+      const account = providerAccount(id);
+      return account && t(account.label);
+    };
+    expect(label("chargebee")).toBe("Site");
+    expect(label("revenuecat")).toBe("Project ID");
+    expect(label("paypal")).toBe("Client ID");
+    expect(label("mollie")).toBe("Profile ID");
     expect(providerAccount("stripe")).toBeNull();
     expect(providerExtra("stripe")).toEqual([]);
+    expect(providerExtra("appstore").map((field) => t(field.label))).toEqual([
+      "Key ID",
+      "Vendor number",
+    ]);
   });
 
-  it("says a key for pasted keys and access for OAuth", () => {
+  it("gives each key field a sample or words in the founder's language", async () => {
+    const t = await getTranslations({ locale: "es", namespace: "providers.placeholders" });
+    expect(providerKeyPlaceholder("stripe")).toEqual({
+      placeholder: "rk_live_...",
+      placeholderText: undefined,
+    });
+    expect(providerKeyPlaceholder("dodo").placeholderText).toBe("dodoKey");
+    expect(t(providerAccount("paypal")!.placeholderText!)).not.toBe("Client ID of the app");
+  });
+
+  it("says a key for pasted keys and access for OAuth", async () => {
     expect(providerAccess("stripe")).toBe("a read-only key");
     expect(providerAccess("gumroad")).toBe("read-only access");
     expect(providerAccess(null)).toBe("a read-only key");
+    expect(providerAccessKind("zoho")).toBe("oauth");
+    expect(providerAccessKind("paypal")).toBe("key");
+    const t = await getTranslations({ locale: "en", namespace: "providers" });
+    expect(t("verifiedWith", { provider: "Gumroad", access: providerAccessKind("gumroad") })).toBe(
+      "Verified with Gumroad through read-only access.",
+    );
+    expect(t("verifiedWith", { provider: "Stripe", access: providerAccessKind("stripe") })).toBe(
+      "Verified with Stripe through a read-only key.",
+    );
+  });
+
+  it("asks the form for a choice in the same words the server refuses with", async () => {
+    const t = await getTranslations({ locale: "en", namespace: "providers" });
+    expect(t("choose")).toBe(CHOOSE_PROVIDER);
+    expect(t("fallback")).toBe(providerName(null));
   });
 
   it("offers Other besides the providers, though Other is none of them", () => {
@@ -121,13 +161,13 @@ describe("the product form's provider choice", () => {
       ),
     ).toEqual({ provider: "other", name: "Lemon Squeezy" });
     expect(() => chosenProvider(form({ provider: "other", other_provider: " " }))).toThrow(
-      new VerificationError("Write the name of your payment provider."),
+      new VerificationError({ text: "Write the name of your payment provider." }),
     );
   });
 
   it("refuses anything that is not in the list", () => {
     expect(() => chosenProvider(form({ provider: "lemonsqueezy" }))).toThrow(
-      new VerificationError(CHOOSE_PROVIDER),
+      new VerificationError({ text: CHOOSE_PROVIDER }),
     );
   });
 

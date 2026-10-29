@@ -1,6 +1,7 @@
 "use client";
 
 import { BadgeCheck } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { checkDomainAction } from "@/app/domain-actions";
 import { CopyField } from "./copy-field";
 import { Feedback, Section, Submit } from "./forms";
@@ -28,19 +29,14 @@ export function DomainVerification({
   verifiedAt: string | null;
   missingSince: string | null;
 }) {
+  const t = useTranslations("domains");
   const [state, action] = useEditorAction(checkDomainAction.bind(null, saasId));
   const verified = !!domain && verifiedDomain === domain;
   return (
     <div id="domain" className="mt-2 border-t pt-8">
-      <Section
-        title="Domain"
-        description="Show that the website is yours: add a DNS record to its domain, and the product page says the domain is verified."
-      >
+      <Section title={t("title")} description={t("description")}>
         {!domain || !record ? (
-          <Notice>
-            Your website&apos;s address is not on a domain of its own, such as an IP address, so
-            there is nowhere to add the record. Use an address on your own domain to verify it.
-          </Notice>
+          <Notice>{t("noDomain")}</Notice>
         ) : (
           <>
             {verified ? (
@@ -48,50 +44,53 @@ export function DomainVerification({
                 <BadgeCheck aria-hidden="true" className="size-4 shrink-0 text-brand" />
                 {/* One flex item, so the date sits in the sentence. */}
                 <span>
-                  {domain} is verified.
+                  {t("verified", { domain })}
                   {verifiedAt && (
                     <>
                       {" "}
-                      Last checked <LocalTime format="date" value={verifiedAt} />.
+                      {t.rich("lastChecked", {
+                        date: () => <LocalTime format="date" value={verifiedAt} />,
+                      })}
                     </>
                   )}
                 </span>
               </p>
             ) : (
-              <p className="text-sm text-muted-foreground">{domain} is not verified yet.</p>
+              <p className="text-sm text-muted-foreground">{t("notVerified", { domain })}</p>
             )}
             {verified && missingSince && (
               <Notice tone="error">
-                The record was not found on <LocalTime format="date" value={missingSince} />. The
-                domain stays verified for three days after that; add the record back before then.
+                {t.rich("missing", {
+                  date: () => <LocalTime format="date" value={missingSince} />,
+                })}
               </Notice>
             )}
-            <p className="text-sm text-muted-foreground">
-              Add this TXT record where you manage DNS for {domain}, then check it. Keep the record
-              in place: it is checked again every day, and a record missing for three days removes
-              the mark. Addresses on a hosting service&apos;s domain, such as your-app.vercel.app,
-              cannot take records of their own.
-            </p>
+            <p className="text-sm text-muted-foreground">{t("instructions", { domain })}</p>
             <dl className="grid gap-1 text-sm">
               <div className="flex gap-2">
-                <dt className="text-muted-foreground">Type</dt>
+                <dt className="text-muted-foreground">{t("type")}</dt>
                 <dd className="font-mono text-[13px]">TXT</dd>
               </div>
             </dl>
             {/* Most DNS providers ask for the name without the domain, which they add. */}
             <CopyField
               id="dns_name"
-              label="Name"
-              copyLabel="Copy name"
+              label={t("name")}
+              copyLabel={t("copyName")}
               value={record.label}
               suffix={`.${domain}`}
-              hint={`Enter ${record.label} as the name: your DNS provider adds .${domain} itself. If it asks for the full name, enter ${record.name}.`}
+              hint={t("nameHint", { label: record.label, domain, name: record.name })}
             />
-            <CopyField id="dns_value" label="Value" copyLabel="Copy value" value={record.value} />
+            <CopyField
+              id="dns_value"
+              label={t("value")}
+              copyLabel={t("copyValue")}
+              value={record.value}
+            />
             <form action={action} className="grid gap-4">
               <Feedback state={state} />
               <div>
-                <Submit pendingLabel="Checking...">Check DNS</Submit>
+                <Submit pendingLabel={t("checking")}>{t("check")}</Submit>
               </div>
             </form>
           </>

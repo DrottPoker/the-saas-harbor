@@ -3,8 +3,11 @@ import {
   apiBase,
   errorBody,
   MAX_PAGES,
+  missingPermission,
   providerGet,
   ProviderRequestError,
+  rateLimited,
+  returnedError,
   tooMuchData,
 } from "../http";
 import type { PaddleSubscription, PaddleTransaction } from "./mrr";
@@ -34,23 +37,14 @@ async function paddleGet<T>(key: string, livemode: boolean, path: string, params
   const error = (await errorBody(response))?.error as
     { code?: string; detail?: string } | undefined;
   const detail = error?.detail?.slice(0, 300);
-  if (response.status === 429)
-    throw new ProviderRequestError("Paddle is rate limiting requests. Try again later.", 429);
+  if (response.status === 429) throw rateLimited("Paddle");
   // Paddle answers a key it does not accept with 403 too, and says so in the error code.
   if (response.status === 401 || REJECTED.has(error?.code ?? ""))
-    throw new ProviderRequestError(
-      "Paddle rejected the key. It may have expired or been revoked, or belong to the other environment.",
-      response.status,
-    );
+    throw new ProviderRequestError("paddle.keyRejected", {}, { status: response.status });
   if (error?.code === "paddle_billing_not_enabled")
-    throw new ProviderRequestError("This Paddle account does not use Paddle Billing.", 403);
-  if (response.status === 403)
-    throw new ProviderRequestError(
-      `The key is missing a read permission.${detail ? ` Paddle says: ${detail}` : ""}`,
-      403,
-      path,
-    );
-  throw new ProviderRequestError(`Paddle returned an error${detail ? `: ${detail}` : "."}`);
+    throw new ProviderRequestError("paddle.billingNotEnabled", {}, { status: 403 });
+  if (response.status === 403) throw missingPermission("Paddle", detail, { status: 403, path });
+  throw returnedError("Paddle", detail);
 }
 
 // Lists follow Paddle's cursor. The next page is built here from its `after` value rather than

@@ -1,11 +1,14 @@
 import { describe, expect, it } from "vitest";
 import { safeNext } from "../../src/lib/domain";
 import {
+  FEEDBACK_ERRORS,
   feedbackHref,
   feedbackOpening,
   feedbackPage,
   feedbackSchema,
 } from "../../src/lib/feedback";
+import en from "../../src/messages/en";
+import { userErrorsOf } from "./support/migrations";
 
 describe("feedback", () => {
   it("keeps only paths on this site as the page it came from", () => {
@@ -41,6 +44,22 @@ describe("feedback", () => {
     for (const from of ["/auth", "/auth?next=%2Ffeedback", "/auth/finish"])
       expect(feedbackOpening(from)).toBe("page");
     expect(feedbackOpening("/feedback?from=%2Fstats")).toBe("none");
+  });
+
+  it("opens the same way in every language", () => {
+    for (const from of ["/es", "/ar/stats", "/zh?by=all", "/esx/auth"])
+      expect(feedbackOpening(from), from).toBe("dialog");
+    for (const from of ["/es/auth", "/ru/auth/finish"]) expect(feedbackOpening(from)).toBe("page");
+    expect(feedbackOpening("/hi/feedback")).toBe("none");
+  });
+
+  it("has a message for every error the database gives users, worded as the database does", () => {
+    const raised = [...userErrorsOf("submit_feedback"), ...userErrorsOf("submit_visitor_feedback")];
+    expect([...FEEDBACK_ERRORS.keys()].sort()).toEqual([...new Set(raised)].sort());
+    for (const [text, key] of FEEDBACK_ERRORS)
+      expect(en.feedback.errors[key].replace("{min}", "10").replace("{max}", "2,000"), key).toBe(
+        `${text}.`,
+      );
   });
 
   it("needs a kind and some text", () => {

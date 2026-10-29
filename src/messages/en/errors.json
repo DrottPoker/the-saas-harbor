@@ -1,4 +1,5 @@
 {
+  "loadProducts": "Products could not be loaded. Please try again shortly.",
   "title": "This page could not be loaded",
   "body": "Something went wrong on our side. Please try again, or come back in a few minutes.",
   "retry": "Try again",

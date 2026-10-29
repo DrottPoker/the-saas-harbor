@@ -1,1 +1,136 @@
-{}
+{
+  "breadcrumb": "Breadcrumb",
+  "browse": "Browse",
+  "verifiedRevenue": "Verified revenue",
+  "domainVerified": "Domain verified",
+  "byFounder": "by <founder>{name}</founder>",
+  "founderFallback": "Founder",
+  "visitWebsite": "Visit website",
+  "editProduct": "Edit product",
+  "report": "Report this product",
+  "about": "About {name}",
+  "figures": {
+    "mrr": "Monthly recurring revenue",
+    "subscribers": "Subscribers",
+    "launched": "Launched",
+    "inUsd": "{amount} in US dollars"
+  },
+  "verification": {
+    "verifiedWith": "Verified with {provider} through {access, select, oauth {read-only access} other {a read-only key}}.",
+    "someProvider": "a payment provider",
+    "lastVerified": "Last verified <date></date>.",
+    "testMode": "Test mode data."
+  },
+  "founderNote": {
+    "onlyYou": "Only you see this.",
+    "unverified": "MRR, revenue and subscribers read Not shared until you connect your payment provider.",
+    "connect": "Connect it",
+    "private": "You hide your revenue, so it reads Not shared.",
+    "change": "Change this",
+    "stale": "Your figures have not been verified for seven days, so they read Not shared.",
+    "check": "Check the connection",
+    "launch": "Launched reads Not shared without a launch date, or while you hide it.",
+    "editLaunch": "Edit the launch date"
+  },
+  "views": {
+    "title": "Page views",
+    "last7": "Last 7 days",
+    "last30": "Last 30 days",
+    "allTime": "All time",
+    "note": "Only you can see this. Your own visits are not counted."
+  },
+  "details": {
+    "founder": "Founder",
+    "category": "Category",
+    "website": "Website",
+    "domain": "Domain",
+    "verified": "Verified",
+    "notVerified": "Not verified",
+    "listed": "Listed"
+  },
+  "techStack": {
+    "title": "Tech stack",
+    "separator": ", "
+  },
+  "demo": {
+    "metaTitle": "{name} (demo)",
+    "figures": "Demo figures, made up for this example and not verified.",
+    "mrrHistory": "Made-up figures for the last 12 months.",
+    "revenueHistory": "Made-up figures for the last 12 months, after refunds and before tax.",
+    "products": {
+      "metricfold": {
+        "tagline": "MRR, churn and cohorts from your Stripe account, without a spreadsheet.",
+        "description": "Metricfold connects to Stripe with a read-only key and turns your subscriptions into the numbers you check every Monday: MRR, net revenue retention, churn and trial conversion. Cohort charts show how long the customers from each signup month stay.\n\nIt is built for founders and small finance teams who want the answer on one screen rather than a reporting project. Weekly email summaries, CSV exports and notes for launches and price changes come with every plan."
+      },
+      "inboxwren": {
+        "tagline": "Sorts your support inbox by urgency and drafts replies you can edit.",
+        "description": "Inboxwren reads new support emails and chat messages, tags them by topic and urgency, and drafts a reply from your help center and earlier answers. Nothing is sent until a person approves it.\n\nMost customers are online shops with two to ten people on support. They use it to answer order questions faster during sales and to catch refund requests before they turn into chargebacks."
+      },
+      "cronhawk": {
+        "tagline": "Know when a scheduled job did not run, ran late or failed.",
+        "description": "Add one line to the end of a cron job, a queue worker or a scheduled function, and Cronhawk expects it to check in on time. When it is late, fails or runs too long, the right person gets an email, a text message or a chat alert.\n\nIt started as a script for a team that lost a week of backups without noticing. Today it watches nightly backups, invoice runs and data imports for close to 900 teams, from solo developers to agencies with hundreds of servers."
+      },
+      "clientloft": {
+        "tagline": "A client portal for freelancers: files, approvals and invoices behind one link.",
+        "description": "Clientloft gives each client a private page with the project's files, feedback rounds, contracts and invoices. Clients approve work with one click and never have to search their email for the latest version.\n\nDesigners, developers and small studios use it to stop chasing approvals. Pages carry your own logo and domain, and a finished project can be archived and handed over with everything in it."
+      },
+      "retrywell": {
+        "tagline": "Recovers failed subscription payments with well-timed retries and friendly reminders.",
+        "description": "When a card payment fails, Retrywell tries it again at the moment it is most likely to go through, and sends short, polite reminders with a link to update the card. Most recovered payments need nothing from you.\n\nIt connects to Stripe in a few minutes and reports how much it recovered each month. Customers are subscription businesses of every size, from side projects to companies with a finance team."
+      },
+      "quietstats": {
+        "tagline": "Simple website analytics without cookies or personal data.",
+        "description": "Quietstats shows visitors, pages, referrers and campaigns on a single page. It sets no cookies and stores no personal data, so visitors are never followed from site to site.\n\nThe script is under 2 KB and the dashboard loads at once. Bloggers, documentation sites and small companies use it to see what works without handing their visitors' data to an advertising network."
+      },
+      "episodemint": {
+        "tagline": "Transcripts, show notes and clips from each podcast episode in minutes.",
+        "description": "Upload an episode and Episodemint writes a transcript with speaker names, chapter markers, show notes and a short list of quotable moments. You edit everything before it goes out.\n\nIt was built by a podcast producer who spent hours on show notes every week. Independent shows and small production companies use it to publish on the day they record, and to turn old episodes into searchable pages."
+      },
+      "mockframe": {
+        "tagline": "App store screenshots from your plain captures, in every size the stores need.",
+        "description": "Drop in plain screenshots, pick a layout, and Mockframe places them in device frames with captions and backgrounds, in the sizes every store listing needs. Changing a caption updates every device size at once.\n\nMobile developers and small app studios use it before each release. Captions in up to 40 languages come from a single spreadsheet, so a new language does not mean a day of design work."
+      },
+      "rankmoss": {
+        "tagline": "Daily keyword rankings for small websites, with suggestions in plain words.",
+        "description": "Rankmoss checks every day where your pages rank for the searches you care about, on desktop and mobile, and tells you in plain words what changed and what to try next.\n\nIt is made for small businesses and freelancers who look after their own website. Reports can be shared with a client or a colleague by link, and prices stay low because it tracks hundreds of keywords rather than millions."
+      },
+      "switchmoor": {
+        "tagline": "Feature flags and gradual rollouts for small engineering teams.",
+        "description": "Switchmoor turns a feature on for a few users, a share of traffic or a single customer, and off again without a deploy. Every change is logged with who made it and why.\n\nLibraries cover the common web and mobile stacks, flags are evaluated inside your app so they add no network delay, and the price is per team rather than per request."
+      },
+      "praisenest": {
+        "tagline": "Collect testimonials from happy customers and show them on your site.",
+        "description": "Praisenest sends customers a short link where they can leave a written or video testimonial. You approve the ones you like and show them on your website with a small embed that matches your design.\n\nCourse creators, agencies and software companies use it to collect social proof without chasing customers by email. Reviews from other sites can be imported, so everything is kept in one place."
+      },
+      "quarterpot": {
+        "tagline": "Sets aside the right amount for taxes every time a freelancer gets paid.",
+        "description": "Quarterpot watches incoming payments and tells you how much of each one to put aside for income tax and VAT, based on where you live and what you have earned so far this year. Reminders arrive before each payment is due.\n\nIt was built for freelancers who were surprised by their first tax bill. It does not file taxes for you; it makes sure the money is there when you or your accountant do."
+      },
+      "belaybook": {
+        "tagline": "Bookings, memberships and belay checks for small climbing gyms.",
+        "description": "Belaybook handles day passes, memberships, class bookings and the belay checks every gym needs to keep on record. Members book on their phone and check in with a QR code at the desk.\n\nIt was built by a climber who helped run a small bouldering gym and found the large gym systems too expensive and too complicated. About forty independent gyms use it today."
+      },
+      "swatchline": {
+        "tagline": "Keeps design tokens in your design files and your code in step.",
+        "description": "Swatchline reads colors, type and spacing from your design files and opens a pull request with updated tokens for the web, iOS and Android whenever a designer publishes a change.\n\nDesign system teams use it to stop copying values by hand. Every change is reviewed like code, and a changelog shows who changed which token and when."
+      },
+      "hourbridge": {
+        "tagline": "Finds meeting times that are fair to everyone across time zones.",
+        "description": "Hourbridge looks at everyone's working hours and calendars and suggests meeting times that share the early and late slots fairly across the team, instead of always asking the same people to stay up.\n\nIt is built for remote teams spread over several continents. Recurring meetings rotate on their own, and each person can mark hours that must never be booked."
+      }
+    },
+    "founders": {
+      "sara": "Former finance lead building tools for subscription businesses",
+      "nadia": "Building support and marketing tools for small online shops",
+      "elin": "Platform engineer who dislikes silent failures",
+      "diego": "Freelance designer building tools for freelancers",
+      "tom": "Web developer who cares about privacy",
+      "kofi": "Podcast producer turned developer",
+      "anika": "Mobile developer making app launches easier",
+      "marcus": "SEO consultant for small businesses",
+      "maya": "Climber and software developer",
+      "lucas": "Design systems engineer",
+      "hana": "Remote team lead building calmer calendars"
+    }
+  }
+}

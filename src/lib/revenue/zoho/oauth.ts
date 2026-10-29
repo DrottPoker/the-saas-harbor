@@ -64,13 +64,12 @@ export async function exchangeZohoCode(
     code_verifier: verifier,
   });
   if (!ok || !body.refresh_token)
-    throw new VerificationError("Zoho did not complete the connection. Try again.");
+    throw new VerificationError("common.connectionNotCompleted", { provider: "Zoho" });
   // Zoho names the scopes it granted; without them the access cannot be shown to only read.
   requireReadOnly(scopeList(body.scope));
   const token = body.access_token!;
   const organization = defaultOrganization(await fetchOrganizations(token, dc));
-  if (!organization)
-    throw new VerificationError("The Zoho account has no Zoho Billing organization to read.");
+  if (!organization) throw new VerificationError("zoho.noOrganization");
   const key = zohoStoredKey({
     dc,
     organizationId: String(organization.organization_id),

@@ -12,9 +12,7 @@ import type { KeyInput, ParsedKey } from "../types";
 export function parseMollieProfile(input: string) {
   const profile = /pfl_[A-Za-z0-9]+/.exec(input.trim())?.[0];
   if (!profile || !/^pfl_[A-Za-z0-9]{4,64}$/.test(profile))
-    throw new VerificationError(
-      "Enter the ID of this product's website profile in Mollie. It starts with pfl_.",
-    );
+    throw new VerificationError("mollie.profileFormat");
   return profile;
 }
 
@@ -25,15 +23,10 @@ export function parseMollieKey(
   const profile = parseMollieProfile(account);
   const token = input.trim();
   if (/^(rk|sk|pk)_(live|test)_|^pdl_|^polar_|^creem_|^apik_/.test(token))
-    throw new VerificationError(
-      "This key belongs to another payment provider. Paste a Mollie advanced access token.",
-    );
-  if (/^(live|test)_/.test(token))
-    throw new VerificationError(
-      "This is a Mollie API key, which can also create payments and refunds. Create an advanced access token with read permissions only, and paste it instead.",
-    );
+    throw new VerificationError("mollie.otherProvider");
+  if (/^(live|test)_/.test(token)) throw new VerificationError("mollie.apiKey");
   if (!/^access_[A-Za-z0-9]{16,200}$/.test(token))
-    throw new VerificationError("Paste a Mollie advanced access token. It starts with access_.");
+    throw new VerificationError("mollie.tokenFormat");
   return {
     key: joinAccountKey(profile, token),
     // Only live data is read unless test keys are allowed; then the first verification finds it.

@@ -1,1 +1,80 @@
-{}
+{
+  "meta": {
+    "title": "Publica tu SaaS gratis",
+    "description": "Publica tu SaaS gratis: una página pública, sin cola de revisión y un enlace dofollow en cuanto se verifiquen tus ingresos. Los productos nuevos sin ingresos son bienvenidos."
+  },
+  "title": "Publica tu SaaS gratis",
+  "description": "The SaaS Harbor recibe productos nuevos desde el primer día. Publicar es gratis, la ficha es pública en cuanto la guardas y no necesitas ingresos ni datos de pago.",
+  "cta": "Publica tu SaaS",
+  "howItWorks": "Cómo funciona",
+  "dofollow": {
+    "title": "Un enlace dofollow gratis, a cambio de ingresos verificados",
+    "body": "Muchos directorios cobran por un enlace seguido a tu sitio. Aquí es gratis: conecta tu proveedor de pagos con una clave de solo lectura y los buscadores seguirán el enlace de la página de tu producto mientras tus ingresos sigan verificados, aunque ocultes las cifras."
+  },
+  "gains": {
+    "title": "Qué obtienes al publicar",
+    "page": "Una página pública para tu producto con su logotipo, descripción, categoría, stack tecnológico y un enlace a tu sitio web.",
+    "lists": "Un lugar en Novedades, Explorar y las páginas de tu categoría y tus tecnologías en cuanto lo guardas.",
+    "profile": "Un perfil como fundador del producto, donde otros usuarios pueden escribirte.",
+    "views": "Las visitas a la página de tu producto, que solo ves tú.",
+    "leaderboard": "Un lugar en la clasificación en cuanto conectes tu proveedor de pagos y compartas tu MRR verificado.",
+    "badge": "Una insignia para tu propio sitio que muestra tu MRR verificado, o que tu producto está publicado aquí."
+  },
+  "newSaas": {
+    "title": "Pensado para SaaS nuevos",
+    "samePage": "Muchos directorios ordenan los productos por reseñas, votos o posiciones pagadas, algo que un producto nuevo todavía no tiene. Aquí un producto nuevo recibe la misma página que uno consolidado y aparece primero en Novedades cuando se suma.",
+    "noRevenue": "No necesitas ingresos para publicar. Cuando los tengas, verificarlos a través de tu proveedor de pagos pone tu producto en la clasificación y convierte el enlace a tu sitio web en uno que los buscadores siguen."
+  },
+  "differences": {
+    "title": "En qué se diferencia de otros directorios",
+    "free": "Gratis, sin planes de pago ni mejoras pagadas.",
+    "noQueue": "Sin cola de revisión: tu página es pública en cuanto la guardas.",
+    "noPaidPlacements": "Sin posiciones pagadas: la clasificación se ordena por MRR verificado, y los montos iguales, por ingresos históricos y luego por la fecha en que se publicó el producto.",
+    "readOnly": "Los ingresos se leen de tu proveedor de pagos con una clave de solo lectura; nunca se escriben a mano.",
+    "dofollow": "Los buscadores siguen el enlace a tu sitio web (dofollow) en cuanto se verifican tus ingresos, compartas o no las cifras. Es gratis.",
+    "indexing": "Los buscadores se enteran de tu página de inmediato: se agrega al mapa del sitio, y Bing y los demás buscadores que aceptan avisos de IndexNow reciben uno cuando la guardas."
+  },
+  "steps": {
+    "title": "Cómo publicar tu SaaS",
+    "account": "Crea una cuenta con tu correo electrónico y un nombre de usuario.",
+    "provider": "Elige tu proveedor de pagos al principio del formulario. Conecta {providers} con una clave de solo lectura para verificar tu MRR, y elige qué compartir. Si usas otro proveedor, o todavía ninguno, elige Otro y escribe su nombre.",
+    "product": "Añade tu producto: nombre, eslogan, descripción, categoría, sitio web, fecha de lanzamiento, logotipo y stack tecnológico. Es público en cuanto lo guardas.",
+    "extras": "Si quieres, verifica tu dominio con un registro DNS y agrega la insignia a tu sitio."
+  },
+  "faq": {
+    "title": "Preguntas frecuentes",
+    "free": {
+      "question": "¿Es gratis publicar un SaaS en The SaaS Harbor?",
+      "answer": "Sí. Publicar, verificar los ingresos, los mensajes y la insignia son gratis, y no hay planes de pago."
+    },
+    "noRevenue": {
+      "question": "¿Puedo publicar un producto que todavía no tiene ingresos?",
+      "answer": "Sí. Elige Otro como proveedor de pagos y escribe ninguno. Un producto sin proveedor de pagos conectado recibe la misma página pública y aparece en Explorar, Novedades y las páginas de su categoría y sus tecnologías. Solo la clasificación necesita MRR verificado."
+    },
+    "public": {
+      "question": "¿Cuánto tarda mi ficha en ser pública?",
+      "answer": "Es pública en cuanto la guardas. No hay cola de revisión; los administradores actúan después sobre las denuncias, como describen los términos."
+    },
+    "share": {
+      "question": "¿Tengo que compartir mis ingresos?",
+      "answer": "No. Los ingresos verificados, el número de suscriptores y la fecha de lanzamiento son públicos de forma predeterminada, y puedes ocultar cada uno al añadir el producto o más tarde. Ocultar los ingresos también oculta el MRR."
+    },
+    "providers": {
+      "question": "¿Qué proveedores de pagos pueden verificar los ingresos?",
+      "answer": "{providers}, uno por producto, mediante una clave que solo puede leer. Los ingresos se vuelven a verificar cada hora."
+    },
+    "dofollow": {
+      "question": "¿El enlace a mi sitio web es dofollow?",
+      "answer": "Sí, y gratis, en cuanto se verifican tus ingresos, compartas o no las cifras. Sin ingresos verificados, el enlace se marca como nofollow."
+    },
+    "limits": {
+      "question": "¿Cuántos productos puedo publicar?",
+      "answer": "Hasta {total} por cuenta y {daily} al día."
+    },
+    "remove": {
+      "question": "¿Puedo eliminar mi ficha más adelante?",
+      "answer": "Sí. Puedes eliminar un producto, o toda tu cuenta, en cualquier momento, y también se elimina todo lo que le pertenece."
+    }
+  },
+  "elsewhere": "¿También vas a lanzar en otros sitios? <link>Dónde lanzar tu SaaS</link> reúne otros lugares que usan los fundadores y para qué sirve cada uno."
+}

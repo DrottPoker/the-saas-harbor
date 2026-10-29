@@ -2,13 +2,14 @@
 
 import { revalidatePath } from "next/cache";
 import { unstable_rethrow } from "next/navigation";
+import { getTranslations } from "next-intl/server";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { ActionState } from "@/lib/domain";
 import { sendQueuedEmails } from "@/lib/email/outbox";
-import { connectsWithOAuth, isProviderId } from "@/lib/revenue/catalog";
+import { providerAccessKind } from "@/lib/revenue/catalog";
 import { beginRevenueCheck } from "@/lib/revenue/connect";
-import { makerMessage, VerificationError } from "@/lib/revenue/errors";
-import { summary } from "@/lib/revenue/summary";
+import { localizedMakerMessage, VerificationError } from "@/lib/revenue/errors";
+import { verificationSummary } from "@/lib/revenue/summary";
 import { disconnectProvider, syncConnection } from "@/lib/revenue/sync";
 import { requireUser } from "@/lib/supabase/server";
 import type { Database } from "@/lib/supabase/types";
@@ -22,14 +23,15 @@ async function requireOwnedSaas(saasId: string) {
     .eq("id", saasId)
     .eq("owner_id", user.id)
     .maybeSingle();
-  if (!data) throw new VerificationError("You can only verify revenue for your own SaaS.");
+  if (!data) throw new VerificationError("check.ownSaasOnly");
   return client as SupabaseClient<Database>;
 }
 
-// Redirects, such as to sign-in, pass through; failures show only words written for makers.
-function failure(error: unknown): ActionState {
+// Redirects, such as to sign-in, pass through; failures show only words written for makers, in
+// the founder's language.
+async function failure(error: unknown): Promise<ActionState> {
   unstable_rethrow(error);
-  return { error: makerMessage(error) };
+  return { error: await localizedMakerMessage(error) };
 }
 
 export async function refreshRevenueAction(saasId: string): Promise<ActionState> {
@@ -39,7 +41,7 @@ export async function refreshRevenueAction(saasId: string): Promise<ActionState>
     const result = await syncConnection(saasId);
     sendQueuedEmails();
     revalidatePath("/", "layout");
-    return { success: summary(result) };
+    return { success: await verificationSummary(result) };
   } catch (error) {
     revalidatePath("/", "layout");
     return failure(error);
@@ -57,11 +59,8 @@ export async function disconnectProviderAction(saasId: string): Promise<ActionSt
     await disconnectProvider(client, saasId);
     revalidatePath("/", "layout");
     // A provider connected through OAuth gave access the founder approved, not a pasted key.
-    const oauth =
-      !!connection && isProviderId(connection.provider) && connectsWithOAuth(connection.provider);
-    return {
-      success: `Disconnected. The stored ${oauth ? "access" : "key"} was deleted.`,
-    };
+    const t = await getTranslations("revenue.result");
+    return { success: t("disconnected", { access: providerAccessKind(connection?.provider) }) };
   } catch (error) {
     return failure(error);
   }

@@ -1,1 +1,240 @@
-{}
+{
+  "choose": "请选择你的支付服务商。如果不在列表中，请选择“其他”。",
+  "fallback": "某个支付服务商",
+  "notSetUp": "此服务器尚未配置 {provider}。",
+  "verifiedWith": "已通过 {provider} 的{access, select, oauth {只读访问权限} other {只读密钥}}验证。",
+  "fields": {
+    "site": "站点",
+    "projectId": "项目 ID",
+    "clientId": "Client ID",
+    "profileId": "Profile ID",
+    "applicationId": "应用 ID",
+    "issuerId": "Issuer ID",
+    "keyId": "Key ID",
+    "vendorNumber": "供应商编号",
+    "cloudStorageUri": "Cloud Storage URI",
+    "packageName": "包名"
+  },
+  "placeholders": {
+    "dodoKey": "只读 API 密钥",
+    "paypalAccount": "应用的 Client ID",
+    "airwallexKey": "限定范围的 API 密钥",
+    "airwallexAccount": "与 API 密钥一同显示的 Client ID",
+    "superwallAccount": "应用控制台地址或 ID",
+    "appstoreKey": ".p8 文件的内容"
+  },
+  "stripe": {
+    "keyLabel": "受限密钥",
+    "newKeyLabel": "新的受限密钥",
+    "dashboard": "在 Stripe 中创建只读密钥",
+    "reads": "订阅、发票、扣款、Checkout 会话和争议",
+    "step1": "Stripe 会打开一个新的受限密钥，名称和权限已预先填好。",
+    "step2": "确认 {permissions} 设为 <b>Read</b>（读取），其他全部设为 None（无），然后选择 <b>Create key</b>（创建密钥）。",
+    "step3": "复制以 rk_live_ 开头的密钥，粘贴到下方。",
+    "noHistory": "暂无收入历史。请换用同时具有 Invoices: Read 权限的密钥，以图表显示最近 12 个月。",
+    "skipped": "{count} 个按用量计费的项目未计入。"
+  },
+  "paddle": {
+    "keyLabel": "API 密钥",
+    "newKeyLabel": "新的 API 密钥",
+    "dashboard": "打开 Paddle 的 API 密钥",
+    "reads": "订阅和交易",
+    "step1": "在 Developer tools → Authentication 中，选择 <b>New API key</b>。",
+    "step2": "为 Subscriptions 和 Transactions 授予 <b>Read</b>（读取）权限，不授予其他权限。到期日期请留空，否则密钥到期后会停止工作。",
+    "step3": "复制以 pdl_live_apikey_ 开头的密钥，粘贴到下方。",
+    "noHistory": "没有收入历史：该 Paddle 账户的交易超出了一次验证可读取的数量。",
+    "skipped": "{count} 个没有已付款项的订阅未计入。"
+  },
+  "polar": {
+    "keyLabel": "组织访问令牌",
+    "newKeyLabel": "新的组织访问令牌",
+    "dashboard": "打开 Polar 控制台",
+    "reads": "你的组织、订阅和订单",
+    "step1": "在你组织的 Settings → Developers 中，选择 <b>New Token</b>。",
+    "step2": "只选择 organizations:read、subscriptions:read 和 orders:read 这几个 scope，并选择 <b>No expiration</b>（永不过期）。",
+    "step3": "复制以 polar_oat_ 开头的令牌，粘贴到下方。",
+    "noHistory": "没有收入历史：该 Polar 账户的订单超出了一次验证可读取的数量。",
+    "skipped": "{count} 个订阅未计入。"
+  },
+  "dodo": {
+    "keyLabel": "API 密钥",
+    "newKeyLabel": "新的 API 密钥",
+    "dashboard": "打开 Dodo Payments 控制台",
+    "reads": "订阅和付款",
+    "step1": "在 Developer → API Keys 中，选择 <b>Add API Key</b>。",
+    "step2": "关闭 <b>Enable write access</b>（写入权限），让密钥只能读取。",
+    "step3": "复制密钥（Dodo Payments 只显示一次），粘贴到下方。",
+    "noHistory": "没有收入历史：Dodo Payments 不说明一笔付款覆盖哪个周期。",
+    "skipped": "{count} 个价格含税但没有付款记录的订阅未计入。"
+  },
+  "creem": {
+    "keyLabel": "API 密钥",
+    "newKeyLabel": "新的 API 密钥",
+    "dashboard": "打开 Creem 的开发者设置",
+    "reads": "产品、订阅和交易",
+    "step1": "在 Developers → API keys 中，创建一个新密钥。",
+    "step2": "在 scope 选择器中，只为产品、订阅和交易授予 <b>read</b>（读取）权限。",
+    "step3": "复制以 creem_ 开头的密钥，粘贴到下方。",
+    "noHistory": "没有收入历史：该 Creem 账户的交易超出了一次验证可读取的数量。",
+    "skipped": "{count} 个无法读取价格或付款的订阅未计入。"
+  },
+  "chargebee": {
+    "keyLabel": "只读 API 密钥",
+    "newKeyLabel": "新的只读 API 密钥",
+    "dashboard": "登录 Chargebee",
+    "reads": "订阅、发票和退款",
+    "step1": "打开 Settings → Configure Chargebee → API keys and events，选择 <b>Add API key</b>。",
+    "step2": "选择 <b>Read-only key</b>（只读密钥），可访问全部数据，或仅限交易数据。",
+    "step3": "复制密钥，并填写你的站点：控制台地址中 .chargebee.com 前面的名称。",
+    "noHistory": "没有收入历史：该 Chargebee 站点的发票超出了一次验证可读取的数量。",
+    "skipped": "{count} 个没有已付发票的订阅未计入。"
+  },
+  "whop": {
+    "keyLabel": "API 密钥",
+    "newKeyLabel": "新的 API 密钥",
+    "dashboard": "打开 Whop 控制台",
+    "reads": "会员资格、方案、优惠码和付款",
+    "step1": "选择你的业务，打开 Developer → Account API keys，创建一个自定义权限的密钥。",
+    "step2": "只授予 member:basic:read、plan:basic:read、payment:basic:read 和 promo_code:basic:read。带有任何超出读取的权限的密钥都会被拒绝。",
+    "step3": "复制密钥，粘贴到下方。",
+    "noHistory": "没有收入历史：该 Whop 账户的付款或方案超出了一次验证可读取的数量。",
+    "skipped": "{count} 个价格含税但没有付款记录的会员资格未计入。"
+  },
+  "revenuecat": {
+    "keyLabel": "私密 API 密钥",
+    "newKeyLabel": "新的私密 API 密钥",
+    "dashboard": "打开 RevenueCat 控制台",
+    "reads": "你项目的 MRR、有效订阅和收入图表",
+    "step1": "在你的项目中，打开 Project settings → API keys，选择 <b>New secret API key</b>，版本选择 V2。",
+    "step2": "将 Charts & metrics 设为 <b>Read only</b>（只读），其他全部设为 No access。权限更多的密钥会被拒绝。",
+    "step3": "复制以 sk_ 开头的密钥，以及项目 ID，即项目中任意页面地址里 /projects/ 后面的部分。",
+    "noHistory": "暂无收入历史。刷新即可读取 RevenueCat 的 MRR 图表。",
+    "skipped": "{count} 个订阅未计入。"
+  },
+  "gumroad": {
+    "dashboard": "查看已连接到你 Gumroad 账户的应用",
+    "reads": "你的产品、会员和销售",
+    "step1": "用表单底部的按钮保存。随后会打开 Gumroad，如果你尚未登录，它会要求你登录。",
+    "step2": "批准 <b>View your sales</b>（查看你的销售）。这是唯一请求的权限：它不能修改产品、退款或给你的客户发邮件。",
+    "step3": "Gumroad 会把你带回这里，收入随即完成验证。",
+    "noHistory": "没有收入历史：该 Gumroad 账户的销售超出了一次验证可读取的数量。",
+    "skipped": "{count} 位近期没有扣款的订阅用户未计入。"
+  },
+  "paypal": {
+    "keyLabel": "Secret 密钥",
+    "newKeyLabel": "新的 Secret 密钥",
+    "dashboard": "打开 PayPal 的应用和凭据",
+    "reads": "你的交易",
+    "step1": "用你的 PayPal 企业账户登录，确认已选择 <b>Live</b>，然后选择 <b>Create App</b>。",
+    "step2": "在新应用的功能中，开启 <b>Transaction search</b>（交易搜索），关闭其他所有功能。除搜索交易外还能做其他事的应用会被拒绝。",
+    "step3": "复制 Client ID 和 Secret key 1，粘贴到下方。MRR 计入 PayPal 订阅；其他付款计入收入。",
+    "noHistory": "没有收入历史：该 PayPal 账户的订阅付款超出了一次验证可读取的数量。",
+    "skipped": "{count} 个订阅未计入。"
+  },
+  "mollie": {
+    "keyLabel": "高级访问令牌",
+    "newKeyLabel": "新的高级访问令牌",
+    "dashboard": "打开 Mollie 的 API 访问令牌",
+    "reads": "你的订阅和付款",
+    "step1": "选择 <b>Build your own</b>（自定义）高级访问令牌，只授予 Payments 和 Subscriptions 的 Read 权限。除读取外还能做其他事的令牌会被拒绝。",
+    "step2": "复制以 access_ 开头的令牌。API 密钥（live_ 或 test_）可以创建付款，不被接受。",
+    "step3": "在 Developers → API keys 中复制此产品网站资料的 ID，它以 pfl_ 开头。MRR 计入 Mollie 订阅；其他付款计入收入。",
+    "noHistory": "没有收入历史：该 Mollie 资料的付款超出了一次验证可读取的数量。",
+    "skipped": "{count} 个无法读取计费周期的订阅未计入。"
+  },
+  "paystack": {
+    "keyLabel": "受限密钥",
+    "newKeyLabel": "新的受限密钥",
+    "dashboard": "打开 Paystack 控制台",
+    "reads": "订阅、方案、交易和退款",
+    "step1": "将控制台切换到 Live，打开 Developers，创建一个受限密钥。",
+    "step2": "只授予 plans:read、transactions:read 和 disputes_refunds:read。切勿粘贴你的私密密钥（sk_），它拥有全部权限。",
+    "step3": "用控制台密码确认，然后复制以 rk_ 开头且只显示一次的密钥，粘贴到下方。",
+    "noHistory": "没有收入历史：该密钥无法读取交易，或该 Paystack 账户的交易超出了一次验证可读取的数量。",
+    "skipped": "{count} 个无法读取方案的订阅未计入。"
+  },
+  "abacatepay": {
+    "keyLabel": "Trust MRR 令牌",
+    "newKeyLabel": "新的 Trust MRR 令牌",
+    "dashboard": "打开 AbacatePay 控制台",
+    "reads": "你店铺的 MRR、有效订阅和每日收入",
+    "step1": "退出测试模式（Modo teste），打开 Apps，找到 Trust MRR。",
+    "step2": "开启该应用并选择 <b>Salvar configurações</b>（保存设置）。以 abc_ 开头的 API 密钥会被拒绝。",
+    "step3": "复制以 mrr_ 开头的令牌，粘贴到下方。",
+    "noHistory": "暂无收入历史。刷新即可读取 AbacatePay 的每日 MRR。",
+    "skipped": "{count} 个订阅未计入。"
+  },
+  "asaas": {
+    "keyLabel": "API 密钥",
+    "newKeyLabel": "新的 API 密钥",
+    "dashboard": "打开 Asaas 的 API 密钥",
+    "reads": "订阅和收费",
+    "step1": "以管理员身份打开 Integrações → Chaves de API，创建一个密钥。",
+    "step2": "只为 Assinaturas（订阅）和 Cobranças（收费）授予 <b>Read</b>（读取）权限，不设置 IP 白名单。未设置权限就创建的密钥拥有全部权限，会被拒绝。",
+    "step3": "复制以 $aact_prod_ 开头且只显示一次的密钥，粘贴到下方。",
+    "noHistory": "没有收入历史：该 Asaas 账户的订阅或收费超出了一次验证可读取的数量。",
+    "skipped": "{count} 个近期没有付款的有效订阅未计入。"
+  },
+  "airwallex": {
+    "keyLabel": "限定范围的 API 密钥",
+    "newKeyLabel": "新的限定范围的 API 密钥",
+    "dashboard": "打开 Airwallex 的 API 密钥",
+    "reads": "订阅、发票和付款",
+    "step1": "在 Settings → Developer → API keys 中，选择 <b>New scoped API key</b>。",
+    "step2": "只为 Subscriptions 和 Invoices（Billing）以及 Payment Acceptance 授予 Read 权限。能读取更多内容的密钥会被拒绝。",
+    "step3": "复制密钥以及与其一同显示的 Client ID，粘贴到下方。MRR 计入 Airwallex Billing 订阅；其他付款计入收入。",
+    "noHistory": "没有收入历史：该 Airwallex 账户的订阅发票超出了一次验证可读取的数量。",
+    "skipped": "{count} 个按用量计费的项目或在 Airwallex 之外付款的订阅未计入。"
+  },
+  "superwall": {
+    "keyLabel": "组织 API 密钥",
+    "newKeyLabel": "新的组织 API 密钥",
+    "dashboard": "打开 Superwall 控制台",
+    "reads": "你应用的 MRR、有效订阅和净收入图表",
+    "step1": "在 Settings → API Keys 中，创建一个密钥。",
+    "step2": "只授予 <b>charts:read</b> 这一个 scope，也可以只限于该应用的项目。权限更多的密钥会被拒绝。",
+    "step3": "复制以 sk_ 开头的密钥，与你应用控制台的地址一起粘贴到下方。",
+    "noHistory": "暂无收入历史。刷新即可读取 Superwall 的 MRR 图表。",
+    "skipped": "{count} 个订阅未计入。"
+  },
+  "appstore": {
+    "keyLabel": "私钥",
+    "newKeyLabel": "新的私钥",
+    "dashboard": "打开 App Store Connect 的 API 密钥",
+    "reads": "你的销售和订阅报告",
+    "step1": "在 Users and Access（用户和访问）→ Integrations（集成）→ App Store Connect API 中，打开 Team Keys（团队密钥），选择 <b>Generate API Key</b>（生成 API 密钥）。",
+    "step2": "在 Access 下，选择可访问报告的 <b>Sales</b>（销售），或 <b>Finance</b>（财务）。能做更多事的密钥（例如 Admin 或 App Manager）会被拒绝。",
+    "step3": "下载 .p8 文件并将其内容粘贴到下方，同时填写 Issuer ID、Key ID，以及 Payments and Financial Reports（付款和财务报告）中的供应商编号。",
+    "noHistory": "暂无收入历史。刷新即可读取 Apple 最近 12 个月的订阅报告。",
+    "skipped": "{count} 个使用付费优惠的订阅未计入。"
+  },
+  "googleplay": {
+    "keyLabel": "服务账号 JSON 密钥",
+    "newKeyLabel": "新的服务账号 JSON 密钥",
+    "dashboard": "打开 Google Cloud 的服务账号",
+    "reads": "你应用的预估销售报告",
+    "step1": "创建一个不带角色的服务账号，并在 Keys（密钥）下添加一个 <b>JSON</b> 密钥。",
+    "step2": "在 Play Console 中打开 Users and permissions（用户和权限），邀请该服务账号的邮箱，只授予 <b>View financial data</b>（查看财务数据）。",
+    "step3": "在 Download reports（下载报告）页面复制财务报告的 Cloud Storage URI，与应用的包名和 JSON 密钥一起粘贴到下方。新权限可能需要几个小时才会生效。",
+    "noHistory": "没有收入历史：Google Play 销售报告超出了一次验证可读取的大小。",
+    "skipped": "{count} 笔无法读取的订阅扣款未计入。"
+  },
+  "zoho": {
+    "dashboard": "查看已连接到你 Zoho 账户的应用",
+    "reads": "你的组织、订阅和付款",
+    "step1": "用表单底部的按钮保存。随后会打开 Zoho，如果你尚未登录，它会要求你登录。",
+    "step2": "批准对设置、订阅和付款的<b>读取权限</b>。这是唯一请求的权限：它不能修改任何内容。",
+    "step3": "Zoho 会把你带回这里，并验证你默认的 Zoho Billing 组织。要验证其他组织，请先将其设为默认。",
+    "noHistory": "没有收入历史：Zoho Billing 不说明一张发票覆盖哪个周期。",
+    "skipped": "{count} 个无法读取价格或计费周期的订阅未计入。"
+  },
+  "mercadopago": {
+    "dashboard": "打开 Mercado Pago",
+    "reads": "你的订阅和付款",
+    "step1": "用表单底部的按钮保存。随后会打开 Mercado Pago，如果你尚未登录，它会要求你登录。",
+    "step2": "允许访问。这是唯一请求的权限：它<b>只能读取</b>，不能收款、退款或修改任何内容。",
+    "step3": "Mercado Pago 会把你带回这里，收入随即完成验证。",
+    "noHistory": "没有收入历史：该 Mercado Pago 账户的付款超出了一次验证可读取的数量，或者其付款没有注明所属订阅。",
+    "skipped": "{count} 个无法读取金额或频率的订阅未计入。"
+  }
+}

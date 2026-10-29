@@ -1,1 +1,56 @@
-{}
+{
+  "axisWithYear": "{month} ’{year}",
+  "summary": {
+    "mrr": "تغيّر MRR في نهاية الشهر من {first} في {firstMonth} إلى {end} في {endMonth}.",
+    "mrrOne": "بلغ MRR في نهاية {month} ما قيمته {value}.",
+    "revenue": "الإيرادات الشهرية من {firstMonth} إلى {endMonth}، بإجمالي {total}.",
+    "revenueOne": "بلغت الإيرادات {value} في {month}."
+  },
+  "periods": {
+    "months": "{months, plural, zero {# شهر} one {شهر} two {شهران} few {# أشهر} many {# شهرًا} other {# شهر}}",
+    "year": "سنة",
+    "all": "الكل",
+    "name": "{label}، {long}",
+    "last": "{months, plural, zero {آخر # شهر} one {الشهر الأخير} two {آخر شهرين} few {آخر # أشهر} many {آخر # شهرًا} other {آخر # شهر}}",
+    "whole": "{months, plural, zero {الفترة كاملة: # شهر} one {الفترة كاملة: شهر واحد} two {الفترة كاملة: شهران} few {الفترة كاملة: # أشهر} many {الفترة كاملة: # شهرًا} other {الفترة كاملة: # شهر}}",
+    "in": "{months, plural, zero {خلال # شهر} one {خلال شهر} two {خلال شهرين} few {خلال # أشهر} many {خلال # شهرًا} other {خلال # شهر}}",
+    "over": "{months, plural, zero {خلال آخر # شهر} one {خلال الشهر الأخير} two {خلال الشهرين الأخيرين} few {خلال آخر # أشهر} many {خلال آخر # شهرًا} other {خلال آخر # شهر}}",
+    "inMonth": "في {month}",
+    "inLast": "{months, plural, zero {في آخر # شهر} one {في الشهر الأخير} two {في الشهرين الأخيرين} few {في آخر # أشهر} many {في آخر # شهرًا} other {في آخر # شهر}}"
+  },
+  "mrr": {
+    "tab": "MRR",
+    "title": "MRR في نهاية الشهر",
+    "note": "MRR في نهاية كل شهر {months, plural, zero {لآخر # شهر} one {للشهر الأخير} two {للشهرين الأخيرين} few {لآخر # أشهر} many {لآخر # شهرًا} other {لآخر # شهر}}، أُعيد حسابه من المدفوعات المحصّلة وحُوّل إلى الدولار الأمريكي بأسعار اليوم.",
+    "month": "الشهر",
+    "value": "MRR"
+  },
+  "revenue": {
+    "tab": "الإيرادات",
+    "title": "الإيرادات الشهرية",
+    "note": "ما دفعه العملاء كل شهر، بعد الخصومات والمبالغ المستردة وقبل الضرائب، محوّلًا إلى الدولار الأمريكي بأسعار اليوم.",
+    "noteSplit": "ما دفعه العملاء كل شهر مقابل الاشتراكات والمشتريات لمرة واحدة، بعد الخصومات والمبالغ المستردة وقبل الضرائب، محوّلًا إلى الدولار الأمريكي بأسعار اليوم.",
+    "month": "الشهر",
+    "subscriptions": "الاشتراكات",
+    "oneTime": "لمرة واحدة",
+    "value": "الإيرادات"
+  },
+  "table": "عرض كجدول",
+  "history": {
+    "tabs": "الرسم البياني",
+    "periods": "فترة الرسم البياني",
+    "keys": "{title}. استخدم مفاتيح الأسهم لقراءة كل شهر.",
+    "month": "{month}: {value}",
+    "monthSplit": "{month}: {value}، الاشتراكات {subscription}، المشتريات لمرة واحدة {oneTime}",
+    "legend": "مفتاح الرسم",
+    "subscriptions": "الاشتراكات",
+    "oneTime": "المشتريات لمرة واحدة"
+  },
+  "growth": {
+    "short": "30 يومًا",
+    "long": "خلال آخر 30 يومًا",
+    "spoken": "{direction, select, up {ارتفاع بمقدار {amount}} down {انخفاض بمقدار {amount}} other {دون تغيير}} {period}",
+    "points": "{count, plural, zero {# نقطة} one {# نقطة} two {# نقطتان} few {# نقاط} many {# نقطة} other {# نقطة}}",
+    "pointsSpoken": "{count, plural, zero {# نقطة مئوية} one {نقطة مئوية واحدة} two {نقطتين مئويتين} few {# نقاط مئوية} many {# نقطة مئوية} other {# نقطة مئوية}}"
+  }
+}
