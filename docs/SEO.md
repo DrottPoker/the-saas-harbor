@@ -44,6 +44,8 @@ Public search checks found directory/product-discovery language on [Shovel.tools
 
 The owner confirmed on 2026-10-29 that `thesaasharbor.com` is already verified in Search Console. Its existing browser session was used to inspect the property. Sitemap submission, successful fetching, indexing and ranking are separate states: record the result Google actually reports, and never describe submission as indexed pages.
 
+On 2026-10-29 all five localized sitemaps were submitted in that property. Google subsequently reported successful processing and 309 discovered URLs in each; the pre-existing English sitemap also had Success status. An initial Chinese sitemap fetch error cleared after successful live URL Inspection and resubmission. No claim of complete page indexing or local-language rankings follows from those sitemap results.
+
 After the language versions are crawled, compare non-brand queries, impressions, clicks and CTR by language path and country over a consistent period. Use URL Inspection to distinguish discovery, indexing eligibility and Google's selected canonical. Treat country and language separately: Hindi does not cover every Indian searcher, and a Chinese page does not prove visibility in Baidu. Check Bing/Yandex/Baidu separately if those are target acquisition channels.
 
 Use existing relevant pages for new query opportunities first. Change titles to reflect demonstrated intent and useful page content, rather than adding unsupported superlatives or repeating synonyms. No recurring monitoring or new analytics data collection is introduced.
