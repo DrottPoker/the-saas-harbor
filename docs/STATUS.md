@@ -20,9 +20,15 @@ The admin panel and Telegram alerts remain English for the owner. Markdown, llms
 
 Milestone emails are translated and format their USD thresholds in the recipient's locale. Currency remains a browser preference, so an email does not assume the recipient still uses the currency from an earlier browser visit. Demo products' taglines, descriptions and founder headlines are translated before filtering and rendering, including in lists; real products keep the text their users wrote.
 
-Validation covers locale/currency detection and formatting, reference-rate caching and dates per currency, matching and translating stored provider notes, localized image failures, email templates, database email languages and removal of account metadata. Shared form labels come from `common.forms`, including on account pages. A proxy regression test covers the headers forwarded by Server Action redirects. Browser coverage includes language and currency choices, search and legal links, a Spanish registration email opened in a fresh English browser, translated provider errors, Arabic account pages, and Axe scans at 390 and 1440 px in both themes. Final check results and production application are recorded below when verified.
+Validation covers locale/currency detection and formatting, reference-rate caching and dates per currency, matching and translating stored provider notes, localized image failures, email templates, database email languages and removal of account metadata. Shared form labels come from `common.forms`, including on account pages. A proxy regression test covers the headers forwarded by Server Action redirects. Browser coverage includes language and currency choices, search and legal links, translated demo listings and pages, a Spanish registration email opened in a fresh English browser, translated provider errors, Arabic account pages, and Axe scans at 390 and 1440 px in both themes.
+
+Verified 2026-10-29: `npm run check` (59 files, 904 unit tests), `npm run build`, `npm run test:db` (32 files, 728 database tests) and the complete `npm run test:e2e` (42 Chromium tests). Arabic and Spanish public pages, including the demo page, and Arabic account pages pass Axe in both themes and at both widths; screenshots were visually reviewed. The final browser run includes the demo-listing correction. Tests use only the local Supabase stack and Mailpit.
 
 With the owner's explicit approval, production Auth received the three translated email templates and subjects and the five localized confirmation addresses. A minimal configuration was used; the follow-up diff has no remaining declared changes and confirms that the existing SMTP and Google/GitHub settings were preserved.
+
+After the local checks passed, `20261027110000_email_language.sql` was applied to production with `supabase db push --linked --skip-vault`; `supabase db diff --linked` confirms no schema changes remain. Local account-deletion tests verify removal of the stored language, and leftover accounts from failed local language-test attempts were removed.
+
+The local Next.js test server can log `The destination stream closed early` during navigation. The language pages' browser-console assertions and the complete suite pass; this server diagnostic remains visible.
 
 ## Providers hidden until set up 2026-10-27
 
