@@ -201,7 +201,7 @@ test("anonymous navigation, private route protection and responsive empty state"
   ).toHaveAttribute("href", "/auth?mode=signup");
   // Search engines learn the site's name, logo and organization from the home page.
   await expect(page).toHaveTitle(
-    "Free SaaS directory and verified MRR leaderboard | The SaaS Harbor",
+    "Free SaaS product directory and verified MRR leaderboard | The SaaS Harbor",
   );
   const site = JSON.parse(
     (await page.locator('script[type="application/ld+json"]').first().textContent())!,
@@ -209,6 +209,7 @@ test("anonymous navigation, private route protection and responsive empty state"
   expect(site["@graph"].map((item: { "@type": string }) => item["@type"])).toEqual([
     "Organization",
     "WebSite",
+    "WebPage",
   ]);
   await expect(
     page.getByRole("banner").getByRole("link", { name: "List your SaaS" }),

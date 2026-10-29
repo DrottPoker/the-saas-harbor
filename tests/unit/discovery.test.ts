@@ -1,17 +1,23 @@
-import { beforeAll, describe, expect, it } from "vitest";
+import { afterEach, beforeAll, describe, expect, it } from "vitest";
+import { LOCALES, LOCALE_INFO, localizedPath } from "../../src/i18n/config";
+import { loadMessages } from "../../src/i18n/messages";
+import { setTestLocale } from "./support/next-intl-server";
 import type { Listing, Profile } from "../../src/lib/data";
 import { categories, categoryFromSlug, categorySlug } from "../../src/lib/domain";
 import { escapeMarkdown, llmsText, makerMarkdown, productMarkdown } from "../../src/lib/markdown";
 import { listMetadata, productSummary, profileDescription, websiteRel } from "../../src/lib/seo";
 import {
   categoryJsonLd,
+  categoriesJsonLd,
   faqJsonLd,
+  guideJsonLd,
   leaderboardJsonLd,
   makerJsonLd,
   productJsonLd,
   serializeJsonLd,
   siteJsonLd,
   techJsonLd,
+  techsJsonLd,
 } from "../../src/lib/structured-data";
 import { techFromSlug } from "../../src/lib/tech";
 
@@ -94,8 +100,134 @@ describe("category addresses", () => {
 });
 
 describe("structured data", () => {
+  afterEach(() => setTestLocale("en"));
+
+  it.each(LOCALES)(
+    "describes the %s home page and the multilingual site separately",
+    async (locale) => {
+      setTestLocale(locale);
+      const messages = await loadMessages(locale);
+      const { "@graph": graph } = await siteJsonLd();
+      expect(graph).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            "@type": "WebSite",
+            "@id": "https://harbor.example/#website",
+            url: "https://harbor.example/",
+            inLanguage: LOCALES.map((l) => LOCALE_INFO[l].lang),
+            description: messages.seo.siteDescription,
+          }),
+          expect.objectContaining({
+            "@type": "WebPage",
+            url: `https://harbor.example${localizedPath(locale, "/")}`,
+            inLanguage: LOCALE_INFO[locale].lang,
+            name: messages.home.meta.title,
+          }),
+        ]),
+      );
+    },
+  );
+
+  it.each(LOCALES)(
+    "uses %s page addresses, breadcrumbs and language without rewriting user content",
+    async (locale) => {
+      setTestLocale(locale);
+      const messages = await loadMessages(locale);
+      const url = (path: string) => `https://harbor.example${localizedPath(locale, path)}`;
+      const [
+        product,
+        maker,
+        category,
+        categoryList,
+        technology,
+        technologyList,
+        faq,
+        guide,
+        ranking,
+      ] = await Promise.all([
+        productJsonLd(listing()),
+        makerJsonLd(profile()),
+        categoryJsonLd("Developer Tools", [listing()]),
+        categoriesJsonLd(["Developer Tools"]),
+        techJsonLd(techFromSlug("go")!, [listing()]),
+        techsJsonLd([techFromSlug("go")!]),
+        faqJsonLd("/list-your-saas", "FAQ", [{ question: "Question", answer: "Answer" }]),
+        guideJsonLd({
+          path: "/where-to-launch",
+          headline: "Guide",
+          description: "Description",
+          published: "2026-10-01",
+          modified: "2026-10-29",
+          places: [
+            { name: "Harbor", url: "/list-your-saas", internal: true },
+            { name: "External", url: "https://external.example/es" },
+          ],
+        }),
+        leaderboardJsonLd([listing()], { path: "/?by=12m", name: "Ranking" }),
+      ]);
+      for (const document of [
+        product,
+        maker,
+        category,
+        categoryList,
+        technology,
+        technologyList,
+        faq,
+        guide,
+        ranking,
+      ])
+        expect(document.inLanguage).toBe(LOCALE_INFO[locale].lang);
+      expect(product).toMatchObject({
+        url: url("/saas/querybird"),
+        description: "SQL reports for small teams",
+        mainEntity: {
+          name: "QueryBird",
+          url: "https://querybird.example",
+          applicationCategory: "DeveloperApplication",
+          applicationSubCategory: messages.categories.names["developer-tools"],
+          creator: { url: url("/users/tomas-rivera") },
+        },
+        breadcrumb: {
+          itemListElement: [
+            { name: messages.home.explore.browseTitle, item: url("/browse") },
+            {
+              name: messages.categories.names["developer-tools"],
+              item: url("/categories/developer-tools"),
+            },
+            { name: "QueryBird", item: url("/saas/querybird") },
+          ],
+        },
+      });
+      expect(maker).toMatchObject({
+        url: url("/users/tomas-rivera"),
+        mainEntity: { sameAs: ["https://tomas.example", "https://github.com/tomas"] },
+      });
+      expect(category).toMatchObject({
+        url: url("/categories/developer-tools"),
+        breadcrumb: {
+          itemListElement: [
+            { name: messages.lists.categories.title },
+            { name: messages.categories.names["developer-tools"] },
+          ],
+        },
+        mainEntity: { itemListElement: [{ url: url("/saas/querybird") }] },
+      });
+      expect(categoryList).toMatchObject({
+        url: url("/categories"),
+        name: messages.lists.categories.title,
+      });
+      expect(technology).toMatchObject({ url: url("/tech/go") });
+      expect(technologyList).toMatchObject({ url: url("/tech"), name: messages.lists.techs.title });
+      expect(faq.url).toBe(url("/list-your-saas"));
+      expect(guide).toMatchObject({
+        url: url("/where-to-launch"),
+        mentions: [{ url: url("/list-your-saas") }, { url: "https://external.example/es" }],
+      });
+      expect(ranking.url).toBe(url("/?by=12m"));
+    },
+  );
   it("describes the site and the organization behind it, with a raster logo", async () =>
-    expect(siteJsonLd()).toMatchObject({
+    expect(await siteJsonLd()).toMatchObject({
       "@graph": [
         {
           "@type": "Organization",
@@ -109,12 +241,13 @@ describe("structured data", () => {
           name: "The SaaS Harbor",
           publisher: { "@id": "https://harbor.example/#organization" },
         },
+        { "@type": "WebPage", url: "https://harbor.example/", inLanguage: "en" },
       ],
     }));
 
   it("lists the leaderboard's first page in rank order", async () =>
     expect(
-      leaderboardJsonLd([listing(), listing({ slug: "second", name: "Second", rank: 2 })]),
+      await leaderboardJsonLd([listing(), listing({ slug: "second", name: "Second", rank: 2 })]),
     ).toMatchObject({
       "@type": "CollectionPage",
       url: "https://harbor.example/",
@@ -129,7 +262,7 @@ describe("structured data", () => {
 
   it("gives a revenue ranking its own address and name", async () =>
     expect(
-      leaderboardJsonLd([listing()], {
+      await leaderboardJsonLd([listing()], {
         path: "/?by=12m",
         name: "SaaS ranked by verified revenue, 12 months",
       }),
@@ -141,7 +274,7 @@ describe("structured data", () => {
 
   it("repeats a page's questions and answers", async () =>
     expect(
-      faqJsonLd("/list-your-saas", "List your SaaS for free", [
+      await faqJsonLd("/list-your-saas", "List your SaaS for free", [
         { question: "Is it free?", answer: "Yes." },
       ]),
     ).toMatchObject({
@@ -159,14 +292,14 @@ describe("structured data", () => {
 
   it("ties every page to the site", async () => {
     const site = { "@id": "https://harbor.example/#website" };
-    expect(productJsonLd(listing())).toMatchObject({ isPartOf: site });
-    expect(makerJsonLd(profile())).toMatchObject({ isPartOf: site });
-    expect(categoryJsonLd("Design", [])).toMatchObject({ isPartOf: site });
-    expect(leaderboardJsonLd([])).toMatchObject({ isPartOf: site });
+    expect(await productJsonLd(listing())).toMatchObject({ isPartOf: site });
+    expect(await makerJsonLd(profile())).toMatchObject({ isPartOf: site });
+    expect(await categoryJsonLd("Design", [])).toMatchObject({ isPartOf: site });
+    expect(await leaderboardJsonLd([])).toMatchObject({ isPartOf: site });
   });
 
   it("describes a product with its category, maker and addresses", async () =>
-    expect(productJsonLd(listing())).toMatchObject({
+    expect(await productJsonLd(listing())).toMatchObject({
       url: "https://harbor.example/saas/querybird",
       mainEntity: {
         "@type": "SoftwareApplication",
@@ -187,18 +320,18 @@ describe("structured data", () => {
     }));
 
   it("links a maker's profiles and leaves out empty ones", async () => {
-    expect(makerJsonLd(profile())).toMatchObject({
+    expect(await makerJsonLd(profile())).toMatchObject({
       "@type": "ProfilePage",
       mainEntity: { sameAs: ["https://tomas.example", "https://github.com/tomas"] },
     });
-    expect(JSON.parse(serializeJsonLd(makerJsonLd(profile({ location: "" }))))).not.toHaveProperty(
-      "mainEntity.homeLocation",
-    );
+    expect(
+      JSON.parse(serializeJsonLd(await makerJsonLd(profile({ location: "" })))),
+    ).not.toHaveProperty("mainEntity.homeLocation");
   });
 
   it("lists a category's ranked products in order", async () =>
     expect(
-      categoryJsonLd("Developer Tools", [
+      await categoryJsonLd("Developer Tools", [
         listing(),
         listing({ slug: "second", name: "Second", rank: 7 }),
       ]),
@@ -212,7 +345,7 @@ describe("structured data", () => {
     }));
 
   it("lists a technology's ranked products under the technology overview", async () =>
-    expect(techJsonLd(techFromSlug("go")!, [listing()])).toMatchObject({
+    expect(await techJsonLd(techFromSlug("go")!, [listing()])).toMatchObject({
       url: "https://harbor.example/tech/go",
       name: "SaaS built with Go",
       breadcrumb: {

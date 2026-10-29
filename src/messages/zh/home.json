@@ -1,8 +1,8 @@
 {
   "meta": {
-    "title": "免费 SaaS 目录与已验证 MRR 排行榜",
+    "title": "免费 SaaS 产品目录与已验证 MRR 收入排行榜",
     "laterTitle": "排行榜",
-    "description": "免费提交你的 SaaS，获得一个带有网站链接的公开页面。连接 Stripe、Paddle、RevenueCat 或其他支付服务商，即可按已验证的 MRR 参与排名。",
+    "description": "发现独立 SaaS 产品，或免费提交你的 SaaS。获得公开产品页面和网站链接，通过支付服务商的只读连接验证月经常性收入（MRR），参与收入排名。",
     "revenueDescription": "按支付服务商验证的近 {window} 收入排名的独立 SaaS 产品，包含一次性购买。",
     "revenueDescriptionAll": "按支付服务商验证的、自首笔付款以来的收入排名的独立 SaaS 产品，包含一次性购买。",
     "window30d": "30 天",

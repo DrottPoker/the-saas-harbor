@@ -1,8 +1,8 @@
 {
   "meta": {
-    "title": "Free SaaS directory and verified MRR leaderboard",
+    "title": "Free SaaS product directory and verified MRR leaderboard",
     "laterTitle": "Leaderboard",
-    "description": "List your SaaS for free and get a public page with a link to your site. Connect Stripe, Paddle, RevenueCat or another payment provider to rank by verified MRR.",
+    "description": "Discover independent SaaS products or list your SaaS for free. Get a public product page and compare MRR verified through read-only payment connections.",
     "revenueDescription": "Independent SaaS products ranked by the revenue their payment provider verifies for the last {window}, one-time purchases included.",
     "revenueDescriptionAll": "Independent SaaS products ranked by the revenue their payment provider verifies since their first payment, one-time purchases included.",
     "window30d": "30 days",

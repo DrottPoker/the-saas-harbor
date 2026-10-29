@@ -1,9 +1,13 @@
 // Structured data (schema.org JSON-LD) that tells search engines and AI assistants what a page is
 // about. It repeats only what the page shows publicly, and demo products never get any.
+import { cache } from "react";
+import { getLocale, getTranslations } from "next-intl/server";
+import { LOCALE_INFO, LOCALES, localizedPath } from "@/i18n/config";
+import { categoryKey } from "@/i18n/names";
 import type { Listing, Profile } from "./data";
 import { categorySlug } from "./domain";
 import { imageUrl } from "./images";
-import { SITE_DESCRIPTION, SITE_NAME, siteUrl } from "./seo";
+import { SITE_NAME, siteUrl } from "./seo";
 import type { Tech } from "./tech";
 
 type JsonLd = Record<string, unknown>;
@@ -21,23 +25,44 @@ const websiteId = () => `${siteUrl()}/#website`;
 const organizationId = () => `${siteUrl()}/#organization`;
 const isPartOf = () => ({ "@id": websiteId() });
 
+// Site entities keep stable ids; pages use their own language and canonical address.
+const pageLanguage = cache(async () => {
+  const [locale, seo, lists, names, home] = await Promise.all([
+    getLocale(),
+    getTranslations("seo"),
+    getTranslations("lists"),
+    getTranslations("categories"),
+    getTranslations("home"),
+  ]);
+  return {
+    tag: LOCALE_INFO[locale].lang,
+    url: (path: string) => `${siteUrl()}${localizedPath(locale, path)}`,
+    seo,
+    lists,
+    names,
+    home,
+  };
+});
+type PageLanguage = Awaited<ReturnType<typeof pageLanguage>>;
+
 /** The organization's logo, served by src/app/logo.png. */
 export const LOGO_SIZE = 512;
 
-function breadcrumbs(items: { name: string; path: string }[]): JsonLd {
+function breadcrumbs(items: { name: string; path: string }[], page: PageLanguage): JsonLd {
   return {
     "@type": "BreadcrumbList",
     itemListElement: items.map((item, index) => ({
       "@type": "ListItem",
       position: index + 1,
       name: item.name,
-      item: `${siteUrl()}${item.path}`,
+      item: page.url(item.path),
     })),
   };
 }
 
 /** The site and the organization that runs it, for the home page. */
-export function siteJsonLd(): JsonLd {
+export async function siteJsonLd(): Promise<JsonLd> {
+  const page = await pageLanguage();
   const url = `${siteUrl()}/`;
   return {
     "@context": "https://schema.org",
@@ -53,7 +78,7 @@ export function siteJsonLd(): JsonLd {
           width: LOGO_SIZE,
           height: LOGO_SIZE,
         },
-        description: SITE_DESCRIPTION,
+        description: page.seo("siteDescription"),
       },
       {
         "@type": "WebSite",
@@ -61,20 +86,32 @@ export function siteJsonLd(): JsonLd {
         name: SITE_NAME,
         alternateName: "SaaS Harbor",
         url,
-        description: SITE_DESCRIPTION,
-        inLanguage: "en",
+        description: page.seo("siteDescription"),
+        inLanguage: LOCALES.map((locale) => LOCALE_INFO[locale].lang),
         publisher: { "@id": organizationId() },
+      },
+      {
+        "@type": "WebPage",
+        "@id": `${page.url("/")}#webpage`,
+        url: page.url("/"),
+        name: page.home("meta.title"),
+        description: page.home("meta.description"),
+        inLanguage: page.tag,
+        isPartOf: isPartOf(),
+        about: { "@id": organizationId() },
       },
     ],
   };
 }
 
 /** A page of questions and answers, exactly as the page shows them. */
-export function faqJsonLd(path: string, name: string, questions: FaqItem[]): JsonLd {
+export async function faqJsonLd(path: string, name: string, questions: FaqItem[]): Promise<JsonLd> {
+  const page = await pageLanguage();
   return {
     "@context": "https://schema.org",
     "@type": "FAQPage",
-    url: `${siteUrl()}${path}`,
+    url: page.url(path),
+    inLanguage: page.tag,
     name,
     isPartOf: isPartOf(),
     mainEntity: questions.map(({ question, answer }) => ({
@@ -88,7 +125,7 @@ export function faqJsonLd(path: string, name: string, questions: FaqItem[]): Jso
 export type FaqItem = { question: string; answer: string };
 
 /** A guide written by the site, and the places it describes. Internal addresses are paths. */
-export function guideJsonLd({
+export async function guideJsonLd({
   path,
   headline,
   description,
@@ -102,8 +139,9 @@ export function guideJsonLd({
   published: string;
   modified: string;
   places: { name: string; url: string; internal?: boolean }[];
-}): JsonLd {
-  const url = `${siteUrl()}${path}`;
+}): Promise<JsonLd> {
+  const page = await pageLanguage();
+  const url = page.url(path);
   const organization = {
     "@type": "Organization",
     "@id": organizationId(),
@@ -113,6 +151,7 @@ export function guideJsonLd({
   return {
     "@context": "https://schema.org",
     "@type": "Article",
+    inLanguage: page.tag,
     headline,
     description,
     url,
@@ -125,7 +164,7 @@ export function guideJsonLd({
     mentions: places.map((place) => ({
       "@type": "WebSite",
       name: place.name,
-      url: place.internal ? `${siteUrl()}${place.url}` : place.url,
+      url: place.internal ? page.url(place.url) : place.url,
     })),
   };
 }
@@ -134,56 +173,64 @@ export function guideJsonLd({
  * The first page of a leaderboard ranking on the home page, in rank order: by MRR, or by revenue
  * at its own address.
  */
-export function leaderboardJsonLd(
+export async function leaderboardJsonLd(
   ranked: Listing[],
-  list = { path: "/", name: "SaaS ranked by verified MRR" },
-): JsonLd {
+  list?: { path: string; name: string },
+): Promise<JsonLd> {
+  const page = await pageLanguage();
   return {
     "@context": "https://schema.org",
     "@type": "CollectionPage",
-    url: `${siteUrl()}${list.path}`,
-    name: list.name,
+    url: page.url(list?.path ?? "/"),
+    name: list?.name ?? page.home("explore.leaderboardTitle"),
+    inLanguage: page.tag,
     isPartOf: isPartOf(),
-    mainEntity: rankedList(ranked),
+    mainEntity: rankedList(ranked, page),
   };
 }
 
-export function productJsonLd(item: Listing): JsonLd {
+export async function productJsonLd(item: Listing): Promise<JsonLd> {
+  const page = await pageLanguage();
   const path = `/saas/${item.slug}`;
   const category = item.category ?? "Other";
   return {
     "@context": "https://schema.org",
     "@type": "WebPage",
-    "@id": `${siteUrl()}${path}`,
-    url: `${siteUrl()}${path}`,
+    "@id": page.url(path),
+    url: page.url(path),
+    inLanguage: page.tag,
     name: item.name,
     description: item.tagline,
     isPartOf: isPartOf(),
-    breadcrumb: breadcrumbs([
-      { name: "Browse", path: "/browse" },
-      { name: category, path: `/categories/${categorySlug(category)}` },
-      { name: item.name ?? "SaaS", path },
-    ]),
+    breadcrumb: breadcrumbs(
+      [
+        { name: page.home("explore.browseTitle"), path: "/browse" },
+        { name: page.names(categoryKey(category)), path: `/categories/${categorySlug(category)}` },
+        { name: item.name ?? "SaaS", path },
+      ],
+      page,
+    ),
     mainEntity: {
       "@type": "SoftwareApplication",
       name: item.name,
       description: item.description,
       applicationCategory: applicationCategories[category] ?? "BusinessApplication",
-      applicationSubCategory: category,
-      url: item.website ?? `${siteUrl()}${path}`,
+      applicationSubCategory: page.names(categoryKey(category)),
+      url: item.website ?? page.url(path),
       image: imageUrl(item.logo_path) ?? undefined,
       datePublished: item.launched_on ?? undefined,
       creator: {
         "@type": "Person",
         name: item.owner_name,
-        url: `${siteUrl()}/users/${item.owner_slug}`,
+        url: page.url(`/users/${item.owner_slug}`),
       },
     },
   };
 }
 
-export function makerJsonLd(profile: Profile): JsonLd {
-  const url = `${siteUrl()}/users/${profile.slug}`;
+export async function makerJsonLd(profile: Profile): Promise<JsonLd> {
+  const page = await pageLanguage();
+  const url = page.url(`/users/${profile.slug}`);
   const links = [
     profile.website,
     profile.linkedin_url,
@@ -194,6 +241,7 @@ export function makerJsonLd(profile: Profile): JsonLd {
   return {
     "@context": "https://schema.org",
     "@type": "ProfilePage",
+    inLanguage: page.tag,
     "@id": url,
     url,
     isPartOf: isPartOf(),
@@ -210,38 +258,52 @@ export function makerJsonLd(profile: Profile): JsonLd {
   };
 }
 
-export function categoriesJsonLd(categories: string[]): JsonLd {
+export async function categoriesJsonLd(categories: string[]): Promise<JsonLd> {
+  const page = await pageLanguage();
   return {
     "@context": "https://schema.org",
     "@type": "CollectionPage",
-    url: `${siteUrl()}/categories`,
-    name: "Categories",
+    url: page.url("/categories"),
+    name: page.lists("categories.title"),
+    inLanguage: page.tag,
     isPartOf: isPartOf(),
     mainEntity: {
       "@type": "ItemList",
       itemListElement: categories.map((category, index) => ({
         "@type": "ListItem",
         position: index + 1,
-        name: category,
-        url: `${siteUrl()}/categories/${categorySlug(category)}`,
+        name: page.names(categoryKey(category)),
+        url: page.url(`/categories/${categorySlug(category)}`),
       })),
     },
   };
 }
 
 /** A category page and its ranked products, in leaderboard order. */
-export function categoryJsonLd(category: string, ranked: Listing[]): JsonLd {
+export async function categoryJsonLd(category: string, ranked: Listing[]): Promise<JsonLd> {
+  const page = await pageLanguage();
   const path = `/categories/${categorySlug(category)}`;
-  return rankedCollection(`${category} SaaS`, path, "Categories", "/categories", category, ranked);
+  const name = page.names(categoryKey(category));
+  return rankedCollection(
+    page.lists("category.title", { category: name }),
+    path,
+    page.lists("categories.title"),
+    "/categories",
+    name,
+    ranked,
+    page,
+  );
 }
 
 /** The overview of the technologies, in the catalog's order. */
-export function techsJsonLd(items: Tech[]): JsonLd {
+export async function techsJsonLd(items: Tech[]): Promise<JsonLd> {
+  const page = await pageLanguage();
   return {
     "@context": "https://schema.org",
     "@type": "CollectionPage",
-    url: `${siteUrl()}/tech`,
-    name: "Tech stacks",
+    url: page.url("/tech"),
+    name: page.lists("techs.title"),
+    inLanguage: page.tag,
     isPartOf: isPartOf(),
     mainEntity: {
       "@type": "ItemList",
@@ -249,22 +311,24 @@ export function techsJsonLd(items: Tech[]): JsonLd {
         "@type": "ListItem",
         position: index + 1,
         name: tech.name,
-        url: `${siteUrl()}/tech/${tech.slug}`,
+        url: page.url(`/tech/${tech.slug}`),
       })),
     },
   };
 }
 
 /** A technology's page and the ranked products built with it, in leaderboard order. */
-export function techJsonLd(tech: Tech, ranked: Listing[]): JsonLd {
+export async function techJsonLd(tech: Tech, ranked: Listing[]): Promise<JsonLd> {
+  const page = await pageLanguage();
   const path = `/tech/${tech.slug}`;
   return rankedCollection(
-    `SaaS built with ${tech.name}`,
+    page.lists("tech.title", { tech: tech.name }),
     path,
-    "Tech stacks",
+    page.lists("techs.title"),
     "/tech",
     tech.name,
     ranked,
+    page,
   );
 }
 
@@ -275,23 +339,28 @@ function rankedCollection(
   parentPath: string,
   crumb: string,
   ranked: Listing[],
+  page: PageLanguage,
 ): JsonLd {
   return {
     "@context": "https://schema.org",
     "@type": "CollectionPage",
-    url: `${siteUrl()}${path}`,
+    url: page.url(path),
     name,
+    inLanguage: page.tag,
     isPartOf: isPartOf(),
-    breadcrumb: breadcrumbs([
-      { name: parentName, path: parentPath },
-      { name: crumb, path },
-    ]),
-    mainEntity: rankedList(ranked),
+    breadcrumb: breadcrumbs(
+      [
+        { name: parentName, path: parentPath },
+        { name: crumb, path },
+      ],
+      page,
+    ),
+    mainEntity: rankedList(ranked, page),
   };
 }
 
 /** Ranked products in leaderboard order, highest MRR first. */
-function rankedList(ranked: Listing[]): JsonLd {
+function rankedList(ranked: Listing[], page: PageLanguage): JsonLd {
   return {
     "@type": "ItemList",
     itemListOrder: "https://schema.org/ItemListOrderDescending",
@@ -299,7 +368,7 @@ function rankedList(ranked: Listing[]): JsonLd {
       "@type": "ListItem",
       position: index + 1,
       name: item.name,
-      url: `${siteUrl()}/saas/${item.slug}`,
+      url: page.url(`/saas/${item.slug}`),
     })),
   };
 }

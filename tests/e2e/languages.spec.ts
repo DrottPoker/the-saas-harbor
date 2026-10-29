@@ -2,10 +2,52 @@ import { test, expect, type Page } from "@playwright/test";
 import { createClient } from "@supabase/supabase-js";
 import { randomBytes, randomUUID } from "node:crypto";
 import { expectAccessible } from "./accessibility";
+import { LOCALES, LOCALE_INFO, localizedPath } from "../../src/i18n/config";
 
 // The fake exchange-rate server (tests/e2e/fake-providers.mjs) gives 0.8 euros per dollar on
 // 2026-09-24, and no rate for most other currencies.
 const PREFERENCES = /Language and currency|Idioma y moneda|اللغة والعملة/;
+
+test("crawlers receive localized metadata and structured data in the initial HTML", async ({
+  request,
+}) => {
+  for (const locale of LOCALES) {
+    for (const [path, type] of [
+      ["/", "WebPage"],
+      ["/categories", "CollectionPage"],
+      ["/categories/design", "CollectionPage"],
+      ["/tech", "CollectionPage"],
+      ["/tech/nextjs", "CollectionPage"],
+      ["/list-your-saas", "FAQPage"],
+      ["/where-to-launch", "Article"],
+    ]) {
+      const address = localizedPath(locale, path);
+      const response = await request.get(address, {
+        headers: { "User-Agent": "Googlebot/2.1 (+http://www.google.com/bot.html)" },
+      });
+      expect(response.status(), address).toBe(200);
+      const html = await response.text();
+      const head = html.split("</head>")[0];
+      expect(head, address).toContain(
+        `rel="canonical" href="http://127.0.0.1:3002${address === "/" ? "" : address}"`,
+      );
+      expect((head.match(/hrefLang=/g) ?? []).length, address).toBe(7);
+      const documents = [
+        ...html.matchAll(/<script[^>]*type="application\/ld\+json"[^>]*>([\s\S]*?)<\/script>/g),
+      ].flatMap((match) => {
+        const value = JSON.parse(match[1]);
+        return value["@graph"] ?? [value];
+      });
+      const document = documents.find((value) => value["@type"] === type);
+      expect(document, address).toMatchObject({ inLanguage: LOCALE_INFO[locale].lang });
+      expect(new URL(document.url).pathname, address).toBe(address);
+      if (path === "/") {
+        const website = documents.find((value) => value["@type"] === "WebSite");
+        expect(website.inLanguage).toEqual(LOCALES.map((value) => LOCALE_INFO[value].lang));
+      }
+    }
+  }
+});
 
 async function choose(page: Page, field: "language" | "currency", value: string) {
   await page.getByRole("button", { name: PREFERENCES }).click();
