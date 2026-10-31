@@ -9,8 +9,9 @@
     "title": "Get started in three steps",
     "account": "Create a free account with your email address and a username.",
     "provider": "Choose your payment provider. Connecting {providers} with a read-only key verifies your MRR, which puts your product on the leaderboard and makes the link to your website one that search engines follow. For any other provider, or none yet, choose Other and write its name.",
-    "product": "Add your product: its name, tagline, description, category, website and launch date. Its page is public as soon as you save it.",
-    "free": "Listing is free, and there are no paid plans. The rest of this page explains how the figures are verified and what is public."
+    "product": "Add your product: its name, tagline, description, category, website and launch date. Save the details and complete the payment provider step to publish your page.",
+    "free": "Listing is free, and there are no paid plans. The rest of this page explains how the figures are verified and what is public.",
+    "providerRequired": "Choose your payment provider and connect {providers} with read-only access. New products are listed after a successful connection, even with zero revenue. You choose which figures to share."
   },
   "verified": {
     "title": "Verified revenue",
@@ -29,7 +30,8 @@
     "ranking": "Products are ranked by verified MRR that their founders share. Equal amounts are ordered by revenue of all time, then by the date the product was listed. Category filters keep the overall rank, and a verified MRR of $0 is ranked too.",
     "revenue": "The leaderboard can also rank products by revenue over the last 30 days, the last 12 months or all time, which counts one-time purchases too. A product takes part in each ranking whose figure it has, while its founder shares its revenue.",
     "unranked": "Products without a connected payment provider, or that keep their revenue private, are still listed in Browse and New arrivals.",
-    "stats": "The statistics page adds up the same figures: combined and median MRR, how MRR is spread, the change over 30 days, and the figures by category and by time since launch. It shows them once five products share verified MRR."
+    "stats": "The statistics page adds up the same figures: combined and median MRR, how MRR is spread, the change over 30 days, and the figures by category and by time since launch. It shows them once five products share verified MRR.",
+    "unrankedRequired": "Products that keep their revenue private still appear in Browse and New arrivals. New products need a successful provider connection before they appear publicly."
   },
   "links": {
     "title": "Links to your website",

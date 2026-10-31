@@ -1,7 +1,8 @@
 {
   "section": {
     "title": "Verified revenue",
-    "description": "Connect your payment provider with a read-only key to verify MRR and subscribers. Verified MRR is ranked on the leaderboard, and the link to your website is followed by search engines. If your provider is not in the list, choose Other."
+    "description": "Connect your payment provider with a read-only key to verify MRR and subscribers. Verified MRR is ranked on the leaderboard, and the link to your website is followed by search engines. If your provider is not in the list, choose Other.",
+    "requiredDescription": "Connect a supported payment provider with read-only access. New products are listed only after a successful connection. You can hide the verified figures."
   },
   "choice": {
     "label": "Payment provider",

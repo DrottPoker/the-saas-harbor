@@ -787,6 +787,7 @@ export type Database = {
           hidden_note: string
           hidden_reason: string | null
           id: string
+          listing_pending: boolean
           logo_path: string | null
           name: string
           owner_id: string
@@ -806,6 +807,7 @@ export type Database = {
           hidden_note?: string
           hidden_reason?: string | null
           id?: string
+          listing_pending?: boolean
           logo_path?: string | null
           name: string
           owner_id: string
@@ -825,6 +827,7 @@ export type Database = {
           hidden_note?: string
           hidden_reason?: string | null
           id?: string
+          listing_pending?: boolean
           logo_path?: string | null
           name?: string
           owner_id?: string
@@ -1319,6 +1322,10 @@ export type Database = {
         }
         Returns: undefined
       }
+      admin_update_listing_settings: {
+        Args: { p_allow_other_provider: boolean }
+        Returns: undefined
+      }
       begin_domain_check: { Args: { p_saas: string }; Returns: string }
       begin_revenue_check: {
         Args: { p_refresh: boolean; p_saas: string }
@@ -1389,6 +1396,7 @@ export type Database = {
           email: string
         }[]
       }
+      listing_settings: { Args: never; Returns: boolean }
       mark_conversation_read: {
         Args: { p_conversation: string; p_read_at: string }
         Returns: undefined

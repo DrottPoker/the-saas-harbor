@@ -9,8 +9,9 @@
     "title": "Empieza en tres pasos",
     "account": "Crea una cuenta gratuita con tu correo electrónico y un nombre de usuario.",
     "provider": "Elige tu proveedor de pagos. Al conectar {providers} con una clave de solo lectura, se verifica tu MRR: tu producto entra en la clasificación y el enlace a tu sitio web pasa a ser uno que los buscadores siguen. Si usas otro proveedor, o todavía ninguno, elige Otro y escribe su nombre.",
-    "product": "Añade tu producto: nombre, eslogan, descripción, categoría, sitio web y fecha de lanzamiento. Su página es pública en cuanto la guardas.",
-    "free": "Publicar es gratis y no hay planes de pago. El resto de esta página explica cómo se verifican las cifras y qué es público."
+    "product": "Añade el nombre, el lema, la descripción, la categoría, la web y la fecha de lanzamiento de tu producto. Guarda los datos y completa el paso del proveedor de pagos para publicar tu página.",
+    "free": "Publicar es gratis y no hay planes de pago. El resto de esta página explica cómo se verifican las cifras y qué es público.",
+    "providerRequired": "Elige tu proveedor de pagos y conecta {providers} con acceso de solo lectura. Los productos nuevos se publican cuando la conexión se completa, aunque sus ingresos sean cero. Tú eliges qué cifras compartir."
   },
   "verified": {
     "title": "Ingresos verificados",
@@ -29,7 +30,8 @@
     "ranking": "Los productos se ordenan por el MRR verificado que comparten sus fundadores. Los montos iguales se ordenan por ingresos históricos y luego por la fecha en que se publicó el producto. Los filtros por categoría conservan el puesto general, y un MRR verificado de cero también entra en la clasificación.",
     "revenue": "La clasificación también puede ordenar los productos por ingresos de los últimos 30 días, de los últimos 12 meses o históricos, que también cuentan las compras únicas. Un producto participa en cada clasificación para la que tiene cifra, mientras su fundador comparta sus ingresos.",
     "unranked": "Los productos sin un proveedor de pagos conectado, o que mantienen privados sus ingresos, siguen apareciendo en Explorar y Novedades.",
-    "stats": "La página de estadísticas suma las mismas cifras: el MRR combinado y su mediana, cómo se distribuye el MRR, el cambio en 30 días y las cifras por categoría y por tiempo desde el lanzamiento. Las muestra cuando cinco productos comparten su MRR verificado."
+    "stats": "La página de estadísticas suma las mismas cifras: el MRR combinado y su mediana, cómo se distribuye el MRR, el cambio en 30 días y las cifras por categoría y por tiempo desde el lanzamiento. Las muestra cuando cinco productos comparten su MRR verificado.",
+    "unrankedRequired": "Los productos que mantienen sus ingresos privados siguen apareciendo en Explorar y Novedades. Los productos nuevos necesitan conectar correctamente un proveedor antes de aparecer públicamente."
   },
   "links": {
     "title": "Enlaces a tu sitio web",

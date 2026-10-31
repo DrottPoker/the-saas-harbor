@@ -34,6 +34,7 @@ import { announceProduct, announceRemovedProduct } from "@/lib/indexnow";
 import { termsUpdated } from "@/lib/legal";
 import { failureMessage, localizeValidation } from "@/lib/localize-validation";
 import { PRODUCT_LIMIT, DAILY_PRODUCT_LIMIT } from "@/lib/moderation";
+import { listingSettings } from "@/lib/listing-settings";
 import { keepNewProduct } from "@/lib/new-product";
 import { PROVIDERS } from "@/lib/revenue/catalog";
 import {
@@ -570,6 +571,8 @@ export async function saveSaas(_state: SaveSaasState, form: FormData): Promise<S
   let choice: ChosenProvider | null;
   try {
     choice = chosenProvider(form);
+    if (choice?.provider === "other" && !(await listingSettings()).allowOtherProvider)
+      return { connectionError: t("chooseRequiredProvider") };
   } catch (error) {
     // The name written under Other is checked like a field; anything else is the provider's.
     const text = makerMessage(error);
@@ -613,7 +616,14 @@ export async function saveSaas(_state: SaveSaasState, form: FormData): Promise<S
         .select("saas_id", { count: "exact", head: true })
         .eq("saas_id", fields.id);
       if (connectionError) return { error: t("save.loadFailed") };
-      if (!count) return { connectionError: t("chooseProvider") };
+      if (!count)
+        return {
+          connectionError: t(
+            (await listingSettings()).allowOtherProvider
+              ? "chooseProvider"
+              : "chooseRequiredProvider",
+          ),
+        };
     }
     uploaded = await uploadImage(client, user.id, form.get("image"));
     const { data, error } = await client.rpc("save_saas", {
@@ -636,6 +646,8 @@ export async function saveSaas(_state: SaveSaasState, form: FormData): Promise<S
     });
     if (error) {
       // P0001 errors, such as the product limits, are written for makers by the database.
+      if (error.message === "Connect a supported payment provider to list your SaaS")
+        throw new Error(t("chooseRequiredProvider"));
       const problem = error.code === "P0001" ? SAVE_PROBLEMS[error.message] : undefined;
       throw new Error(
         problem

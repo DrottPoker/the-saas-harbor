@@ -46,7 +46,8 @@
     "syncFailed": "Error de sincronización",
     "notVerified": "Sin verificar",
     "view": "Ver",
-    "edit": "Editar"
+    "edit": "Editar",
+    "pendingConnection": "Conexión pendiente"
   },
   "share": {
     "post": "Acabo de publicar {name} en {site}.",

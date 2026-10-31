@@ -190,6 +190,8 @@ Demo accounts from `npm run db:seed` are `<name>@demo.harbor.test` (for example 
 
 ### Admins
 
+The Settings tab at `/admin/settings` controls whether the product form offers Other. Enable **Hide Other and require a provider connection** to require a successful connection before a new product is listed. Until then it stays private in its founder's dashboard, including after a rejected key or an unfinished OAuth approval. Zero revenue qualifies; verified figures can still be hidden. Existing listings stay public. Other is offered by default, and the policy is enforced in the database as well as the form. Offering Other again lets a pending product be listed when its founder saves it under Other.
+
 Admins review reports in the admin panel at `/admin`, which is reached from the account menu, where the number of open reports is shown. Its product pages also show every product's latest verified MRR and revenue, including figures the founder keeps private. Everyone else gets a 404 there. Admin rights are rows in `private.admins`, which the app cannot write, so they are granted outside it:
 
 ```powershell

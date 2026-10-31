@@ -46,7 +46,8 @@
     "syncFailed": "Sync failed",
     "notVerified": "Not verified",
     "view": "View",
-    "edit": "Edit"
+    "edit": "Edit",
+    "pendingConnection": "Pending connection"
   },
   "share": {
     "post": "I just listed {name} on {site}.",

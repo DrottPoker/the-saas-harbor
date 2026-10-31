@@ -10,7 +10,9 @@
     "limit": "You have listed {limit} products, which is the most an account can have. Delete a product to add another.",
     "editTitle": "Edit {name}",
     "editDescription": "Product details and verified figures are public. You can hide the figures.",
-    "viewPage": "View page"
+    "viewPage": "View page",
+    "requiredDescription": "Connect a supported payment provider with read-only access. New products are listed only after a successful connection. You can hide the verified figures.",
+    "pendingConnection": "Your product is saved privately. Connect a supported payment provider to publish it."
   },
   "chooseProvider": "Choose your payment provider. If it is not in the list, choose Other.",
   "figures": {
@@ -78,5 +80,6 @@
     "confirmName": "Type the product name exactly as shown to confirm.",
     "logoFailed": "The logo could not be deleted, so the product was kept. Please try again.",
     "failed": "The SaaS could not be deleted. Please try again."
-  }
+  },
+  "chooseRequiredProvider": "Choose a supported payment provider to list your SaaS."
 }

@@ -10,6 +10,7 @@ import { formatList } from "@/i18n/list";
 import { DAILY_PRODUCT_LIMIT, PRODUCT_LIMIT } from "@/lib/moderation";
 import { availableProviders } from "@/lib/revenue/available";
 import { providerNames } from "@/lib/revenue/catalog";
+import { listingSettings } from "@/lib/listing-settings";
 import { pageMetadata } from "@/lib/seo";
 import { faqJsonLd, type FaqItem } from "@/lib/structured-data";
 import { currentUser } from "@/lib/supabase/server";
@@ -89,19 +90,25 @@ function Checks({ items }: { items: string[] }) {
 }
 
 export default async function ListYourSaas() {
-  const [t, locale, user] = await Promise.all([
+  const [t, locale, user, { allowOtherProvider }] = await Promise.all([
     getTranslations("listYourSaas"),
     getLocale(),
     currentUser(),
+    listingSettings(),
   ]);
   const names = providerNames(availableProviders());
   const faq: FaqItem[] = questions.map((key) => ({
     question: t(`faq.${key}.question`),
-    answer: t(`faq.${key}.answer`, {
-      providers: formatList(names, locale),
-      total: PRODUCT_LIMIT,
-      daily: DAILY_PRODUCT_LIMIT,
-    }),
+    answer: t(
+      !allowOtherProvider && key === "noRevenue"
+        ? "faq.noRevenue.answerRequired"
+        : `faq.${key}.answer`,
+      {
+        providers: formatList(names, locale),
+        total: PRODUCT_LIMIT,
+        daily: DAILY_PRODUCT_LIMIT,
+      },
+    ),
   }));
   // Visitors create an account first; signed-in users go straight to the product form.
   const start = user ? "/dashboard/saas/new" : "/auth?mode=signup";
@@ -121,7 +128,10 @@ export default async function ListYourSaas() {
   return (
     <Shell size="narrow">
       <JsonLd data={faqJsonLd(localizedPath(locale, path), t("title"), faq)} />
-      <PageHeader title={t("title")} description={t("description")} />
+      <PageHeader
+        title={t("title")}
+        description={t(allowOtherProvider ? "description" : "descriptionRequired")}
+      />
       {actions}
       <section
         aria-labelledby="dofollow"
@@ -146,7 +156,12 @@ export default async function ListYourSaas() {
         <Section id="steps" title={t("steps.title")}>
           <ol className="grid list-decimal gap-2 ps-5 marker:text-faint-foreground">
             {steps.map((key) => (
-              <li key={key}>{t(key, { providers: formatList(names, locale, "disjunction") })}</li>
+              <li key={key}>
+                {t(
+                  !allowOtherProvider && key === "steps.provider" ? "steps.providerRequired" : key,
+                  { providers: formatList(names, locale, "disjunction") },
+                )}
+              </li>
             ))}
           </ol>
         </Section>

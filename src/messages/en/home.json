@@ -19,7 +19,9 @@
     "gainLink": "A dofollow link to your website once you verify revenue",
     "gainViews": "Page views and messages from other users",
     "gainLeaderboard": "A place on the leaderboard, if you connect your revenue",
-    "noPayment": "No payment details and no revenue check needed."
+    "noPayment": "No payment details and no revenue check needed.",
+    "leadRequired": "List your SaaS for free with a public product page, a link to your website and messages from other users. New listings require a payment provider connection.",
+    "noPaymentRequired": "Listing is free. Connect a supported payment provider with read-only access."
   },
   "explore": {
     "leaderboardTitle": "Leaderboard",

@@ -10,7 +10,9 @@
     "limit": "你已提交 {limit} 个产品，已达到每个账户的上限。删除一个产品后才能再添加。",
     "editTitle": "编辑 {name}",
     "editDescription": "产品信息和已验证数据是公开的。你可以隐藏这些数据。",
-    "viewPage": "查看页面"
+    "viewPage": "查看页面",
+    "requiredDescription": "通过只读权限连接受支持的支付服务商。新产品仅在连接成功后公开展示。您可以隐藏已验证的数据。",
+    "pendingConnection": "您的产品已保存，暂未公开。请连接受支持的支付服务商以发布产品。"
   },
   "chooseProvider": "请选择你的支付服务商。如果列表中没有，请选择“其他”。",
   "figures": {
@@ -78,5 +80,6 @@
     "confirmName": "请输入与显示完全一致的产品名称以确认。",
     "logoFailed": "无法删除 Logo，因此产品已保留。请重试。",
     "failed": "无法删除该 SaaS。请重试。"
-  }
+  },
+  "chooseRequiredProvider": "请选择受支持的支付服务商以发布您的 SaaS。"
 }

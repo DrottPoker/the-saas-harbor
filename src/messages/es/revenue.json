@@ -1,7 +1,8 @@
 {
   "section": {
     "title": "Ingresos verificados",
-    "description": "Conecta tu proveedor de pagos con una clave de solo lectura para verificar el MRR y los suscriptores. El MRR verificado entra en la clasificación, y los buscadores siguen el enlace a tu sitio web. Si tu proveedor no está en la lista, elige Otro."
+    "description": "Conecta tu proveedor de pagos con una clave de solo lectura para verificar el MRR y los suscriptores. El MRR verificado entra en la clasificación, y los buscadores siguen el enlace a tu sitio web. Si tu proveedor no está en la lista, elige Otro.",
+    "requiredDescription": "Conecta un proveedor de pagos compatible con acceso de solo lectura. Los productos nuevos se publican solo cuando la conexión se completa correctamente. Puedes ocultar las cifras verificadas."
   },
   "choice": {
     "label": "Proveedor de pagos",

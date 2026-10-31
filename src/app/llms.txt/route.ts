@@ -1,14 +1,18 @@
 import { categoryCounts, techCounts, topRanked } from "@/lib/data";
 import { categories } from "@/lib/domain";
+import { listingSettings } from "@/lib/listing-settings";
 import { llmsText } from "@/lib/markdown";
 import { textResponse } from "@/lib/text-response";
 
 // A guide to the site for AI assistants (llmstxt.org), with the current top 50.
 export async function GET() {
-  const [ranked, counts, techs] = await Promise.all([
+  const [ranked, counts, techs, { allowOtherProvider }] = await Promise.all([
     topRanked(50),
     categoryCounts(),
     techCounts(),
+    listingSettings(),
   ]);
-  return textResponse(llmsText(ranked, counts, categories, techs), { type: "text/plain" });
+  return textResponse(llmsText(ranked, counts, categories, techs, allowOtherProvider), {
+    type: "text/plain",
+  });
 }

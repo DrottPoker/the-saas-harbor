@@ -10,7 +10,9 @@
     "limit": "Ya publicaste {limit} productos, el máximo que permite una cuenta. Elimina un producto para agregar otro.",
     "editTitle": "Editar {name}",
     "editDescription": "Los datos del producto y las cifras verificadas son públicos. Puedes ocultar las cifras.",
-    "viewPage": "Ver página"
+    "viewPage": "Ver página",
+    "requiredDescription": "Conecta un proveedor de pagos compatible con acceso de solo lectura. Los productos nuevos se publican solo cuando la conexión se completa correctamente. Puedes ocultar las cifras verificadas.",
+    "pendingConnection": "Tu producto se ha guardado de forma privada. Conecta un proveedor de pagos compatible para publicarlo."
   },
   "chooseProvider": "Elige tu proveedor de pagos. Si no está en la lista, elige Otro.",
   "figures": {
@@ -78,5 +80,6 @@
     "confirmName": "Escribe el nombre del producto exactamente como aparece para confirmar.",
     "logoFailed": "No se pudo eliminar el logo, así que el producto se conservó. Inténtalo de nuevo.",
     "failed": "No se pudo eliminar el SaaS. Inténtalo de nuevo."
-  }
+  },
+  "chooseRequiredProvider": "Elige un proveedor de pagos compatible para publicar tu SaaS."
 }

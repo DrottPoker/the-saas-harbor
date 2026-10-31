@@ -14,7 +14,7 @@
   "gains": {
     "title": "What a listing gives",
     "page": "A public page for your product with its logo, description, category, tech stack and a link to your website.",
-    "lists": "A place in New arrivals, Browse and your category and technology pages as soon as you save it.",
+    "lists": "A place in New arrivals, Browse and your category and technology pages once your product is listed.",
     "profile": "A profile as the product's founder, where other users can write to you.",
     "views": "Page views for your product's page, which only you see.",
     "leaderboard": "A place on the leaderboard once you connect your payment provider and share your verified MRR.",
@@ -28,18 +28,19 @@
   "differences": {
     "title": "How it differs from other directories",
     "free": "Free, with no paid plans or upgrades.",
-    "noQueue": "No review queue: your page is public as soon as you save it.",
+    "noQueue": "No review queue: complete the listing requirements to make your page public.",
     "noPaidPlacements": "No paid placements: the leaderboard is ordered by verified MRR, and equal amounts by revenue of all time, then by the date the product was listed.",
     "readOnly": "Revenue is read from your payment provider through a read-only key, never typed in.",
     "dofollow": "The link to your website is followed by search engines (dofollow) once your revenue is verified, whether you share the figures or not. It is free.",
-    "indexing": "Search engines hear about your page at once: it joins the sitemap, and Bing and the other search engines that take IndexNow notices are told when you save it."
+    "indexing": "Your public page joins the sitemap so search engines can find it."
   },
   "steps": {
     "title": "How to list your SaaS",
     "account": "Create an account with your email address and a username.",
     "provider": "Choose your payment provider at the top of the form. Connect {providers} with a read-only key to verify your MRR, and choose what to share. For any other provider, or none yet, choose Other and write its name.",
     "product": "Add your product: name, tagline, description, category, website, launch date, logo and tech stack. It is public when you save it.",
-    "extras": "If you like, verify your domain with a DNS record and add the badge to your site."
+    "extras": "If you like, verify your domain with a DNS record and add the badge to your site.",
+    "providerRequired": "Choose your payment provider and connect {providers} with read-only access. New products are listed after a successful connection, even with zero revenue. You choose which figures to share."
   },
   "faq": {
     "title": "Common questions",
@@ -49,11 +50,12 @@
     },
     "noRevenue": {
       "question": "Can I list a product that has no revenue yet?",
-      "answer": "Yes. Choose Other as the payment provider and write none. A product without a connected payment provider gets the same public page and appears in Browse, New arrivals and its category and technology pages. Only the leaderboard needs verified MRR."
+      "answer": "Yes. Choose Other as the payment provider and write none. A product without a connected payment provider gets the same public page and appears in Browse, New arrivals and its category and technology pages. Only the leaderboard needs verified MRR.",
+      "answerRequired": "Yes. Connect a supported payment provider even if its revenue is zero. Your product is listed after the connection succeeds, and you choose which verified figures to share."
     },
     "public": {
       "question": "How long until my listing is public?",
-      "answer": "It is public as soon as you save it. There is no review queue; admins act on reports afterwards, as the terms describe."
+      "answer": "Your page becomes public after you complete the listing requirements. There is no review queue; admins act on reports afterwards, as the terms describe."
     },
     "share": {
       "question": "Do I have to share my revenue?",
@@ -76,5 +78,6 @@
       "answer": "Yes. You can delete a product, or your whole account, at any time, and everything that belongs to it goes with it."
     }
   },
-  "elsewhere": "Launching somewhere else too? <link>Where to launch your SaaS</link> lists other places founders use, and what each is good for."
+  "elsewhere": "Launching somewhere else too? <link>Where to launch your SaaS</link> lists other places founders use, and what each is good for.",
+  "descriptionRequired": "List your SaaS for free with a public product page, a link to your website and messages from other users. New listings require a payment provider connection."
 }

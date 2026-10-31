@@ -46,7 +46,8 @@
     "syncFailed": "同期失敗",
     "notVerified": "未検証",
     "view": "表示",
-    "edit": "編集"
+    "edit": "編集",
+    "pendingConnection": "接続待ち"
   },
   "share": {
     "post": "{name}を{site}に掲載しました。",

@@ -14,7 +14,7 @@
   "gains": {
     "title": "Qué obtienes al publicar",
     "page": "Una página pública para tu producto con su logotipo, descripción, categoría, stack tecnológico y un enlace a tu sitio web.",
-    "lists": "Un lugar en Novedades, Explorar y las páginas de tu categoría y tus tecnologías en cuanto lo guardas.",
+    "lists": "Un lugar en Novedades, Explorar y las páginas de tu categoría y tus tecnologías cuando tu producto esté publicado.",
     "profile": "Un perfil como fundador del producto, donde otros usuarios pueden escribirte.",
     "views": "Las visitas a la página de tu producto, que solo ves tú.",
     "leaderboard": "Un lugar en la clasificación en cuanto conectes tu proveedor de pagos y compartas tu MRR verificado.",
@@ -28,18 +28,19 @@
   "differences": {
     "title": "En qué se diferencia de otros directorios",
     "free": "Gratis, sin planes de pago ni mejoras pagadas.",
-    "noQueue": "Sin cola de revisión: tu página es pública en cuanto la guardas.",
+    "noQueue": "Sin cola de revisión: completa los requisitos de publicación para que tu página sea pública.",
     "noPaidPlacements": "Sin posiciones pagadas: la clasificación se ordena por MRR verificado, y los montos iguales, por ingresos históricos y luego por la fecha en que se publicó el producto.",
     "readOnly": "Los ingresos se leen de tu proveedor de pagos con una clave de solo lectura; nunca se escriben a mano.",
     "dofollow": "Los buscadores siguen el enlace a tu sitio web (dofollow) en cuanto se verifican tus ingresos, compartas o no las cifras. Es gratis.",
-    "indexing": "Los buscadores se enteran de tu página de inmediato: se agrega al mapa del sitio, y Bing y los demás buscadores que aceptan avisos de IndexNow reciben uno cuando la guardas."
+    "indexing": "Tu página pública se incluye en el mapa del sitio para que los buscadores puedan encontrarla."
   },
   "steps": {
     "title": "Cómo publicar tu SaaS",
     "account": "Crea una cuenta con tu correo electrónico y un nombre de usuario.",
     "provider": "Elige tu proveedor de pagos al principio del formulario. Conecta {providers} con una clave de solo lectura para verificar tu MRR, y elige qué compartir. Si usas otro proveedor, o todavía ninguno, elige Otro y escribe su nombre.",
     "product": "Añade tu producto: nombre, eslogan, descripción, categoría, sitio web, fecha de lanzamiento, logotipo y stack tecnológico. Es público en cuanto lo guardas.",
-    "extras": "Si quieres, verifica tu dominio con un registro DNS y agrega la insignia a tu sitio."
+    "extras": "Si quieres, verifica tu dominio con un registro DNS y agrega la insignia a tu sitio.",
+    "providerRequired": "Elige tu proveedor de pagos y conecta {providers} con acceso de solo lectura. Los productos nuevos se publican cuando la conexión se completa, aunque sus ingresos sean cero. Tú eliges qué cifras compartir."
   },
   "faq": {
     "title": "Preguntas frecuentes",
@@ -49,11 +50,12 @@
     },
     "noRevenue": {
       "question": "¿Puedo publicar un producto que todavía no tiene ingresos?",
-      "answer": "Sí. Elige Otro como proveedor de pagos y escribe ninguno. Un producto sin proveedor de pagos conectado recibe la misma página pública y aparece en Explorar, Novedades y las páginas de su categoría y sus tecnologías. Solo la clasificación necesita MRR verificado."
+      "answer": "Sí. Elige Otro como proveedor de pagos y escribe ninguno. Un producto sin proveedor de pagos conectado recibe la misma página pública y aparece en Explorar, Novedades y las páginas de su categoría y sus tecnologías. Solo la clasificación necesita MRR verificado.",
+      "answerRequired": "Sí. Conecta un proveedor de pagos compatible aunque tus ingresos sean cero. Tu producto se publica cuando la conexión se completa correctamente y tú eliges qué cifras verificadas compartir."
     },
     "public": {
       "question": "¿Cuánto tarda mi ficha en ser pública?",
-      "answer": "Es pública en cuanto la guardas. No hay cola de revisión; los administradores actúan después sobre las denuncias, como describen los términos."
+      "answer": "Tu página se hace pública cuando completas los requisitos de publicación. No hay cola de revisión; los administradores actúan después si reciben denuncias, como se explica en los términos."
     },
     "share": {
       "question": "¿Tengo que compartir mis ingresos?",
@@ -76,5 +78,6 @@
       "answer": "Sí. Puedes eliminar un producto, o toda tu cuenta, en cualquier momento, y también se elimina todo lo que le pertenece."
     }
   },
-  "elsewhere": "¿También vas a lanzar en otros sitios? <link>Dónde lanzar tu SaaS</link> reúne otros lugares que usan los fundadores y para qué sirve cada uno."
+  "elsewhere": "¿También vas a lanzar en otros sitios? <link>Dónde lanzar tu SaaS</link> reúne otros lugares que usan los fundadores y para qué sirve cada uno.",
+  "descriptionRequired": "Publica tu SaaS gratis con una página pública del producto, un enlace a tu web y mensajes de otros usuarios. Para publicar un producto nuevo es necesario conectar un proveedor de pagos."
 }

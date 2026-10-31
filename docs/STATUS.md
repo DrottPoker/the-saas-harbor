@@ -8,6 +8,20 @@ The first release includes accounts, email confirmation and recovery, public mak
 
 Makers can message each other privately (see Messages below), and report products, profiles and messages to the admins, who decide in an admin panel (see Reports and moderation below). They get emails about unread messages and about decisions (see Email notifications below). Other forms of connection, such as following or contact lists, are not implemented.
 
+## Admin listing settings 2026-10-31
+
+The admin panel has a Settings tab at `/admin/settings`. **Hide Other and require a provider connection** removes Other from the product form and requires a successful initial connection before new products become public. Zero revenue qualifies and the founder can hide verified figures. Existing listings stay public, and disconnecting after a successful initial connection does not unpublish them. Other remains offered by default so the admin chooses when to activate the requirement.
+
+The singleton policy is readable through a narrow RPC and writable only through an admin-checked function. Database triggers also cover direct product/settings writes. New products stay pending through rejected keys or unfinished OAuth approval, with private access for their owner and admins; public pages, lists, profiles, sitemap, Markdown, badges, redirects and reports exclude them. A verified connection publishes in the same transaction. Re-enabling Other does not publish drafts on its own; saving one under Other does. The form, dashboard and public listing instructions follow the policy in all seven languages, including FAQ structured data and English llms.txt.
+
+Migration: `20261031152839_admin_listing_settings.sql`. Database coverage tests permissions, atomic rejection, direct-write bypasses, private drafts, zero-revenue publication and re-enabling Other. Browser coverage exercises the admin setting, stale forms, failed and successful provider connections, public 404s, sitemap exclusion and the settings page's accessibility at 390 and 1440 px in both themes.
+
+The existing PayPal integration assertion now evaluates its monthly fixture on the 15th: its average-month service line can finish before the 31st, which made the expected current history figure depend on the day the suite ran.
+
+Verified locally: `npm run check` (929 unit tests), `npm run build`, `npm run test:db` (772 tests), an empty local schema diff and no security-advisor findings. The full browser run passed all 48 existing tests; after correcting the new test's match for Stripe's Test mode label, `npm run test:e2e -- listing-settings.spec.ts` passed on a fresh production build with the final copy. Its four Settings screenshots were reviewed at 390 and 1440 px in light and dark themes, with passing Axe and overflow checks.
+
+Applied to production on 2026-10-31; the linked schema diff is empty. A read confirms Other is offered by default and no existing product became pending. The cloud advisor flags intentionally exposed SECURITY DEFINER RPCs, including the public policy read and the admin-checked update, plus the existing disabled leaked-password protection and limited MFA options. Local database coverage verifies the new RPC privileges and admin checks; these cloud Auth settings were outside this change.
+
 ## Japanese language 2026-10-29
 
 At the owner's request, Japanese is the seventh site language, with the complete catalog under `src/messages/ja`: public and signed-in pages, forms, validation, payment-provider instructions and errors, legal pages and emails. The header offers 日本語, addresses use `/ja`, and Accept-Language recognizes Japanese. Japan already maps to JPY; stored money and rankings remain USD. Japanese system fonts render kana and kanji without downloading a large web font. SEO metadata, structured data, hreflang, robots.txt and the sitemap include Japanese. English remains the fallback and the binding legal version, while the admin panel, Telegram, Markdown, llms.txt, badges and sharing images retain their existing English behavior.

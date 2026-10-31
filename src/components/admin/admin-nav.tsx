@@ -11,6 +11,7 @@ const items = [
   ["/admin/products", "Products"],
   ["/admin/accounts", "Accounts"],
   ["/admin/log", "Log"],
+  ["/admin/settings", "Settings"],
 ] as const;
 
 export function AdminNav() {

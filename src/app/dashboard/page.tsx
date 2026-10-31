@@ -106,7 +106,7 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
       .maybeSingle(),
     client
       .from("saas")
-      .select("id,slug,name,tagline,logo_path,hidden_at,verified_domain")
+      .select("id,slug,name,tagline,logo_path,hidden_at,verified_domain,listing_pending")
       .eq("owner_id", user.id)
       .order("created_at", { ascending: false }),
     client.from("revenue_connections").select("saas_id, status").eq("owner_id", user.id),
@@ -119,7 +119,9 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
   const newProduct = await newProductId();
   const added =
     newProduct && params.added === newProduct && !suspended
-      ? products?.find((product) => product.id === newProduct && !product.hidden_at)
+      ? products?.find(
+          (product) => product.id === newProduct && !product.hidden_at && !product.listing_pending,
+        )
       : undefined;
   // The first product each step still needs, so its link leads straight to the work.
   const editor = (missing: (product: NonNullable<typeof products>[number]) => boolean) => {
@@ -233,11 +235,13 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
                 </div>
                 {product.hidden_at ? (
                   <Badge tone="error">{t("products.hidden")}</Badge>
+                ) : product.listing_pending ? (
+                  <Badge>{t("products.pendingConnection")}</Badge>
                 ) : (
                   <RevenueBadge status={revenueStatus.get(product.id)} />
                 )}
                 <div className="flex shrink-0 gap-1">
-                  {!product.hidden_at && !suspended && (
+                  {!product.hidden_at && !product.listing_pending && !suspended && (
                     <Button asChild variant="ghost" size="sm">
                       <Link href={`/saas/${product.slug}`}>{t("products.view")}</Link>
                     </Button>

@@ -112,6 +112,7 @@ function ProviderChoice({
   value,
   onChange,
   offerOther,
+  required,
   invalid,
   onClear,
   clearLabel,
@@ -120,8 +121,8 @@ function ProviderChoice({
   providers: ProviderId[];
   value: ProviderOption | null;
   onChange: (provider: ProviderOption) => void;
-  /** Whether Other is offered, and a choice is required: only while nothing is connected. */
   offerOther: boolean;
+  required: boolean;
   /** Set when the form was sent without a choice. */
   invalid: boolean;
   /** Leaves the provider unchosen again; without it, nothing offers that. */
@@ -133,7 +134,7 @@ function ProviderChoice({
     <Field
       name="provider"
       label={t("label")}
-      required={offerOther}
+      required={required}
       aside={
         onClear && (
           <button
@@ -156,7 +157,7 @@ function ProviderChoice({
           id="provider"
           // Not Radix's own `required`, which would have the browser point at a hidden field; the
           // form checks the choice itself.
-          aria-required={offerOther}
+          aria-required={required}
           aria-invalid={invalid || undefined}
           className={cn(
             fieldClasses,
@@ -586,6 +587,7 @@ export function RevenueSection({
   connection,
   snapshot,
   available,
+  allowOtherProvider,
   result,
   provider,
   onProvider,
@@ -599,6 +601,7 @@ export function RevenueSection({
   snapshot: RevenueSnapshot | null;
   /** The providers this server can connect, which the list offers. */
   available: ProviderId[];
+  allowOtherProvider: boolean;
   /** How the last connection went, in words for the founder. */
   result: { tone: "success" | "error"; text: string } | null;
   provider: ProviderOption | null;
@@ -620,7 +623,11 @@ export function RevenueSection({
   const [replacing, setReplacing] = useState(() => !!connection && provider !== null);
   const current = connection && isProviderId(connection.provider) ? connection.provider : null;
   return (
-    <Section id="revenue" title={t("section.title")} description={t("section.description")}>
+    <Section
+      id="revenue"
+      title={t("section.title")}
+      description={t(allowOtherProvider ? "section.description" : "section.requiredDescription")}
+    >
       {result && <Notice tone={result.tone}>{result.text}</Notice>}
       {connection ? (
         <>
@@ -638,6 +645,7 @@ export function RevenueSection({
                 value={provider}
                 onChange={onProvider}
                 offerOther={false}
+                required={false}
                 invalid={false}
                 onClear={() => {
                   onProvider(null);
@@ -666,7 +674,8 @@ export function RevenueSection({
             providers={available}
             value={provider}
             onChange={onProvider}
-            offerOther
+            offerOther={allowOtherProvider}
+            required
             invalid={invalid}
           />
           {provider === "other" ? (

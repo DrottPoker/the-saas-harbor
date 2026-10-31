@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { formatList } from "@/i18n/list";
 import { availableProviders } from "@/lib/revenue/available";
 import { providerNames } from "@/lib/revenue/catalog";
+import { listingSettings } from "@/lib/listing-settings";
 import { pageMetadata } from "@/lib/seo";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -60,10 +61,11 @@ const textLink = (href: string) => (chunks: ReactNode) => (
 
 export default async function About() {
   // The demo section is shown only while demo products are.
-  const [t, locale, demo] = await Promise.all([
+  const [t, locale, demo, { allowOtherProvider }] = await Promise.all([
     getTranslations("about"),
     getLocale(),
     demoActive(),
+    listingSettings(),
   ]);
   const providers = formatList(providerNames(availableProviders()), locale, "disjunction");
   const values = { providers, privacy: textLink("/privacy"), terms: textLink("/terms") };
@@ -84,7 +86,14 @@ export default async function About() {
                 >
                   {index + 1}
                 </span>
-                <span>{t(step, { providers })}</span>
+                <span>
+                  {t(
+                    !allowOtherProvider && step === "start.provider"
+                      ? "start.providerRequired"
+                      : step,
+                    { providers },
+                  )}
+                </span>
               </li>
             ))}
           </ol>
@@ -97,7 +106,12 @@ export default async function About() {
               <h2 className="text-lg font-semibold">{t(section.title)}</h2>
               {section.body.map((paragraph) => (
                 <p key={paragraph} className="mt-3 leading-7 text-foreground/85">
-                  {t.rich(paragraph, values)}
+                  {t.rich(
+                    !allowOtherProvider && paragraph === "leaderboard.unranked"
+                      ? "leaderboard.unrankedRequired"
+                      : paragraph,
+                    values,
+                  )}
                 </p>
               ))}
               {"details" in section && (

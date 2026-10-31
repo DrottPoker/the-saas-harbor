@@ -67,11 +67,11 @@ select results_eq(
   'makers write only the columns they edit, and never read a stored key');
 select results_eq(
   $$ select functions from pgtap_function_privileges where role = 'anon' $$,
-  $$ values ('check_username,directory_stats,is_admin,saas_slug_redirect'::text) $$,
+  $$ values ('check_username,directory_stats,is_admin,listing_settings,saas_slug_redirect'::text) $$,
   'visitors run only the functions public pages need');
 select results_eq(
   $$ select functions from pgtap_function_privileges where role = 'authenticated' $$,
-  $$ values ('admin_account,admin_account_preferences,admin_accounts,admin_analytics_behavior,admin_analytics_breakdown,admin_analytics_funnel,admin_analytics_heatmap,admin_analytics_live,admin_analytics_overview,admin_analytics_platform,admin_analytics_sources,admin_dismiss_report,admin_funnel_accounts,admin_hide_saas,admin_other_providers,admin_payment_providers,admin_restore_account,admin_restore_saas,admin_revenue,admin_set_feedback_handled,admin_suspend_account,begin_domain_check,begin_revenue_check,check_username,claim_index_notice,complete_signup,delete_account,directory_stats,is_admin,mark_conversation_read,record_sign_in_country,saas_domain_verification,saas_page_view_counts,saas_slug_redirect,save_notification_settings,save_profile,save_saas,send_message,set_username,submit_feedback,submit_report,unread_message_count,username_change_available_at'::text) $$,
+  $$ values ('admin_account,admin_account_preferences,admin_accounts,admin_analytics_behavior,admin_analytics_breakdown,admin_analytics_funnel,admin_analytics_heatmap,admin_analytics_live,admin_analytics_overview,admin_analytics_platform,admin_analytics_sources,admin_dismiss_report,admin_funnel_accounts,admin_hide_saas,admin_other_providers,admin_payment_providers,admin_restore_account,admin_restore_saas,admin_revenue,admin_set_feedback_handled,admin_suspend_account,admin_update_listing_settings,begin_domain_check,begin_revenue_check,check_username,claim_index_notice,complete_signup,delete_account,directory_stats,is_admin,listing_settings,mark_conversation_read,record_sign_in_country,saas_domain_verification,saas_page_view_counts,saas_slug_redirect,save_notification_settings,save_profile,save_saas,send_message,set_username,submit_feedback,submit_report,unread_message_count,username_change_available_at'::text) $$,
   'makers run only the functions the app calls');
 
 select * from finish();

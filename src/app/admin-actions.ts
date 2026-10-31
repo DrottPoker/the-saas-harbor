@@ -5,11 +5,29 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import type { PostgrestError } from "@supabase/supabase-js";
 import { adminSession, safeAdminPath } from "@/lib/admin";
-import { decisionSchema, noteSchema, type ActionState } from "@/lib/domain";
+import { decisionSchema, listingSettingsSchema, noteSchema, type ActionState } from "@/lib/domain";
 import { sendQueuedEmails } from "@/lib/email/outbox";
 
 const id = z.uuid();
 const denied: ActionState = { error: "Only admins can do this." };
+
+export async function saveListingSettingsAction(
+  _state: ActionState,
+  form: FormData,
+): Promise<ActionState> {
+  const session = await adminSession();
+  if (!session) return denied;
+  const parsed = listingSettingsSchema.safeParse({
+    hideOtherProvider: form.get("hide_other_provider"),
+  });
+  if (!parsed.success) return { error: "Choose a valid listing setting." };
+  const { error } = await session.client.rpc("admin_update_listing_settings", {
+    p_allow_other_provider: !parsed.data.hideOtherProvider,
+  });
+  if (error) return { error: "The settings could not be saved. Try again." };
+  revalidatePath("/", "layout");
+  return { success: "Listing settings saved." };
+}
 
 function failure(error: PostgrestError): ActionState {
   // P0001 errors are written for admins by the decision functions.

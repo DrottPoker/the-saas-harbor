@@ -19,7 +19,9 @@
     "gainLink": "验证收入后，获得指向你网站的 dofollow 链接",
     "gainViews": "页面浏览量和来自其他用户的消息",
     "gainLeaderboard": "连接收入后，在排行榜上占有一席之地",
-    "noPayment": "无需填写付款信息，也无需收入审核。"
+    "noPayment": "无需填写付款信息，也无需收入审核。",
+    "leadRequired": "免费发布您的 SaaS，获得公开产品页面、网站链接，以及其他用户发来的消息。发布新产品需要连接支付服务商。",
+    "noPaymentRequired": "发布产品免费。请通过只读权限连接受支持的支付服务商。"
   },
   "explore": {
     "leaderboardTitle": "排行榜",

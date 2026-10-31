@@ -259,6 +259,13 @@ export const noteSchema = z
   .trim()
   .max(NOTE_MAX_LENGTH, "Keep the note under 1,000 characters.");
 
+export const listingSettingsSchema = z.object({
+  hideOtherProvider: z
+    .enum(["on"])
+    .nullable()
+    .transform((value) => value === "on"),
+});
+
 // An email link from Auth: a token hash and what it confirms. Only the kinds the app sends.
 export function emailLink(tokenHash: string | null | undefined, type: string | null | undefined) {
   if (!tokenHash || !/^[A-Za-z0-9_-]{16,200}$/.test(tokenHash)) return null;

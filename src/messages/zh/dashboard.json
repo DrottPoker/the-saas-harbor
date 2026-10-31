@@ -46,7 +46,8 @@
     "syncFailed": "同步失败",
     "notVerified": "未验证",
     "view": "查看",
-    "edit": "编辑"
+    "edit": "编辑",
+    "pendingConnection": "等待连接"
   },
   "share": {
     "post": "我刚刚在 {site} 上提交了 {name}。",

@@ -89,6 +89,7 @@ export function SaasForm({
   connection = null,
   snapshot = null,
   available,
+  allowOtherProvider,
   result = null,
 }: {
   id: string;
@@ -98,6 +99,7 @@ export function SaasForm({
   snapshot?: RevenueSnapshot | null;
   /** The providers this server can connect, which the form offers. */
   available: ProviderId[];
+  allowOtherProvider: boolean;
   /** How connecting this product's provider last went. */
   result?: { provider: ProviderId; tone: "success" | "error"; text: string } | null;
 }) {
@@ -108,7 +110,7 @@ export function SaasForm({
   // product saved under Other with Other chosen.
   const [provider, setProvider] = useState<ProviderOption | null>(() => {
     if (result?.tone === "error" && !connectsWithOAuth(result.provider)) return result.provider;
-    return !connection && settings?.other_provider ? "other" : null;
+    return allowOtherProvider && !connection && settings?.other_provider ? "other" : null;
   });
   // Set when the form was sent without a provider, until one is chosen.
   const [missing, setMissing] = useState(false);
@@ -119,7 +121,10 @@ export function SaasForm({
     if (state.connectionError) document.getElementById("revenue")?.scrollIntoView();
   }, [state]);
   const shown = missing
-    ? { tone: "error" as const, text: t("chooseProvider") }
+    ? {
+        tone: "error" as const,
+        text: t(allowOtherProvider ? "chooseProvider" : "chooseRequiredProvider"),
+      }
     : state.connectionError
       ? { tone: "error" as const, text: state.connectionError }
       : result;
@@ -153,6 +158,7 @@ export function SaasForm({
         connection={connection}
         snapshot={snapshot}
         available={available}
+        allowOtherProvider={allowOtherProvider}
         result={shown}
         provider={provider}
         onProvider={(next) => {

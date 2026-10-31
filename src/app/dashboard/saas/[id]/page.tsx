@@ -16,6 +16,7 @@ import { Button } from "@/components/ui/button";
 import { CONNECTION_COLUMNS, type RevenueConnection } from "@/lib/data";
 import { formatCount } from "@/lib/display-money";
 import { RECORD_LABEL, recordName, recordValue, websiteDomain } from "@/lib/domain-verification";
+import { listingSettings } from "@/lib/listing-settings";
 import { PRODUCT_LIMIT } from "@/lib/moderation";
 import { newProductId } from "@/lib/new-product";
 import { availableProviders } from "@/lib/revenue/available";
@@ -54,6 +55,7 @@ export default async function EditSaas({ params, searchParams }: Props) {
     requireUser(),
     getTranslations("saasForm.editor"),
   ]);
+  const { allowOtherProvider } = await listingSettings();
   if (!isNew && !z.uuid().safeParse(id).success) notFound();
   if (isNew) {
     const [{ count, error }, locale] = await Promise.all([
@@ -67,7 +69,7 @@ export default async function EditSaas({ params, searchParams }: Props) {
         <PageHeader
           className="mt-4 border-b"
           title={t("addTitle")}
-          description={t("addDescription")}
+          description={t(allowOtherProvider ? "addDescription" : "requiredDescription")}
         />
         <div className="pt-8">
           {(count ?? 0) >= PRODUCT_LIMIT ? (
@@ -76,7 +78,11 @@ export default async function EditSaas({ params, searchParams }: Props) {
             </Notice>
           ) : (
             <ClientMessages namespaces={FORM_MESSAGES}>
-              <SaasForm id={crypto.randomUUID()} available={availableProviders()} />
+              <SaasForm
+                id={crypto.randomUUID()}
+                available={availableProviders()}
+                allowOtherProvider={allowOtherProvider}
+              />
             </ClientMessages>
           )}
         </div>
@@ -126,7 +132,10 @@ export default async function EditSaas({ params, searchParams }: Props) {
   // A product just added with a payment provider lands here, with the offer to share it once the
   // connection worked; after a failure, the reason comes first.
   const offerShare =
-    result?.tone === "success" && (await newProductId()) === id && !saas.data.hidden_at;
+    result?.tone === "success" &&
+    (await newProductId()) === id &&
+    !saas.data.hidden_at &&
+    !saas.data.listing_pending;
   const share = await getTranslations("dashboard.share");
   return (
     <ClientMessages namespaces={EDITOR_MESSAGES}>
@@ -150,7 +159,8 @@ export default async function EditSaas({ params, searchParams }: Props) {
           description={t("editDescription")}
           actions={
             // A hidden product has no public page to show.
-            !saas.data.hidden_at && (
+            !saas.data.hidden_at &&
+            !saas.data.listing_pending && (
               <Button asChild variant="outline">
                 <Link href={`/saas/${saas.data.slug}`}>{t("viewPage")}</Link>
               </Button>
@@ -166,6 +176,7 @@ export default async function EditSaas({ params, searchParams }: Props) {
             className="mt-8"
           />
         )}
+        {saas.data.listing_pending && <Notice className="mt-8">{t("pendingConnection")}</Notice>}
         <div className="pt-8">
           <SaasForm
             // A new result mounts the form again, so it shows the product as it is now saved.
@@ -176,6 +187,7 @@ export default async function EditSaas({ params, searchParams }: Props) {
             connection={displayConnection as RevenueConnection | null}
             snapshot={connection.data ? snapshot.data : null}
             available={availableProviders()}
+            allowOtherProvider={allowOtherProvider}
             result={result}
           />
           <DomainVerification
@@ -191,7 +203,7 @@ export default async function EditSaas({ params, searchParams }: Props) {
             missingSince={verification.data?.missing_since ?? null}
           />
           {/* A hidden product has no public page, so it has no badge either. */}
-          {!saas.data.hidden_at && (
+          {!saas.data.hidden_at && !saas.data.listing_pending && (
             <BadgeEmbed
               path={`/saas/${saas.data.slug}`}
               pageUrl={`${siteUrl()}/saas/${saas.data.slug}`}

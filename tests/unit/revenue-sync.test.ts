@@ -364,7 +364,10 @@ describe("RevenueCat verification", () => {
 
 describe("PayPal verification", () => {
   it("finds the sandbox, and values subscriptions by their payments, with history", async () => {
-    const result = await verifyRevenue("paypal", paypalKey(PAYPAL.one), null);
+    // The fixture bills on the 1st; its average-month service line can end before the 31st.
+    const current = new Date();
+    const now = new Date(Date.UTC(current.getUTCFullYear(), current.getUTCMonth(), 15, 12));
+    const result = await verifyRevenue("paypal", paypalKey(PAYPAL.one), null, now);
     expect(result).toMatchObject({
       provider: "paypal",
       livemode: false,

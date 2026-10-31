@@ -19,7 +19,9 @@
     "gainLink": "Un enlace dofollow a tu sitio web cuando verifiques tus ingresos",
     "gainViews": "Visitas a la página y mensajes de otros usuarios",
     "gainLeaderboard": "Un lugar en la clasificación, si conectas tus ingresos",
-    "noPayment": "Sin datos de pago y sin revisión de ingresos."
+    "noPayment": "Sin datos de pago y sin revisión de ingresos.",
+    "leadRequired": "Publica tu SaaS gratis con una página pública del producto, un enlace a tu web y mensajes de otros usuarios. Para publicar un producto nuevo es necesario conectar un proveedor de pagos.",
+    "noPaymentRequired": "Publicar es gratis. Conecta un proveedor de pagos compatible con acceso de solo lectura."
   },
   "explore": {
     "leaderboardTitle": "Clasificación",

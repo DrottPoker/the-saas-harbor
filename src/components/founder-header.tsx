@@ -1,6 +1,7 @@
 import Link from "@/components/link";
 import { ArrowRight, Check } from "lucide-react";
 import { getTranslations } from "next-intl/server";
+import { listingSettings } from "@/lib/listing-settings";
 import { currentUser } from "@/lib/supabase/server";
 import { LighthouseBeam } from "./lighthouse-beam";
 import { Button } from "./ui/button";
@@ -14,7 +15,11 @@ const gains = ["gainPage", "gainLink", "gainViews", "gainLeaderboard"] as const;
  */
 export async function FounderHeader() {
   // Visitors create an account first; signed-in users go straight to the product form.
-  const [t, user] = await Promise.all([getTranslations("home.founder"), currentUser()]);
+  const [t, user, { allowOtherProvider }] = await Promise.all([
+    getTranslations("home.founder"),
+    currentUser(),
+    listingSettings(),
+  ]);
   const start = user ? "/dashboard/saas/new" : "/auth?mode=signup";
   return (
     <div className="grid gap-6 pb-10 lg:grid-cols-[minmax(0,1fr)_20rem] lg:items-center lg:gap-12">
@@ -25,7 +30,9 @@ export async function FounderHeader() {
           <br />
           {t("titleSecond")}
         </h1>
-        <p className="mt-4 max-w-2xl text-base text-muted-foreground sm:text-lg">{t("lead")}</p>
+        <p className="mt-4 max-w-2xl text-base text-muted-foreground sm:text-lg">
+          {t(allowOtherProvider ? "lead" : "leadRequired")}
+        </p>
         <div className="mt-6 flex flex-wrap items-center gap-x-6 gap-y-3">
           <Button asChild size="lg">
             <Link href={start}>
@@ -53,7 +60,9 @@ export async function FounderHeader() {
             </li>
           ))}
         </ul>
-        <p className="mt-4 border-t pt-3 text-[13px] text-muted-foreground">{t("noPayment")}</p>
+        <p className="mt-4 border-t pt-3 text-[13px] text-muted-foreground">
+          {t(allowOtherProvider ? "noPayment" : "noPaymentRequired")}
+        </p>
       </section>
     </div>
   );

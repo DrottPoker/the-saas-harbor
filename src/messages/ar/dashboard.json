@@ -46,7 +46,8 @@
     "syncFailed": "فشلت المزامنة",
     "notVerified": "غير موثّق",
     "view": "عرض",
-    "edit": "تعديل"
+    "edit": "تعديل",
+    "pendingConnection": "بانتظار الربط"
   },
   "share": {
     "post": "أدرجتُ للتو {name} على {site}.",

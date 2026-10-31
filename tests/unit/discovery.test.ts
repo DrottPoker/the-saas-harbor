@@ -535,6 +535,14 @@ describe("markdown", () => {
     );
   });
 
+  it("describes the active connection requirement to AI assistants", () => {
+    const text = llmsText([], new Map(), categories, new Map(), false);
+    expect(text).toContain("New products stay private until a successful read-only connection");
+    expect(text).toContain("even with zero revenue");
+    expect(text).not.toContain("is optional");
+    expect(text).not.toContain("public as soon as it is saved");
+  });
+
   it("lists the technologies that products use", async () => {
     const techs = new Map([
       ["nextjs", { products: 2, ranked: 1 }],
