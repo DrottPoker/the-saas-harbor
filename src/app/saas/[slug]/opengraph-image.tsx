@@ -2,6 +2,7 @@ import { ImageResponse } from "next/og";
 import { findSaas } from "@/lib/data";
 import { formatUsd } from "@/lib/domain";
 import { excerpt } from "@/lib/moderation";
+import { ogPictureSource } from "@/lib/og-picture";
 import { isProviderId } from "@/lib/revenue/catalog";
 import {
   HarborCard,
@@ -36,12 +37,13 @@ export default async function Image({ params }: { params: Promise<{ slug: string
   figures.push({ label: "Category", value: item.category ?? "Other" });
   if (figures.length < 3)
     figures.push({ label: "Founder", value: excerpt(item.owner_name ?? "", 22) });
+  const logo = await ogPictureSource(item.logo_path);
   return new ImageResponse(
     <HarborCard footer={<HarborFigures figures={figures} />}>
       <HarborHeading
         title={name}
         subtitle={item.tagline}
-        picture={<OgPicture path={item.logo_path} name={name} theme="dark" size={144} />}
+        picture={<OgPicture src={logo} name={name} theme="dark" size={144} />}
       />
     </HarborCard>,
     OG_RESPONSE,

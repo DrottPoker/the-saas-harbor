@@ -2,6 +2,7 @@ import { ImageResponse } from "next/og";
 import { findProfile, makerTotals } from "@/lib/data";
 import { formatUsd } from "@/lib/domain";
 import { excerpt } from "@/lib/moderation";
+import { ogPictureSource } from "@/lib/og-picture";
 import {
   HarborCard,
   type HarborFigure,
@@ -33,14 +34,13 @@ export default async function Image({ params }: { params: Promise<{ slug: string
     });
   if (figures.length < 3 && profile.location)
     figures.push({ label: "Based in", value: excerpt(profile.location, 22) });
+  const photo = await ogPictureSource(profile.avatar_path);
   return new ImageResponse(
     <HarborCard footer={<HarborFigures figures={figures} />}>
       <HarborHeading
         title={profile.name}
         subtitle={profile.headline}
-        picture={
-          <OgPicture path={profile.avatar_path} name={profile.name} round theme="dark" size={144} />
-        }
+        picture={<OgPicture src={photo} name={profile.name} round theme="dark" size={144} />}
       />
     </HarborCard>,
     OG_RESPONSE,

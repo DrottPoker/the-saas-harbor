@@ -2,6 +2,7 @@ import { ImageResponse } from "next/og";
 import { formatDate } from "@/lib/domain";
 import { milestoneHeadline, milestoneSentence } from "@/lib/milestones";
 import { excerpt } from "@/lib/moderation";
+import { ogPictureSource } from "@/lib/og-picture";
 import { providerName } from "@/lib/revenue/catalog";
 import { OG_RESPONSE, OG_SIZE, OgCard, OgPicture, siteImage } from "@/components/og-card";
 import { loadMilestone, type Params } from "./load";
@@ -16,11 +17,12 @@ export default async function Image({ params }: { params: Params }) {
   if (!found || "redirect" in found) return siteImage();
   const { item, milestone, reachedAt } = found;
   const name = item.name ?? "Product";
+  const logo = await ogPictureSource(item.logo_path);
   return new ImageResponse(
     <OgCard
       title={milestoneHeadline(milestone)}
       subtitle={excerpt(milestoneSentence(milestone, name), 110)}
-      picture={<OgPicture path={item.logo_path} name={name} />}
+      picture={<OgPicture src={logo} name={name} />}
       figures={[
         ["Product", excerpt(name, 24)],
         ["Reached", formatDate(reachedAt)],

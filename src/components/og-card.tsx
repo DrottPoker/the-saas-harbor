@@ -4,7 +4,6 @@
 // theme's (`OgCard`). The logo is drawn from src/lib/logo.ts.
 import { ImageResponse } from "next/og";
 import { PROVIDER_TILES, TILE_MARK, TILE_SIZE } from "@/components/provider-logo";
-import { imageUrl } from "@/lib/images";
 import { LOGO_BEAM_ORIGIN, LOGO_COLORS, LOGO_VIEWBOX, type LogoTheme, logoSvg } from "@/lib/logo";
 import { excerpt } from "@/lib/moderation";
 import { ogLine, ogLines } from "@/lib/og-text";
@@ -50,24 +49,23 @@ export function OgMark({ size, theme = "light" }: { size: number; theme?: LogoTh
 }
 
 /**
- * A logo or photo. Satori draws PNG and JPEG; other formats show initials, as the site does. On
- * navy, an image sits on the muted surface inside a border, as on the site, so a clear logo keeps
- * its edges, and a product's initial takes the blue of the logo's sea.
+ * A logo or photo, read by `ogPictureSource` (src/lib/og-picture.ts), or initials without one. On navy, an image sits on the
+ * muted surface inside a border, as on the site, so a clear logo keeps its edges, and a product's
+ * initial takes the blue of the logo's sea.
  */
 export function OgPicture({
-  path,
+  src: url,
   name,
   round = false,
   theme = "light",
   size = 160,
 }: {
-  path: string | null;
+  src: string | null;
   name: string;
   round?: boolean;
   theme?: LogoTheme;
   size?: number;
 }) {
-  const url = path && /\.(png|jpe?g)$/i.test(path) ? imageUrl(path) : null;
   const radius = round ? size / 2 : Math.round(size * 0.225);
   const dark = theme === "dark";
   const box = {
