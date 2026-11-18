@@ -38,6 +38,10 @@ jobs:
           node-version-file: .nvmrc
           cache: npm
       - run: npm ci
+      # The stack's ports (55320-55329) lie in the range Linux gives to outgoing connections, so one
+      # can be taken at the moment its container binds it ("address already in use"). Reserved,
+      # they are left alone.
+      - run: sudo sysctl -w net.ipv4.ip_local_reserved_ports=55320-55329
       # Only the services the tests use. Realtime delivers messages live.
       - run: npx supabase start -x studio,edge-runtime,logflare,vector,supavisor,postgres-meta,imgproxy
       - run: npx playwright install --with-deps chromium
