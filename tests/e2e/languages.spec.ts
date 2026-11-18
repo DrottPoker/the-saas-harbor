@@ -161,6 +161,35 @@ test("a first visit follows the browser's language, and crawlers find every lang
   await context.close();
 });
 
+// The header's actions are widest in Spanish and Russian. A row that is too full shows first as
+// an action pushed into the row's padding, which no sideways scroll gives away until it passes the
+// screen's edge, so the row's own padding is the measure here.
+test("the header's first row keeps inside its padding on phones, in every language", async ({
+  page,
+}) => {
+  for (const width of [320, 390]) {
+    await page.setViewportSize({ width, height: 800 });
+    for (const locale of ["", "zh", "hi", "ar", "es", "ru", "ja"]) {
+      await page.goto(`/${locale}`);
+      const outside = await page.evaluate(async () => {
+        await document.fonts.ready;
+        const row = document.querySelector("header")!.firstElementChild!;
+        const style = getComputedStyle(row);
+        const box = row.getBoundingClientRect();
+        const left = box.left + parseFloat(style.paddingLeft);
+        const right = box.right - parseFloat(style.paddingRight);
+        return [...row.children]
+          .map((child) => child.getBoundingClientRect())
+          .filter((r) => r.width > 0 && (r.left < left - 0.5 || r.right > right + 0.5))
+          .map((r) => `${Math.round(r.left)}-${Math.round(r.right)} of ${left}-${right}`);
+      });
+      expect(outside, `/${locale} at ${width} px`).toEqual([]);
+      // The mark stays whatever gives way.
+      await expect(page.locator("header a[aria-label] svg").first()).toBeInViewport();
+    }
+  }
+});
+
 for (const locale of ["ar", "es", "ja"])
   for (const theme of ["light", "dark"] as const)
     for (const width of [390, 1440])

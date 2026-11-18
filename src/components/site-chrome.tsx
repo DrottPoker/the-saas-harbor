@@ -40,9 +40,10 @@ export async function SiteHeader({
   return (
     <header className="border-b">
       <div className="mx-auto flex h-14 max-w-6xl items-center gap-3 px-4 sm:gap-6 sm:px-6">
-        <Brand compact={!!account} />
+        <Brand />
         <Navigation className="hidden md:flex" />
-        <div className="ms-auto flex items-center gap-2 sm:gap-4">
+        {/* The actions keep their width; the brand's name gives way when the row is full. */}
+        <div className="ms-auto flex shrink-0 items-center gap-2 sm:gap-4">
           {settings("max-md:hidden")}
           {account ? (
             <>

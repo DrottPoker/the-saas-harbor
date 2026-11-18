@@ -45,18 +45,22 @@ export function LogoMark({ className }: { className?: string }) {
   );
 }
 
-/** With `compact`, the name is only for screen readers on the narrowest phones. */
-export function Brand({ compact = false }: { compact?: boolean }) {
+/**
+ * The mark with the name beside it. Where a row has no room for both, such as the header on a
+ * phone in a language with long labels, the name gives way and the mark stays: the link may shrink
+ * to the mark's width, and a name that no longer fits on its line wraps below it, out of sight.
+ * No width is named, so it holds in every language.
+ */
+export function Brand() {
   return (
     // The label keeps the name in one piece; the two lines are separate boxes.
-    <Link href="/" aria-label={SITE_NAME} className="flex shrink-0 items-center gap-2">
+    <Link
+      href="/"
+      aria-label={SITE_NAME}
+      className="flex h-10 min-w-10 flex-wrap content-start items-center gap-x-2 overflow-hidden"
+    >
       <LogoMark />
-      <span
-        className={cn(
-          "flex flex-col leading-none tracking-tight text-logo-ink",
-          compact && "max-[359px]:sr-only",
-        )}
-      >
+      <span className="flex h-10 flex-col justify-center leading-none tracking-tight text-logo-ink">
         <span className="text-xs font-semibold">The</span>
         <span className="text-[17px] font-bold">SaaS Harbor</span>
       </span>

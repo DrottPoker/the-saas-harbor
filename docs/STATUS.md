@@ -8,6 +8,16 @@ The first release includes accounts, email confirmation and recovery, public mak
 
 Makers can message each other privately (see Messages below), and report products, profiles and messages to the admins, who decide in an admin panel (see Reports and moderation below). They get emails about unread messages and about decisions (see Email notifications below). Other forms of connection, such as following or contact lists, are not implemented.
 
+## A header that fits in every language 2026-11-19
+
+After the push of 2026-11-18, CI showed that the browser tests had failed on `main` since 2026-10-29, when the tests in other languages were added: the home page scrolled sideways at 390 px in Spanish and Arabic. They passed on the development machine by two pixels. In Spanish the header's first row needs 372 px of the 358 inside its padding (the logo with its name, Iniciar sesión and Publica tu SaaS), so the button stood 14 px into the row's padding and stopped 2 px short of the screen's edge; CI draws the text a little wider, which takes it past the edge, and so may a visitor's phone. In English the row was too full at 320 px.
+
+The brand's name now gives way where the row is full, and the mark stays: the link may shrink to the mark's width and a name that no longer fits on its line wraps below it, out of sight, while the actions keep their width. No breakpoint is named, so it holds for any label in any language. Measured at 320 and 390 px in all seven languages, signed out: no sideways scroll, with at least 35 px to spare at 320 px. The name shows at 390 px in English, Chinese, Hindi, Arabic and Japanese and gives way in Spanish and Russian; from 768 px it always shows. Looked at in both themes, with Arabic right to left.
+
+The first CI run of the push failed earlier, when the local stack started: port 55322 was taken ("address already in use"). The stack's ports lie in the range Linux gives to outgoing connections, so CI now reserves them before it starts the stack.
+
+A new browser test measures the row against its own padding at 320 and 390 px in all seven languages, since a row that is too full shows as an action pushed into the padding before any sideways scroll gives it away; it fails without the fix on the development machine too (English at 320 px) and passes with it. Verified locally: `npm run check` (62 files, 947 unit tests), `npm run build`, `npm run test:db` (35 files, 782 tests) and the complete `npm run test:e2e` (50 Chromium tests). The CI run of 2026-11-18 passed every other browser test (45 of 49) with the review's fixes in.
+
 ## Project review and fixes 2026-11-18
 
 At the owner's request the whole project was reviewed: the database, revenue verification, the application layer, the interface, the documents, the tests and the tooling. The dependency upgrade and the confirmed defects below were fixed the same day; what was left is in known issues 29 to 37.
