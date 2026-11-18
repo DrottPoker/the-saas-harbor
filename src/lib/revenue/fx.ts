@@ -8,6 +8,13 @@ function ratesBase() {
   return isSecureOrLocalUrl(base) ? base : null;
 }
 
+// The rates change once a day, so a rate read in the last hour is used again: a run verifies many
+// connections, mostly in the same few currencies. When the service does not answer, a rate read in
+// the last three days still serves, so an outage does not fail every product in another currency.
+const RATE_FRESH_MS = 3_600_000;
+const RATE_USABLE_MS = 3 * 24 * 3_600_000;
+const verifiedRates = new Map<string, { rate: number; date: string; at: number }>();
+
 // Daily reference rates (Frankfurter, central-bank data, no API key). Returns units of each
 // currency per 1 USD and the rate date.
 export async function usdRates(currencies: string[]) {
@@ -15,23 +22,45 @@ export async function usdRates(currencies: string[]) {
   if (!quotes.length) return { rates: new Map<string, number>(), date: null };
   const base = ratesBase();
   if (!base) throw new VerificationError("run.ratesNotConfigured");
-  const url = new URL("/v2/rates", base);
-  url.searchParams.set("base", "usd");
-  url.searchParams.set("quotes", quotes.join(","));
-  let rows: { date: string; quote: string; rate: number }[];
-  try {
-    const response = await fetch(url, { cache: "no-store", signal: AbortSignal.timeout(15_000) });
-    if (!response.ok) throw new Error();
-    rows = await response.json();
-  } catch {
-    throw new VerificationError("run.ratesUnavailable");
+  const now = Date.now();
+  const age = (quote: string) => now - (verifiedRates.get(quote)?.at ?? -Infinity);
+  const wanted = quotes.filter((quote) => age(quote) > RATE_FRESH_MS);
+  if (wanted.length) {
+    const url = new URL("/v2/rates", base);
+    url.searchParams.set("base", "usd");
+    url.searchParams.set("quotes", wanted.join(","));
+    try {
+      const response = await fetch(url, { cache: "no-store", signal: AbortSignal.timeout(15_000) });
+      if (!response.ok) throw new Error(`Exchange rates answered ${response.status}`);
+      const read = ratesFrom(await response.json());
+      // An answer replaces what was held: a currency it leaves out has no rate any more.
+      for (const quote of wanted) verifiedRates.delete(quote);
+      for (const [quote, rate] of read.rates)
+        verifiedRates.set(quote, { rate, date: read.dates.get(quote)!, at: now });
+    } catch (error) {
+      if (wanted.some((quote) => age(quote) > RATE_USABLE_MS))
+        throw new VerificationError("run.ratesUnavailable");
+      console.warn(
+        "Exchange rates could not be read; the last ones are used:",
+        error instanceof Error ? error.message : error,
+      );
+    }
   }
-  return ratesFrom(rows);
+  // A currency the service has no rate for stays out, and fails the verification that needs it.
+  const held = quotes.flatMap((quote) => {
+    const rate = verifiedRates.get(quote);
+    return rate && age(quote) <= RATE_USABLE_MS
+      ? [{ quote, rate: rate.rate, date: rate.date }]
+      : [];
+  });
+  return ratesFrom(held);
 }
 
-function ratesFrom(rows: { date: string; quote: string; rate: number }[]) {
-  const usable = rows.filter(
+function ratesFrom(rows: unknown) {
+  if (!Array.isArray(rows)) throw new Error("Exchange rates answered in an unknown form");
+  const usable = (rows as { date: string; quote: string; rate: number }[]).filter(
     (row) =>
+      !!row &&
       typeof row.quote === "string" &&
       /^\d{4}-\d{2}-\d{2}$/.test(row.date) &&
       Number.isFinite(row.rate) &&

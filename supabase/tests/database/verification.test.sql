@@ -3,7 +3,7 @@
 -- rolled-back transaction.
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(16);
+select plan(21);
 
 -- Existing local connections count as just checked, so only the fixtures are due.
 update public.revenue_connections set last_checked_at = now(), revenue_checked_at = now();
@@ -121,6 +121,48 @@ where saas_id = 'd7100000-0000-4000-8000-000000000002';
 set local role service_role;
 select is_empty($$ select * from public.claim_due_verifications(10, interval '55 minutes') $$,
   'a connection verified within the hour is not due');
+
+-- A connection whose verification keeps failing waits half as long as it has been failing,
+-- at least the interval and at most a day.
+set local role postgres;
+update public.revenue_connections set status = 'error', last_error = 'The key was revoked.',
+  last_synced_at = now() - interval '10 hours', last_checked_at = now() - interval '2 hours'
+where saas_id = 'd7100000-0000-4000-8000-000000000002';
+set local role service_role;
+select is_empty($$ select * from public.claim_due_verifications(10, interval '55 minutes') $$,
+  'a connection that failed for eight hours is not tried again within four');
+set local role postgres;
+update public.revenue_connections set last_checked_at = now() - interval '5 hours'
+where saas_id = 'd7100000-0000-4000-8000-000000000002';
+set local role service_role;
+select results_eq(
+  $$ select * from public.claim_due_verifications(10, interval '55 minutes') $$,
+  $$ values ('d7100000-0000-4000-8000-000000000002'::uuid, false) $$,
+  'and is tried again once half the time it has failed has passed');
+set local role postgres;
+update public.revenue_connections set last_synced_at = now() - interval '30 days',
+  last_checked_at = now() - interval '23 hours'
+where saas_id = 'd7100000-0000-4000-8000-000000000002';
+set local role service_role;
+select is_empty($$ select * from public.claim_due_verifications(10, interval '55 minutes') $$,
+  'a connection that failed for a month is tried once a day');
+set local role postgres;
+update public.revenue_connections set last_checked_at = now() - interval '25 hours'
+where saas_id = 'd7100000-0000-4000-8000-000000000002';
+set local role service_role;
+select results_eq(
+  $$ select * from public.claim_due_verifications(10, interval '55 minutes') $$,
+  $$ values ('d7100000-0000-4000-8000-000000000002'::uuid, false) $$,
+  'never less often than that');
+set local role postgres;
+update public.revenue_connections set last_synced_at = now() - interval '70 minutes',
+  last_checked_at = now() - interval '56 minutes'
+where saas_id = 'd7100000-0000-4000-8000-000000000002';
+set local role service_role;
+select results_eq(
+  $$ select * from public.claim_due_verifications(10, interval '55 minutes') $$,
+  $$ values ('d7100000-0000-4000-8000-000000000002'::uuid, false) $$,
+  'a first failure is tried again within the hour');
 
 set local role authenticated;
 select set_config('request.jwt.claim.sub', 'd7000000-0000-4000-8000-000000000001', true);

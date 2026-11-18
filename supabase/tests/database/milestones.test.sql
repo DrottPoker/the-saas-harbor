@@ -3,7 +3,11 @@
 -- while the MRR is shared. Runs in a rolled-back transaction.
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(20);
+select plan(23);
+
+-- The fixtures are listed, whatever the local stack's listing policy says: a product still
+-- waiting for its provider reaches no place.
+update private.listing_settings set allow_other_provider = true;
 
 insert into auth.users(id, email) values
   ('e7000000-0000-4000-8000-000000000001', 'founder@milestones.test'),
@@ -195,6 +199,29 @@ select results_eq(
      order by milestone $$,
   $$ values ('top-1'::text), ('top-10'), ('top-3') $$,
   'first place also reaches the top 3 and the top 10');
+
+-- Places follow the leaderboard: equal MRR is ordered by revenue of all time before the date
+-- listed. Products 11 and 12 draw level with product 10; only 12 has sold something.
+update public.public_metrics set mrr_cents = 990::bigint * 100000000
+where saas_id = 'e8100000-0000-4000-8000-000000000011';
+select is_empty($$ select 1 from public.saas_milestones
+  where saas_id = 'e8100000-0000-4000-8000-000000000011' and milestone like 'top-%' $$,
+  'a product that draws level without revenue of all time stays behind, by the leaderboard''s last tie-breakers');
+update public.public_metrics set mrr_cents = 990::bigint * 100000000, revenue_total_cents = 5000
+where saas_id = 'e8100000-0000-4000-8000-000000000012';
+select results_eq(
+  $$ select milestone from public.saas_milestones
+     where saas_id = 'e8100000-0000-4000-8000-000000000012' and milestone like 'top-%' $$,
+  $$ values ('top-10'::text) $$,
+  'with equal MRR, revenue of all time places a product first, as on the leaderboard');
+
+-- A product still waiting for its payment provider is not on the leaderboard.
+update public.saas set listing_pending = true where id = 'e8100000-0000-4000-8000-000000000025';
+update public.public_metrics set mrr_cents = mrr_cents * 10
+where saas_id = 'e8100000-0000-4000-8000-000000000025';
+select is_empty($$ select 1 from public.saas_milestones
+  where saas_id = 'e8100000-0000-4000-8000-000000000025' and milestone like 'top-%' $$,
+  'a product that is not listed yet reaches no place');
 
 -- A hidden product reaches nothing, and deleting a product deletes its milestones.
 update public.saas set hidden_at = now(), hidden_reason = 'spam'

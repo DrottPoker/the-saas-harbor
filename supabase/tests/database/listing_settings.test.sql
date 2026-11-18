@@ -1,7 +1,7 @@
 -- Listing policy is public, admin-only to change, and enforced for direct API writes too.
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(29);
+select plan(31);
 
 insert into auth.users(id, email) values
   ('ec000000-0000-4000-8000-000000000001', 'maker@listing-settings.test'),
@@ -97,6 +97,9 @@ values ('ec100000-0000-4000-8000-000000000004', 'ec000000-0000-4000-8000-0000000
   'Direct Listing', 'Fixture', 'A temporary fixture that is rolled back.', 'Other', 'https://example.com');
 select is((select listing_pending from public.saas where id = 'ec100000-0000-4000-8000-000000000004'),
   true, 'direct inserts also need a connection');
+select public.save_saas('ec100000-0000-4000-8000-000000000005', 'Waiting Listing', 'Fixture',
+  'A temporary fixture that is rolled back.', 'Other', 'https://example.com', null, null,
+  true, false, false, '{}', null, 'stripe');
 select set_config('request.jwt.claim.sub', 'ec000000-0000-4000-8000-000000000002', true);
 select lives_ok($$ select public.admin_update_listing_settings(true) $$, 'admins can offer Other again');
 set local role anon;
@@ -104,6 +107,16 @@ select set_config('request.jwt.claim.sub', '', true);
 select is(public.listing_settings(), true, 'the enabled policy is public');
 select is((select count(*) from public.public_saas where id = 'ec100000-0000-4000-8000-000000000004'),
   0::bigint, 'enabling Other does not publish pending products by itself');
+-- Another user names the pending product in a settings row of their own. It meets the product's
+-- existing row and is skipped without an error, and must publish nothing on the way.
+set local role authenticated;
+select set_config('request.jwt.claim.sub', 'ec000000-0000-4000-8000-000000000003', true);
+select lives_ok($$ insert into public.saas_settings(saas_id, owner_id, other_provider)
+  values ('ec100000-0000-4000-8000-000000000005', 'ec000000-0000-4000-8000-000000000003', 'Other')
+  on conflict (saas_id) do nothing $$, 'a settings row for another founder''s product is skipped');
+set local role postgres;
+select is((select listing_pending from public.saas where id = 'ec100000-0000-4000-8000-000000000005'),
+  true, 'and does not publish that founder''s pending product');
 set local role authenticated;
 select set_config('request.jwt.claim.sub', 'ec000000-0000-4000-8000-000000000001', true);
 select public.save_saas('ec100000-0000-4000-8000-000000000004', 'Direct Listing', 'Fixture',

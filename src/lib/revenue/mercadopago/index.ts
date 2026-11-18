@@ -94,16 +94,19 @@ async function missingPreapprovals(
  * Mercado Pago, connected through OAuth with a token that can only read: MRR from authorized
  * subscriptions (preapprovals), and history and revenue from approved payments, which Mercado Pago
  * lists for the last twelve months. Tokens are renewed during a read, never while payments are
- * read, which run on their own and must not spend the stored refresh token.
+ * read, which run on their own and must not spend the stored refresh token. A renewal spends the
+ * refresh token held, so the new key is handed over for storing before any other request.
  */
 export const mercadopago: ProviderAdapter = {
   id: "mercadopago",
   parseKey: () => parseMercadoPagoKey(),
-  async read(stored, livemode, { allowTest, now, history }) {
+  async read(stored, livemode, { allowTest, now, history, onRenewedKey }) {
     const held = decodeMercadoPagoKey(stored);
     const live = livemode ?? !held.accessToken.startsWith("TEST-");
     requireMode(live, allowTest);
     const renewed = await renewIfDue(held, now);
+    const renewedKey = renewed ? encodeMercadoPagoKey(renewed) : null;
+    if (renewedKey) await onRenewedKey?.(renewedKey);
     const key = renewed ?? held;
     const nowSeconds = Math.floor(now.getTime() / 1000);
     const authorized = await fetchPreapprovals(key.accessToken, "authorized", MAX_PAGES);
@@ -141,7 +144,7 @@ export const mercadopago: ProviderAdapter = {
       ...mercadoPagoMrr(authorized, nowSeconds, key.userId),
       lines,
       historyNote,
-      ...(renewed ? { renewedKey: encodeMercadoPagoKey(renewed) } : {}),
+      ...(renewedKey ? { renewedKey } : {}),
     };
   },
   // Payments from before Mercado Pago's twelve months cannot be listed, so a read that reaches

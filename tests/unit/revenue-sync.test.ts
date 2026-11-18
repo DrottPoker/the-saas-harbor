@@ -932,6 +932,23 @@ describe("payments", () => {
     expect(again.kinds.pay_once).toBe("one_time");
   }, 30_000);
 
+  it("values a Dodo payment refunded in part on every read, since a further refund does not show in the list", async () => {
+    const first = await recent("dodo", DODO_KEYS.one);
+    expect(first.values.pay_partly).toEqual(usd(3000));
+    const fingerprint = (read: typeof first) =>
+      read.payments.find((payment) => payment.id === "pay_partly")!.fingerprint;
+    expect(fingerprint(first)).toBe("4000:partial::3000");
+    // Stored after its first refund of 500: the list reads the same, and it is valued again.
+    const again = await recent("dodo", DODO_KEYS.one, {
+      stored: (id) =>
+        id === "pay_partly"
+          ? { fingerprint: "4000:partial::3500", amount: 3500, kind: "one_time" }
+          : null,
+    });
+    expect(again.values.pay_partly).toEqual(usd(3000));
+    expect(fingerprint(again)).toBe("4000:partial::3000");
+  }, 30_000);
+
   it("goes on with Dodo payments in the next run once the requests of one run are spent", async () => {
     const { complete, from, payments } = await recent("dodo", DODO_KEYS.one, { maxPages: 4 });
     expect(complete).toBe(false);
@@ -1126,10 +1143,11 @@ describe("payments", () => {
     expect(complete).toBe(true);
     const day = (back: number) =>
       new Date(Date.now() - back * DAY * 1000).toISOString().slice(0, 10);
-    expect(values[`${day(5)}:subscription:usd`]).toEqual(usd(2000));
-    expect(values[`${day(10)}:subscription:usd`]).toEqual(usd(0));
-    expect(values[`${day(6)}:one_time:usd`]).toEqual(usd(500));
-    expect(values[`${day(12)}:one_time:usd`]).toEqual(usd(600));
+    const app = GOOGLE_PLAY.packageName;
+    expect(values[`${app}:${day(5)}:subscription:usd`]).toEqual(usd(2000));
+    expect(values[`${app}:${day(10)}:subscription:usd`]).toEqual(usd(0));
+    expect(values[`${app}:${day(6)}:one_time:usd`]).toEqual(usd(500));
+    expect(values[`${app}:${day(12)}:one_time:usd`]).toEqual(usd(600));
   }, 20_000);
 
   it("reads Zoho Billing payments less refunds, of unknown kind", async () => {

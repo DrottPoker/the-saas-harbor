@@ -108,6 +108,14 @@ describe("addresses in other languages", () => {
       "/auth/callback?code=1",
       "/auth/oauth/google",
       "/saas/querybird/opengraph-image",
+      "/saas/querybird/milestones/mrr-1000/opengraph-image",
+      "/users/tomas-rivera/opengraph-image",
+      "/stats/opengraph-image",
+      "/opengraph-image",
+      "/icon",
+      "/apple-icon",
+      "/_vercel/insights/script.js",
+      "/_vercel/speed-insights/vitals",
       "https://example.com/",
       "//example.com/",
     ]) {
@@ -115,6 +123,11 @@ describe("addresses in other languages", () => {
       expect(localizedPath("es", path)).toBe(path);
     }
     expect(isLocalizedPath("/auth/confirm?token_hash=1")).toBe(true);
+    // A product or user named like a file is still a page.
+    for (const path of ["/saas/icon", "/users/apple-icon", "/saas/opengraph-image"]) {
+      expect(isLocalizedPath(path), path).toBe(true);
+      expect(localizedPath("es", path)).toBe(`/es${path}`);
+    }
   });
   it("split into the language and the English path", () => {
     expect(splitLocale("/es/browse")).toEqual({ locale: "es", path: "/browse" });

@@ -12,7 +12,13 @@ import {
 } from "./client";
 import { parseDodoKey } from "./key";
 import { dodoMrr, taxIncludedSubscriptions, untaxedShare, type DodoListedPayment } from "./mrr";
-import { dodoEarned, dodoFingerprint, dodoKind } from "./payments";
+import {
+  dodoEarned,
+  dodoFingerprint,
+  dodoKind,
+  dodoPartFingerprint,
+  dodoRefundedInPart,
+} from "./payments";
 
 // Each tax-inclusive subscription costs two requests, and Dodo allows 240 a minute per business.
 const MAX_TAX_LOOKUPS = 200;
@@ -35,7 +41,8 @@ async function environment(key: string, livemode: boolean | null, allowTest: boo
 
 /**
  * Payments from `before` back to `since`, a month at a time, each request counted against
- * `maxPages`. A payment is valued with a request of its own unless it is stored unchanged. A read
+ * `maxPages`. A payment is valued with a request of its own unless it is stored unchanged; one
+ * refunded in part is valued every time, since a further refund leaves the list as it was. A read
  * that runs out of requests covers the days after the newest one it could not value, and returns
  * the payments it valued on that day too, so they are stored and the next read goes further.
  */
@@ -62,7 +69,8 @@ async function readPayments(
       .sort((a, b) => b.at - a.at);
     for (const { payment, at } of newestFirst) {
       const fingerprint = dodoFingerprint(payment);
-      if (stored(payment.payment_id)?.fingerprint === fingerprint) {
+      const inPart = dodoRefundedInPart(payment);
+      if (!inPart && stored(payment.payment_id)?.fingerprint === fingerprint) {
         payments.push({
           id: payment.payment_id,
           at,
@@ -77,12 +85,12 @@ async function readPayments(
         // which finds the payments valued here stored.
         return { payments, complete: false, from: dayStart(dayOf(at)) + DAY };
       }
-      const detail = await fetchPayment(key, livemode, payment.payment_id);
+      const earned = dodoEarned(await fetchPayment(key, livemode, payment.payment_id));
       payments.push({
         id: payment.payment_id,
         at,
-        fingerprint,
-        value: { currency: payment.currency, amount: dodoEarned(detail) },
+        fingerprint: inPart ? dodoPartFingerprint(payment, earned) : fingerprint,
+        value: { currency: payment.currency, amount: earned },
         kind: dodoKind(payment),
       });
     }

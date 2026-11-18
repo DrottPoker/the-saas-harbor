@@ -69,12 +69,16 @@ export async function verifyRevenue(
   key: string,
   livemode: boolean | null,
   now = new Date(),
-  { history = true }: { history?: boolean } = {},
+  {
+    history = true,
+    onRenewedKey,
+  }: { history?: boolean; onRenewedKey?: (key: string) => Promise<void> } = {},
 ): Promise<Verification> {
   const reading = await adapter(provider).read(key, livemode, {
     allowTest: allowTestKeys(),
     now,
     history,
+    onRenewedKey,
   });
   const nowSeconds = Math.floor(now.getTime() / 1000);
   const lines = reading.lines;
@@ -265,8 +269,10 @@ export function refreshReadsPayments(checkedAt: string | null, now = Date.now())
 // Re-verifies a stored connection. A scheduled run carries over a history read less than a day
 // ago; a maker's refresh reads everything. Payments are read when a scheduled run says they are
 // due, or on a maker's refresh when they were not read in the last hour; otherwise the latest
-// figures are carried over. Failures are recorded on the connection for the owner; a failed read
-// of payments leaves MRR verified.
+// figures are carried over. MRR is stored before the payments are read, and stored again with
+// their figures: reading a large account's payments can take minutes, and a run cut short there
+// would otherwise lose the hour's verification too. Failures are recorded on the connection for
+// the owner; a failed read of payments leaves MRR verified.
 export async function syncConnection(
   saasId: string,
   { scheduled = false, revenue = false }: { scheduled?: boolean; revenue?: boolean } = {},
@@ -291,20 +297,30 @@ export async function syncConnection(
     const provider = connection.provider as ProviderId;
     const latest = await latestSnapshot(saasId);
     const carried = scheduled ? historyToCarry(latest, provider) : null;
+    // A renewed key is stored the moment the adapter holds it: the old one may no longer work,
+    // and the rest of the read, or the exchange rates after it, can still fail.
+    let renewed: string | null = null;
     const read = await verifyRevenue(provider, key, connection.livemode, new Date(), {
       history: !carried,
+      onRenewedKey: async (next) => {
+        await renewKey(saasId, connection.connected_at, next);
+        renewed = next;
+      },
     });
-    // The old key may no longer work, so the new one is stored before anything else can fail.
-    if (read.renewedKey) await renewKey(saasId, connection.connected_at, read.renewedKey);
+    if (read.renewedKey && read.renewedKey !== renewed)
+      await renewKey(saasId, connection.connected_at, read.renewedKey);
     const current = read.renewedKey ?? key;
     const verification = carried ? { ...read, ...carried } : read;
     verification.revenue = revenueToCarry(latest, provider);
+    await record(saasId, verification, { connectedAt: connection.connected_at });
     if (readPayments)
       try {
         verification.revenue = await readRevenue(saasId, provider, current, connection.livemode, {
           allowTest: allowTestKeys(),
           connectedAt: connection.connected_at,
         });
+        // The same day's snapshot, now with the figures from the payments just read.
+        await record(saasId, verification, { connectedAt: connection.connected_at });
       } catch (cause) {
         await admin
           .from("revenue_connections")
@@ -312,7 +328,6 @@ export async function syncConnection(
           .eq("saas_id", saasId)
           .eq("connected_at", connection.connected_at);
       }
-    await record(saasId, verification, { connectedAt: connection.connected_at });
     return verification;
   } catch (cause) {
     // A failure is recorded on the connection that was read, not on a key connected since.

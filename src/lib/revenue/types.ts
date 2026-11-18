@@ -22,13 +22,24 @@ export type ProviderReading = {
   historyNote: string | null;
   /**
    * What replaces the stored key after this read, where the provider rotates its credentials,
-   * such as a refresh token that is good only once. Stored with the verification.
+   * such as a refresh token that is good only once. Also given to `onRenewedKey` during the read;
+   * a first connection, which has no stored key yet, stores it with the verification.
    */
   renewedKey?: string;
 };
 
-/** `history` false reads what MRR needs only, and returns no lines and no note. */
-export type ReadOptions = { allowTest: boolean; now: Date; history: boolean };
+/**
+ * `history` false reads what MRR needs only, and returns no lines and no note. An adapter that
+ * rotates its credentials calls `onRenewedKey` with the new key as soon as it holds one, before any
+ * further request: the old credentials may be spent by then, so the new ones must be stored even
+ * if the rest of the read fails.
+ */
+export type ReadOptions = {
+  allowTest: boolean;
+  now: Date;
+  history: boolean;
+  onRenewedKey?: (key: string) => Promise<void>;
+};
 
 /**
  * What a maker pasted: the key, the site or project it belongs to where one is asked for, and the

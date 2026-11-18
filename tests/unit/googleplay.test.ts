@@ -637,28 +637,28 @@ describe("Google Play revenue", () => {
     const payments = googlePlayPayments(charges, at(2026, 9), null);
     expect(payments).toEqual([
       {
-        id: "2026-10-01:subscription:usd",
+        id: "com.example.app:2026-10-01:subscription:usd",
         at: at(2026, 9),
         fingerprint: "3000:1000:2",
         value: { currency: "usd", amount: 2000 },
         kind: "subscription",
       },
       {
-        id: "2026-10-01:one_time:usd",
+        id: "com.example.app:2026-10-01:one_time:usd",
         at: at(2026, 9),
         fingerprint: "500:0:1",
         value: { currency: "usd", amount: 500 },
         kind: "one_time",
       },
       {
-        id: "2026-10-01:one_time:eur",
+        id: "com.example.app:2026-10-01:one_time:eur",
         at: at(2026, 9),
         fingerprint: "300:0:1",
         value: { currency: "eur", amount: 300 },
         kind: "one_time",
       },
       {
-        id: "2026-10-02:one_time:usd",
+        id: "com.example.app:2026-10-02:one_time:usd",
         at: at(2026, 9, 2),
         fingerprint: "1000:400:1",
         value: { currency: "usd", amount: 600 },
@@ -666,7 +666,18 @@ describe("Google Play revenue", () => {
       },
     ]);
     expect(googlePlayPayments(charges, at(2026, 8), at(2026, 9)).map((p) => p.id)).toEqual([
-      "2026-09-30:subscription:usd",
+      "com.example.app:2026-09-30:subscription:usd",
+    ]);
+  });
+
+  it("keeps each app's days apart, so two products never share a payment id", () => {
+    const { charges } = saleCharges([
+      row("A", at(2026, 9, 1), 20),
+      row("B", at(2026, 9, 1), 10, { packageName: "com.example.other" }),
+    ]);
+    expect(googlePlayPayments(charges, at(2026, 9), null)).toMatchObject([
+      { id: "com.example.app:2026-10-01:subscription:usd", value: { amount: 2000 } },
+      { id: "com.example.other:2026-10-01:subscription:usd", value: { amount: 1000 } },
     ]);
   });
 

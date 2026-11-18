@@ -706,6 +706,31 @@ describe("Mercado Pago against the fake server", () => {
     );
   });
 
+  it("hands over a renewed key before the rest of the read, which may fail", async () => {
+    const parsed = await connect("expiring");
+    const api = process.env.MERCADOPAGO_API_BASE;
+    let handed: string | undefined;
+    await expect(
+      mercadopago.read(parsed.key, true, {
+        allowTest: false,
+        now: now(),
+        history: false,
+        // The renewal has spent the stored refresh token; every later request now fails.
+        onRenewedKey: async (key) => {
+          handed = key;
+          process.env.MERCADOPAGO_API_BASE = "http://127.0.0.1:9";
+        },
+      }),
+    ).rejects.toThrow();
+    process.env.MERCADOPAGO_API_BASE = api;
+    expect(handed).toBeDefined();
+    const options = { allowTest: false, since: 0, before: null, maxPages: 100, stored: () => null };
+    expect((await mercadopago.payments(handed!, true, options)).complete).toBe(true);
+    await expect(mercadopago.payments(parsed.key, true, options)).rejects.toThrow(
+      /no longer accepts the connection/,
+    );
+  });
+
   it("keeps using a working access token when its renewal is refused", async () => {
     const parsed = await connect("expiring");
     const held = decodeMercadoPagoKey(parsed.key);

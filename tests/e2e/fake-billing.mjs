@@ -509,6 +509,7 @@ function dodoPayments() {
     payment("pay_eur", now - 20 * DAY, 2400, "EUR", { subscription_id: "sub_dodo_eur" }),
     payment("pay_once", now - 4 * DAY, 3000, "USD"),
     payment("pay_refunded", now - 9 * DAY, 1000, "USD", { refund_status: "full" }),
+    payment("pay_partly", now - 13 * DAY, 4000, "USD", { refund_status: "partial" }),
     payment("pay_disputed", now - 11 * DAY, 2000, "USD", { dispute_status: "dispute_lost" }),
   ];
 }
@@ -518,10 +519,16 @@ function dodoPayment(id) {
   const payment = dodoPayments().find((p) => p.payment_id === id);
   if (!payment) return null;
   const tax = { pay_eur: 400, pay_once: 500 }[id] ?? 0;
+  // pay_partly was refunded twice; the list shows the same status after the first refund.
   const refunds =
     id === "pay_refunded"
       ? [{ refund_id: "ref_1", amount: 1000, status: "succeeded", currency: "USD" }]
-      : [];
+      : id === "pay_partly"
+        ? [
+            { refund_id: "ref_2", amount: 500, status: "succeeded", currency: "USD" },
+            { refund_id: "ref_3", amount: 500, status: "succeeded", currency: "USD" },
+          ]
+        : [];
   const disputes =
     id === "pay_disputed" ? [{ dispute_id: "dsp_1", dispute_status: "dispute_lost" }] : [];
   return { ...payment, tax, refunds, disputes };

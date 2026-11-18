@@ -2,7 +2,13 @@ import { describe, expect, it } from "vitest";
 import { invoicePayments, refundedByInvoice } from "../../src/lib/revenue/chargebee/payments";
 import { creemEarned, transactionPayments } from "../../src/lib/revenue/creem/payments";
 import type { CreemTransaction } from "../../src/lib/revenue/creem/mrr";
-import { dodoEarned, dodoFingerprint, dodoKind } from "../../src/lib/revenue/dodo/payments";
+import {
+  dodoEarned,
+  dodoFingerprint,
+  dodoKind,
+  dodoPartFingerprint,
+  dodoRefundedInPart,
+} from "../../src/lib/revenue/dodo/payments";
 import type { PaddleTransaction } from "../../src/lib/revenue/paddle/mrr";
 import {
   transactionEarned,
@@ -625,6 +631,21 @@ describe("Dodo Payments", () => {
         refund_status: "partial",
       }),
     ).toBe("12000:partial:");
+  });
+
+  it("adds what a payment refunded in part earned, which a further refund changes", () => {
+    const listed = {
+      payment_id: "pay_1",
+      total_amount: 12000,
+      currency: "USD",
+      created_at: "2026-09-20T10:00:00Z",
+    };
+    const partly = { ...listed, refund_status: "partial" };
+    expect(dodoRefundedInPart(partly)).toBe(true);
+    expect(dodoRefundedInPart({ ...listed, refund_status: "full" })).toBe(false);
+    expect(dodoRefundedInPart(listed)).toBe(false);
+    expect(dodoPartFingerprint(partly, 10000)).toBe("12000:partial::10000");
+    expect(dodoPartFingerprint(partly, 7000)).not.toBe(dodoPartFingerprint(partly, 10000));
   });
 
   it("counts a payment that names a subscription for it", () => {

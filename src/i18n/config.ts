@@ -40,11 +40,13 @@ export function isLocale(value: unknown): value is Locale {
   return typeof value === "string" && (LOCALES as readonly string[]).includes(value);
 }
 
-// Addresses that are the same in every language: files, routes for machines, the Markdown versions,
-// the sign-in returns that providers are told about, and the admin panel, which is in English.
-// Everything else is a page, which other languages serve under /<locale>.
+// Addresses that are the same in every language: files, routes for machines (the host's own under
+// /_vercel among them), the Markdown versions, the sign-in returns that providers are told about,
+// and the admin panel, which is in English. Everything else is a page, which other languages serve
+// under /<locale>. The icons and sharing images are named with their whole path, as in the proxy's
+// matcher, so a product or user called Icon keeps its pages (/saas/icon).
 const SHARED_PATH =
-  /^\/(?:api|md|_next|admin|auth\/callback|auth\/oauth)(?:\/|$)|\.(?:md|txt|svg|png|ico|xml|json)$|\/(?:opengraph-image|icon|apple-icon)$/;
+  /^\/(?:api|md|_next|_vercel|admin|auth\/callback|auth\/oauth)(?:\/|$)|\.(?:md|txt|svg|png|ico|xml|json)$|^\/(?:icon|apple-icon|(?:stats\/)?opengraph-image|(?:saas|users)\/[^/]+\/opengraph-image|saas\/[^/]+\/milestones\/[^/]+\/opengraph-image)$/;
 
 /** Whether a path is a page that has a version per language. */
 export function isLocalizedPath(path: string) {

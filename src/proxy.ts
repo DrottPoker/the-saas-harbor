@@ -188,10 +188,13 @@ export async function proxy(request: NextRequest) {
 }
 // Only pages need the policy and a refreshed session. API routes (the scheduled jobs among them),
 // the admin statistics' data, the files for crawlers, sharing images, icons and embedded badges
-// skip the proxy, so each of their requests costs one function run instead of two. Routes that
-// read the session refresh it themselves. /saas/<slug>.md still passes, for its rewrite.
+// skip the proxy, so each of their requests costs one function run instead of two. So do the
+// host's own routes under /_vercel (its analytics script and beacons), which a redirect to a
+// language would break. Routes that read the session refresh it themselves. /saas/<slug>.md still
+// passes, for its rewrite. The paths that are not pages are also listed in SHARED_PATH
+// (src/i18n/config.ts).
 export const config = {
   matcher: [
-    "/((?!_next/static|_next/image|api/|md/|admin/analytics/data$|favicon\\.ico$|icon$|icon1\\.svg$|apple-icon$|logo\\.png$|robots\\.txt$|sitemap\\.xml$|llms\\.txt$|indexnow\\.txt$|opengraph-image$|stats/opengraph-image$|(?:saas|users)/[^/]+/opengraph-image$|saas/[^/]+/milestones/[^/]+/opengraph-image$|saas/[^/]+/badge\\.svg$).*)",
+    "/((?!_next/static|_next/image|_vercel/|api/|md/|admin/analytics/data$|favicon\\.ico$|icon$|icon1\\.svg$|apple-icon$|logo\\.png$|robots\\.txt$|sitemap\\.xml$|llms\\.txt$|indexnow\\.txt$|opengraph-image$|stats/opengraph-image$|(?:saas|users)/[^/]+/opengraph-image$|saas/[^/]+/milestones/[^/]+/opengraph-image$|saas/[^/]+/badge\\.svg$).*)",
   ],
 };

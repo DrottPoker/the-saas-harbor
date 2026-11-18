@@ -2,9 +2,11 @@
 // Every charge counts, subscriptions and one-time products and paid apps alike, at its item price,
 // which is without the tax Google collects, less what its refunds took back where the rows read
 // include them; refunds are added to the report of the month they are made in. The reports do not
-// take off chargebacks. Charges are summed per UTC day, kind and currency, and each sum counts as
-// one payment, so the number of payments stored stays small however many orders an app has; a
-// day's sum changes as late charges and refunds come in, so the figures are its fingerprint.
+// take off chargebacks. Charges are summed per app, UTC day, kind and currency, and each sum counts
+// as one payment, so the number of payments stored stays small however many orders an app has; a
+// day's sum changes as late charges and refunds come in, so the figures are its fingerprint. The
+// id names the app, whose package name is unique in Google Play, so two products never share one,
+// and one app's revenue verifies one product.
 import { dayOf, dayStart } from "../payments";
 import type { ListedPayment, PaymentKind } from "../types";
 import type { SaleCharge } from "./mrr";
@@ -29,7 +31,7 @@ export function googlePlayPayments(
     if (charge.at < since || (before !== null && charge.at >= before)) continue;
     const kind: PaymentKind = charge.subscription ? "subscription" : "one_time";
     const day = dayOf(charge.at);
-    const id = `${day}:${kind}:${charge.currency}`;
+    const id = `${charge.packageName}:${day}:${kind}:${charge.currency}`;
     const total = days.get(id) ?? {
       day,
       kind,

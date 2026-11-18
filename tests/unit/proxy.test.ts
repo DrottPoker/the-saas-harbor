@@ -13,6 +13,8 @@ describe("proxy matcher", () => {
       "/saas/solofy",
       "/saas/opengraph-image",
       "/users/opengraph-image",
+      "/saas/icon",
+      "/users/apple-icon",
       "/users/victor",
       "/dashboard",
       "/auth/callback?code=abc",
@@ -26,6 +28,8 @@ describe("proxy matcher", () => {
   });
   it("skips API routes, the admin statistics' data, files for crawlers, sharing images, icons and badges", () => {
     for (const url of [
+      "/_vercel/insights/script.js",
+      "/_vercel/speed-insights/vitals",
       "/api/email/send",
       "/api/analytics",
       "/admin/analytics/data?report=live",
